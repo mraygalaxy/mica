@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MICA</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MICA">
+  <meta name="author" content="Michael R. Hines">
+
+  <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <script src="BOOTSTRAP/js/jquery.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-transition.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-alert.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-modal.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-dropdown.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-scrollspy.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-tab.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-tooltip.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-popover.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-button.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-collapse.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-carousel.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-typeahead.js"></script>
+  <script src="BOOTSTRAP/js/bootstrap-affix.js"></script>
+  
+  <link href="BOOTSTRAP/css/bootstrap.css" rel="stylesheet">
+  <link href="BOOTSTRAP/css/bootstrap-responsive.css" rel="stylesheet">
+  <link href="MSTRAP/mica.css" rel="stylesheet">
+
+  <script src="MSTRAP/mica.js" charset="utf-8"></script>
+  </head>
+    <body data-spy='scroll' data-target='.bs-docs-sidebar' id='cbody'>
+  <nav class="main-nav" id="main-nav">
+  <br/><br/>
+  BOOTSIDEBAR
+  </nav>
+  <div class='page-wrap'>
+  <div class='content'>
+    <div style="display:none" id="ConnectContents">
+        <form method="POST" action="BOOTDEST/connect" accept-charset="UTF-8">
+        <input type="text" id="username" class="span4" name="username" value='BOOTUSERHOLD' placeholder="Username" />
+        <input type="password" id="password" class="span4" name="password" placeholder="Password" />
+        <label class="checkbox">
+            <input type="checkbox" name="remember" BOOTREMEMBER/> Remember Me
+        </label>
+        <button type="submit" name="connect" class="btn btn-primary btn-block" value='1'>Sign in</button>
+        </form>
+    </div>
+    <div class="container-fluid">
+     <div class="row-fluid">
+         <div class="span12">
+            <div class="navbar navbar-fixed-top">
+               <div class="navbar-inner">
+                      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                          <span class="icon-bar"></span>
+                          <span class="icon-bar"></span>
+                          <span class="icon-bar"></span>
+                      </a>
+                      <a id='offnav' class='brand' onclick="togglecanvas();" href='#'>&nbsp;&nbsp;<i class='icon-arrow-right'></i>&nbsp;BOOTCLOUDNAME</a>
+                      <div class="nav-collapse collapse">
+                            <ul class="nav">
+                            BOOTNAV
+                            </ul>
+                      </div>
+                      <img class='brand nav pull-right' src='MSTRAP/favicon.ico' width='20px'/>
+                  </div><!--/.nav-collapse -->
+               </div><!--navbar-inner-->
+            </div><!--navbar-->
+         </div><!--span12-->
+     </div><!--row-fluid -->
+     <div class='row-fluid'>
+            <div class="modal hide fade" id='aboutModal'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 id="myLoginLabel">About this software:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div>
+                    <h5>Author: Michael R. Hines, Ph.D.: <a href='http://michael.hinespot.com'>http://michael.hinespot.com</a></h5>
+                    I am not a linguist (not by a longshot) - I have a dayjob as a researcher in operating systems, virtualization and cloud computing. 
+
+                    <p/><br/>
+                    I entered China for work in 2013 with my wife and began learning Chinese,
+                    But I'm also a former musician, so the music of spoken language came 
+                    very naturally to me - this was my saving grace. For years, I was so
+                    embarrassed that I couldn't read/write characters - so I made up lots
+                    of excuses to my friends and coworkers until finally I realized the 
+                    source of the problem: My brain cannot physically deconstruct so much 
+                    information (strokes) in such a small area of space. But I've found
+                    that this is not relevant to conversation, as this software helps to 
+                    prove later: Characters are the enemy. I wanted to be able to read
+                    Chinese books and news stories like I would any other kind of prose,
+                    so I created this software.
+
+                    <p/><br/>
+                    Hope you enjoy it as much as I do. =)
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal hide fade" id='newAccountModal'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 id="myLoginLabel">Create New Account:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div id='newaccountdestination'>
+                        <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                        <h5>&nbsp;Username: <input type="text" name="username"/></h5>
+                        <h5>&nbsp;Password: <input type="password" name="password"/></h5>
+                        <h5>&nbsp;Confirm:&nbsp; <input type="password" name="confirm"/></h5>
+                        BOOTNEWACCOUNTADMIN
+                        <button name='newaccount' type="submit" class="btn btn-primary" value='password'>
+                        <i class="icon-plus-sign icon-white"></i>&nbsp;Create</button>
+                        </form>                                   
+                    </div>
+                </div>
+            </div>
+            <div class="modal hide fade" id='regroupModal'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 id="myLoginLabel">Split/Merge Words:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div id='regroupdestination'></div>
+                </div>
+            </div>
+            <div class="modal hide fade" id='instantModal'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 id="myLoginLabel">Instant Translation:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div id='instantdestination'></div>
+                </div>
+            </div>
+            <div class="modal hide fade" id='uploadModal'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h3 id="myUploadLabel">Upload Story:</h3>
+                </div>
+                
+                <div class="modal-body">
+                        <h4>Copy/Paste a Story:</h4>
+                        <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
+                        <h5>
+                           &nbsp;<button name='uploadtext' type="submit" class="btn btn-primary" value='empty'>
+                          <i class="icon-upload icon-white"></i>&nbsp;Upload Text</button>
+                           &nbsp;Unique Name: <input type='text' name='storyname' value=''></input>
+                        </h5>
+                        <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
+                        </form>                                   
+                        <p/>
+                        <h4>Or Upload a File Instead:</h4>
+                        <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
+                        <h5>
+                            &nbsp;<button name='uploadfile' type="submit" class="btn btn-primary" value='empty'>
+                            <i class="icon-upload icon-white"></i>&nbsp;Upload File</button>
+                            &nbsp;Story File: <input type="file" name="storyfile" id="file"/> 
+                        </h5>
+                        </form>                                   
+                        <h5>NOTE: Story *must* be UTF-8 encoded,<br/>
+                        and it's filename must end with a '.txt' extension.</h5>
+                </div>
+            </div>
+BOOTBODY
+     </div> <!-- row-fluid -->
+    </div> <!--container-fluid -->
+   </div> <!-- content -->
+  </div> <!-- page-wrap -->
+    <script>
+    var ConnectisVisible = false;
+    var ConnectclickedAway = false;
+    function getTemplate() {
+            if(window.innerWidth < 500)
+                    return "<div style='margin-left: 150px' id='connectpopover' class='popover'><div class='arrow'></div><div class='popover-inner'><h3 class='popover-title'></h3><div class='popover-content'><p></p></div></div></div>";
+            else
+                    return "<div id='connectpopover' class='popover'><div class='arrow'></div><div class='popover-inner'><h3 class='popover-title'></h3><div class='popover-content'><p></p></div></div></div>";
+    }
+    var connectpop = $('#connectpop').popover({ 
+        html : true,
+        title: "Connect:",
+        placement : $.browser.device ? 'bottom-right' : 'bottom',
+        trigger: 'manual',
+        template: getTemplate(),
+        content: function() {
+          return $('#ConnectContents').html();
+        }
+      });
+      /* Allow the popover to close when clicking somewhere else on the screen */
+    Connectdata = connectpop.data('popover');
+
+    if(Connectdata != undefined) {
+       ConnectclickedAway = true;
+       ConnectisVisible = true;
+       connectpop.data('popover').tip().css('z-index', 1030);
+    }
+
+      connectpop.click(function(e) {
+            $(this).popover('toggle');
+            ConnectclickedAway = false;
+            ConnectisVisible = true;
+            e.preventDefault();
+        });
+
+    $(document).click(function(e) {
+          if(findParentNode('ConnectContents', e.srcElement, 'cbody') == true) {
+            return;
+          }
+          if(findParentNode('connectpopover', e.srcElement, 'cbody') == true) {
+            return;
+            }
+
+              if(ConnectisVisible & ConnectclickedAway)
+              {
+                $('#connectpop').popover('hide');
+                ConnectisVisible = ConnectclickedAway = false;
+              }
+              else
+              {
+                ConnectclickedAway = true;
+              }
+    });
+BOOTSHOWPOPOVER
+    </script>
+</body>
+</html>
