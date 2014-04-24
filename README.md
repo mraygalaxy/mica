@@ -38,10 +38,10 @@ Getting Started:
 
 $ apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip
 
-# (yes, they are all required as of now)
+### (yes, they are all required as of now)
 
 2. Compile Python Interface to Beijing University ICTCLAS Chinese Lexical Analysis System 
-# http://www.ictclas.org/
+### http://www.ictclas.org/
 
 $ cd mica
 $ python setup.py build
@@ -49,10 +49,10 @@ $ cp build/*/mica.so .
 
 3. Create a developer account / Translator Application key/ID requests from Microsoft
 
-https://datamarket.azure.com/account/keys # create keys
-http://datamarket.azure.com/dataset/bing/microsofttranslator # bind those keys to the translator API
+$ https://datamarket.azure.com/account/keys # create keys
+$ http://datamarket.azure.com/dataset/bing/microsofttranslator # bind those keys to the translator API
 
-# You might need to create a couple of new accounts - just follow the instructions
+### You might need to create a couple of new accounts - just follow the instructions
 
 4. Install CJK library and CEDICT:
 
@@ -72,5 +72,5 @@ If all the dependencies are in place, then you should be able to do the followin
 
 $ ./mica.py -I client_id -S client_key_long_string_of_characters -C path_to_cacert -K path_to_private_key
 
-# You can add the '-k' option if you want to restart the process without throwing away 
-# all the cookies used in the web interfaces in case you want to easily update the software.
+### You can add the '-k' option if you want to restart the process without throwing away 
+### all the cookies used in the web interfaces in case you want to easily update the software.
