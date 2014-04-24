@@ -1,0 +1,132 @@
+body {
+	padding-top: 25px;
+}
+
+.bwizard-steps li {
+	border: 0;
+}
+.sidebar-nav {
+	padding: 9px 0;
+}
+.modal {
+	max-height: 90%;
+}
+.anchor {
+	padding-top: 55px;
+	margin-top: -55px;
+}
+.navbar-inner {
+	background-image: -webkit-linear-gradient(top, white, #DBD7D7);
+}
+a.brand:hover {
+	color : white;
+}
+a {
+	font-weight:bold;
+}
+.popover {
+	width: 400px;
+}
+.popover-title {
+    font-weight: bold;
+    font-size: large;
+}
+
+td.trans {
+    text-align: center;
+}
+
+a.trans {
+    cursor: pointer;
+}
+
+div.trans {
+    font-size: x-small;
+}
+
+.page-wrap {
+  float: right;
+  width: 100%;
+  transition: width 0.3s ease;
+}
+
+.main-nav {
+  position: fixed;
+  top: 0;
+  width: 0;
+  height: 100%;
+  background: white;
+  overflow-y: auto;
+  transition: width 0.3s ease;
+  }
+}
+
+.content {
+  padding: 100px 20px 20px 20px;
+}
+
+.close-menu {
+  display: none;
+}
+
+#main-nav:target {
+  width: 50%;
+}
+#main-nav:target + .page-wrap {
+  width: 50%;
+  .open-menu {
+     display: none; 
+  }
+  .close-menu {
+     display: block;
+  }
+}
+
+*.nolight {
+   -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+.redsquare {
+  background: red;
+  width: 10px;
+  height: 10px;
+  margin: 5px auto;
+}
+.blacksquare {
+  background: black;
+  width: 10px;
+  height: 10px;
+  margin: 5px auto;
+}
+.bluesquare {
+  background: blue;
+  width: 10px;
+  height: 10px;
+  margin: 5px auto;
+}
+.greensquare {
+  background: green;
+  width: 10px;
+  height: 10px;
+  margin: 5px auto;
+}
+
+span.splitoutline {
+    border-style:solid;
+    border-color:#287EC7;
+}
+
+td.mergetop { border-top: solid red; }
+td.mergebottom { border-bottom: solid red; }
+td.mergeleft { border-left: solid red; }
+td.mergeright { border-right: solid red; }
+td.splittop { border-top: solid blue }
+td.splitbottom { border-bottom: solid blue }
+td.splitleft { border-left: solid blue  }
+td.splitright { border-right: solid blue  }

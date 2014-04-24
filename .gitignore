@@ -1,0 +1,13 @@
+*.pem
+build
+cedict*.txt
+databases
+restart.sh
+logs
+.project
+.pydevproject
+.settings
+ICTCLAS.log
+accounts.db
+mica.so
+obsolete.py
