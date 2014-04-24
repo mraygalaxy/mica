@@ -2284,7 +2284,7 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
             elif req.action == "help" :
                 output = ""
-                helpfh = codecs.open(cwd + "serve/info_template.html", "r", "utf-8")
+                helpfh = codecs.open(cwd + "github_wiki/Home.md", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
                 return self.bootstrap(req, output)
