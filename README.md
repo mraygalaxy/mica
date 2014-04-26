@@ -13,9 +13,14 @@ in the world, and then use people to correct the errors
 *after* the content has already been tranformed into an
 interactive, readable format.
 
-Full Documentation & Usage & Motivation:
+Full Usage Documentation: https://github.com/hinesmr/mica/wiki
 
-https://github.com/hinesmr/mica/wiki
+Credits:
+1. Lexical word parsing and character grouping: http://www.ictclas.org
+2. Offline chinese translation: https://pypi.python.org/pypi/cjklib
+3. Offline polyphome listings: https://github.com/lxyu/pinyin
+4. Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
+
 
 INSTALLATION:
 =============
