@@ -42,8 +42,6 @@ $ apt-get install python-dev python-openssl python-setuptools python-sqlalchemy 
 
 2. Compile Python Interface to Beijing University ICTCLAS Chinese Lexical Analysis System 
  
- # http://www.ictclas.org/
-
 $ cd mica
 
 $ python setup.py build
