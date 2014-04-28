@@ -9,7 +9,7 @@
 
 using namespace std;
 
-static PyObject * mica_translate(PyObject *self, PyObject *args)
+static PyObject * mica_ictclas_translate(PyObject *self, PyObject *args)
 {
     PyObject * ret;
     unsigned int nPaLen;
@@ -29,17 +29,17 @@ static PyObject * mica_translate(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MicaMethods[] = {
-    {"trans",  mica_translate, METH_VARARGS,
+    {"trans",  mica_ictclas_translate, METH_VARARGS,
      "Identify chinese character groups."},
     {NULL, NULL, 0, NULL}
 };
 
 static PyObject *MicaError;
-static string errorname1("mica.error"), errorname2("error");
+static string errorname1("mica_ictclas.error"), errorname2("error");
 static char name[100];
 
 PyMODINIT_FUNC
-initmica(void)
+initmica_ictclas(void)
 {
     PyObject *m;
 
@@ -51,7 +51,7 @@ initmica(void)
 
     ICTCLAS_SetPOSmap(2);
 
-    m = Py_InitModule("mica", MicaMethods);
+    m = Py_InitModule("mica_ictclas", MicaMethods);
 
     if (m == NULL)
         return;
@@ -70,6 +70,6 @@ main(int argc, char *argv[])
 {
     Py_SetProgramName(argv[0]);
     Py_Initialize();
-    initmica();
+    initmica_ictclas();
     return 1;
 }
