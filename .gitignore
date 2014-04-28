@@ -9,5 +9,8 @@ logs
 .settings
 ICTCLAS.log
 accounts.db
-mica.so
+mica_ictclas.so
 obsolete.py
+*.swp
+*.swo
+*.pyc

@@ -11,8 +11,6 @@ from os import listdir
 from os.path import isfile, join
 from threading import Thread, Lock
 from daemon import DaemonContext
-from logging.handlers import logging
-from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
 from sys import _getframe
 from simplejson import JSONDecodeError
 from datetime import datetime
@@ -33,6 +31,7 @@ from beaker.middleware import SessionMiddleware
 from cjklib.dictionary import CEDICT
 from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
+from common import *
 
 import threading
 import traceback
@@ -43,7 +42,6 @@ import urllib
 import urllib2
 import copy
 import warnings
-import logging
 import codecs
 import shelve
 import uuid as uuid4
@@ -56,25 +54,9 @@ import __builtin__
 
 bins = dir(__builtin__)
 
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-WARN = logging.WARN
-ERROR = logging.ERROR
-CRITICAL = logging.CRITICAL
-
-micalogger = False
-
-def minfo(msg) :
-   micalogger.info(msg)
-
-def mdebug(msg) :
-   micalogger.debug(msg)
-
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 path.append(cwd)
 data_path = cwd + "/chinese.txt"
-
-# use $ echo -n 'password' | md5sum
 
 cd = {}
 dpfh = open(data_path)
@@ -2395,6 +2377,9 @@ parser.add_option("-I", "--client-id", dest = "client_id", default = False, help
 parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
 parser.add_option("-C", "--cacert", dest = "cacert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
 parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
+parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
+parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050",
+help = "Port on which the slaves are running")
 
 parser.set_defaults()
 options, args = parser.parse_args()
@@ -2414,26 +2399,22 @@ if not options.keepsession and 'session.data_dir' in session_opts and 'session.l
     except OSError :
         pass
 
+slaves = {}
+
 def main() :
-    blog = logging.getLogger('beaker.container')
-    blog.setLevel(logging.DEBUG)
-    global micalogger
-    micalogger = logging.getLogger("")
-    micalogger.setLevel(logging.DEBUG)
-    handler = logging.handlers.RotatingFileHandler(options.logfile, maxBytes=(1048576*5), backupCount=7)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    micalogger.addHandler(handler)
-    blog.addHandler(handler)
-    streamhandler = logging.StreamHandler()
-    streamhandler.setFormatter(formatter)
-    micalogger.addHandler(streamhandler)
-    blog.addHandler(streamhandler)
+    mica_init_logging(options.logfile)
 
     log.startLogging(DailyLogFile.fromFullPath(options.tlogfile), setStdout=True)
 
     try :
-        minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
+        slave_addresses = options.slaves.split(",")
+
+        for slave_address in slave_addresses :
+            slave_uri = "http://" + slave_address + ":" + options.slave_port
+            minfo("Registering slave @ " + slave_uri)
+            slaves[slave_uri] = MICASlaveClient(slave_uri)
+
+        assert(len(slaves) >= 1)
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(options.port, options.host))
@@ -2441,6 +2422,8 @@ def main() :
 
         reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
         reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cacert), interface = options.host)
+        minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
+
         reactor.run()
     except Exception, e :
         minfo("What the hell is going on? " + str(e))
