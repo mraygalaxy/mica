@@ -48,7 +48,7 @@ import codecs
 import shelve
 import uuid as uuid4
 import cjklib
-import mica
+import mica_ictclas
 import hashlib
 import errno
 import simplejson as json
@@ -1104,7 +1104,7 @@ class MICA(object):
 
     def parse(self, uuid, name, story, username, storydb) :
         mdebug("Ready to translate: " + name)
-        parsed = mica.trans(story["original"].encode("UTF-8"))
+        parsed = mica_ictclas.trans(story["original"].encode("UTF-8"))
         mdebug("Parsed result: " + parsed)
         lines = parsed.split("\n")
         groups = []
@@ -2293,7 +2293,7 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
-        except mica.error, e :
+        except mica_ictclas.error, e :
             return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: mica C-extension failed: " + str(e) + "</h4>")
         except Exception, msg:
             mdebug("Exception: " + str(msg))
@@ -2314,7 +2314,8 @@ class MICA(object):
             return out
 
 session_opts = {
-    'session.data_dir' : '/tmp/mica_sessions_' + getpwuid(os.getuid())[0] + 'data',
+    'session.data_dir' : '/tmp/mica_sessions_' + getpwuid(os.getuid())[0] + '_data',
+    'session.lock_dir' : '/tmp/mica_sessions_' + getpwuid(os.getuid())[0] + '_lock',
     'session.type' : 'file',
     }
 
@@ -2406,13 +2407,16 @@ if not options.client_id or not options.client_secret:
     print "Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)"
     exit(1)
 
-if not options.keepsession :
+if not options.keepsession and 'session.data_dir' in session_opts and 'session.lock_dir' in session_opts :
     try :
         shutil.rmtree(session_opts['session.data_dir'])
+        shutil.rmtree(session_opts['session.lock_dir'])
     except OSError :
         pass
 
 def main() :
+    blog = logging.getLogger('beaker.container')
+    blog.setLevel(logging.DEBUG)
     global micalogger
     micalogger = logging.getLogger("")
     micalogger.setLevel(logging.DEBUG)
@@ -2420,9 +2424,11 @@ def main() :
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     micalogger.addHandler(handler)
+    blog.addHandler(handler)
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
     micalogger.addHandler(streamhandler)
+    blog.addHandler(streamhandler)
 
     log.startLogging(DailyLogFile.fromFullPath(options.tlogfile), setStdout=True)
 
