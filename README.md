@@ -31,7 +31,7 @@ There are several steps to perform before MICA can run:
 
 1) Install basic package dependencies
 
-$ apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto
+$ sudo apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto
 
 2) Create a developer account / Translator Application key/ID requests from Microsoft
 
@@ -45,7 +45,7 @@ $ http://datamarket.azure.com/dataset/bing/microsofttranslator # bind those keys
 
 $ cd /tmp
 
-$ pip install cjklib  # not yet in apt-get
+$ sudo pip install cjklib  # not yet in apt-get
 
 $ sudo installcjkdict CEDICT
 
@@ -69,7 +69,7 @@ $ sudo ldconfig
 $ cd mica
 
 $ python setup.py build
-$ python setup.py install 
+$ sudo python setup.py install 
 $ cp build/*/mica_ictclas.so .
 
 
