@@ -29,11 +29,11 @@ There are several steps to perform before MICA can run:
 
 (Yes, please follow them all).
 
-1. Install basic package dependencies
+1) Install basic package dependencies
 
 $ apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto
 
-2. Create a developer account / Translator Application key/ID requests from Microsoft
+2) Create a developer account / Translator Application key/ID requests from Microsoft
 
 $ https://datamarket.azure.com/account/keys # create keys
 
@@ -41,7 +41,7 @@ $ http://datamarket.azure.com/dataset/bing/microsofttranslator # bind those keys
 
  # You might need to create a couple of new accounts - just follow the instructions
 
-3. Install CJK library and CEDICT:
+3) Install CJK library and CEDICT:
 
 $ cd /tmp
 
@@ -54,17 +54,17 @@ $ wget ftp://ftp.unicode.org/Public/UNIDATA/Unihan.zip
 $ sudo buildcjkdb -r build cjklibData 
 
 
-4. Generated a self-signed certificate for Twisted
+4) Generated a self-signed certificate for Twisted
 
 $ openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
 
-5. Copy ITCT (www.itctlas.org) libraries for linking 
+5) Copy ITCT (www.itctlas.org) libraries for linking 
 
 $ sudo cp ictc_64bit/libICTCLAS50.* /usr/lib64  # if you are on a 64-bit system
 $ sudo cp ictc_32bit/libICTCLAS50.* /usr/lib    # if you are on a 32-bit system
 $ sudo ldconfig
 
-6. Compile Python Interface to Beijing University ICTCLAS Chinese Lexical Analysis System 
+6) Compile Python Interface to Beijing University ICTCLAS Chinese Lexical Analysis System 
  
 $ cd mica
 
