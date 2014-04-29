@@ -84,14 +84,6 @@ If all the dependencies are in place, then you should be able to do the followin
 
 $ ./mica.py -I client_id -S client_key_long_string_of_characters -C path_to_cacert -K path_to_private_key
 
-   # Where the first to 'I' and 'S' parameters are the ID and key you got from the microsoft translation
+   # Where the first to 'I' and 'S' parameters are the ID and key you got from the microsoft translation free application developer accounts and the last two parameters 'C' and 'K' are from the openssl command from above if you needed to needed to create a self-signed certificate.
 
-   # free applicatio developer accounts
-
-   # and the last two parameters 'C' and 'K' are from the openssl command from above if you needed to
-
-   # needed to create a self-signed certificate.
-
-   # You can add the '-k' option if you want to restart the process without throwing away 
- 
- # all the cookies used in the web interfaces in case you want to easily update the software.
+   # You can add the '-k' option if you want to restart the process without throwing away all the cookies used in the web interfaces in case you want to easily update the software.
