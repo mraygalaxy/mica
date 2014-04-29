@@ -61,7 +61,9 @@ $ openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
 5) Copy ITCT (www.itctlas.org) libraries for linking 
 
 $ sudo cp ictc_64bit/libICTCLAS50.* /usr/lib64  # if you are on a 64-bit system
+
 $ sudo cp ictc_32bit/libICTCLAS50.* /usr/lib    # if you are on a 32-bit system
+
 $ sudo ldconfig
 
 6) Compile Python Interface to Beijing University ICTCLAS Chinese Lexical Analysis System 
@@ -69,7 +71,9 @@ $ sudo ldconfig
 $ cd mica
 
 $ python setup.py build
+
 $ sudo python setup.py install 
+
 $ cp build/*/mica_ictclas.so .
 
 
