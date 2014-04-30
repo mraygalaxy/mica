@@ -16,3 +16,4 @@ obsolete.py
 *.pyc
 *.crt
 *.key
+*.csr
