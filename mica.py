@@ -2375,7 +2375,7 @@ parser.add_option("-l", "--log", dest = "logfile", default = cwd + "logs/mica.lo
 parser.add_option("-t", "--tlog", dest = "tlogfile", default = cwd + "logs/twisted.log", help ="Twisted log file.")
 parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
 parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
-parser.add_option("-C", "--cacert", dest = "cacert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
+parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
 parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
 parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
 parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050",
@@ -2384,7 +2384,7 @@ help = "Port on which the slaves are running")
 parser.set_defaults()
 options, args = parser.parse_args()
 
-if not options.cacert or not options.privkey :
+if not options.cert or not options.privkey :
     print "Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README."
     exit(1)
 
@@ -2421,7 +2421,7 @@ def main() :
         nonsslsite = Site(NONSSLDispatcher(options.sslport, options.host))
 
         reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
-        reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cacert), interface = options.host)
+        reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cert), interface = options.host)
         minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
 
         reactor.run()
