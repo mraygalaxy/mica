@@ -58,7 +58,7 @@ $ sudo buildcjkdb -r build cjklibData
 
 $ openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
 
-5) Copy ITCT (www.itctlas.org) libraries for linking 
+5) Copy ICTCLAS (www.ictclas.org) libraries for linking 
 
 $ sudo cp ictc_64bit/libICTCLAS50.* /usr/lib64  # if you are on a 64-bit system
 
