@@ -56,7 +56,7 @@ $ sudo buildcjkdb -r build cjklibData
 
 4) Generated a self-signed certificate for Twisted
 
-$ openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
+$ openssl req -x509 -nodes -days 9000 -newkey rsa:2048 -keyout mica.key -out mica.crt
 
 5) Copy ICTC (www.ictclas.org) libraries for linking 
 
