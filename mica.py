@@ -56,7 +56,7 @@ bins = dir(__builtin__)
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 path.append(cwd)
-data_path = cwd + "/chinese.txt"
+data_path = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
 
 cd = {}
 dpfh = open(data_path)
@@ -1346,19 +1346,75 @@ class MICA(object):
 
         if not disk :
             output = "<div class='span8'>" + output
-            output += "<div id='translationstatus'></div>"
+            output += """
+                    <div id='translationstatus'></div>
+                    <div id='pagecontent'></div>
+                    <div id='pagenav'></div>
+                    """
 
+        output += """
+                  <script>
+                    $('#pagenav').bootpag({
+                           total: 23,
+                              page: 1,
+                                 maxVisible: 10 
+                    }).on('page', function(event, num){
+                        $('#pagecontent').html('Page ' + num); 
+                    });
+                  </script>
+                  """
+
+        if not disk :
+            output += """
+                    </div> <!-- span8 reading section -->
+                    <div class='span3'>
+                    """
+            output += "<div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
+
+            if action in ["read"] :
+                output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>memolist('" + uuid + "');</script>"
+            elif action == "edit" :
+                output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>editslist('" + uuid + "');</script>"
+            elif action == "home" :
+                output += "<br/>Polyphome Legend:<br/>"
+                pfh = open(cwd + "serve/legend_template.html", 'r')
+                output += pfh.read()
+                pfh.close()
+                output += """
+                    <br/>
+                    Polyphome Change History:<br/>
+                """
+                output += "<div id='history'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>history('" + uuid + "');</script>"
+
+            output += "</div>"
+
+        return output
+
+    def view_page(self, uuid, name, story, action, output, db, page, disk = False) :
         units = story["units"]
         chars_per_line = 60 
         words = len(units)
+        pages = []
         lines = [] 
         line = [] 
+        curr_page = 0
 
         trans_id = 0
         chars = 0
 
         for x in range(0, len(units)) :
             unit = units[x]
+
+            if unit["page"] > curr_page :
+                if len(line) :
+                    lines.append(line)
+                    line = []
+                if len(lines) :
+                    pages.append(lines)
+                    lines = []
+                chars = 0
+                curr_page += 1
+
             source = "".join(unit["source"])
 
             ret = self.get_parts(unit)
@@ -1390,245 +1446,227 @@ class MICA(object):
 
         if len(line) :
             lines.append(line)
+        if len(lines) :
+            pages.append(lines)
 
         spacer = "<td style='margin-right: 20px'></td>"
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
         merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
 
-        for line in lines :
-            disk_out = ""
-            line_out = ""
+        for pidx in range(0, len(pages)) :
+            lines = pages[pidx]
+            for line in lines :
+                disk_out = ""
+                line_out = ""
 
-            if not disk :
-                line_out += "\n<table>"
-                
-                line_out += "\n<tr>"
+                if not disk :
+                    line_out += "\n<table"
+                    if pidx != 0 :
+                        line_out += " style='display: none'" 
+                    ">"
+                    
+                    line_out += "\n<tr>"
 
-                prev_merge = False
-                for word_idx in range(0, len(line)) :
-                    word = line[word_idx]
+                    prev_merge = False
+                    for word_idx in range(0, len(line)) :
+                        word = line[word_idx]
+                        english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
+                        py = word[1]
+                        trans_id = str(word[2])
+                        unit = word[3]
+                        tid = unit["hash"] if py else trans_id 
+                        nb_unit = str(word[4])
+                        source = word[5]
+                        curr_merge = False
+                        merge_end = False
+
+                        line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
+
+                        if py and action == "edit" :
+                            if source in db["mergegroups"] and (unit["hash"] in db["mergegroups"][source]["record"]) :
+                                curr_merge = True
+
+                                if word_idx < (len(line) - 1) :
+                                    endword = line[word_idx + 1]
+                                    if endword[1] :
+                                        endunit = endword[3]
+                                        endchars = "".join(endunit["source"])
+                                        if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
+                                            merge_end = True
+                                    else :
+                                        merge_end = True
+
+
+                        if py and action == "edit" :
+                            if curr_merge :
+                                if curr_merge and not prev_merge and merge_end : 
+                                    merge_end = False
+                                    prev_merge = False
+                                    curr_merge = False
+
+                            if curr_merge :
+                                line_out += "class='mergetop mergebottom"
+                                if not prev_merge : 
+                                    line_out += " mergeleft"
+                                line_out += "'"
+                            else :
+                                if not curr_merge and source in db["splits"] and unit["hash"] in db["splits"][source]["record"] :
+                                    line_out += "class='splittop splitbottom splitleft splitright'"
+
+                            prev_merge = curr_merge
+
+                        line_out += ">"
+                        line_out += "<span id='spanselect_" + trans_id + "' class='none'>"
+                        line_out += "<a class='trans'"
+                        line_out += " uniqueid='" + tid + "' "
+                        line_out += " nbunit='" + nb_unit + "' "
+                        line_out += " pinyin=\"" + (py if py else english) + "\" "
+                        line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
+                        line_out += " style='color: black; font-weight: normal' "
+                        line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
+                        line_out += source if py else english
+                        line_out += "</a>"
+                        line_out += "</span>"
+                        line_out += "</td>"
+
+                        if py :
+                            if action == "edit" and merge_end :
+                                line_out += merge_end_spacer 
+                            elif action == "edit" and curr_merge :
+                                line_out += merge_spacer 
+                            else :
+                                line_out += spacer 
+
+                    line_out += "</tr>\n<tr>"
+
+                for word in line :
                     english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
                     py = word[1]
-                    trans_id = str(word[2])
                     unit = word[3]
+                    trans_id = str(word[2])
                     tid = unit["hash"] if py else trans_id 
                     nb_unit = str(word[4])
                     source = word[5]
-                    curr_merge = False
-                    merge_end = False
+                    line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
+                    if py and (py not in punctuation) :
+                        if not disk :
+                            line_out += "<a class='trans' "
 
-                    line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
+                            add_count = ""
+                            if action == "home" :
+                                color = ""
+                                if py and len(unit["multiple_spinyin"]) :
+                                    color = "green"
 
-                    if py and action == "edit" :
-                        if source in db["mergegroups"] and (unit["hash"] in db["mergegroups"][source]["record"]) :
-                            curr_merge = True
+                                if source in db["tonechanges"] :
+                                    changes = db["tonechanges"][source]
+                                    if unit["hash"] in changes["record"] :
+                                        color = "black"
+                                        add_count = " (" + str(changes["total"]) + ")"
 
-                            if word_idx < (len(line) - 1) :
-                                endword = line[word_idx + 1]
-                                if endword[1] :
-                                    endunit = endword[3]
-                                    endchars = "".join(endunit["source"])
-                                    if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
-                                        merge_end = True
-                                else :
-                                    merge_end = True
+                                if color != "black" and py and len(unit["multiple_spinyin"]) :
+                                    fpy = " ".join(unit["multiple_spinyin"][0])
+                                    for ux in range(1, len(unit["multiple_spinyin"])) :
+                                         upy = " ".join(unit["multiple_spinyin"][ux])
+                                         if upy != fpy :
+                                             color = "red"
+                                             break
 
+                                if color != "" :
+                                    line_out += " style='color: " + color + "' "
+                            elif py :
+                                line_out += " style='color: black' "
 
-                    if py and action == "edit" :
-                        if curr_merge :
-                            if curr_merge and not prev_merge and merge_end : 
-                                merge_end = False
-                                prev_merge = False
-                                curr_merge = False
+                            line_out += " id='ttip" + trans_id + "'"
 
-                        if curr_merge :
-                            line_out += "class='mergetop mergebottom"
-                            if not prev_merge : 
-                                line_out += " mergeleft"
-                            line_out += "'"
+                            if action in ["read","edit"] or not(len(unit["multiple_spinyin"])) :
+                                line_out += " onclick=\"toggle('" + tid + "', "
+                                line_out += ("0" if action == "read" else "1") + ")\""
+
+                            line_out += ">"
+                            line_out += ((py if py else english).lower()) + add_count 
+                            line_out += "</a>"
                         else :
-                            if not curr_merge and source in db["splits"] and unit["hash"] in db["splits"][source]["record"] :
-                                line_out += "class='splittop splitbottom splitleft splitright'"
-
-                        prev_merge = curr_merge
-
-                    line_out += ">"
-                    line_out += "<span id='spanselect_" + trans_id + "' class='none'>"
-                    line_out += "<a class='trans'"
-                    line_out += " uniqueid='" + tid + "' "
-                    line_out += " nbunit='" + nb_unit + "' "
-                    line_out += " pinyin=\"" + (py if py else english) + "\" "
-                    line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
-                    line_out += " style='color: black; font-weight: normal' "
-                    line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
-                    line_out += source if py else english
-                    line_out += "</a>"
-                    line_out += "</span>"
-                    line_out += "</td>"
-
-                    if py :
-                        if action == "edit" and merge_end :
-                            line_out += merge_end_spacer 
-                        elif action == "edit" and curr_merge :
-                            line_out += merge_spacer 
+                            disk_out += (py if py else english).lower()
+                    else :
+                        if disk :
+                            disk_out += (py if py else english).lower()
                         else :
-                            line_out += spacer 
+                            line_out += (py if py else english).lower()
 
-                line_out += "</tr>\n<tr>"
-
-            for word in line :
-                english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
-                py = word[1]
-                unit = word[3]
-                trans_id = str(word[2])
-                tid = unit["hash"] if py else trans_id 
-                nb_unit = str(word[4])
-                source = word[5]
-                line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
-                if py and (py not in punctuation) :
                     if not disk :
-                        line_out += "<a class='trans' "
+                        line_out += "<br/>"
 
-                        add_count = ""
-                        if action == "home" :
-                            color = ""
-                            if py and len(unit["multiple_spinyin"]) :
-                                color = "green"
+                        if action == "home" and py and len(unit["multiple_spinyin"]) :
+                            line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
+                            line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db)
+                            line_out += "</div>"
+                            line_out += "<script>"
+                            line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
+                            line_out += "</script>"
 
-                            if source in db["tonechanges"] :
-                                changes = db["tonechanges"][source]
-                                if unit["hash"] in changes["record"] :
-                                    color = "black"
-                                    add_count = " (" + str(changes["total"]) + ")"
+                        line_out += "</td>"
 
-                            if color != "black" and py and len(unit["multiple_spinyin"]) :
-                                fpy = " ".join(unit["multiple_spinyin"][0])
-                                for ux in range(1, len(unit["multiple_spinyin"])) :
-                                     upy = " ".join(unit["multiple_spinyin"][ux])
-                                     if upy != fpy :
-                                         color = "red"
-                                         break
-
-                            if color != "" :
-                                line_out += " style='color: " + color + "' "
-                        elif py :
-                            line_out += " style='color: black' "
-
-                        line_out += " id='ttip" + trans_id + "'"
-
-                        if action in ["read","edit"] or not(len(unit["multiple_spinyin"])) :
-                            line_out += " onclick=\"toggle('" + tid + "', "
-                            line_out += ("0" if action == "read" else "1") + ")\""
-
-                        line_out += ">"
-                        line_out += ((py if py else english).lower()) + add_count 
-                        line_out += "</a>"
+                        if py :
+                            line_out += spacer
                     else :
-                        disk_out += (py if py else english).lower()
+                        disk_out += " "
+
+                if disk :
+                    disk_out += "\n"
                 else :
-                    if disk :
-                        disk_out += (py if py else english).lower()
-                    else :
-                        line_out += (py if py else english).lower()
+                    line_out += "</tr>"
+                    line_out += "<tr>"
 
                 if not disk :
-                    line_out += "<br/>"
+                    for word in line :
+                        english = word[0]
+                        if len(english) and english[0] == '/' :
+                            english = english[1:-1]
+                        unit = word[3]
+                        nb_unit = str(word[4])
+                        py = word[1]
+                        source = word[5]
+                        memorized = True if (py and unit["hash"] in db["memorized"]) else False
+                        tid = unit["hash"] if py else str(word[2])
+                        line_out += "<td style='vertical-align: top; text-align: center'>"
+                        line_out += "<table><tr>"
+                        line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
+                        line_out += "</tr><tr><td>"
+                        '''
+                        if action == "home" :
+                            line_out += ("".join(unit["source"]) if py else "")
+                        '''
+                        line_out += "<div class='trans trans" + tid + "' style='display: "
+                        line_out += "block" if (action == "read" and not memorized) else "none"
+                        line_out += "' id='trans" + tid + "'>"
+                        if py :
+                            if action in ["read", "edit"] :
+                                line_out += "<a class='trans' onclick=\"memorize('" + \
+                                            tid + "', '" + uuid + "', '" + str(nb_unit) + "')\">"
 
-                    if action == "home" and py and len(unit["multiple_spinyin"]) :
-                        line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
-                        line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db)
+                            line_out += english.replace("/"," /<br/>")
+                            if action in [ "read", "edit" ] :
+                                line_out += "</a>"
+
+                        line_out += "<br/>"
                         line_out += "</div>"
-                        line_out += "<script>"
-                        line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
-                        line_out += "</script>"
+                        line_out += "<div style='display: "
+                        line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
+                        line_out += "' class='trans blank" + tid + "'>"
+                        line_out += "&nbsp;</div>"
+                        line_out += "</td>"
+                        line_out += "</tr></table>"
+                        line_out += "</td>"
+                        if py :
+                            line_out += "<td>&nbsp;</td>"
+                    line_out += "</tr>"
+                    line_out += "</table>"
 
-                    line_out += "</td>"
-
-                    if py :
-                        line_out += spacer
+                if not disk :
+                    output += line_out
                 else :
-                    disk_out += " "
-
-            if disk :
-                disk_out += "\n"
-            else :
-                line_out += "</tr>"
-                line_out += "<tr>"
-
-            if not disk :
-                for word in line :
-                    english = word[0]
-                    if len(english) and english[0] == '/' :
-                        english = english[1:-1]
-                    unit = word[3]
-                    nb_unit = str(word[4])
-                    py = word[1]
-                    source = word[5]
-                    memorized = True if (py and unit["hash"] in db["memorized"]) else False
-                    tid = unit["hash"] if py else str(word[2])
-                    line_out += "<td style='vertical-align: top; text-align: center'>"
-                    line_out += "<table><tr>"
-                    line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
-                    line_out += "</tr><tr><td>"
-                    '''
-                    if action == "home" :
-                        line_out += ("".join(unit["source"]) if py else "")
-                    '''
-                    line_out += "<div class='trans trans" + tid + "' style='display: "
-                    line_out += "block" if (action == "read" and not memorized) else "none"
-                    line_out += "' id='trans" + tid + "'>"
-                    if py :
-                        if action in ["read", "edit"] :
-                            line_out += "<a class='trans' onclick=\"memorize('" + \
-                                        tid + "', '" + uuid + "', '" + str(nb_unit) + "')\">"
-
-                        line_out += english.replace("/"," /<br/>")
-                        if action in [ "read", "edit" ] :
-                            line_out += "</a>"
-
-                    line_out += "<br/>"
-                    line_out += "</div>"
-                    line_out += "<div style='display: "
-                    line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
-                    line_out += "' class='trans blank" + tid + "'>"
-                    line_out += "&nbsp;</div>"
-                    line_out += "</td>"
-                    line_out += "</tr></table>"
-                    line_out += "</td>"
-                    if py :
-                        line_out += "<td>&nbsp;</td>"
-                line_out += "</tr>"
-                line_out += "</table>"
-                output += line_out
-            else :
-                output += disk_out
-
-        if not disk :
-            output += "</div><div class='span3'>"
-            output += "<div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
-
-            if action in ["read"] :
-                output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>memolist('" + uuid + "');</script>"
-            elif action == "edit" :
-                output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>editslist('" + uuid + "');</script>"
-            elif action == "home" :
-                output += "<br/>Polyphome Legend:<br/>"
-                pfh = open(cwd + "serve/legend_template.html", 'r')
-                output += pfh.read()
-                pfh.close()
-                output += """
-                    <br/>
-                    Polyphome Change History:<br/>
-                """
-                output += "<div id='history'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>history('" + uuid + "');</script>"
-
-            output += "</div>"
-
-            '''
-            output += "<script>"
-            output += "install_highlight();"
-            output += "</script>"
-            '''
+                    output += disk_out
 
         return output
 
@@ -1729,7 +1767,16 @@ class MICA(object):
                     db["splits"] = {}
                 if "mergegroups" not in db :
                     db["mergegroups"] = {}
+                if "tags" not in db :
+                    db["tags"] = {}
 
+                for name, story in db["stories"].iteritems() :
+                    db["stories"][name]["pages"] = 1
+                    if "units" in story :
+                        for sidx in range(0, len(story["units"])) :
+                            db["stories"][name]["units"][sidx]["page"] = 0
+
+                    db["stories"][name]["tags"] = {}
 
                 if "current_story" in req.session :
                     del req.session["current_story"]
@@ -2413,6 +2460,7 @@ def main() :
             slave_uri = "http://" + slave_address + ":" + options.slave_port
             minfo("Registering slave @ " + slave_uri)
             slaves[slave_uri] = MICASlaveClient(slave_uri)
+            #slaves[slave_uri].foo("bar")
 
         assert(len(slaves) >= 1)
 

@@ -10,6 +10,7 @@ import re
 from DocXMLRPCServer import DocXMLRPCServer
 from optparse import OptionParser
 from common import *
+from time import sleep
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
@@ -85,16 +86,16 @@ services = {}
 def append_service(hostname, service) :
     if hostname not in services :
         services[hostname] = service
+        service.abort = False
         service.start()
         return True
     return False
 
-def remove_service(hostname, stop = True):
+def remove_service(hostname):
     if hostname in services :
         service = services[hostname]
         del services[hostname]
-        if stop :
-            service.stop()
+        service.stop()
         service.join()
         return service
     return False
@@ -171,6 +172,7 @@ def main() :
     apiservices = [] 
     debug = True if options.debug_host else False
     hostnames = options.host.split(",")
+    abort = True 
 
     try :
         for hostname in hostnames :
@@ -189,6 +191,8 @@ def main() :
             else :
                 append_service(hostname, apiservice)
 
+        abort = False
+
         # If this process is monitoring itself, then it could
         # call itself and loop here while it is alive.
         # So, we don't need this one: 
@@ -197,16 +201,24 @@ def main() :
 
         # Instead, just join to them all.
 
-        for hostname in hostnames :
-            remove_service(hostname, stop = False)  
+        while True :
+            sleep(5)
+            if abort :
+                break
 
     except KeyboardInterrupt:
         merr("CTRL-C Exiting...")
     except Exception, e :
         merr("Failed to startup MICA Slave Service: " + str(e))
+    finally :
+        if not abort :
+            minfo("Tearing down services...")
+           
+            for hostname in hostnames :
+                remove_service(hostname)  
 
-#MainThread = threading.current_thread()
-#MainThread.abort = False
+MainThread = threading.current_thread()
+MainThread.abort = False
 
 if options.daemon :
     with DaemonContext(
