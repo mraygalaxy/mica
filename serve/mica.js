@@ -67,9 +67,9 @@ if ("liststate" in params)
 	            if(getSpecificContent != '') {
 	                data = $(response).find(getSpecificContent).html();
 	                if(write) {
-	                    if(writeSubcontent)
+	                    if(writeSubcontent) {
 	                        $(id).html(data);
-	                    else
+	                    } else
 	                        $(id).html(response);
 	                }
 	            } else {
@@ -77,6 +77,15 @@ if ("liststate" in params)
 	                    $(id).html(response);
 	                data = response;
 	            }
+
+                if(write) {
+                        //have to replace script or else jQuery will remove them
+                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
+                            if (!$(this).attr('src')) {
+                                eval($(this).text());
+                            }
+                        });
+                }
 	            if(callback != false)
 	               callback(data);
             }
@@ -350,6 +359,7 @@ function make_child(node) {
       var chars = [];
       var pinyin = [];
       var indexes = [];
+      var pages = [];
 
       $("span.label > a").each(function(index) {
         chars.push($(this).text());
@@ -357,6 +367,7 @@ function make_child(node) {
         nbunits.push($(this).attr('nbunit'));
         pinyin.push($(this).attr('pinyin'));
         indexes.push($(this).attr('index'));
+        pages.push($(this).attr('page'));
       });
 
       var out = "";
@@ -383,6 +394,7 @@ function make_child(node) {
               button += "&nbunit=" + nbunits[0];
               button += "&tid=" + tids[0];
               button += "&index=" + indexes[0];
+              button += "&page=" + pages[0];
           } else {
               out += "<table>";
               for(var x = 0; x < chars.length; x++) {
@@ -398,6 +410,7 @@ function make_child(node) {
                  button += "&nbunit" + x + "=" + nbunits[x];
                  button += "&tid" + x + "=" + tids[x];
                  button += "&index" + x + "=" + indexes[x];
+                 button += "&page" + x + "=" + pages[x];
               }
               out += "</table>";
           }
@@ -483,6 +496,14 @@ function make_child(node) {
 	                    $(id).html(response);
 	                data = response;
 	            }
+                if(write) {
+                        //have to replace script or else jQuery will remove them
+                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
+                            if (!$(this).attr('src')) {
+                                eval($(this).text());
+                            }
+                        });
+                }
 	            if(callback != false)
 	               callback(data, opaque1, opaque2);
             }
@@ -491,7 +512,8 @@ function make_child(node) {
   }
 
 function multipopinstall(trans_id, unused) {
-    $('#ttip' + trans_id).popover({placement: 'bottom-right',
+    $('#ttip' + trans_id).popover({placement: 'bottom',
+//    $('#ttip' + trans_id).popover({placement: 'bottom-right',
                                    trigger: 'click',
                                    html: true,
                                    content: function() {
@@ -504,10 +526,10 @@ function multipoprefresh(data, trans_id, spy) {
     $('#ttip' + trans_id).popover('hide');
 }
 
-function multiselect(uuid, index, nb_unit, trans_id, spy) {
+function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           change('#pop' + trans_id, 
           bootdest + '/home?view=1&uuid=' + uuid + '&multiple_select=1'
-          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id, 
+          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
           true, 
@@ -580,10 +602,10 @@ function memory_finish(data, opaque1, opaque2) {
     toggle_specific('memory', hash, 0);
 }
 
-function memory(id, uuid, nb_unit, memorized) {
+function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
    change('#memory' + id, 
-          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit, 
+          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -593,12 +615,12 @@ function memory(id, uuid, nb_unit, memorized) {
           uuid);
 }
 
-function memorize(id, uuid, nb_unit) {
-    memory(id, uuid, nb_unit, 1);
+function memorize(id, uuid, nb_unit, page) {
+    memory(id, uuid, nb_unit, 1, page);
 }
 
-function forget(id, uuid, nb_unit) {
-    memory(id, uuid, nb_unit, 0);
+function forget(id, uuid, nb_unit, page) {
+    memory(id, uuid, nb_unit, 0, page);
 }
 
 
