@@ -478,6 +478,10 @@ class MICA(object):
         return self.dbs[username], username
 
     def bootstrap(self, req, body, now = False, pretend_disconnected = False) :
+
+        if isinstance(body, str) :
+            body = body.decode("utf-8")
+
         navcontents = ""
         newaccountadmin = ""
         cloudcontents = "None Available"
@@ -702,7 +706,7 @@ class MICA(object):
         for idx in range(0, len(self.replacement_keys)) :
             x = replacements[idx]
             y = self.replacement_keys[idx]
-            contents = contents.replace(y, x.decode("utf-8"))
+            contents = contents.replace(y, x)
     
         return contents
 
