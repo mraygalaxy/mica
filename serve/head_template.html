@@ -29,8 +29,8 @@
   <div class='content'>
     <div style="display:none" id="ConnectContents">
         <form method="POST" action="BOOTDEST/connect" accept-charset="UTF-8">
-        Username: <input type="text" id="username" name="username" value='BOOTUSERHOLD' placeholder="Username" />
-        Password: <input type="password" id="password" name="password" placeholder="Password" />
+        Username: <br/><input type="text" id="username" name="username" value='BOOTUSERHOLD' placeholder="Username" />
+        <br/>Password: <br/><input type="password" id="password" name="password" placeholder="Password" />
         <label class="checkbox">
             <input type="checkbox" name="remember" BOOTREMEMBER/> Remember Me
         </label>
@@ -160,7 +160,7 @@
                         </div>
                         
                         <div class="modal-body">
-                                <h4>Copy/Paste a Story:</h4>
+                                <h4><b>Copy/Paste a Story:</b></h4>
                                 <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
                                 <h5>
                                    &nbsp;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
@@ -170,16 +170,22 @@
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
                                 </form>                                   
                                 <p/>
-                                <h4>Or Upload a File Instead:</h4>
+                                <h4><b>Or Upload a File Instead:</b></h4>
                                 <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
                                 <h5>
                                     &nbsp;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
                                     <i class="icon-upload icon-white"></i>&nbsp;Upload File</button>
                                     &nbsp;Story File: <input type="file" name="storyfile" id="file"/> 
+                                    <br/>
+                                      What kind of file is this? <select name="filetype">
+                                      <option value='txt'>TXT (utf-8, single-page)</option>
+                                      <option value='pdf'>PDF (utf-8, multi-page)</option>
+                                      <option value='epub'>EPUB (not implemented, utf-8, multi-page)</option>
+                                      <option value='json'>JSON (not implemented, utf-8, multi-page</option>
+                                      </select>
                                 </h5>
                                 </form>                                   
-                                <h5>NOTE: Story *must* be UTF-8 encoded,<br/>
-                                and it's filename must end with a '.txt' extension.</h5>
+                                <h5>NOTE: Story *must* be UTF-8 encoded.</h5>
                         </div>
                     </div>
                 </div>
