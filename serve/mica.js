@@ -537,6 +537,8 @@ function editslist(uuid) {
           true);
 }
 
+
+
 function history(uuid) {
    go('#history', 
           bootdest + '/read?uuid=' + uuid + '&phistory=1', 
@@ -545,6 +547,28 @@ function history(uuid) {
           true, 
           false,
           true);
+}
+
+function view(mode, uuid, page) {
+   go('#pagecontent', 
+          bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page, 
+          '#pageresult', 
+          unavailable, 
+          true, 
+          false,
+          true);
+}
+
+function install_pages(action, pages, uuid) {
+        $('#pagenav').bootpag({
+            total: pages,
+                   page: 1,
+                   maxVisible: 10 
+        }).on('page', function(event, num){
+          view(action, uuid, num-1);
+        });
+
+        view(action, uuid, 0);
 }
 
 function memory_finish(data, opaque1, opaque2) {

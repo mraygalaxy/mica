@@ -386,7 +386,7 @@ class MICA(object):
     def __init__(self, client_id, client_secret):
         self.mutex = Lock()
         self.transmutex = Lock()
-        self.heromsg = "<div class='span1'></div><div class='span 1 hero-unit' style='padding: 5px'>"
+        self.heromsg = "<div class='col-md-1'></div><div class='span 1 hero-unit' style='padding: 5px'>"
         self.pid = "none"
 
         if not os.path.isdir(cwd + "databases/") :
@@ -397,9 +397,9 @@ class MICA(object):
         self.client = Translator(client_id, client_secret)
 
         self.menu = [ 
-             ("home" , ("/home", "<i class='icon-home'></i>&nbsp;Review")), 
-             ("edit" , ("/edit", "<i class='icon-pencil'></i>&nbsp;Edit")), 
-             ("read" , ("/read", "<i class='icon-book'></i>&nbsp;Read")), 
+             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;Review")), 
+             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;Edit")), 
+             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;Read")), 
         ]
         
         # Replacements must be in this order
@@ -514,40 +514,40 @@ class MICA(object):
                            <script>var translist = [];</script>
                            <table><tr><td>&nbsp;&nbsp;</td><td>
                            <h4>Stories:</h4>
-                            <div class='accordion' id='accordionStories'>
+                            <div class='panel-group' id='panelStories'>
                            """
 
                 reading = """
-                                            <div class='accordion-group'>
-                                              <div class="accordion-heading">
-                                               <a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionStories' href='#collapseReading'>
-                                               <i class='icon-arrow-down' style='size: 50%'></i>&nbsp;Reading:
+                                            <div class='panel panel-default'>
+                                              <div class="panel-heading">
+                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseReading'>
+                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Reading:
                                                 </a>
                                                 </div>
-                                                <div id='collapseReading' class='accordion-body'>
-                                                <div class='accordion-inner'>
+                                                <div id='collapseReading' class='panel-body'>
+                                                <div class='panel-inner'>
                           <table class='table table-hover table-striped'>
                           """
                 noreview = """
-                                            <div class='accordion-group'>
-                                              <div class="accordion-heading">
-                                               <a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionStories' href='#collapseReviewing'>
-                                               <i class='icon-arrow-down' style='size: 50%'></i>&nbsp;Not Reviewed:
+                                            <div class='panel panel-default'>
+                                              <div class="panel-heading">
+                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseReviewing'>
+                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Not Reviewed:
                                                 </a>
                                                 </div>
-                                                <div id='collapseReviewing' class='accordion-body collapse'>
-                                                <div class='accordion-inner'>
+                                                <div id='collapseReviewing' class='panel-body collapse'>
+                                                <div class='panel-inner'>
                           <table class='table table-hover table-striped'>
                           """
                 untrans = """
-                                            <div class='accordion-group'>
-                                              <div class="accordion-heading">
-                                               <a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionStories' href='#collapseUntranslated'>
-                                               <i class='icon-arrow-down' style='size: 50%'></i>&nbsp;Untranslated:
+                                            <div class='panel panel-default'>
+                                              <div class="panel-heading">
+                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseUntranslated'>
+                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Untranslated:
                                                 </a>
                                                 </div>
-                                                <div id='collapseUntranslated' class='accordion-body collapse'>
-                                                <div class='accordion-inner'>
+                                                <div id='collapseUntranslated' class='panel-body collapse'>
+                                                <div class='panel-inner'>
                           <table class='table table-hover table-striped'>
                           """
 
@@ -559,12 +559,12 @@ class MICA(object):
                     sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid=" + story["uuid"] + "\">" + rname + "</a>"
                     if "units" in story and (reviewed or story["translated"]) :
                         pr = story["pr"]
-                        sideout += "<br/><div class='progress progress-success progress-striped'><div class='bar' style='width: "
+                        sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
                         sideout += pr + "%;'> (" + pr + "%)</div>"
                     sideout += "</td>"
                     if "units" in story and reviewed :
-                        sideout += "<td><a title='Download Pinyin' class='btn btn-mini' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
-                        sideout += "<i class='icon-download-alt'></i></a></td>"
+                        sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                        sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
 
                     return sideout
 
@@ -590,8 +590,8 @@ class MICA(object):
                         untrans += sidestart(name, username, story, reviewed)
                         untrans += "\n<td style='font-size: x-small' colspan='3'>"
                         untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                        untrans += "<a title='Delete' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/home?delete=1&uuid=" + story['uuid'] + "\"><i class='icon-trash'></i></a>&nbsp;"
-                        untrans += "<a style='font-size: x-small' class='btn btn-mini' onclick=\"trans('" + story['uuid'] + "')\">Translate</a></div>&nbsp;"
+                        untrans += "<a title='Delete' style='font-size: x-small' class='btn-default  btn-xs' href=\"BOOTDEST/home?delete=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
+                        untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a></div>&nbsp;"
                         untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                         untrans += "</div>"
                         if "translating" in story and story["translating"] :
@@ -600,18 +600,18 @@ class MICA(object):
                         untrans += "</tr>"
                     else :
                         notsure = sidestart(name, username, story, reviewed)
-                        notsure += "<td><a title='Forget' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/home?forget=1&uuid=" + story['uuid'] + "\"><i class='icon-remove'></i></a></td>"
-                        notsure += "<td><a title='Review' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='icon-search'></i></a></td>"
-                        notsure += "<td><a title='Edit' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='icon-pencil'></i></a></td>"
-                        notsure += "<td><a title='Read' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='icon-book'></i></a></td>"
+                        notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?forget=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-remove'></i></a></td>"
+                        notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
+                        notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
+                        notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
                         if reviewed :
                            reading += notsure
-                           reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/read?reviewed=0&uuid=" + story['uuid'] + "\"><i class='icon-arrow-down'></i></a></td>"
+                           reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?reviewed=0&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
                            reading += "</tr>"
                         else :
                            noreview += notsure
-                           noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn btn-mini' href=\"BOOTDEST/read?reviewed=1&uuid=" + story['uuid'] + "\"><i class='icon-arrow-up'></i></a></td>"
+                           noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?reviewed=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                            noreview += "</tr>"
 
                 reading += "</table></div></div></div>\n"
@@ -631,7 +631,7 @@ class MICA(object):
                     navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='icon-random'></i>&nbsp;Re-Group
+                                 <i class='glyphicon glyphicon-random'></i>&nbsp;Re-Group
                                  <b class='caret'></b>
                                  </a>
                                  <ul class='dropdown-menu'>
@@ -641,31 +641,31 @@ class MICA(object):
                     if "current_story" in req.session :
                         uuid = req.session["current_story"]
                     navcontents += uuid
-                    navcontents += "', 'split')\"><i class='icon-resize-full'></i>&nbsp;Split Word Apart</a></li>"
+                    navcontents += "', 'split')\"><i class='glyphicon glyphicon-resize-full'></i>&nbsp;Split Word Apart</a></li>"
                     navcontents += "<li><a onclick=\"process_edits('"
                     if "current_story" in req.session :
                         uuid = req.session["current_story"]
                     navcontents += uuid
-                    navcontents += "','merge')\"><i class='icon-resize-small'></i>&nbsp;Merge Characters</a></li>"
+                    navcontents += "','merge')\"><i class='glyphicon glyphicon-resize-small'></i>&nbsp;Merge Characters</a></li>"
                     navcontents += "</ul>"
                     navcontents += "</li>"
                 if req.action != "help" :
-                    navcontents += "<li><a onclick='process_instant()'><i class='icon-share'></i>&nbsp;Instant</a></li>"
+                    navcontents += "<li><a onclick='process_instant()'><i class='glyphicon glyphicon-share'></i>&nbsp;Instant</a></li>"
                 navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='icon-user'></i>&nbsp;Account
+                                 <i class='glyphicon glyphicon-user'></i>&nbsp;Account
                                  <b class='caret'></b>
                                  </a>
                                  <ul class='dropdown-menu'>
                                 """
-                navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='icon-upload'></i>&nbsp;Upload New Story</a></li>"
+                navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
                 if 'admin' in self.acctdb["accounts"][username]["roles"] :
-                    navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='icon-plus-sign'></i>&nbsp;New Account</a></li>"
-                navcontents += "<li><a href=\"BOOTDEST/account\"><i class='icon-user'></i>&nbsp;Preferences</a></li>\n"
-                navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='icon-off'></i>&nbsp;Disconnect</a></li>\n"
-                navcontents += "<li><a href='#aboutModal' data-toggle='modal'><i class='icon-info-sign'></i>&nbsp;About</a></li>\n"
-                navcontents += "<li><a href=\"BOOTDEST/help\"><i class='icon-question-sign'></i>&nbsp;Help</a></li>\n"
+                    navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
+                navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
+                navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
+                navcontents += "<li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&nbsp;About</a></li>\n"
+                navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
             else :
@@ -675,10 +675,10 @@ class MICA(object):
     
         if req.action == "index" :
             mpath = req.uri + relative_prefix_suffix
-            bootstrappath = req.uri + relative_prefix_suffix + "/bootstrap/docs/assets"
+            bootstrappath = req.uri + relative_prefix_suffix + "/bootstrap"
         else :
             mpath = req.uri + "/.." + relative_prefix
-            bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap/docs/assets"
+            bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
     
         replacements = [    
                          navcontents, 
@@ -702,7 +702,7 @@ class MICA(object):
         for idx in range(0, len(self.replacement_keys)) :
             x = replacements[idx]
             y = self.replacement_keys[idx]
-            contents = contents.replace(y, x)
+            contents = contents.replace(y, x.decode("utf-8"))
     
         return contents
 
@@ -1185,7 +1185,7 @@ class MICA(object):
              if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
                  out += "<td>Default</td>"
              else :
-                 out += "<td><a style='font-size: x-small' class='btn btn-mini' " + \
+                 out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
                         "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
                         str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "')\">Select</a></td>"
 
@@ -1198,7 +1198,7 @@ class MICA(object):
     def history(self, story, uuid, db) :
         out = ""
 
-        out += "<div class='accordion' id='accordionHistory'>\n"
+        out += "<div class='panel-group' id='panelHistory'>\n"
         
         history = []
         found = {}
@@ -1224,8 +1224,8 @@ class MICA(object):
 
         for x in history :
             out += """
-                <div class='accordion-group'>
-                  <div class="accordion-heading">
+                <div class='panel panel-default'>
+                  <div class="panel-heading">
                   """
 
             char, total, spy, eng, tid = x
@@ -1236,14 +1236,14 @@ class MICA(object):
 
             out += char + " (" + str(total) + "): "
 
-            out += "<a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionHistory'" + tid + " href='#collapse" + tid + "'>"
+            out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory'" + tid + " href='#collapse" + tid + "'>"
 
-            out += "<i class='icon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
+            out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
 
             out += "</a>"
             out += "</div>"
-            out += "<div id='collapse" + tid + "' class='accordion-body collapse'>"
-            out += "<div class='accordion-inner'>" + eng.replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</div>"
+            out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
+            out += "<div class='panel-inner'>" + eng.replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</div>"
 
             out += "</div>"
             out += "</div>"
@@ -1305,13 +1305,13 @@ class MICA(object):
             """
         if len(history) != 0 :
             out += """
-                <div class='accordion' id='accordionEdit'>
+                <div class='panel-group' id='panelEdit'>
                 """
             
             for x in history :
                 out += """
-                    <div class='accordion-group'>
-                      <div class="accordion-heading">
+                    <div class='panel panel-default'>
+                      <div class="panel-heading">
                       """
 
                 char, total, spy, result, tid, op = x
@@ -1322,14 +1322,14 @@ class MICA(object):
 
                 out +=  op + " (" + str(total) + "): " + char + ": "
 
-                out += "<a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionEdit' href='#collapse" + tid + "'>"
+                out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse" + tid + "'>"
 
-                out += "<i class='icon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
+                out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
 
                 out += "</a>"
                 out += "</div>"
-                out += "<div id='collapse" + tid + "' class='accordion-body collapse'>"
-                out += "<div class='accordion-inner'>" + result + "</div>"
+                out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
+                out += "<div class='panel-inner'>" + result + "</div>"
 
                 out += "</div>"
                 out += "</div>"
@@ -1345,29 +1345,20 @@ class MICA(object):
             return "Untranslated story! Ahhhh!"
 
         if not disk :
-            output = "<div class='span8'>" + output
+            output = "<div class='col-md-8'>" + output
             output += """
                     <div id='translationstatus'></div>
+                    <table><tr><td>Pages:&nbsp;&nbsp;</td><td><div style='display: inline'
+                    id='pagenav'></div></td></tr></table>
                     <div id='pagecontent'></div>
-                    <div id='pagenav'></div>
                     """
 
-        output += """
-                  <script>
-                    $('#pagenav').bootpag({
-                           total: 23,
-                              page: 1,
-                                 maxVisible: 10 
-                    }).on('page', function(event, num){
-                        $('#pagecontent').html('Page ' + num); 
-                    });
-                  </script>
-                  """
+        output += "<script>install_pages('" + action + "', " + str(story["pages"]) + ", '" + uuid + "');</script>"
 
         if not disk :
             output += """
-                    </div> <!-- span8 reading section -->
-                    <div class='span3'>
+                    </div> <!-- col-md-8 reading section -->
+                    <div class='col-md-3'>
                     """
             output += "<div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
 
@@ -1397,7 +1388,6 @@ class MICA(object):
         pages = []
         lines = [] 
         line = [] 
-        curr_page = 0
 
         trans_id = 0
         chars = 0
@@ -1405,15 +1395,8 @@ class MICA(object):
         for x in range(0, len(units)) :
             unit = units[x]
 
-            if unit["page"] > curr_page :
-                if len(line) :
-                    lines.append(line)
-                    line = []
-                if len(lines) :
-                    pages.append(lines)
-                    lines = []
-                chars = 0
-                curr_page += 1
+            if unit["page"] != page :
+                continue
 
             source = "".join(unit["source"])
 
@@ -1446,227 +1429,219 @@ class MICA(object):
 
         if len(line) :
             lines.append(line)
-        if len(lines) :
-            pages.append(lines)
 
         spacer = "<td style='margin-right: 20px'></td>"
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
         merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
 
-        for pidx in range(0, len(pages)) :
-            lines = pages[pidx]
-            for line in lines :
-                disk_out = ""
-                line_out = ""
+        for line in lines :
+            disk_out = ""
+            line_out = ""
 
-                if not disk :
-                    line_out += "\n<table"
-                    if pidx != 0 :
-                        line_out += " style='display: none'" 
-                    ">"
-                    
-                    line_out += "\n<tr>"
+            if not disk :
+                line_out += "\n<table>"
+                line_out += "\n<tr>"
 
-                    prev_merge = False
-                    for word_idx in range(0, len(line)) :
-                        word = line[word_idx]
-                        english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
-                        py = word[1]
-                        trans_id = str(word[2])
-                        unit = word[3]
-                        tid = unit["hash"] if py else trans_id 
-                        nb_unit = str(word[4])
-                        source = word[5]
-                        curr_merge = False
-                        merge_end = False
-
-                        line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
-
-                        if py and action == "edit" :
-                            if source in db["mergegroups"] and (unit["hash"] in db["mergegroups"][source]["record"]) :
-                                curr_merge = True
-
-                                if word_idx < (len(line) - 1) :
-                                    endword = line[word_idx + 1]
-                                    if endword[1] :
-                                        endunit = endword[3]
-                                        endchars = "".join(endunit["source"])
-                                        if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
-                                            merge_end = True
-                                    else :
-                                        merge_end = True
-
-
-                        if py and action == "edit" :
-                            if curr_merge :
-                                if curr_merge and not prev_merge and merge_end : 
-                                    merge_end = False
-                                    prev_merge = False
-                                    curr_merge = False
-
-                            if curr_merge :
-                                line_out += "class='mergetop mergebottom"
-                                if not prev_merge : 
-                                    line_out += " mergeleft"
-                                line_out += "'"
-                            else :
-                                if not curr_merge and source in db["splits"] and unit["hash"] in db["splits"][source]["record"] :
-                                    line_out += "class='splittop splitbottom splitleft splitright'"
-
-                            prev_merge = curr_merge
-
-                        line_out += ">"
-                        line_out += "<span id='spanselect_" + trans_id + "' class='none'>"
-                        line_out += "<a class='trans'"
-                        line_out += " uniqueid='" + tid + "' "
-                        line_out += " nbunit='" + nb_unit + "' "
-                        line_out += " pinyin=\"" + (py if py else english) + "\" "
-                        line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
-                        line_out += " style='color: black; font-weight: normal' "
-                        line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
-                        line_out += source if py else english
-                        line_out += "</a>"
-                        line_out += "</span>"
-                        line_out += "</td>"
-
-                        if py :
-                            if action == "edit" and merge_end :
-                                line_out += merge_end_spacer 
-                            elif action == "edit" and curr_merge :
-                                line_out += merge_spacer 
-                            else :
-                                line_out += spacer 
-
-                    line_out += "</tr>\n<tr>"
-
-                for word in line :
+                prev_merge = False
+                for word_idx in range(0, len(line)) :
+                    word = line[word_idx]
                     english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
                     py = word[1]
-                    unit = word[3]
                     trans_id = str(word[2])
+                    unit = word[3]
                     tid = unit["hash"] if py else trans_id 
                     nb_unit = str(word[4])
                     source = word[5]
-                    line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
-                    if py and (py not in punctuation) :
-                        if not disk :
-                            line_out += "<a class='trans' "
+                    curr_merge = False
+                    merge_end = False
 
-                            add_count = ""
-                            if action == "home" :
-                                color = ""
-                                if py and len(unit["multiple_spinyin"]) :
-                                    color = "green"
+                    line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
-                                if source in db["tonechanges"] :
-                                    changes = db["tonechanges"][source]
-                                    if unit["hash"] in changes["record"] :
-                                        color = "black"
-                                        add_count = " (" + str(changes["total"]) + ")"
+                    if py and action == "edit" :
+                        if source in db["mergegroups"] and (unit["hash"] in db["mergegroups"][source]["record"]) :
+                            curr_merge = True
 
-                                if color != "black" and py and len(unit["multiple_spinyin"]) :
-                                    fpy = " ".join(unit["multiple_spinyin"][0])
-                                    for ux in range(1, len(unit["multiple_spinyin"])) :
-                                         upy = " ".join(unit["multiple_spinyin"][ux])
-                                         if upy != fpy :
-                                             color = "red"
-                                             break
+                            if word_idx < (len(line) - 1) :
+                                endword = line[word_idx + 1]
+                                if endword[1] :
+                                    endunit = endword[3]
+                                    endchars = "".join(endunit["source"])
+                                    if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
+                                        merge_end = True
+                                else :
+                                    merge_end = True
 
-                                if color != "" :
-                                    line_out += " style='color: " + color + "' "
-                            elif py :
-                                line_out += " style='color: black' "
 
-                            line_out += " id='ttip" + trans_id + "'"
+                    if py and action == "edit" :
+                        if curr_merge :
+                            if curr_merge and not prev_merge and merge_end : 
+                                merge_end = False
+                                prev_merge = False
+                                curr_merge = False
 
-                            if action in ["read","edit"] or not(len(unit["multiple_spinyin"])) :
-                                line_out += " onclick=\"toggle('" + tid + "', "
-                                line_out += ("0" if action == "read" else "1") + ")\""
-
-                            line_out += ">"
-                            line_out += ((py if py else english).lower()) + add_count 
-                            line_out += "</a>"
+                        if curr_merge :
+                            line_out += "class='mergetop mergebottom"
+                            if not prev_merge : 
+                                line_out += " mergeleft"
+                            line_out += "'"
                         else :
-                            disk_out += (py if py else english).lower()
-                    else :
-                        if disk :
-                            disk_out += (py if py else english).lower()
-                        else :
-                            line_out += (py if py else english).lower()
+                            if not curr_merge and source in db["splits"] and unit["hash"] in db["splits"][source]["record"] :
+                                line_out += "class='splittop splitbottom splitleft splitright'"
 
+                        prev_merge = curr_merge
+
+                    line_out += ">"
+                    line_out += "<span id='spanselect_" + trans_id + "' class='none'>"
+                    line_out += "<a class='trans'"
+                    line_out += " uniqueid='" + tid + "' "
+                    line_out += " nbunit='" + nb_unit + "' "
+                    line_out += " pinyin=\"" + (py if py else english) + "\" "
+                    line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
+                    line_out += " style='color: black; font-weight: normal' "
+                    line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
+                    line_out += source if py else english
+                    line_out += "</a>"
+                    line_out += "</span>"
+                    line_out += "</td>"
+
+                    if py :
+                        if action == "edit" and merge_end :
+                            line_out += merge_end_spacer 
+                        elif action == "edit" and curr_merge :
+                            line_out += merge_spacer 
+                        else :
+                            line_out += spacer 
+
+                line_out += "</tr>\n<tr>"
+
+            for word in line :
+                english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
+                py = word[1]
+                unit = word[3]
+                trans_id = str(word[2])
+                tid = unit["hash"] if py else trans_id 
+                nb_unit = str(word[4])
+                source = word[5]
+                line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
+                if py and (py not in punctuation) :
                     if not disk :
-                        line_out += "<br/>"
+                        line_out += "<a class='trans' "
 
-                        if action == "home" and py and len(unit["multiple_spinyin"]) :
-                            line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
-                            line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db)
-                            line_out += "</div>"
-                            line_out += "<script>"
-                            line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
-                            line_out += "</script>"
-
-                        line_out += "</td>"
-
-                        if py :
-                            line_out += spacer
-                    else :
-                        disk_out += " "
-
-                if disk :
-                    disk_out += "\n"
-                else :
-                    line_out += "</tr>"
-                    line_out += "<tr>"
-
-                if not disk :
-                    for word in line :
-                        english = word[0]
-                        if len(english) and english[0] == '/' :
-                            english = english[1:-1]
-                        unit = word[3]
-                        nb_unit = str(word[4])
-                        py = word[1]
-                        source = word[5]
-                        memorized = True if (py and unit["hash"] in db["memorized"]) else False
-                        tid = unit["hash"] if py else str(word[2])
-                        line_out += "<td style='vertical-align: top; text-align: center'>"
-                        line_out += "<table><tr>"
-                        line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
-                        line_out += "</tr><tr><td>"
-                        '''
+                        add_count = ""
                         if action == "home" :
-                            line_out += ("".join(unit["source"]) if py else "")
-                        '''
-                        line_out += "<div class='trans trans" + tid + "' style='display: "
-                        line_out += "block" if (action == "read" and not memorized) else "none"
-                        line_out += "' id='trans" + tid + "'>"
-                        if py :
-                            if action in ["read", "edit"] :
-                                line_out += "<a class='trans' onclick=\"memorize('" + \
-                                            tid + "', '" + uuid + "', '" + str(nb_unit) + "')\">"
+                            color = ""
+                            if py and len(unit["multiple_spinyin"]) :
+                                color = "green"
 
-                            line_out += english.replace("/"," /<br/>")
-                            if action in [ "read", "edit" ] :
-                                line_out += "</a>"
+                            if source in db["tonechanges"] :
+                                changes = db["tonechanges"][source]
+                                if unit["hash"] in changes["record"] :
+                                    color = "black"
+                                    add_count = " (" + str(changes["total"]) + ")"
 
-                        line_out += "<br/>"
-                        line_out += "</div>"
-                        line_out += "<div style='display: "
-                        line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
-                        line_out += "' class='trans blank" + tid + "'>"
-                        line_out += "&nbsp;</div>"
-                        line_out += "</td>"
-                        line_out += "</tr></table>"
-                        line_out += "</td>"
-                        if py :
-                            line_out += "<td>&nbsp;</td>"
-                    line_out += "</tr>"
-                    line_out += "</table>"
+                            if color != "black" and py and len(unit["multiple_spinyin"]) :
+                                fpy = " ".join(unit["multiple_spinyin"][0])
+                                for ux in range(1, len(unit["multiple_spinyin"])) :
+                                     upy = " ".join(unit["multiple_spinyin"][ux])
+                                     if upy != fpy :
+                                         color = "red"
+                                         break
+
+                            if color != "" :
+                                line_out += " style='color: " + color + "' "
+                        elif py :
+                            line_out += " style='color: black' "
+
+                        line_out += " id='ttip" + trans_id + "'"
+
+                        if action in ["read","edit"] or not(len(unit["multiple_spinyin"])) :
+                            line_out += " onclick=\"toggle('" + tid + "', "
+                            line_out += ("0" if action == "read" else "1") + ")\""
+
+                        line_out += ">"
+                        line_out += ((py if py else english).lower()) + add_count 
+                        line_out += "</a>"
+                    else :
+                        disk_out += (py if py else english).lower()
+                else :
+                    if disk :
+                        disk_out += (py if py else english).lower()
+                    else :
+                        line_out += (py if py else english).lower()
 
                 if not disk :
-                    output += line_out
+                    line_out += "<br/>"
+
+                    if action == "home" and py and len(unit["multiple_spinyin"]) :
+                        line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
+                        line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db)
+                        line_out += "</div>"
+                        line_out += "<script>"
+                        line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
+                        line_out += "</script>"
+
+                    line_out += "</td>"
+
+                    if py :
+                        line_out += spacer
                 else :
-                    output += disk_out
+                    disk_out += " "
+
+            if disk :
+                disk_out += "\n"
+            else :
+                line_out += "</tr>"
+                line_out += "<tr>"
+
+            if not disk :
+                for word in line :
+                    english = word[0]
+                    if len(english) and english[0] == '/' :
+                        english = english[1:-1]
+                    unit = word[3]
+                    nb_unit = str(word[4])
+                    py = word[1]
+                    source = word[5]
+                    memorized = True if (py and unit["hash"] in db["memorized"]) else False
+                    tid = unit["hash"] if py else str(word[2])
+                    line_out += "<td style='vertical-align: top; text-align: center'>"
+                    line_out += "<table><tr>"
+                    line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
+                    line_out += "</tr><tr><td>"
+                    '''
+                    if action == "home" :
+                        line_out += ("".join(unit["source"]) if py else "")
+                    '''
+                    line_out += "<div class='trans trans" + tid + "' style='display: "
+                    line_out += "block" if (action == "read" and not memorized) else "none"
+                    line_out += "' id='trans" + tid + "'>"
+                    if py :
+                        if action in ["read", "edit"] :
+                            line_out += "<a class='trans' onclick=\"memorize('" + \
+                                        tid + "', '" + uuid + "', '" + str(nb_unit) + "')\">"
+
+                        line_out += english.replace("/"," /<br/>")
+                        if action in [ "read", "edit" ] :
+                            line_out += "</a>"
+
+                    line_out += "<br/>"
+                    line_out += "</div>"
+                    line_out += "<div style='display: "
+                    line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
+                    line_out += "' class='trans blank" + tid + "'>"
+                    line_out += "&nbsp;</div>"
+                    line_out += "</td>"
+                    line_out += "</tr></table>"
+                    line_out += "</td>"
+                    if py :
+                        line_out += "<td>&nbsp;</td>"
+                line_out += "</tr>"
+                line_out += "</table>"
+
+            if not disk :
+                output += line_out
+            else :
+                output += disk_out
 
         return output
 
@@ -2188,33 +2163,33 @@ class MICA(object):
                 output += "Total words memorized from all stories: " + str(len(db["memorized"])) + "<br/>"
                 output += "Total unique memorized from this story: " + str(total_memorized) + "<br/>"
                 output += "Total unique words from this story: " + str(len(unique)) + "<br/>"
-                output += "<div class='progress progress-success progress-striped'><div class='bar' style='width: "
+                output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
                 output += pr + "%;'> (" + pr + "%)</div></div>"
 
                 if total_memorized :
-                    output += "<div class='accordion' id='accordionMemorized'>\n"
+                    output += "<div class='panel-group' id='panelMemorized'>\n"
                     for p in progress :
                         output += """
-                                <div class='accordion-group'>
-                                  <div class="accordion-heading">
+                                <div class='panel panel-default'>
+                                  <div class="panel-heading">
                                   """
                         py, english, unit, nb_unit, trans_id = p
                         if len(english) and english[0] == '/' :
                             english = english[1:-1]
                         tid = unit["hash"] if py else trans_id 
 
-                        output += "<a class='trans btn btn-mini' onclick=\"forget('" + \
+                        output += "<a class='trans btn-default btn-xs' onclick=\"forget('" + \
                                 str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "')\">" + \
-                                "<i class='icon-remove'></i></a>"
+                                "<i class='glyphicon glyphicon-remove'></i></a>"
 
                         output += "&nbsp; " + "".join(unit["source"]) + ": "
-                        output += "<a class='accordion-toggle' style='display: inline' data-toggle='collapse' data-parent='#accordionMemorized' href='#collapse" + tid + "'>"
+                        output += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>"
 
-                        output += "<i class='icon-arrow-down' style='size: 50%'></i>&nbsp;" + py
+                        output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + py
                         output += "</a>"
                         output += "</div>"
-                        output += "<div id='collapse" + tid + "' class='accordion-body collapse'>"
-                        output += "<div class='accordion-inner'>" + english.replace("/"," /") + "</div>"
+                        output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
+                        output += "<div class='panel-inner'>" + english.replace("/"," /") + "</div>"
                         output += "</div>"
                         output += "</div>"
                     output += "</div>"
@@ -2228,6 +2203,10 @@ class MICA(object):
                     # Reload just in case the translation changed anything
                     name = db["story_index"][uuid]
                     story = db["stories"][name]
+                    if req.http.params.get("page") :
+                        page = int(req.http.params.get("page"))
+                        output = self.view_page(uuid, name, story, req.action, output, db, page)
+                        return self.bootstrap(req, "<div id='pageresult'>" + output + "</div>")
                     output = self.view(uuid, name, story, req.action, output, db)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
@@ -2258,7 +2237,7 @@ class MICA(object):
                     <tr><td><h5>&nbsp;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
                     <tr><td><h5>&nbsp;Password: </td><td><input type="password" name="password"/></h5></td></tr>
                     <tr><td><h5>&nbsp;Confirm:&nbsp; </td><td><input type="password" name="confirm"/></h5></td></tr>
-                    <tr><td><button name='changepassword' type="submit" class="btn btn-primary" value='1'>Change Password</button></td></tr>
+                    <tr><td><button name='changepassword' type="submit" class="btn-primary" value='1'>Change Password</button></td></tr>
                     </table>
                     </form>                                   
                     """
