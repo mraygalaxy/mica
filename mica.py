@@ -1892,7 +1892,7 @@ class MICA(object):
 
                 new_uuid = str(uuid4.uuid4())
 
-                db["stories"][str(filename)] = { 
+                db["stories"][filename] = { 
                                           'uuid' : new_uuid,
                                           'translated' : False,
                                           'name' : filename,
@@ -1921,9 +1921,9 @@ class MICA(object):
                         pagecount += 1
 
                     fp.close()
-                    db["stories"][str(filename)]['original'] = new_source
+                    db["stories"][filename]['original'] = new_source
                 elif filetype == "txt" :
-                    db["stories"][str(filename)]['original'] = source.decode("utf-8")
+                    db["stories"][filename]['original'] = source.decode("utf-8")
                 
                 db["story_index"][new_uuid] = filename
 #                db.sync()
@@ -1970,7 +1970,7 @@ class MICA(object):
                         out += "error 25 0 0"
                     else :
                         name = db["story_index"][uuid]
-                        story = db["stories"][str(name)]
+                        story = db["stories"][name]
                         if "translating" not in story or not story["translating"] :
                             out += "no 0 0 0"
                         else :
@@ -2002,25 +2002,25 @@ class MICA(object):
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid story uuid: " + uuid + "</h4></div>")
 
                 name = db["story_index"][uuid]
-                story = db["stories"][str(name)]
+                story = db["stories"][name]
 
             if req.http.params.get("reviewed") :
                 reviewed = True if req.http.params.get("reviewed") == "1" else False
-                db["stories"][str(name)]["reviewed"] = reviewed 
+                db["stories"][name]["reviewed"] = reviewed 
                 if reviewed :
-                    db["stories"][str(name)]["final"] = self.view(uuid, name, story, req.action, "", db, disk = True)
+                    db["stories"][name]["final"] = self.view(uuid, name, story, req.action, "", db, disk = True)
 #                db.sync()
                 transaction.commit()
 
             if req.http.params.get("forget") :
                 req.skip_sidebar = False
-                if "pages" not in db["stories"][str(name)] or not len(db["stories"][str(name)]["pages"]) :
+                if "pages" not in db["stories"][name] or not len(db["stories"][name]["pages"]) :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid Forget request for story: " + name + ", uuid: " + uuid + "</h4></div>")
-                db["stories"][str(name)]["translated"] = False
+                db["stories"][name]["translated"] = False
 #                db.sync()
                 transaction.commit()
 
-                story = db["stories"][str(name)]
+                story = db["stories"][name]
 
                 if "current_story" in req.session and req.session["current_story"] == uuid :
                     del req.session["current_story"]
@@ -2031,7 +2031,7 @@ class MICA(object):
                 if name not in db["stories"] :
                     mdebug(sf + " does not exist. =(")
                 else :
-                    del db["stories"][str(name)]
+                    del db["stories"][name]
                     del db["story_index"][uuid]
 #                    db.sync()
                     transaction.commit()
@@ -2123,10 +2123,10 @@ class MICA(object):
                 mindex = int(req.http.params.get("index"))
                 trans_id = int(req.http.params.get("trans_id"))
                 page = req.http.params.get("page")
-                unit = db["stories"][str(name)]["pages"][page]["units"][nb_unit]
+                unit = db["stories"][name]["pages"][page]["units"][nb_unit]
                 unit["multiple_correct"] = mindex
                 self.rehash_correct_polyphome(unit) 
-                db["stories"][str(name)]["pages"][page]["units"][nb_unit] = unit
+                db["stories"][name]["pages"][page]["units"][nb_unit] = unit
 
                 add_record(db, unit, mindex, "tonechanges", "selected") 
 #                db.sync()
@@ -2165,7 +2165,7 @@ class MICA(object):
                 memorized = int(req.http.params.get("memorized"))
                 nb_unit = int(req.http.params.get("nb_unit"))
                 page = req.http.params.get("page")
-                unit = db["stories"][str(name)]["pages"][page]["units"][nb_unit]
+                unit = db["stories"][name]["pages"][page]["units"][nb_unit]
                 if memorized :
                     db["memorized"][unit["hash"]] = unit
                 else :
@@ -2182,7 +2182,7 @@ class MICA(object):
                     mindex = int(req.http.params.get("index"))
                     mhash = req.http.params.get("tid")
                     page = req.http.params.get("page")
-                    units = db["stories"][str(name)]["pages"][page]["units"]
+                    units = db["stories"][name]["pages"][page]["units"]
                     before = units[:nb_unit] if (nb_unit > 0) else []
                     after = units[nb_unit + 1:] if (nb_unit != (len(units) - 1)) else []
                     curr = units[nb_unit]
