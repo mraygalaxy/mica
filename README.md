@@ -33,7 +33,7 @@ There are several steps to perform before MICA can run:
 
 1) Install basic package dependencies
 
-$ sudo apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto
+$ sudo apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto python-zodb
 
 2) Create a developer account / Translator Application key/ID requests from Microsoft
 
