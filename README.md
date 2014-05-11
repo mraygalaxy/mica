@@ -20,6 +20,8 @@ Credits:
  2. Offline chinese translation: https://pypi.python.org/pypi/cjklib
  3. Offline polyphome listings: https://github.com/lxyu/pinyin
  4. Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
+ 5. PDF extraction: pdfminer
+ 6. PDF creation: fpdf
 
 
 INSTALLATION:
@@ -75,6 +77,11 @@ $ python setup.py build
 $ sudo python setup.py install 
 
 $ cp build/*/mica_ictclas.so .
+
+7) Install PDF manipulation libraries:
+
+$ sudo pip install pdfminer
+$ sudo pip install fpdf
 
 
 RUNNING:

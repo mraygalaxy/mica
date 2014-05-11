@@ -33,6 +33,12 @@ from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
 from common import *
 
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+from pdfminer.pdfpage import PDFPage
+from cStringIO import StringIO
+
 import threading
 import traceback
 import os
@@ -212,9 +218,17 @@ class Translator(object):
             'scope': self.scope,
             'grant_type': self.grant_type
         })
-        response = json.loads(urllib.urlopen(
-            'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args
-        ).read())
+        
+        try :
+            response = json.loads(urllib.urlopen(
+                'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args
+            ).read())
+        except IOError, e :
+            raise TranslateApiException(
+                response.get('error_description', 'Failed to authenticate with translation service'),
+                response.get('error', str(e))
+            )
+        
 
         self.logger.debug(response)
 
@@ -366,12 +380,33 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
   unit["multiple_correct"] = -1
   return unit
 
-punctuation = [u'\n', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
-punctuation += ['\n', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
+import string 
+punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
-for num in range(0, 9) :
+for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+    punctuation.append(letter)
+    punctuation.append(letter.decode("utf-8"))
+
+for num in range(0, 10) :
     punctuation.append(unicode(str(num)))
     punctuation.append(str(num))
+    
+punctuation_without_newlines = punctuation
+punctuation.append(u'\n')
+punctuation.append('\n')
+
+temp_punct = {}
+temp_punct_without = {}
+
+for p in punctuation :
+    temp_punct[p] = {}
+
+for p in punctuation_without_newlines :
+    temp_punct_without[p] = {}
+    
+punctuation = temp_punct
+punctuation_without_newlines = temp_punct_without
 
 def strip_punct(word) :
     new_word = ""
@@ -477,6 +512,12 @@ class MICA(object):
             self.dbs[username] = shelve.open(cwd + "databases/" + username + ".db", writeback=True)
         return self.dbs[username], username
 
+    def template(self, template_prefix) :
+        contents_fh = open(cwd + relative_prefix + "/" + template_prefix + "_template.html", "r")
+        contents = contents_fh.read()
+        contents_fh.close()
+        return contents
+
     def bootstrap(self, req, body, now = False, pretend_disconnected = False) :
 
         if isinstance(body, str) :
@@ -491,9 +532,7 @@ class MICA(object):
         if now :
             contents = body
         else :
-            contents_fh = open(cwd + relative_prefix + "/head_template.html", "r")
-            contents = contents_fh.read()
-            contents_fh.close()
+            contents = self.template("head")
             
             navactive = req.action
             if navactive == 'home' or navactive == 'index' :
@@ -514,46 +553,10 @@ class MICA(object):
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
                     """
-                sidebar += """
-                           <script>var translist = [];</script>
-                           <table><tr><td>&nbsp;&nbsp;</td><td>
-                           <h4>Stories:</h4>
-                            <div class='panel-group' id='panelStories'>
-                           """
-
-                reading = """
-                                            <div class='panel panel-default'>
-                                              <div class="panel-heading">
-                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseReading'>
-                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Reading:
-                                                </a>
-                                                </div>
-                                                <div id='collapseReading' class='panel-body'>
-                                                <div class='panel-inner'>
-                          <table class='table table-hover table-striped'>
-                          """
-                noreview = """
-                                            <div class='panel panel-default'>
-                                              <div class="panel-heading">
-                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseReviewing'>
-                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Not Reviewed:
-                                                </a>
-                                                </div>
-                                                <div id='collapseReviewing' class='panel-body collapse'>
-                                                <div class='panel-inner'>
-                          <table class='table table-hover table-striped'>
-                          """
-                untrans = """
-                                            <div class='panel panel-default'>
-                                              <div class="panel-heading">
-                                               <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelStories' href='#collapseUntranslated'>
-                                               <i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;Untranslated:
-                                                </a>
-                                                </div>
-                                                <div id='collapseUntranslated' class='panel-body collapse'>
-                                                <div class='panel-inner'>
-                          <table class='table table-hover table-striped'>
-                          """
+                sidebar += self.template("sidebar")
+                reading = self.template("reading")
+                noreview = self.template("noreview")
+                untrans = self.template("untrans")
 
                 def sidestart(name, username, story, reviewed) :
                     rname = name.replace(".txt","").replace("\n","").replace("_", " ")
@@ -622,7 +625,7 @@ class MICA(object):
                 noreview += "</table></div></div></div>\n"
                 untrans += "</table></div></div></div>\n"
 
-                sidebar += reading + noreview + untrans + "</div></td></tr></table>"
+                sidebar += untrans + reading + noreview + "</div></td></tr></table>"
                 sidebar += """
                             
                            <script>
@@ -895,9 +898,13 @@ class MICA(object):
                     msg += word  + " "
                 msg += ") "
 #        mdebug(msg)
+        for unit_idx in range(0, len(units)) :
+            units[unit_idx]["online"] = True
+            units[unit_idx]["punctuation"] = False 
+                          
         return units 
 
-    def add_unit(self, trans, uni_source, eng) :
+    def add_unit(self, trans, uni_source, eng, online = False, punctuation = False) :
         unit = {}
         unit["spinyin"] = trans
         unit["source"] = []
@@ -913,6 +920,8 @@ class MICA(object):
             unit["trans"] = True 
             unit["english"] = eng
 
+        unit["online"] = online
+        unit["punctuation"] = punctuation
         return unit
 
     def get_first_translation(self, d, char, pinyin, none_if_not_found = True) :
@@ -939,9 +948,19 @@ class MICA(object):
 
     def recursive_translate(self, uuid, name, story, cjk, db, d, uni, storydb, temp_units, page) :
         units = []
+        
+        mdebug("Requested: " + uni)
+        if uni == "怎么" :
+            mdebug("Found our breakpoint")
 
-        if uni in punctuation or not len(uni) :
-            units.append(self.add_unit([uni], uni, [uni]))
+        all_punct = True
+        for char in uni :
+            if len(uni) and char not in punctuation :
+                all_punct = False
+                break
+            
+        if all_punct :
+            units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
             trans = []
             eng = []
@@ -1072,7 +1091,9 @@ class MICA(object):
         if temp_units :
             story["temp_units"] = []
         else :
-            story["pages"][page]["units"] = []
+            if "pages" not in story :
+                story['pages'] = {}
+            story["pages"][page] = {"units": [] }
 
         for idx in range(0, len(groups)) :
             group = groups[idx]
@@ -1090,32 +1111,81 @@ class MICA(object):
 
     def parse(self, uuid, name, story, username, storydb) :
         mdebug("Ready to translate: " + name)
-        parsed = mica_ictclas.trans(story["original"].encode("UTF-8"))
-        mdebug("Parsed result: " + parsed)
-        lines = parsed.split("\n")
-        groups = []
-        for line in lines :
-            groups = groups + line.split(" ")
-            groups.append("\n")
-
+    
+        page_inputs = 1 if ("filetype" not in story or story["filetype"] == "txt") else len(story["original"])
+        page_start = 0
+        if "pages" in story :
+            page_start += len(story["pages"])
+            
+        if page_start != 0 :
+            mdebug("Some pages already translated. Restarting @ offset page " + str(page_start))
+        
         self.transmutex.acquire()
         try :
-            storydb["stories"][name]["translating_total"] = len(groups)
-            storydb["stories"][name]["translating_current"] = 1
             storydb["stories"][name]["translating"] = True 
+            storydb["stories"][name]["translated"] = False
+            storydb["stories"][name]["translating_pages"] = page_inputs
+            storydb["stories"][name]["translating_current"] = 0
+            storydb["stories"][name]["translating_total"] = 100
             storydb.sync()
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
 
-        try :
-            self.parse_actual(uuid, name, story, storydb, groups, page)
-        except Exception, e :
-            storydb["stories"][name]["translating"] = False 
-            storydb.sync()
-            raise e
+        for iidx in range(page_start, page_inputs) :
+            page_input = (story["original"] if ("filetype" not in story or story["filetype"] == "txt") else story["original"][str(iidx)]["contents"]).encode("utf-8")
+            parsed = mica_ictclas.trans(page_input)
+            mdebug("Parsed result: " + parsed + " for page: " + str(iidx))
+            lines = parsed.split("\n")
+            groups = []
+            for line in lines :
+                temp_groups = []
+                save_char_group = "" 
+                for char_group in line.split(" ") :
+                    if char_group not in punctuation_without_newlines :
+                        if save_char_group != "" :
+                            groups.append(save_char_group)
+                            save_char_group = ""
+                        groups.append(char_group)
+                    else :
+                        save_char_group += char_group
+                        
+                if save_char_group != "" :
+                    groups.append(save_char_group)
+                    
+                groups.append("\n")
             
+
+            self.transmutex.acquire()
+            try :
+                storydb["stories"][name]["translating_total"] = len(groups)
+                storydb["stories"][name]["translating_current"] = 1
+                storydb["stories"][name]["translating_page"] = iidx 
+            except Exception, e :
+                mdebug("Failure to sync: " + str(e))
+            finally :
+                self.transmutex.release()
+
+            try :
+                self.parse_actual(uuid, name, story, storydb, groups, str(iidx))
+                if "pages" not in storydb["stories"][name] :
+                    storydb["stories"][name]['pages'] = {}
+                online = 0
+                offline = 0
+                for unit in story["pages"][str(iidx)]["units"] :
+                    if not unit["punctuation"] :
+                        if unit["online"] :
+                            online += 1
+                        else :
+                            offline += 1 
+                mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
+                storydb["stories"][name]["pages"][str(iidx)] = story["pages"][str(iidx)]
+                storydb.sync()
+            except Exception, e :
+                storydb["stories"][name]["translating"] = False 
+                storydb.sync()
+                raise e
 
         self.transmutex.acquire()
         try :
@@ -1123,6 +1193,17 @@ class MICA(object):
             storydb["stories"][name]["translating"] = False 
             storydb["stories"][name]["translated"] = True 
             storydb.sync()
+        except Exception, e :
+            mdebug("Failure to sync: " + str(e))
+        finally :
+            self.transmutex.release()
+
+        self.transmutex.acquire()
+        try :
+            if "translated" not in storydb["stories"][name] or not storydb["stories"][name]["translated"] :
+                if "pages" in storydb["stories"][name] :
+                    del storydb["stories"][name]["pages"]
+                    storydb.sync()
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
@@ -1202,11 +1283,12 @@ class MICA(object):
     def history(self, story, uuid, db) :
         out = ""
 
-        out += "<div class='panel-group' id='panelHistory'>\n"
         
         history = []
         found = {}
         tid = 0
+        online = 0
+        offline = 0
 
         for page_idx in range(0, len(story["pages"])) :
             for unit in story["pages"][str(page_idx)]["units"] :
@@ -1220,6 +1302,12 @@ class MICA(object):
                 if char not in found :
                     found[char] = True
                     history.append([char, str(changes["total"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid])
+                    if "punctuation" in unit and not unit["punctuation"] :
+                        if "online" in unit and unit["online"] :
+                            online += 1
+                        else :
+                            offline += 1
+                            
                 tid += 1
         
         # Add sort options here
@@ -1228,6 +1316,9 @@ class MICA(object):
 
         history.sort( key=by_total, reverse = True )
 
+        out += "Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
+        out += "<div class='panel-group' id='panelHistory'>\n"
+        
         for x in history :
             out += """
                 <div class='panel panel-default'>
@@ -1376,9 +1467,7 @@ class MICA(object):
                 output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div><script>editslist('" + uuid + "');</script>"
             elif action == "home" :
                 output += "<br/>Polyphome Legend:<br/>"
-                pfh = open(cwd + "serve/legend_template.html", 'r')
-                output += pfh.read()
-                pfh.close()
+                output += self.template("legend")
                 output += """
                     <br/>
                     Polyphome Change History:<br/>
@@ -1581,7 +1670,7 @@ class MICA(object):
                         line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
                         line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db, page)
                         line_out += "</div>"
-                        line_out += "<script type='text/javascript'>"
+                        line_out += "<script>"
                         line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
                         line_out += "</script>"
 
@@ -1662,9 +1751,11 @@ class MICA(object):
             else :
                 again = False 
         except ArgumentOutOfRangeException, e :
-            mdebug("Missing results. Probably we timed out. Trying again: " + str(e))
+            merr("Missing results. Probably we timed out. Trying again: " + str(e))
+        except TranslateApiException, e :
+            merr("First-try translation failed: " + str(e))
         except IOError, e :
-            mdebug("Connection error. Will try one more time:" + str(e))
+            merr("Connection error. Will try one more time:" + str(e))
 
         finally :
             finished = not again
@@ -1734,13 +1825,6 @@ class MICA(object):
                 if "tags" not in db :
                     db["tags"] = {}
 
-                for name, story in db["stories"].iteritems() :
-                    if "pages" in db["stories"][name] :
-                        del db["stories"][name]["pages"]
-                    if "units" in db["stories"][name] :
-                        db["stories"][name]["pages"] = {"0" : { "units" : db["stories"][name]["units"] } }
-                    db["stories"][name]["tags"] = {}
-
                 if "current_story" in req.session :
                     del req.session["current_story"]
 
@@ -1775,18 +1859,45 @@ class MICA(object):
             def add_story_from_source(req, filename, source, db, filetype) :
                 if filename in db["stories"] :
                     return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
-                mdebug("Received new story contents: " + source + ", name: " + filename)
+                mdebug("Received new story name: " + filename)
+                if filetype == "txt" :
+                    mdebug("Source: " + source)
 
                 new_uuid = str(uuid4.uuid4())
+
                 db["stories"][filename] = { 
                                           'uuid' : new_uuid,
                                           'translated' : False,
                                           'name' : filename,
-                                          'pages' : {},
-                                          'original' : source.decode("utf-8"),
                                           'filetype' : filetype,
                                       }
+                if filetype == "pdf" :
+                    new_source = {}
+                    fp = StringIO(source)
+                    rsrcmgr = PDFResourceManager()
+                    pagenos = set()
 
+                    pagecount = 0
+                    for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
+                        retstr = StringIO()
+                        device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=LAParams())
+                        interpreter = PDFPageInterpreter(rsrcmgr, device)
+                        interpreter.process_page(page)
+
+                        data = retstr.getvalue()
+                        mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
+                        de_data = data.decode("utf-8") if isinstance(data, str) else data
+                        new_source[str(pagecount)] = {"contents" : de_data}
+
+                        retstr.close()
+                        device.close()
+                        pagecount += 1
+
+                    fp.close()
+                    db["stories"][filename]['original'] = new_source
+                elif filetype == "txt" :
+                    db["stories"][filename]['original'] = source.decode("utf-8")
+                
                 db["story_index"][new_uuid] = filename
                 db.sync()
 
@@ -1828,17 +1939,20 @@ class MICA(object):
                 if req.http.params.get("tstatus") :
                     out = "<div id='tstatusresult'>"
                     if uuid not in db["story_index"] :
-                        out += "error 25"
+                        out += "error 25 0 0"
                     else :
                         name = db["story_index"][uuid]
                         story = db["stories"][name]
                         if "translating" not in story or not story["translating"] :
-                            out += "no 0"
+                            out += "no 0 0 0"
                         else :
                             curr = float(int(story["translating_current"]))
                             total = float(int(story["translating_total"]))
 
                             out += "yes " + str(int(curr / total * 100))
+                            out += (" " + str(story["translating_page"])) if "translating_page" in story else "0"
+                            out += (" " + str(story["translating_pages"])) if "translating_pages" in story else "1"
+                            
                     out += "</div>"
                     return self.bootstrap(req, self.heromsg + "\n" + out + "</div>")
 
@@ -1899,7 +2013,7 @@ class MICA(object):
                 out += "<div id='instantresult'>"
                 final = { }
                 requests = [source]
-                breakout = source.decode("utf-8")
+                breakout = source.decode("utf-8") if isinstance(source, str) else source
                 if len(breakout) > 1 :
                     for x in range(0, len(breakout)) :
                         requests.append(breakout[x].encode("utf-8"))
@@ -2399,8 +2513,10 @@ parser.add_option("-p", "--port", dest = "port", default = "80", help ="port")
 parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
 parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
 parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
-parser.add_option("-d", "--daemon", dest = "daemon", action = "store_true", \
+parser.add_option("-D", "--daemon", dest = "daemon", action = "store_true", \
                    default = False, help ="Daemonize the service.")
+parser.add_option("-d", "--debug_host", dest = "debug_host", \
+                   default = None, help ="Hostname for remote debugging")
 parser.add_option("-l", "--log", dest = "logfile", default = cwd + "logs/mica.log", help ="MICA main log file.")
 parser.add_option("-t", "--tlog", dest = "tlogfile", default = cwd + "logs/twisted.log", help ="Twisted log file.")
 parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
@@ -2454,6 +2570,17 @@ def main() :
         reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
         reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cert), interface = options.host)
         minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
+
+        if options.debug_host is not None :
+            try :
+                import debug
+                print str(sys.path)
+                import pydevd
+                pydevd.settrace(host=options.debug_host)
+            except ImportError, msg :
+                cbwarn("Failed to import debug file for remote debugging: " + str(msg), True)
+                options.debug_host = None
+                exit(1)
 
         reactor.run()
     except Exception, e :

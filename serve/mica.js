@@ -133,9 +133,15 @@ function trans_poll_finish(data, uuid, unused) {
     var tmparr = data.split(" ");
     var result = tmparr[0];
     var percent = tmparr[1];
+    var page = parseInt(tmparr[2]) + 1;
+    var pages = parseInt(tmparr[3]); 
+    
+    if (pages == 0) {
+    	pages = page;
+    }
 
     if (result == "yes" || first_time) {
-        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;Working: " + percent + "%");
+        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;Working: Page " + page + "/" + pages + ", " + percent + "%");
         trans_wait_poll(uuid);
     } else {
         $("#translationstatus" + uuid).html('Done! Please reload.');
