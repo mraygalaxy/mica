@@ -8,6 +8,9 @@ logs
 .pydevproject
 .settings
 ICTCLAS.log
+accounts.db.index
+accounts.db.lock
+accounts.db.tmp
 accounts.db
 mica_ictclas.so
 obsolete.py
