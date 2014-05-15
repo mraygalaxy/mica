@@ -34,8 +34,8 @@ from cjklib.dbconnector import getDBConnector
 from common import *
 
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
 from pdfminer.pdfpage import PDFPage
 from cStringIO import StringIO
 
@@ -59,8 +59,68 @@ import mica_ictclas
 import hashlib
 import errno
 import simplejson as json
+import string 
 import __builtin__
 
+pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
+
+for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+    pdf_punct += letter.decode("utf-8")
+
+pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
+
+def parse_lt_objs (lt_objs, page_number):
+    text_content = [] 
+    images = []
+
+    for lt_obj in lt_objs:
+        if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
+            text_content.append(lt_obj.get_text().strip())
+        elif isinstance(lt_obj, LTImage):
+            images.append(lt_obj.stream.get_data())
+        elif isinstance(lt_obj, LTFigure):
+            sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
+            text_content.append(sub_text)
+            images.append(sub_images)
+
+    return (text_content, images)
+
+def filter_lines(data2) :
+    new_page = []
+
+    for line in data2 : 
+        if line == "" :
+            continue
+
+        for match in re.compile(r'[0-9]+ +[0-9, ]+', flags=re.IGNORECASE).findall(line) :
+            line = line.replace(match, match.replace(" ", ""))
+
+        temp_line = line.strip().decode("utf-8") if isinstance(line, str) else line.strip()
+        if len(temp_line) == 3 and temp_line[0] == "(" and temp_line[-1] == ")" :
+            matches = re.compile(u'\(.\)', flags=re.IGNORECASE).findall(temp_line)
+
+            if len(matches) == 1 :
+                continue
+
+        line = re.sub(r'( *82303.*$|[0-9][0-9][0-9][0-9][0-9]+ *)', '', line)
+        test_all = re.sub(r'([\x00-\x7F]| )+', '', line)
+
+        if test_all == "" :
+            continue
+
+        no_numbers = re.sub(r"([0-9]| )+", "", line)
+        if isinstance(no_numbers, str) :
+            no_numbers = no_numbers.decode("utf-8")
+        while len(re.compile(pdf_expr).findall(no_numbers)) :
+            no_numbers = re.sub(pdf_expr, '', no_numbers)
+            continue
+
+        if len(no_numbers) <= 1 :
+            continue
+
+        new_page.append(line)
+
+    return new_page
 bins = dir(__builtin__)
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
@@ -383,8 +443,7 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
   unit["multiple_correct"] = -1
   return unit
 
-import string 
-punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
 punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
 for letter in (string.ascii_lowercase + string.ascii_uppercase) :
@@ -1103,7 +1162,7 @@ class MICA(object):
         d = CEDICT(dbConnectInst = db)
         return (cjk, db, d)
 
-    def parse_actual(self, uuid, name, story, storydb, groups, page, temp_units = False) :
+    def parse_page(self, uuid, name, story, storydb, groups, page, temp_units = False) :
         (cjk, db, d) = self.get_cjk_handle()
 
         if temp_units :
@@ -1188,7 +1247,7 @@ class MICA(object):
                 self.transmutex.release()
 
             try :
-                self.parse_actual(uuid, name, story, storydb, groups, str(iidx))
+                self.parse_page(uuid, name, story, storydb, groups, str(iidx))
                 if "pages" not in storydb["stories"][name] :
                     storydb["stories"][name]['pages'] = {}
                 online = 0
@@ -1901,25 +1960,35 @@ class MICA(object):
                 if filetype == "pdf" :
                     new_source = {}
                     fp = StringIO(source)
-                    rsrcmgr = PDFResourceManager()
                     pagenos = set()
 
                     pagecount = 0
-                    for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
-                        retstr = StringIO()
-                        device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=LAParams())
-                        interpreter = PDFPageInterpreter(rsrcmgr, device)
-                        interpreter.process_page(page)
 
-                        data = retstr.getvalue()
+                    rsrcmgr = PDFResourceManager()
+                    device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+                    interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+                    for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
+                        interpreter.process_page(page)
+                        layout = device.get_result()
+
+                        data2 = []
+                        images = []
+                        for obj in layout :
+                            sub_data, sub_images = parse_lt_objs(obj, pagecount)
+                            data2 += sub_data
+                            images += sub_images
+
+                        new_page = filter_lines(data2)
+
+                        data = "\n".join(new_page)
                         mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
                         de_data = data.decode("utf-8") if isinstance(data, str) else data
                         new_source[str(pagecount)] = {"contents" : de_data}
 
-                        retstr.close()
-                        device.close()
                         pagecount += 1
 
+                    device.close()
                     fp.close()
                     db["stories"][filename]['original'] = new_source
                 elif filetype == "txt" :
@@ -2191,7 +2260,7 @@ class MICA(object):
                     for char in curr["source"] :
                         groups.append(char.encode("UTF-8"))
 
-                    self.parse_actual(uuid, name, story, db, groups, page, temp_units = True)
+                    self.parse_page(uuid, name, story, db, groups, page, temp_units = True)
                     db["stories"][name]["pages"][page]["units"] = before + story["temp_units"] + after
                     del story["temp_units"]
                     add_record(db, curr, mindex, "splits", "splits")
@@ -2217,7 +2286,7 @@ class MICA(object):
                         for char in chargroup["source"] :
                             group += char.encode("UTF-8")
 
-                    self.parse_actual(uuid, name, story, db, [group], page, temp_units = True)
+                    self.parse_page(uuid, name, story, db, [group], page, temp_units = True)
 
                     if len(story["temp_units"]) == 1 :
                         merged = story["temp_units"][0]

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
 from pdfminer.pdfpage import PDFPage
 from cStringIO import StringIO
 from fpdf import FPDF
@@ -16,6 +16,8 @@ import sys
 # set system encoding to unicode
 import sys
 import re
+import string
+
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -32,6 +34,12 @@ if options.in_file == False or options.out_file == False :
     print "Need input and output file"
     exit(1)
 
+pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
+
+for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+    pdf_punct += letter.decode("utf-8")
+
+pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
 rsrcmgr = PDFResourceManager()
 fp = file(options.in_file, 'rb')
 pagenos = set()
@@ -43,37 +51,95 @@ pdf.add_font('DejaVu','','fireflysung.ttf', uni=True)
 pdf.set_font('DejaVu','', font_size)
 
 page_count = 1
+ASCII = ''.join(chr(x) for x in range(128))
+
+
+def parse_lt_objs (lt_objs, page_number):
+    text_content = [] 
+    images = []
+
+    for lt_obj in lt_objs:
+        if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
+            text_content.append(lt_obj.get_text().strip())
+        elif isinstance(lt_obj, LTImage):
+            images.append(lt_obj.stream.get_data())
+        elif isinstance(lt_obj, LTFigure):
+            sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
+            text_content.append(sub_text)
+            images.append(sub_images)
+
+    return (text_content, images)
+
+device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+def filter_lines(data2) :
+    new_page = []
+
+    for line in data2 : 
+        if line == "" :
+            continue
+
+        for match in re.compile(r'[0-9]+ +[0-9, ]+', flags=re.IGNORECASE).findall(line) :
+            line = line.replace(match, match.replace(" ", ""))
+
+
+        if len(line.strip().decode("utf-8")) == 3 and line[0] == "(" and line[-1] == ")" :
+            matches = re.compile(u'\(.\)', flags=re.IGNORECASE).findall(line.strip())
+            print str(matches) + ": " + line
+
+            if len(matches) == 1 :
+                continue
+
+        line = re.sub(r'( *82303.*$|[0-9][0-9][0-9][0-9][0-9]+ *)', '', line)
+        test_all = re.sub(r'([\x00-\x7F]| )+', '', line)
+
+        if test_all == "" :
+            continue
+
+        no_numbers = re.sub(r"([0-9]| )+", "", line).decode("utf-8")
+        while len(re.compile(pdf_expr).findall(no_numbers)) :
+            no_numbers = re.sub(pdf_expr, '', no_numbers)
+            continue
+
+        if len(no_numbers) <= 1 :
+            continue
+
+        new_page.append(line)
+
+    return new_page
+
 for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
-    retstr = StringIO()
-    device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=LAParams())
-    interpreter = PDFPageInterpreter(rsrcmgr, device)
     interpreter.process_page(page)
+    layout = device.get_result()
 
-    data = retstr.getvalue()
+    data2 = []
+    images = []
+    for obj in layout :
+        sub_data, sub_images = parse_lt_objs (obj, page_count)
+        data2 += sub_data
+        images += sub_images
 
-    retstr.close()
-    device.close()
+
+    print "Page " + str(page_count) + ", images: " + str(len(images))
+    #print " got return: \n" + "\n".join(data2)
 
     pdf.add_page()
     pdf.write(14, "PAGE: " + str(page_count))
     pdf.ln(14)
 
-    print("Page input: " + data)
-    for line in data.split("\n") : 
-        if len(re.compile(r'[a-z]+[a-z]+', flags=re.IGNORECASE).findall(line)) :
-            continue
-        if len(line.strip()) <= 1 :
-            continue
-        if len(line.strip().decode("utf-8")) == 3 and line[0] == "(" and line[-1] == ")" :
-            matches = re.compile(u'\(.\)', flags=re.IGNORECASE).findall(line.strip())
-            print str(matches) + ": " + line
-            if len(matches) == 1 :
-                continue
-        if len(re.compile(r'[0-9]+[0-9]+[0-9]+', flags=re.IGNORECASE).findall(line)) :
-            continue
+    new_page = filter_lines(data2)
+
+    #print "Page " + str(page_count)
+    #print "Result: " + "\n".join(new_page)
+    for line in new_page :
         pdf.write(font_size,line)
         pdf.ln(font_size / 2)
     page_count += 1
+#    if page_count == 3 :
+#        break
+
+device.close()
 
 pdf.output(options.out_file,'F')
 fp.close()
