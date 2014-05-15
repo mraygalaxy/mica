@@ -2439,9 +2439,11 @@ class MICA(object):
                         if req.http.params.get("image") :
                             nb_image = req.http.params.get("image")
                             output = "<div id='pageresult'>"
-                            if nb_image in story["original"][str(page)]["images"] :
+                            if int(nb_image) < len(story["original"][str(page)]["images"]) :
                                output += "<img src='data:image/jpeg;base64," + base64.b64encode(story["original"][str(page)]["images"][int(nb_image)]) + "' width='100%'/>"
-                            output += "Image #" + str(nb_image) + " no available on this Page"
+                            else :
+                               output += "Image #" + str(nb_image) + " not available on this page"
+
                             output += "</div>"
                             return self.bootstrap(req, output)
                         else :
