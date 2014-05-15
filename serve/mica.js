@@ -577,26 +577,40 @@ function history(uuid) {
           true);
 }
 
+var view_images = false;
+var current_page = 0;
+var current_mode = "read";
+var current_uuid = "uuid";
+
 function view(mode, uuid, page) {
+   var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
+   
+   if (view_images) {
+   	   url += "&image=0";
+   }
+   
    go('#pagecontent', 
-          bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page, 
+   		  url, 
           '#pageresult', 
           unavailable, 
           true, 
           false,
           true);
+   current_page = page;
+   current_mode = mode;
+   current_uuid = uuid;
 }
 
-function install_pages(action, pages, uuid) {
+function install_pages(mode, pages, uuid) {
         $('#pagenav').bootpag({
             total: pages,
                    page: 1,
                    maxVisible: 10 
         }).on('page', function(event, num){
-          view(action, uuid, num-1);
+          view(mode, uuid, num-1);
         });
 
-        view(action, uuid, 0);
+        view(mode, uuid, current_page);
 }
 
 function memory_finish(data, opaque1, opaque2) {

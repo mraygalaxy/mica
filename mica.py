@@ -60,6 +60,7 @@ import hashlib
 import errno
 import simplejson as json
 import string 
+import base64
 import __builtin__
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
@@ -204,6 +205,9 @@ def prefix(uri) :
         path = ""
     return (address, path)
 
+def allcommit(db):
+    db._p_changed = 1
+    transaction.commit()
 
 class ArgumentOutOfRangeException(Exception):
     def __init__(self, message):
@@ -540,8 +544,7 @@ class MICA(object):
                                       'roles' : ['admin','normal'] 
                                     } 
                              }
-            #self.acctdb.sync()
-            transaction.commit()
+            allcommit(acctdb)
 
         
     def __call__(self, environ, start_response):
@@ -595,9 +598,9 @@ class MICA(object):
         contents_fh.close()
         return contents
 
-    def bootstrap(self, req, body, now = False, pretend_disconnected = False) :
+    def bootstrap(self, req, body, now = False, pretend_disconnected = False, nodecode = False) :
 
-        if isinstance(body, str) :
+        if isinstance(body, str) and not nodecode :
             body = body.decode("utf-8")
 
         navcontents = ""
@@ -783,10 +786,11 @@ class MICA(object):
                          req.session['last_remember'] if 'last_remember' in req.session else '',
                       ]
     
-        for idx in range(0, len(self.replacement_keys)) :
-            x = replacements[idx]
-            y = self.replacement_keys[idx]
-            contents = contents.replace(y, x)
+        if not nodecode :
+            for idx in range(0, len(self.replacement_keys)) :
+                x = replacements[idx]
+                y = self.replacement_keys[idx]
+                contents = contents.replace(y, x)
     
         return contents
 
@@ -1180,7 +1184,6 @@ class MICA(object):
             self.transmutex.acquire()
             try :
                 storydb["stories"][name]["translating_current"] = idx 
-#                storydb.sync()
                 transaction.commit()
             except Exception, e :
                 mdebug("Failure to sync: " + str(e))
@@ -1205,8 +1208,7 @@ class MICA(object):
             storydb["stories"][name]["translating_pages"] = page_inputs
             storydb["stories"][name]["translating_current"] = 0
             storydb["stories"][name]["translating_total"] = 100
-#            storydb.sync()
-            transaction.commit()
+            allcommit(storydb)
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
@@ -1260,12 +1262,10 @@ class MICA(object):
                             offline += 1 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
                 storydb["stories"][name]["pages"][str(iidx)] = story["pages"][str(iidx)]
-#                storydb.sync()
-                transaction.commit()
+                allcommit(storydb)
             except Exception, e :
                 storydb["stories"][name]["translating"] = False 
-#                storydb.sync()
-                transaction.commit()
+                allcommit(storydb)
                 raise e
 
         self.transmutex.acquire()
@@ -1273,8 +1273,7 @@ class MICA(object):
             storydb["stories"][name] = story
             storydb["stories"][name]["translating"] = False 
             storydb["stories"][name]["translated"] = True 
-#            storydb.sync()
-            transaction.commit()
+            allcommit(storydb)
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
@@ -1285,8 +1284,7 @@ class MICA(object):
             if "translated" not in storydb["stories"][name] or not storydb["stories"][name]["translated"] :
                 if "pages" in storydb["stories"][name] :
                     del storydb["stories"][name]["pages"]
-#                    storydb.sync()
-                    transaction.commit()
+                    allcommit(storydb)
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
@@ -1530,7 +1528,25 @@ class MICA(object):
             output = "<div class='col-md-8'>" + output
             output += """
                     <div id='translationstatus'></div>
-                    <table><tr><td>Pages:&nbsp;&nbsp;</td><td><div style='display: inline'
+                    <table><tr>
+                    <td>
+                    <button id='imageButton' class="btn btn-default" type="button" data-toggle="button">Show Images</button>
+                    <script>
+                    $('#imageButton').click(function () {
+                        if($('#imageButton').html() == "Hide Images") {
+                           $('#imageButton').html('Show Images');
+                           view_images = false;
+                        } else {
+                            view_images = true; 
+                           $('#imageButton').html('Hide Images');
+                        }
+                       view(current_mode, current_uuid, current_page);
+                    });
+//                    $('#imageButton').button('toggle');
+                    </script>
+                    </td>
+                
+                    <td>&nbsp;&nbsp;Pages:&nbsp;&nbsp;</td><td><div style='display: inline'
                     id='pagenav'></div></td></tr></table>
                     <div id='pagecontent'></div>
                     """
@@ -1914,8 +1930,7 @@ class MICA(object):
                 req.session["last_refresh"] = str(timest())
                 req.session.save()
 
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
 
             if 'connected' not in req.session or req.session['connected'] != True :
                 msg = """
@@ -1939,8 +1954,7 @@ class MICA(object):
                        if "translating" in story and story["translating"] :
                            mdebug("Killing stale translation session: " + name)
                            db["stories"][name]["translating"] = False
-#                           db.sync()
-                           transaction.commit()
+                           allcommit(db)
 
             def add_story_from_source(req, filename, source, db, filetype) :
                 if filename in db["stories"] :
@@ -1984,7 +1998,10 @@ class MICA(object):
                         data = "\n".join(new_page)
                         mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
                         de_data = data.decode("utf-8") if isinstance(data, str) else data
-                        new_source[str(pagecount)] = {"contents" : de_data}
+                        new_source[str(pagecount)] = {
+                                                        "contents" : de_data,
+                                                        "images" : images
+                                                     }
 
                         pagecount += 1
 
@@ -1995,8 +2012,7 @@ class MICA(object):
                     db["stories"][filename]['original'] = source.decode("utf-8")
                 
                 db["story_index"][new_uuid] = filename
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
 
                 if "current_story" in req.session :
                     del req.session["current_story"]
@@ -2078,16 +2094,14 @@ class MICA(object):
                 db["stories"][name]["reviewed"] = reviewed 
                 if reviewed :
                     db["stories"][name]["final"] = self.view(uuid, name, story, req.action, "", db, disk = True)
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
 
             if req.http.params.get("forget") :
                 req.skip_sidebar = False
                 if "pages" not in db["stories"][name] or not len(db["stories"][name]["pages"]) :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid Forget request for story: " + name + ", uuid: " + uuid + "</h4></div>")
                 db["stories"][name]["translated"] = False
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
 
                 story = db["stories"][name]
 
@@ -2098,12 +2112,11 @@ class MICA(object):
 
             if req.http.params.get("delete") :
                 if name not in db["stories"] :
-                    mdebug(sf + " does not exist. =(")
+                    mdebug(name + " does not exist. =(")
                 else :
                     del db["stories"][name]
                     del db["story_index"][uuid]
-#                    db.sync()
-                    transaction.commit()
+                    allcommit(db)
                 uuid = False
 
             if req.http.params.get("instant") :
@@ -2198,8 +2211,7 @@ class MICA(object):
                 db["stories"][name]["pages"][page]["units"][nb_unit] = unit
 
                 add_record(db, unit, mindex, "tonechanges", "selected") 
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                            self.polyphomes(story, uuid, unit, nb_unit, trans_id, db, page) + \
@@ -2239,8 +2251,7 @@ class MICA(object):
                     db["memorized"][unit["hash"]] = unit
                 else :
                     del db["memorized"][unit["hash"]];
-#                db.sync()
-                transaction.commit()
+                allcommit(db)
                 return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>Memorized! " + \
                                            unit["hash"] + "</div></div>", now = True)
 
@@ -2264,8 +2275,7 @@ class MICA(object):
                     db["stories"][name]["pages"][page]["units"] = before + story["temp_units"] + after
                     del story["temp_units"]
                     add_record(db, curr, mindex, "splits", "splits")
-#                    db.sync()
-                    transaction.commit()
+                    allcommit(db)
 
                 elif operation == "merge" :
                     nb_units = int(req.http.params.get("units"))
@@ -2331,8 +2341,7 @@ class MICA(object):
                             db["mergegroups"][char] = changes
 
                     del story["temp_units"]
-#                    db.sync()
-                    transaction.commit()
+                    allcommit(db)
                 else :
                     return self.bootstrap(req, self.heromsg + "\nInvalid Operation!</div>")
 
@@ -2379,8 +2388,7 @@ class MICA(object):
                     db["stories"][name]["total_unique"] = total_unique 
                     sync = True
                 if sync :
-#                    db.sync()
-                    transaction.commit()
+                    allcommit(db)
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100))
                 output += "Total words memorized from all stories: " + str(len(db["memorized"])) + "<br/>"
@@ -2428,8 +2436,18 @@ class MICA(object):
                     story = db["stories"][name]
                     if req.http.params.get("page") :
                         page = req.http.params.get("page")
-                        output = self.view_page(uuid, name, story, req.action, output, db, page)
-                        return self.bootstrap(req, "<div id='pageresult'>" + output + "</div>")
+                        if req.http.params.get("image") :
+                            nb_image = req.http.params.get("image")
+                            output = "<div id='pageresult'>"
+                            if nb_image in story["original"][str(page)]["images"] :
+                               output += "<img src='data:image/jpeg;base64," + base64.b64encode(story["original"][str(page)]["images"][int(nb_image)]) + "' width='100%'/>"
+                            output += "Image #" + str(nb_image) + " no available on this Page"
+                            output += "</div>"
+                            return self.bootstrap(req, output)
+                        else :
+                            output = self.view_page(uuid, name, story, req.action, output, db, page)
+                                
+                            return self.bootstrap(req, "<div id='pageresult'>" + output + "</div>")
                     output = self.view(uuid, name, story, req.action, output, db)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
@@ -2487,8 +2505,7 @@ class MICA(object):
                     self.acctdb["accounts"][newusername] = { 'password' : hashlib.md5(newpassword).hexdigest(),
                                                     'roles' : roles,
                                                   }
-#                    self.acctdb.sync()
-                    transaction.commit()
+                    allcommit(acctdb)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
 
@@ -2504,8 +2521,7 @@ class MICA(object):
                     if oldhash != self.acctdb["accounts"][username]['password'] :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
                     self.acctdb["accounts"][username]['password'] = newhash
-#                    self.acctdb.sync()
-                    transaction.commit()
+                    allcommit(acctdb)
                     out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
 
                 return self.bootstrap(req, out)
