@@ -65,7 +65,9 @@ if ("liststate" in params)
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
-	                data = $(response).find(getSpecificContent).html();
+                    obj = $(response)
+                    objresult = obj.find(getSpecificContent)
+	                data = objresult.html();
 	                if(write) {
 	                    if(writeSubcontent) {
 	                        $(id).html(data);
@@ -145,6 +147,7 @@ function trans_poll_finish(data, uuid, unused) {
         trans_wait_poll(uuid);
     } else {
         $("#translationstatus" + uuid).html('Done! Please reload.');
+        loadstories(false);
     }
 }
 
@@ -164,6 +167,7 @@ function trans_stop(data, uuid, unused) {
     finish = false;
     do_refresh = false;
     $("#translationstatus" + uuid).html('Done! Please reload.');
+    loadstories(false);
 }
 
 function trans_start(uuid) {
@@ -361,6 +365,7 @@ function make_child(node) {
 
   function process_edits(uuid, operation) {
       var tids = [];
+      var transids = [];
       var nbunits = [];
       var chars = [];
       var pinyin = [];
@@ -371,6 +376,7 @@ function make_child(node) {
         chars.push($(this).text());
         tids.push($(this).attr('uniqueid'));
         nbunits.push($(this).attr('nbunit'));
+        transids.push($(this).attr('transid'));
         pinyin.push($(this).attr('pinyin'));
         indexes.push($(this).attr('index'));
         pages.push($(this).attr('page'));
@@ -400,11 +406,11 @@ function make_child(node) {
               button += "&nbunit=" + nbunits[0];
               button += "&tid=" + tids[0];
               button += "&index=" + indexes[0];
-              button += "&page=" + pages[0];
+              button += "&pagenum=" + pages[0];
           } else {
               out += "<table>";
               for(var x = 0; x < chars.length; x++) {
-                 if (x > 0 && ((parseInt(nbunits[x]) - 1) != parseInt(nbunits[x-1]))) {
+                 if (x > 0 && ((parseInt(transids[x]) - 1) != parseInt(transids[x-1]))) {
                      consecutive = false; 
                      break;
                  }
@@ -545,9 +551,9 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           spy);
 }
 
-function memolist(uuid) {
+function memolist(uuid, page) {
    go('#memolist', 
-          bootdest + '/read?uuid=' + uuid + '&memolist=1', 
+          bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
           '#memolistresult', 
           unavailable, 
           true, 
@@ -555,9 +561,9 @@ function memolist(uuid) {
           true);
 }
 
-function editslist(uuid) {
+function editslist(uuid, page) {
    go('#editslist', 
-          bootdest + '/edit?uuid=' + uuid + '&editslist=1', 
+          bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
           '#editsresult', 
           unavailable, 
           true, 
@@ -567,9 +573,9 @@ function editslist(uuid) {
 
 
 
-function history(uuid) {
+function history(uuid, page) {
    go('#history', 
-          bootdest + '/read?uuid=' + uuid + '&phistory=1', 
+          bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
           '#historyresult', 
           unavailable, 
           true, 
@@ -578,24 +584,74 @@ function history(uuid) {
 }
 
 var view_images = false;
+var show_both = false;
 var current_page = 0;
 var current_mode = "read";
 var current_uuid = "uuid";
+var curr_img_num = 0;
+
+function change_pageimg_width() {
+    $('#pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
+    $('#pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
+    $('#pageimg' + curr_img_num).css('bottom', 0);
+}
+
+function restore_pageimg_width() {
+    $('#pageimg' + curr_img_num).css('width', '100%');
+}
 
 function view(mode, uuid, page) {
    var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
    
-   if (view_images) {
-   	   url += "&image=0";
+   window.scrollTo(0, 0);
+   if (show_both) {
+       curr_img_num += 1;
+
+       $("#pagecontent").html("<div class='col-md-6'><div id='pageimg" + curr_img_num + "'></div></div><div id='pagetext' class='col-md-6'></div>");
+    
+        $('#pageimg' + curr_img_num).affix();
+        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
+        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
+        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
+
+       go('#pagetext', 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+
+       url += "&image=0";
+
+       go('#pageimg' + curr_img_num, 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+   } else {
+       if (view_images) {
+           url += "&image=0";
+       }
+       
+       go('#pagecontent', 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
    }
-   
-   go('#pagecontent', 
-   		  url, 
-          '#pageresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
+
+   if (mode == "read")
+   	   memolist(uuid, page)
+   else if (mode == "edit")
+   	   editslist(uuid, page)
+   else if (mode == "home")
+	   history(uuid, page)
+   	   
    current_page = page;
    current_mode = mode;
    current_uuid = uuid;
@@ -736,4 +792,73 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             }
         }
     }
+}
+
+function installreading() {
+    $('#imageButton').click(function () {
+        if($('#imageButton').attr('class') == 'active') {
+           $('#imageButton').attr('class', '');
+           view_images = false;
+        } else {
+            view_images = true; 
+           $('#imageButton').attr('class', 'active');
+        }
+       view(current_mode, current_uuid, current_page);
+       show_both = false;
+       $('#sideButton').attr('class', '');
+    });
+    $('#sideButton').click(function () {
+        if($('#sideButton').attr('class') == 'active') {
+           $('#sideButton').attr('class', '');
+           show_both = false;
+        } else {
+           show_both = true; 
+           $('#sideButton').attr('class', 'active');
+        }
+       view_images = false;
+       $('#imageButton').attr('class', '');
+       view(current_mode, current_uuid, current_page);
+    });
+}
+
+function loadstories(unused) {
+
+    $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
+go('#sidebarcontents', 
+    bootdest + '/storylist',
+    '#storylistresult', 
+    unavailable, 
+    true, 
+    false,
+    true);
+}
+
+function dropstory(uuid) {
+    go('#sidebarcontents', 
+    bootdest + '/home?forget=1&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
+}
+
+function trashstory(uuid) {
+    go('#sidebarcontents', 
+    bootdest + '/home?delete=1&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
+}
+
+function reviewstory(uuid, which) {
+    go('#sidebarcontents', 
+    bootdest + '/home?reviewed=' + which + '&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
 }

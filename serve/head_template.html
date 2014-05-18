@@ -23,7 +23,7 @@
   <body id='cbody'>
   <nav class="main-nav" id="main-nav">
   <br/><br/>
-  BOOTSIDEBAR
+  <div id='sidebarcontents'></div>
   </nav>
   <div class='page-wrap'>
   <div class='content'>
@@ -38,7 +38,7 @@
         </form>
     </div>
     <div class="navbar navbar-default navbar-fixed-top" role='navigation'>
-        <div class="container">
+        <div  class="container-fluid">
               <div class='navbar-header'>
                <button type='button' class='navbar-toggle' data-toggle="collapse" data-target=".navbar-collapse">
                   <span class="sr-only">Toggle navigation</span>
@@ -56,7 +56,7 @@
                </div><!--/.navbar-collapse -->
          </div><!--container -->
     </div><!--navbar navbar-fixed-top -->
-     <div class='container'>
+     <div class='container-fluid'>
             <div class="modal fade" id='aboutModal'>
                 <div class='modal-dialog'>
                     <div class='modal-content'>
@@ -161,7 +161,7 @@
                         
                         <div class="modal-body">
                                 <h4><b>Copy/Paste a Story:</b></h4>
-                                <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
+                                <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                    &nbsp;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
                                   <i class="icon-upload icon-white"></i>&nbsp;Upload Text</button>
@@ -171,7 +171,7 @@
                                 </form>                                   
                                 <p/>
                                 <h4><b>Or Upload a File Instead:</b></h4>
-                                <form action='BOOTDEST/home' method='post' enctype='multipart/form-data'>
+                                <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                     &nbsp;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
                                     <i class="icon-upload icon-white"></i>&nbsp;Upload File</button>
@@ -192,6 +192,7 @@
             </div>
 BOOTBODY
      </div> <!-- container -->
+     <div id='footer'></div>
    </div>  <!--content -->
   </div>  <!--page-wrap -->
     <script>
