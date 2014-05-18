@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 import socket
 import logging
 import xmlrpclib
@@ -6,12 +7,15 @@ import sys
 import copy
 import socket
 import inspect
+import sys
 from datetime import datetime
 from threading import Lock
 from logging.handlers import logging
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
 from xmlrpclib import Server
 from time import time, strftime, strptime, localtime
+
+reload(sys).setdefaultencoding("utf-8")
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
@@ -20,6 +24,7 @@ ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 
 micalogger = False
+txnlogger = False
 
 def minfo(msg) :
    micalogger.info(msg)
@@ -36,15 +41,24 @@ def merr(msg) :
 def mica_init_logging(logfile) :
     global micalogger
 
+    # Reset the logging handlers
+    logger = getLogger()
+    while len(logger.handlers) != 0 :
+        logger.removeHandler(logger.handlers[0])
+
+    txnlogger = logging.getLogger("txn")
+    txnlogger.setLevel(level=logging.INFO)
     micalogger = logging.getLogger("")
     micalogger.setLevel(logging.DEBUG)
     handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     micalogger.addHandler(handler)
+    txnlogger.addHandler(handler)
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
     micalogger.addHandler(streamhandler)
+    txnlogger.addHandler(streamhandler)
 
 def wait_for_port_ready(hostname, port, try_once = False) :
     '''
