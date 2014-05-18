@@ -607,7 +607,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<div class='col-md-6'><div id='pageimg" + curr_img_num + "'></div></div><div id='pagetext' class='col-md-6'></div>");
+       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'></div></div><div id='pagetext' class='col-md-7'></div>");
     
         $('#pageimg' + curr_img_num).affix();
         $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -657,16 +657,26 @@ function view(mode, uuid, page) {
    current_uuid = uuid;
 }
 
-function install_pages(mode, pages, uuid) {
+function install_pages(mode, pages, uuid, start, view_mode) {
+		if (view_mode == "text") {
+           view_images = false;
+	       show_both = false;
+		} else if(view_mode == "images") {
+           view_images = true;
+	       show_both = false;
+		} else if(view_mode == "both") {
+           view_images = false;
+	       show_both = true;
+		}
         $('#pagenav').bootpag({
             total: pages,
-                   page: 1,
+                   page: start + 1,
                    maxVisible: 10 
         }).on('page', function(event, num){
           view(mode, uuid, num-1);
         });
 
-        view(mode, uuid, current_page);
+        view(mode, uuid, start);
 }
 
 function memory_finish(data, opaque1, opaque2) {
@@ -799,21 +809,26 @@ function installreading() {
         if($('#imageButton').attr('class') == 'active') {
            $('#imageButton').attr('class', '');
            view_images = false;
+	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
-            view_images = true; 
+           view_images = true; 
            $('#imageButton').attr('class', 'active');
+	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
-       view(current_mode, current_uuid, current_page);
        show_both = false;
        $('#sideButton').attr('class', '');
+       view(current_mode, current_uuid, current_page);
+       
     });
     $('#sideButton').click(function () {
         if($('#sideButton').attr('class') == 'active') {
            $('#sideButton').attr('class', '');
            show_both = false;
+	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active');
+	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
         }
        view_images = false;
        $('#imageButton').attr('class', '');
@@ -824,7 +839,7 @@ function installreading() {
 function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
-go('#sidebarcontents', 
+    go('#sidebarcontents', 
     bootdest + '/storylist',
     '#storylistresult', 
     unavailable, 
