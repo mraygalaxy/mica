@@ -686,8 +686,6 @@ class MICA(object):
                     navcontents += uuid
                     navcontents += "', 'split')\"><i class='glyphicon glyphicon-resize-full'></i>&nbsp;Split Word Apart</a></li>"
                     navcontents += "<li><a href='#' onclick=\"process_edits('"
-                    if "current_story" in req.session :
-                        uuid = req.session["current_story"]
                     navcontents += uuid
                     navcontents += "','merge')\"><i class='glyphicon glyphicon-resize-small'></i>&nbsp;Merge Characters</a></li>"
                     navcontents += "</ul>"
@@ -701,8 +699,18 @@ class MICA(object):
                                  <b class='caret'></b>
                                  </a>
                                 <ul class='dropdown-menu'>
-                                <li id='sideButton'><a href='#'>Side-By-Side</a></li>
-                                <li id='imageButton'><a href='#'>Image Only</a></li>
+                                """
+                    navcontents += "<li id='sideButton' "
+                    if "view_mode" in req.session :
+                         if req.session["view_mode"] == "both" :
+                             navcontents += " class='active'"
+                    navcontents += "><a href='#'>Side-By-Side</a></li>"
+                    navcontents += "<li id='imageButton' "
+                    if "view_mode" in req.session :
+                         if req.session["view_mode"] == "images" :
+                             navcontents += " class='active'"
+                    navcontents += "><a href='#'>Image Only</a></li>"
+                    navcontents += """
                                 </ul>
                                 </li>
                                 """
@@ -1499,62 +1507,61 @@ class MICA(object):
 
         return out
 
-    def view(self, uuid, name, story, action, db, disk = False) :
+    def view(self, uuid, name, story, action, db, start_page, view_mode) :
         if not story["translated"] :
             return "Untranslated story! Ahhhh!"
 
-        if not disk :
-            output = "<div class='row-fluid'>\n"
-            output += "<div class='col-lg-12'>\n"
-            output += """
-                            <div class='row-fluid'>
-                                <div class='col-lg-9'>
-                                    <div class='row-fluid'>
-                                        <!-- this '12' is not intuitive, but it
-                                        indicates the start of a new fluid
-                                        nesting level that also is subdivided by
-                                        units of 12 -->
-                                        <div class='col-lg-12'>
-                                            <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
-                                            <div id='translationstatus'></div>
-                                            <table><tr>
-                                            <td><div style='display: inline' id='pagenav'></div></td>
-                                            </tr></table>
-                                            <script>installreading();</script>
-                                            </div>
-                                        </div><!-- col-lg-9 header section -->
-                                    </div><!-- row for header section -->
-                                    <div id='pagecontent' class='row-fluid'></div>
-                                </div><!-- outer md-9 all section --> 
+        output = "<div class='row-fluid'>\n"
+        output += "<div class='col-lg-12'>\n"
+        output += """
+                        <div class='row-fluid'>
+                            <div class='col-lg-10'>
+                                <div class='row-fluid'>
+                                    <!-- this '12' is not intuitive, but it
+                                    indicates the start of a new fluid
+                                    nesting level that also is subdivided by
+                                    units of 12 -->
+                                    <div class='col-lg-12'>
+                                        <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
+                                        <div id='translationstatus'></div>
+                                        <table><tr>
+                                        <td><div style='display: inline' id='pagenav'></div></td>
+                                        </tr></table>
+                                        <script>installreading();</script>
+                                        </div>
+                                    </div><!-- col-lg-10 header section -->
+                                </div><!-- row for header section -->
+                                <div id='pagecontent' class='row-fluid'></div>
+                            </div><!-- outer md-9 all section --> 
 
-                    """
-
-        if not disk :
-            output += """
-                                <div class='col-lg-3'>
-                                <!--data-spy='affix'--><div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
-                    """
-            output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
-
-            if action in ["read"] :
-                output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
-            elif action == "edit" :
-                output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
-            elif action == "home" :
-                output += "<br/>Polyphome Legend:<br/>"
-                output += self.template("legend")
-                output += """
-                    <br/>
-                    Polyphome Change History:<br/>
                 """
-                output += "<div id='history'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
 
-            output += "</div><!-- statsheader -->"
-            output += "</div><!-- col-lg-3 stats section -->\n"
-            output += "</div><!-- col-lg-12 for everything section -->\n"
-            output += "</div><!-- row for everything -->\n"
+        output += """
+                            <div class='col-lg-2'>
+                            <!--data-spy='affix'--><div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
+                """
+        output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
 
-            output += "<script>install_pages('" + action + "', " + str(len(story["pages"])) + ", '" + uuid + "');</script>"
+        if action in ["read"] :
+            output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+        elif action == "edit" :
+            output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+        elif action == "home" :
+            output += "<br/>Polyphome Legend:<br/>"
+            output += self.template("legend")
+            output += """
+                <br/>
+                Polyphome Change History:<br/>
+            """
+            output += "<div id='history'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+
+        output += "</div><!-- statsheader -->"
+        output += "</div><!-- col-lg-2 stats section -->\n"
+        output += "</div><!-- col-lg-12 for everything section -->\n"
+        output += "</div><!-- row for everything -->\n"
+
+        output += "<script>install_pages('" + action + "', " + str(len(story["pages"])) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "');</script>"
+        
         return output
 
     def view_page(self, uuid, name, story, action, output, db, page, disk = False) :
@@ -1911,6 +1918,8 @@ class MICA(object):
 
                 if "current_story" in req.session :
                     del req.session["current_story"]
+                if "current_page" in req.session :
+                    del req.session["current_page"]
 
                 req.session["last_refresh"] = str(timest())
                 req.session.save()
@@ -2002,6 +2011,9 @@ class MICA(object):
                 if "current_story" in req.session :
                     del req.session["current_story"]
                     req.session.save()
+                if "current_page" in req.session :
+                    del req.session["current_page"]
+                    req.session.save()
 
                 uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
                 return self.bootstrap(req, uc)
@@ -2017,6 +2029,8 @@ class MICA(object):
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
                 return add_story_from_source(req, filename, source, db, "txt")
 
+            start_page = "0"
+            view_mode = "text"
             uuid = False
             name = False
             story = False
@@ -2044,20 +2058,44 @@ class MICA(object):
                     out += "</div>"
                     return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
 
+            story_changed = False
             if "current_story" in req.session :
                 if uuid :
+                    if req.session["current_story"] != uuid :
+                        story_changed = True
                     req.session["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session["current_story"]
             elif uuid :
+                story_changed = True
                 req.session["current_story"] = uuid
+                req.session.save()
+                
+            if story_changed :
+                if "current_page" in req.session:
+                    del req.session["current_page"]
+                    req.session.save()
+                    
+            if "current_page" in req.session :
+                start_page = req.session["current_page"]
+            else :
+                req.session["current_page"] = start_page 
+                req.session.save()
+                
+            if "view_mode" in req.session :
+                view_mode = req.session["view_mode"]
+            else :
+                req.session["view_mode"] = view_mode 
                 req.session.save()
 
             if uuid :
                 if uuid not in db["story_index"] :
                     if "current_story" in req.session :
                         del req.session["current_story"]
+                        req.session.save()
+                    if "current_page" in req.session :
+                        del req.session["current_page"]
                         req.session.save()
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid story uuid: " + uuid + "</h4></div>")
 
@@ -2089,6 +2127,8 @@ class MICA(object):
 
                 if "current_story" in req.session and req.session["current_story"] == uuid :
                     del req.session["current_story"]
+                    if "current_page" in req.session :
+                        del req.session["current_page"]
                     req.session.save()
                     uuid = False
                 return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
@@ -2102,10 +2142,16 @@ class MICA(object):
                     self.allcommit(db)
                 if "current_story" in req.session and req.session["current_story"] == uuid :
                     del req.session["current_story"]
+                    if "current_page" in req.session :
+                        del req.session["current_page"]
                     req.session.save()
                     uuid = False
                 return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
+            if req.http.params.get("switchmode") :
+                req.session["view_mode"] = req.http.params.get("switchmode")
+                req.session.save()
+                return self.bootstrap(req, self.heromsg + "\n<h4>View mode changed.</h4></div>", now = True)
 
             if req.http.params.get("instant") :
                 source = req.http.params.get("instant")
@@ -2376,7 +2422,7 @@ class MICA(object):
                             db["stories"][name]["total_memorized"] = total_memorized
                         if "total_unique" not in story or story["total_unique"] != total_unique :
                             db["stories"][name]["total_unique"] = total_unique 
-                        allcommit(db)
+                        self.allcommit(db)
                         success = True
                     except ConflictError, con :
                         mwarn("Conflict updating memolist. Retrying...")
@@ -2428,6 +2474,8 @@ class MICA(object):
                     story = db["stories"][name]
                     if req.http.params.get("page") :
                         page = req.http.params.get("page")
+                        req.session["current_page"] = str(page)
+                        req.session.save()
                         if req.http.params.get("image") :
                             nb_image = req.http.params.get("image")
                             output = "<div><div id='pageresult'>"
@@ -2441,7 +2489,7 @@ class MICA(object):
                             output = self.view_page(uuid, name, story, req.action, output, db, page)
                                 
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
-                    output = self.view(uuid, name, story, req.action, db)
+                    output = self.view(uuid, name, story, req.action, db, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
                 output += "<script>loadstories();</script>"
