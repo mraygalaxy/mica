@@ -1982,7 +1982,7 @@ class MICA(object):
                         layout = device.get_result()
 
                         data2 = PersistentList()
-                        images = PeristentList()
+                        images = PersistentList()
                         for obj in layout :
                             sub_data, sub_images = parse_lt_objs(obj, pagecount)
                             data2 += sub_data
@@ -2089,6 +2089,28 @@ class MICA(object):
                 req.session["view_mode"] = view_mode 
                 req.session.save()
 
+            if req.http.params.get("delete") :
+                if not name :
+                    if req.http.params.get("name") :
+                        name = req.http.params.get("name")
+                        
+                if name and name not in db["stories"] :
+                    mdebug(name + " does not exist. =(")
+                else :
+                    if name and name in db["stories"] :
+                        del db["stories"][name]
+                    
+                    if uuid in db["story_index"] :
+                        del db["story_index"][uuid]
+                    self.allcommit(db)
+                if "current_story" in req.session and req.session["current_story"] == uuid :
+                    del req.session["current_story"]
+                    if "current_page" in req.session :
+                        del req.session["current_page"]
+                    req.session.save()
+                    uuid = False
+                return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
+
             if uuid :
                 if uuid not in db["story_index"] :
                     if "current_story" in req.session :
@@ -2132,21 +2154,6 @@ class MICA(object):
                     req.session.save()
                     uuid = False
                 return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
-
-            if req.http.params.get("delete") :
-                if name not in db["stories"] :
-                    mdebug(name + " does not exist. =(")
-                else :
-                    del db["stories"][name]
-                    del db["story_index"][uuid]
-                    self.allcommit(db)
-                if "current_story" in req.session and req.session["current_story"] == uuid :
-                    del req.session["current_story"]
-                    if "current_page" in req.session :
-                        del req.session["current_page"]
-                    req.session.save()
-                    uuid = False
-                return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
                 req.session["view_mode"] = req.http.params.get("switchmode")
@@ -2558,7 +2565,7 @@ class MICA(object):
                         untrans += sidestart(name, username, story, reviewed)
                         untrans += "\n<td style='font-size: x-small' colspan='3'>"
                         untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                        untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
+                        untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
                         untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a></div>&nbsp;"
                         untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                         untrans += "</div>"
