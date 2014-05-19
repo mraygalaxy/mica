@@ -858,9 +858,9 @@ function dropstory(uuid) {
     false);
 }
 
-function trashstory(uuid) {
+function trashstory(uuid, name) {
     go('#sidebarcontents', 
-    bootdest + '/home?delete=1&uuid=' + uuid,
+    bootdest + '/home?delete=1&uuid=' + uuid + "&name=" + name,
     '', 
     unavailable, 
     false, 
