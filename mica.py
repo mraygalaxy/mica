@@ -496,7 +496,7 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
 punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
 punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
-punctuation_without_letters = punctuation
+punctuation_without_letters = copy.deepcopy(punctuation)
 
 for letter in (string.ascii_lowercase + string.ascii_uppercase) :
     punctuation.append(letter)
@@ -506,7 +506,7 @@ for num in range(0, 10) :
     punctuation.append(unicode(str(num)))
     punctuation.append(str(num))
     
-punctuation_without_newlines = punctuation
+punctuation_without_newlines = copy.deepcopy(punctuation)
 punctuation.append(u'\n')
 punctuation.append('\n')
 
@@ -1234,22 +1234,29 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    def parse(self, uuid, name, story, username, storydb) :
+    def parse(self, uuid, name, story, username, storydb, page = False) :
         mdebug("Ready to translate: " + name)
     
         page_inputs = 1 if ("filetype" not in story or story["filetype"] == "txt") else len(story["original"])
-        page_start = 0
-        if "pages" in story :
-            page_start += len(story["pages"])
-            
-        if page_start != 0 :
-            mdebug("Some pages already translated. Restarting @ offset page " + str(page_start))
+        
+        if page :
+            page_start = int(page)
+            mdebug("Translating single page starting at " + str(page))
+            page_inputs = page_start + 1 
+        else :  
+            page_start = 0
+            if "pages" in story :
+                page_start += len(story["pages"])
+                
+            if page_start != 0 :
+                mdebug("Some pages already translated. Restarting @ offset page " + str(page_start))
         
         self.transmutex.acquire()
         try :
             storydb["stories"][name]["translating"] = True 
-            storydb["stories"][name]["translated"] = False
-            storydb["stories"][name]["translating_pages"] = page_inputs
+            if not page :
+                storydb["stories"][name]["translated"] = False
+                storydb["stories"][name]["translating_pages"] = page_inputs
             storydb["stories"][name]["translating_current"] = 0
             storydb["stories"][name]["translating_total"] = 100
             self.allcommit(storydb)
@@ -1346,7 +1353,7 @@ class MICA(object):
                 word = unit["spinyin"][widx]
                 if word == u'\n' or word == '\n':
                     py += word
-                elif py != "\n" and py not in punctuation :
+                elif py != "\n" and py not in punctuation_without_letters :
                     py += word + " "
 
             if py != u'\n' and py != "\n" :
@@ -1476,7 +1483,7 @@ class MICA(object):
 
         return out
 
-    def edits(self, story, uuid, db, page) :
+    def edits(self, req, story, uuid, db, page) :
         out = ""
 
         history = []
@@ -1485,6 +1492,8 @@ class MICA(object):
 
         for unit in story["pages"][str(page)]["units"] :
             char = "".join(unit["source"])
+            if char in punctuation_without_letters or len(char.strip()) == 0:
+                continue
             if char in found :
                 continue
 
@@ -1502,9 +1511,15 @@ class MICA(object):
                     continue
                 record = changes["record"][unit["hash"]]
                 memberlist = "<table class='table'>"
+                nb_singles = 0
                 for key, member in record["members"].iteritems() :
+                    if len(key) == 1 :
+                        nb_singles += 1
+                        continue
                     memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
                 memberlist += "</table>\n"
+                if nb_singles == len(record["members"]) :
+                    continue
                 history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
             else :
                 continue
@@ -1530,6 +1545,7 @@ class MICA(object):
             <p/>
             """
         out += "<a href='#' class='btn btn-info' onclick=\"process_edits('" + uuid + "', 'all', true)\">Try Recommendations</a>\n<p/>\n"
+        out += "<a href='BOOTDEST/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page) + "' class='btn btn-info'>Re-translate page</a>\n<p/>\n"
         if len(history) != 0 :
             out += """
                 <div class='panel-group' id='panelEdit'>
@@ -1650,12 +1666,12 @@ class MICA(object):
 
             py, english = ret
 
-            if py not in punctuation and chars >= chars_per_line :
+            if py not in punctuation_without_letters and chars >= chars_per_line :
                lines.append(line)
                line = []
                chars = 0
 
-            if py in punctuation :
+            if py in (punctuation_without_letters + ['\n', u'\n']) :
                 if py != u'\n' and py != "\n":
                     line.append([py, False, trans_id, [], x, source])
                     chars += 1
@@ -1698,6 +1714,7 @@ class MICA(object):
                     curr_merge = False
                     merge_end = False
                     use_batch = False
+                    skip_prev_merge = False
 
                     line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
@@ -1712,13 +1729,30 @@ class MICA(object):
                                     endchars = "".join(endunit["source"])
                                     if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
                                         merge_end = True
+                                    else :
+                                        end_members = db["mergegroups"][endchars]["record"][endunit["hash"]]["members"]
+                                        curr_members = db["mergegroups"][source]["record"][unit["hash"]]["members"]
+                                        source_found = False
+                                        end_found = False
+                                        for mchars, member in end_members.iteritems() :
+                                            if source in mchars :
+                                                source_found = True
+                                        for mchars, member in curr_members.iteritems() :
+                                            if endchars in mchars :
+                                                end_found = True
+                                                
+                                        if not end_found or not source_found :
+                                            #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                                            merge_end = True
+                                            skip_prev_merge = True
+                                            
                                 else :
                                     merge_end = True
 
 
                     if py and action == "edit" :
                         if curr_merge :
-                            if curr_merge and not prev_merge and merge_end : 
+                            if (word_idx == (len(line) - 1)) or (curr_merge and not prev_merge and merge_end ): 
                                 merge_end = False
                                 prev_merge = False
                                 curr_merge = False
@@ -1736,7 +1770,7 @@ class MICA(object):
                                 use_batch = "split" 
                                 line_out += "class='splittop splitbottom splitleft splitright'"
 
-                        prev_merge = curr_merge
+                        prev_merge = curr_merge if not skip_prev_merge else False
 
                     line_out += ">"
                     line_out += "<span id='spanselect_" + trans_id + "' class='"
@@ -2052,7 +2086,7 @@ class MICA(object):
 
             self.parse_page(uuid, name, story, db, groups, page, temp_units = True)
             db["stories"][name]["pages"][page]["units"] = before + story["temp_units"] + after
-            offset += len(story["temp_units"]) - len(curr)
+            offset += (len(story["temp_units"]) - len(curr))
             del story["temp_units"]
             add_record(db, curr, mindex, "splits", "splits")
             self.allcommit(db)
@@ -2118,7 +2152,7 @@ class MICA(object):
 
                     db["mergegroups"][char] = changes
 
-                offset += len(story["temp_units"]) - len(curr)
+                offset += (len(story["temp_units"]) - len(curr))
             del story["temp_units"]
             self.allcommit(db)
             
@@ -2539,7 +2573,7 @@ class MICA(object):
             if req.http.params.get("editslist") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
-                                           self.edits(story, uuid, db, page) + \
+                                           self.edits(req, story, uuid, db, page) + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("memorized") :
@@ -2569,7 +2603,7 @@ class MICA(object):
                     
                     ret = result[1:]
                     success = ret[0]
-                    offset += ret[1]
+                    offset = ret[1]
                     
                     if not success :
                         return self.bootstrap(req, self.heromsg + "\nInvalid Operation: " + str(edit) + "</div>")
@@ -2624,12 +2658,16 @@ class MICA(object):
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + output + "</div></div>", now = True)
                
+            if req.http.params.get("retranslate") :
+                page = req.http.params.get("page")
+                self.parse(uuid, name, story, username, db, page = page)
+                
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
                     # Reload just in case the translation changed anything
                     name = db["story_index"][uuid]
                     story = db["stories"][name]
-                    if req.http.params.get("page") :
+                    if req.http.params.get("page")  and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
                         req.session["current_page"] = str(page)
                         req.session.save()
