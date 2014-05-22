@@ -363,25 +363,16 @@ function make_child(node) {
            toggle_specific('blank', name, 0);
   }
 
-  function process_edits(uuid, operation) {
-      var tids = [];
-      var transids = [];
-      var nbunits = [];
-      var chars = [];
-      var pinyin = [];
-      var indexes = [];
-      var pages = [];
-
-      $("span.label > a").each(function(index) {
-        chars.push($(this).text());
-        tids.push($(this).attr('uniqueid'));
-        nbunits.push($(this).attr('nbunit'));
-        transids.push($(this).attr('transid'));
-        pinyin.push($(this).attr('pinyin'));
-        indexes.push($(this).attr('index'));
-        pages.push($(this).attr('page'));
-      });
-
+      
+  function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
+  	  var op = { 
+  	  			"operation": operation,
+  	  			"uuid" : uuid,
+  	  			"units" : chars.length,
+  	  			"failed" : true,
+  	  			"chars" : chars[0],
+  	  			"pinyin" : pinyin[0]
+  	  			 };
       var out = "";
       if (chars.length == 0) {
           out += "You have not selected anything!";
@@ -390,25 +381,19 @@ function make_child(node) {
       } else if (operation == "split" && chars[0].split('').length < 2) {
           out += "This word only has one character. It cannot be split!";
       } else if (operation == "merge" && chars.length < 2) {
-          out += "You need at least two characters selected before you can merge them into a word!";
+      	  if (batch)
+      	      return "";
+          out += "You need at least two character groups selected before you can merge them into a word!";
       } else {
-          out += "<h4>Are you sure you want to <b>";
-          out += (operation == "split" ? "Split" : "Merge");
-          out += "</b> these words ";
-          out += (operation == "split" ? "APART" : "TOGETHER");
-          out += "?</h4>";
-          button = "<a class='btn btn-success' href='" + bootdest;
-          button += "/edit?operation=" + operation + "&uuid=" + uuid + "&units=" + chars.length;
           var consecutive = true;
 
           if (operation == "split") {
-              out += "<div style='font-size: 200%'>" + chars[0] + " (" + pinyin[0] + ")<br/></div>";
-              button += "&nbunit=" + nbunits[0];
-              button += "&tid=" + tids[0];
-              button += "&index=" + indexes[0];
-              button += "&pagenum=" + pages[0];
+              op["nbunit"] = nbunits[0];
+              op["tid"] = tids[0];
+              op["index"] = indexes[0];
+              op["pagenum"] = pages[0];
+              op["pinyin"] = pinyin[0];
           } else {
-              out += "<table>";
               for(var x = 0; x < chars.length; x++) {
                  if (x > 0 && ((parseInt(transids[x]) - 1) != parseInt(transids[x-1]))) {
                      consecutive = false; 
@@ -417,22 +402,154 @@ function make_child(node) {
                  if (!consecutive) {
                         break;
                  }
-                 out += "<tr><td style='font-size: 200%'>" + chars[x] + "</td><td style='font-size: 200%'>&nbsp;" + pinyin[x] + "</td></tr>";
-                 out += "<tr><td>&nbsp;</td></tr>";
-                 button += "&nbunit" + x + "=" + nbunits[x];
-                 button += "&tid" + x + "=" + tids[x];
-                 button += "&index" + x + "=" + indexes[x];
-                 button += "&page" + x + "=" + pages[x];
+                 op["nbunit" + x] = nbunits[x];
+                 op["tid" + x] = tids[x];
+                 op["index" + x] = indexes[x];
+                 op["page" + x] = pages[x];
+	             op["chars" + x] = chars[x];
+	             op["pinyin" + x] = pinyin[x];
               }
-              out += "</table>";
           }
           if (consecutive) {
-              button += "'>" + (operation == "split" ? "Split" : "Merge")+ "!</a>";
-              out += "<p/><p/>" + button;
+	      	  op["failed"] = false;
           } else {
               out = "The selected characters are not consecutive (including punctuation). You cannot merge them.";
           }
       }
+      
+      op["out"] = out
+      
+      return op;
+  }
+  
+  function process_edits(uuid, operation, batch) {
+      var tids = [];
+      var transids = [];
+      var nbunits = [];
+      var chars = [];
+      var pinyin = [];
+      var indexes = [];
+      var pages = [];
+      var batchids = [];
+      var operations = [];
+      var selector_class = batch ? "batch" : "label";
+      var edits = []
+
+      $("span." + selector_class + " > a").each(function(index) {
+        chars.push($(this).text());
+        tids.push($(this).attr('uniqueid'));
+        nbunits.push($(this).attr('nbunit'));
+        transids.push($(this).attr('transid'));
+        pinyin.push($(this).attr('pinyin'));
+        indexes.push($(this).attr('index'));
+        pages.push($(this).attr('page'));
+        batchids.push($(this).attr('batchid'));
+        operations.push($(this).attr('operation'));
+      });
+      
+      var out = "";
+      
+      if (batch) {
+			var t_tids = [];
+			var t_transids = [];
+			var t_nbunits = [];
+			var t_chars = [];
+			var t_pinyin = [];
+			var t_indexes = [];
+			var t_pages = [];
+			var t_operations = [];
+			var curr_batch = batchids[0];
+		    for (var x = 0; x < batchids.length; x++) {
+		    	if (batchids[x] != curr_batch) {
+					edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+					t_tids = [];
+					t_transids = [];
+					t_nbunits = [];
+					t_chars = [];
+					t_pinyin = [];
+					t_indexes = [];
+					t_pages = [];
+					t_operations = [];
+				}
+				
+				curr_batch = batchids[x];
+			
+	    		t_tids.push(tids[x]);
+	    		t_transids.push(transids[x]);
+	    		t_nbunits.push(nbunits[x]);
+	    		t_chars.push(chars[x]);
+	    		t_pinyin.push(pinyin[x]);
+	    		t_indexes.push(indexes[x]);
+	    		t_pages.push(pages[x]);
+	    		t_operations.push(operations[x]);
+		    }
+		    
+		    // handle the last batch...
+		    
+		    if (t_tids.length > 0) {
+				edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+		    }
+      } else {
+		  edits.push(prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation));
+      }
+      
+      out += "<h4>Are you sure you want to perform these edits?</h4>\n";
+      out += "<form method='post' action='" + bootdest + "/edit'>"
+      var editcount = 1;
+      out += "<table>"
+      for(var x = 0; x < edits.length; x++) {
+	      out += "<tr>";
+      	  out += "<td>#" + editcount + ")&nbsp;</td>";
+      	  	
+      	  if (edits[x]["operation"] == "split") {
+      	  	  out += "<td>Split "; 
+	      	  if (edits[x]["failed"] == true) {
+		      	  out += "(INVALID)"
+	      	  } else {
+		      	  editcount += 1;
+	      	  }
+	      	  out += ":&nbsp;</td><td>" + edits[x]["chars"] + "(" + edits[x]["pinyin"] + ")</td>";
+	      } else {
+      	  	  out += "<td>Merge "; 
+	      	  if (edits[x]["failed"] == true) {
+		      	  out += "(INVALID)"
+	      	  } else {
+		      	  editcount += 1;
+	      	  }
+	      	  
+			  out += ":&nbsp;</td>";
+	      	  for (var y = 0; y < edits[x]["units"]; y++) {
+	      	  	  if (edits[x]["chars" + y] == undefined)
+			          out += "<td>" + edits[x]["chars"] + "</td>"
+			      else 
+			          out += "<td>" + edits[x]["chars" + y] + "</td>"
+			          
+	      	  	  if (edits[x]["pinyin" + y] == undefined)
+			          out += "<td>&nbsp;" + edits[x]["pinyin"];
+			      else
+			          out += "<td>&nbsp;" + edits[x]["pinyin" + y];
+	      	  	  if (y < (edits[x]["units"] - 1)) {
+	      	  	      out += ", &nbsp;";
+	      	  	  }
+				  out += "</td>"
+	      	  }
+      	  }
+	      out += "</tr>";
+      	  if (edits[x]["failed"] == true) {
+      	  	out += "<tr><td></td><td>Reason:</td><td colspan='100'>" + edits[x]["out"] + "</td></tr>"
+      	  }
+      }
+      out += "</table>"
+  	  out += "<input type='hidden' name='oprequest' value='" + JSON.stringify(edits) + "'/>\n"
+  	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n"
+  	  out += "<p/><p/>"
+  	  if (editcount > 1) {
+	      out += "<input class='btn btn-default btn-primary' name='submit' type='submit' value='Submit'/>";
+	  } else {
+	      out += "See above for problems with your edit requests."
+  	  	
+  	  }
+      out += "</form>"
 
       $('#regroupdestination').html(out);
       $('#regroupModal').modal('show');
@@ -470,8 +587,12 @@ function make_child(node) {
   function select_toggle(name) {
        var spanclass = $("#spanselect_" + name).attr('class');
        if (spanclass == "none") {
-           $("#spanselect_" + name).attr('class', 'label label-info');
-       } else {
+           $("#spanselect_" + name).attr('class', 'label label-info none');
+       } else if (spanclass == "batch") {
+           $("#spanselect_" + name).attr('class', 'label label-info batch');
+       } else if (spanclass == "label label-info batch") {
+           $("#spanselect_" + name).attr('class', 'batch');
+       } else if (spanclass == "label label-info none") {
            $("#spanselect_" + name).attr('class', 'none');
        }
   }
@@ -607,7 +728,8 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'></div></div><div id='pagetext' class='col-md-7'></div>");
+    
+       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7'>" + spinner + "&nbsp;Loading Text...</div>");
     
         $('#pageimg' + curr_img_num).affix();
         $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -634,7 +756,12 @@ function view(mode, uuid, page) {
    } else {
        if (view_images) {
            url += "&image=0";
+	       $("#pagecontent").html(spinner + "&nbsp;Loading Image...");
+       } else {
+	       $("#pagecontent").html(spinner + "&nbsp;Loading Text...");
+       	
        }
+       
        
        go('#pagecontent', 
               url, 
@@ -808,11 +935,13 @@ function installreading() {
     $('#imageButton').click(function () {
         if($('#imageButton').attr('class') == 'active') {
            $('#imageButton').attr('class', '');
+           $('#textButton').attr('class', 'active');
            view_images = false;
 	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active');
+           $('#textButton').attr('class', '');
 	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
@@ -823,15 +952,31 @@ function installreading() {
     $('#sideButton').click(function () {
         if($('#sideButton').attr('class') == 'active') {
            $('#sideButton').attr('class', '');
+           $('#textButton').attr('class', 'active');
            show_both = false;
 	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active');
+           $('#textButton').attr('class', '');
 	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
         }
        view_images = false;
        $('#imageButton').attr('class', '');
+       view(current_mode, current_uuid, current_page);
+    });
+    
+    $('#textButton').click(function () {
+      go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   if (show_both == false && view_images == false) {
+	   	  // already in text mode
+	   	  return;
+	   }
+       $('#imageButton').attr('class', '');
+       $('#sideButton').attr('class', '');
+       $('#textButton').attr('class', 'active');
+       show_both = false;
+       view_images = false;
        view(current_mode, current_uuid, current_page);
     });
 }
