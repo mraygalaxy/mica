@@ -650,12 +650,17 @@ class MICA(object):
 
         return r
 
-    def dbcheck(self, req) :
+    def dbcheck(self, req, pack = False) :
         username = req.session['username']
         if username not in self.zdbacctstorage :
             self.zdbacctstorage[username] = ZODB.FileStorage.FileStorage(cwd + "databases/" + username + ".db")
         if username not in self.zdbacctdb :
             self.zdbacctdb[username] = ZODB.DB(self.zdbacctstorage[username])
+        if pack :
+            transaction.commit()
+            mdebug("Packing ZODB database. Please wait...")
+            self.zdbacctdb[username].pack()
+            mdebug("Packing complete.")
         if not req.zdbacctconnection :
             #mdebug("New connection on: " + req.unparsed_uri + " action: " + req.action)
             req.zdbacctconnection = self.zdbacctdb[username].open()
@@ -2734,9 +2739,18 @@ class MICA(object):
                 return self.bootstrap(req, "<div><div id='storylistresult'>" + storylist + "</div></div>", now = True)
             
             elif req.action == "account" :
-                db, username = self.dbcheck(req)
-                req.db = db
                 out = ""
+                pack = False
+                
+                if req.http.params.get("pack") :
+                    pack = True
+                    
+                db, username = self.dbcheck(req, pack)
+                
+                if pack :
+                    out += self.heromsg + "\n<h4>Database packing complete for your account.</h4></div>\n"
+                
+                req.db = db
 
                 acctdb, acctconn = self.acctopen()
 
@@ -2756,8 +2770,10 @@ class MICA(object):
                     <tr><td><button name='changepassword' type="submit" class="btn-primary" value='1'>Change Password</button></td></tr>
                     </table>
                     </form>                                   
+                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Pack ZODB file</a>
                     """
 
+                
                 if req.http.params.get("newaccount") :
                     newusername = req.http.params.get("username")
                     newpassword = req.http.params.get("password")
