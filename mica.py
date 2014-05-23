@@ -2596,6 +2596,9 @@ class MICA(object):
                 
                 for edit in edits :
                     mdebug("Processing edit: " + str(edit))
+                    if edit["failed"] :
+                        mdebug("This edit failed. Skipping.")
+                        continue
                     result = repeat(self.operation, args = [db, req, story, edit, offset], kwargs = {})
                     
                     if not result[0] and len(result) > 1 :
