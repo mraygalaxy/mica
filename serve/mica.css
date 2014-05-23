@@ -1,5 +1,5 @@
 body {
-	padding-top: 25px;
+	padding-top: 55px;
 }
 
 .bwizard-steps li {
@@ -11,11 +11,13 @@ body {
 .modal {
 	max-height: 90%;
 }
+
 .anchor {
 	padding-top: 55px;
 	margin-top: -55px;
 }
-.navbar-inner {
+
+.navbar-default {
 	background-image: -webkit-linear-gradient(top, white, #DBD7D7);
 }
 a.brand:hover {
@@ -130,3 +132,4 @@ td.splittop { border-top: solid blue }
 td.splitbottom { border-bottom: solid blue }
 td.splitleft { border-left: solid blue  }
 td.splitright { border-right: solid blue  }
+

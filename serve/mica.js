@@ -65,11 +65,13 @@ if ("liststate" in params)
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
-	                data = $(response).find(getSpecificContent).html();
+                    obj = $(response)
+                    objresult = obj.find(getSpecificContent)
+	                data = objresult.html();
 	                if(write) {
-	                    if(writeSubcontent)
+	                    if(writeSubcontent) {
 	                        $(id).html(data);
-	                    else
+	                    } else
 	                        $(id).html(response);
 	                }
 	            } else {
@@ -77,6 +79,15 @@ if ("liststate" in params)
 	                    $(id).html(response);
 	                data = response;
 	            }
+
+                if(write) {
+                        //have to replace script or else jQuery will remove them
+                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
+                            if (!$(this).attr('src')) {
+                                eval($(this).text());
+                            }
+                        });
+                }
 	            if(callback != false)
 	               callback(data);
             }
@@ -124,12 +135,19 @@ function trans_poll_finish(data, uuid, unused) {
     var tmparr = data.split(" ");
     var result = tmparr[0];
     var percent = tmparr[1];
+    var page = parseInt(tmparr[2]) + 1;
+    var pages = parseInt(tmparr[3]); 
+    
+    if (pages == 0) {
+    	pages = page;
+    }
 
     if (result == "yes" || first_time) {
-        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;Working: " + percent + "%");
+        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;Working: Page " + page + "/" + pages + ", " + percent + "%");
         trans_wait_poll(uuid);
     } else {
         $("#translationstatus" + uuid).html('Done! Please reload.');
+        loadstories(false);
     }
 }
 
@@ -149,6 +167,7 @@ function trans_stop(data, uuid, unused) {
     finish = false;
     do_refresh = false;
     $("#translationstatus" + uuid).html('Done! Please reload.');
+    loadstories(false);
 }
 
 function trans_start(uuid) {
@@ -344,21 +363,16 @@ function make_child(node) {
            toggle_specific('blank', name, 0);
   }
 
-  function process_edits(uuid, operation) {
-      var tids = [];
-      var nbunits = [];
-      var chars = [];
-      var pinyin = [];
-      var indexes = [];
-
-      $("span.label > a").each(function(index) {
-        chars.push($(this).text());
-        tids.push($(this).attr('uniqueid'));
-        nbunits.push($(this).attr('nbunit'));
-        pinyin.push($(this).attr('pinyin'));
-        indexes.push($(this).attr('index'));
-      });
-
+      
+  function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
+  	  var op = { 
+  	  			"operation": operation,
+  	  			"uuid" : uuid,
+  	  			"units" : chars.length,
+  	  			"failed" : true,
+  	  			"chars" : chars[0],
+  	  			"pinyin" : pinyin[0]
+  	  			 };
       var out = "";
       if (chars.length == 0) {
           out += "You have not selected anything!";
@@ -367,47 +381,175 @@ function make_child(node) {
       } else if (operation == "split" && chars[0].split('').length < 2) {
           out += "This word only has one character. It cannot be split!";
       } else if (operation == "merge" && chars.length < 2) {
-          out += "You need at least two characters selected before you can merge them into a word!";
+      	  if (batch)
+      	      return "";
+          out += "You need at least two character groups selected before you can merge them into a word!";
       } else {
-          out += "<h4>Are you sure you want to <b>";
-          out += (operation == "split" ? "Split" : "Merge");
-          out += "</b> these words ";
-          out += (operation == "split" ? "APART" : "TOGETHER");
-          out += "?</h4>";
-          button = "<a class='btn btn-success' href='" + bootdest;
-          button += "/edit?operation=" + operation + "&uuid=" + uuid + "&units=" + chars.length;
           var consecutive = true;
 
           if (operation == "split") {
-              out += "<div style='font-size: 200%'>" + chars[0] + " (" + pinyin[0] + ")<br/></div>";
-              button += "&nbunit=" + nbunits[0];
-              button += "&tid=" + tids[0];
-              button += "&index=" + indexes[0];
+              op["nbunit"] = nbunits[0];
+              op["tid"] = tids[0];
+              op["index"] = indexes[0];
+              op["pagenum"] = pages[0];
+              op["pinyin"] = pinyin[0];
           } else {
-              out += "<table>";
               for(var x = 0; x < chars.length; x++) {
-                 if (x > 0 && ((parseInt(nbunits[x]) - 1) != parseInt(nbunits[x-1]))) {
+                 if (x > 0 && ((parseInt(transids[x]) - 1) != parseInt(transids[x-1]))) {
                      consecutive = false; 
                      break;
                  }
                  if (!consecutive) {
                         break;
                  }
-                 out += "<tr><td style='font-size: 200%'>" + chars[x] + "</td><td style='font-size: 200%'>&nbsp;" + pinyin[x] + "</td></tr>";
-                 out += "<tr><td>&nbsp;</td></tr>";
-                 button += "&nbunit" + x + "=" + nbunits[x];
-                 button += "&tid" + x + "=" + tids[x];
-                 button += "&index" + x + "=" + indexes[x];
+                 op["nbunit" + x] = nbunits[x];
+                 op["tid" + x] = tids[x];
+                 op["index" + x] = indexes[x];
+                 op["page" + x] = pages[x];
+	             op["chars" + x] = chars[x];
+	             op["pinyin" + x] = pinyin[x];
               }
-              out += "</table>";
           }
           if (consecutive) {
-              button += "'>" + (operation == "split" ? "Split" : "Merge")+ "!</a>";
-              out += "<p/><p/>" + button;
+	      	  op["failed"] = false;
           } else {
               out = "The selected characters are not consecutive (including punctuation). You cannot merge them.";
           }
       }
+      
+      op["out"] = out
+      
+      return op;
+  }
+  
+  function process_edits(uuid, operation, batch) {
+      var tids = [];
+      var transids = [];
+      var nbunits = [];
+      var chars = [];
+      var pinyin = [];
+      var indexes = [];
+      var pages = [];
+      var batchids = [];
+      var operations = [];
+      var selector_class = batch ? "batch" : "label";
+      var edits = []
+
+      $("span." + selector_class + " > a").each(function(index) {
+        chars.push($(this).text());
+        tids.push($(this).attr('uniqueid'));
+        nbunits.push($(this).attr('nbunit'));
+        transids.push($(this).attr('transid'));
+        pinyin.push($(this).attr('pinyin'));
+        indexes.push($(this).attr('index'));
+        pages.push($(this).attr('page'));
+        batchids.push($(this).attr('batchid'));
+        operations.push($(this).attr('operation'));
+      });
+      
+      var out = "";
+      
+      if (batch) {
+			var t_tids = [];
+			var t_transids = [];
+			var t_nbunits = [];
+			var t_chars = [];
+			var t_pinyin = [];
+			var t_indexes = [];
+			var t_pages = [];
+			var t_operations = [];
+			var curr_batch = batchids[0];
+		    for (var x = 0; x < batchids.length; x++) {
+		    	if (batchids[x] != curr_batch) {
+					edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+					t_tids = [];
+					t_transids = [];
+					t_nbunits = [];
+					t_chars = [];
+					t_pinyin = [];
+					t_indexes = [];
+					t_pages = [];
+					t_operations = [];
+				}
+				
+				curr_batch = batchids[x];
+			
+	    		t_tids.push(tids[x]);
+	    		t_transids.push(transids[x]);
+	    		t_nbunits.push(nbunits[x]);
+	    		t_chars.push(chars[x]);
+	    		t_pinyin.push(pinyin[x]);
+	    		t_indexes.push(indexes[x]);
+	    		t_pages.push(pages[x]);
+	    		t_operations.push(operations[x]);
+		    }
+		    
+		    // handle the last batch...
+		    
+		    if (t_tids.length > 0) {
+				edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+		    }
+      } else {
+		  edits.push(prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation));
+      }
+      
+      out += "<h4>Are you sure you want to perform these edits?</h4>\n";
+      out += "<form method='post' action='" + bootdest + "/edit'>"
+      var editcount = 1;
+      out += "<table>"
+      for(var x = 0; x < edits.length; x++) {
+	      out += "<tr>";
+      	  out += "<td>#" + editcount + ")&nbsp;</td>";
+      	  	
+      	  if (edits[x]["operation"] == "split") {
+      	  	  out += "<td>Split "; 
+	      	  if (edits[x]["failed"] == true) {
+		      	  out += "(INVALID)"
+	      	  } else {
+		      	  editcount += 1;
+	      	  }
+	      	  out += ":&nbsp;</td><td>" + edits[x]["chars"] + "(" + edits[x]["pinyin"] + ")</td>";
+	      } else {
+      	  	  out += "<td>Merge "; 
+	      	  if (edits[x]["failed"] == true) {
+		      	  out += "(INVALID)"
+	      	  } else {
+		      	  editcount += 1;
+	      	  }
+	      	  
+			  out += ":&nbsp;</td>";
+	      	  for (var y = 0; y < edits[x]["units"]; y++) {
+	      	  	  if (edits[x]["chars" + y] == undefined)
+			          out += "<td>" + edits[x]["chars"] + "</td>"
+			      else 
+			          out += "<td>" + edits[x]["chars" + y] + "</td>"
+			          
+	      	  	  if (edits[x]["pinyin" + y] == undefined)
+			          out += "<td>&nbsp;" + edits[x]["pinyin"];
+			      else
+			          out += "<td>&nbsp;" + edits[x]["pinyin" + y];
+	      	  	  if (y < (edits[x]["units"] - 1)) {
+	      	  	      out += ", &nbsp;";
+	      	  	  }
+				  out += "</td>"
+	      	  }
+      	  }
+	      out += "</tr>";
+      	  if (edits[x]["failed"] == true) {
+      	  	out += "<tr><td></td><td>Reason:</td><td colspan='100'>" + edits[x]["out"] + "</td></tr>"
+      	  }
+      }
+      out += "</table>"
+  	  out += "<input type='hidden' name='oprequest' value='" + JSON.stringify(edits) + "'/>\n"
+  	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n"
+  	  out += "<p/><p/>"
+  	  if (editcount > 1) {
+	      out += "<input class='btn btn-default btn-primary' name='submit' type='submit' value='Submit'/>";
+	  } else {
+	      out += "See above for problems with your edit requests."
+  	  	
+  	  }
+      out += "</form>"
 
       $('#regroupdestination').html(out);
       $('#regroupModal').modal('show');
@@ -445,8 +587,12 @@ function make_child(node) {
   function select_toggle(name) {
        var spanclass = $("#spanselect_" + name).attr('class');
        if (spanclass == "none") {
-           $("#spanselect_" + name).attr('class', 'label label-info');
-       } else {
+           $("#spanselect_" + name).attr('class', 'label label-info none');
+       } else if (spanclass == "batch") {
+           $("#spanselect_" + name).attr('class', 'label label-info batch');
+       } else if (spanclass == "label label-info batch") {
+           $("#spanselect_" + name).attr('class', 'batch');
+       } else if (spanclass == "label label-info none") {
            $("#spanselect_" + name).attr('class', 'none');
        }
   }
@@ -483,6 +629,14 @@ function make_child(node) {
 	                    $(id).html(response);
 	                data = response;
 	            }
+                if(write) {
+                        //have to replace script or else jQuery will remove them
+                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
+                            if (!$(this).attr('src')) {
+                                eval($(this).text());
+                            }
+                        });
+                }
 	            if(callback != false)
 	               callback(data, opaque1, opaque2);
             }
@@ -491,7 +645,8 @@ function make_child(node) {
   }
 
 function multipopinstall(trans_id, unused) {
-    $('#ttip' + trans_id).popover({placement: 'bottom-right',
+    $('#ttip' + trans_id).popover({placement: 'bottom',
+//    $('#ttip' + trans_id).popover({placement: 'bottom-right',
                                    trigger: 'click',
                                    html: true,
                                    content: function() {
@@ -504,10 +659,10 @@ function multipoprefresh(data, trans_id, spy) {
     $('#ttip' + trans_id).popover('hide');
 }
 
-function multiselect(uuid, index, nb_unit, trans_id, spy) {
+function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           change('#pop' + trans_id, 
           bootdest + '/home?view=1&uuid=' + uuid + '&multiple_select=1'
-          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id, 
+          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
           true, 
@@ -517,9 +672,9 @@ function multiselect(uuid, index, nb_unit, trans_id, spy) {
           spy);
 }
 
-function memolist(uuid) {
+function memolist(uuid, page) {
    go('#memolist', 
-          bootdest + '/read?uuid=' + uuid + '&memolist=1', 
+          bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
           '#memolistresult', 
           unavailable, 
           true, 
@@ -527,9 +682,9 @@ function memolist(uuid) {
           true);
 }
 
-function editslist(uuid) {
+function editslist(uuid, page) {
    go('#editslist', 
-          bootdest + '/edit?uuid=' + uuid + '&editslist=1', 
+          bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
           '#editsresult', 
           unavailable, 
           true, 
@@ -537,14 +692,118 @@ function editslist(uuid) {
           true);
 }
 
-function history(uuid) {
+
+
+function history(uuid, page) {
    go('#history', 
-          bootdest + '/read?uuid=' + uuid + '&phistory=1', 
+          bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
           '#historyresult', 
           unavailable, 
           true, 
           false,
           true);
+}
+
+var view_images = false;
+var show_both = false;
+var current_page = 0;
+var current_mode = "read";
+var current_uuid = "uuid";
+var curr_img_num = 0;
+
+function change_pageimg_width() {
+    $('#pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
+    $('#pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
+    $('#pageimg' + curr_img_num).css('bottom', 0);
+}
+
+function restore_pageimg_width() {
+    $('#pageimg' + curr_img_num).css('width', '100%');
+}
+
+function view(mode, uuid, page) {
+   var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
+   
+   window.scrollTo(0, 0);
+   if (show_both) {
+       curr_img_num += 1;
+
+    
+       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7'>" + spinner + "&nbsp;Loading Text...</div>");
+    
+        $('#pageimg' + curr_img_num).affix();
+        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
+        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
+        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
+
+       go('#pagetext', 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+
+       url += "&image=0";
+
+       go('#pageimg' + curr_img_num, 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+   } else {
+       if (view_images) {
+           url += "&image=0";
+	       $("#pagecontent").html(spinner + "&nbsp;Loading Image...");
+       } else {
+	       $("#pagecontent").html(spinner + "&nbsp;Loading Text...");
+       	
+       }
+       
+       
+       go('#pagecontent', 
+              url, 
+              '#pageresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+   }
+
+   if (mode == "read")
+   	   memolist(uuid, page)
+   else if (mode == "edit")
+   	   editslist(uuid, page)
+   else if (mode == "home")
+	   history(uuid, page)
+   	   
+   current_page = page;
+   current_mode = mode;
+   current_uuid = uuid;
+}
+
+function install_pages(mode, pages, uuid, start, view_mode) {
+		if (view_mode == "text") {
+           view_images = false;
+	       show_both = false;
+		} else if(view_mode == "images") {
+           view_images = true;
+	       show_both = false;
+		} else if(view_mode == "both") {
+           view_images = false;
+	       show_both = true;
+		}
+        $('#pagenav').bootpag({
+            total: pages,
+                   page: start + 1,
+                   maxVisible: 10 
+        }).on('page', function(event, num){
+          view(mode, uuid, num-1);
+        });
+
+        view(mode, uuid, start);
 }
 
 function memory_finish(data, opaque1, opaque2) {
@@ -556,10 +815,10 @@ function memory_finish(data, opaque1, opaque2) {
     toggle_specific('memory', hash, 0);
 }
 
-function memory(id, uuid, nb_unit, memorized) {
+function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
    change('#memory' + id, 
-          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit, 
+          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -569,12 +828,12 @@ function memory(id, uuid, nb_unit, memorized) {
           uuid);
 }
 
-function memorize(id, uuid, nb_unit) {
-    memory(id, uuid, nb_unit, 1);
+function memorize(id, uuid, nb_unit, page) {
+    memory(id, uuid, nb_unit, 1, page);
 }
 
-function forget(id, uuid, nb_unit) {
-    memory(id, uuid, nb_unit, 0);
+function forget(id, uuid, nb_unit, page) {
+    memory(id, uuid, nb_unit, 0, page);
 }
 
 
@@ -670,4 +929,96 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             }
         }
     }
+}
+
+function installreading() {
+    $('#imageButton').click(function () {
+        if($('#imageButton').attr('class') == 'active') {
+           $('#imageButton').attr('class', '');
+           $('#textButton').attr('class', 'active');
+           view_images = false;
+	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+        } else {
+           view_images = true; 
+           $('#imageButton').attr('class', 'active');
+           $('#textButton').attr('class', '');
+	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
+        }
+       show_both = false;
+       $('#sideButton').attr('class', '');
+       view(current_mode, current_uuid, current_page);
+       
+    });
+    $('#sideButton').click(function () {
+        if($('#sideButton').attr('class') == 'active') {
+           $('#sideButton').attr('class', '');
+           $('#textButton').attr('class', 'active');
+           show_both = false;
+	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+        } else {
+           show_both = true; 
+           $('#sideButton').attr('class', 'active');
+           $('#textButton').attr('class', '');
+	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
+        }
+       view_images = false;
+       $('#imageButton').attr('class', '');
+       view(current_mode, current_uuid, current_page);
+    });
+    
+    $('#textButton').click(function () {
+      go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   if (show_both == false && view_images == false) {
+	   	  // already in text mode
+	   	  return;
+	   }
+       $('#imageButton').attr('class', '');
+       $('#sideButton').attr('class', '');
+       $('#textButton').attr('class', 'active');
+       show_both = false;
+       view_images = false;
+       view(current_mode, current_uuid, current_page);
+    });
+}
+
+function loadstories(unused) {
+
+    $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
+    go('#sidebarcontents', 
+    bootdest + '/storylist',
+    '#storylistresult', 
+    unavailable, 
+    true, 
+    false,
+    true);
+}
+
+function dropstory(uuid) {
+    go('#sidebarcontents', 
+    bootdest + '/home?forget=1&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
+}
+
+function trashstory(uuid, name) {
+    go('#sidebarcontents', 
+    bootdest + '/home?delete=1&uuid=' + uuid + "&name=" + name,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
+}
+
+function reviewstory(uuid, which) {
+    go('#sidebarcontents', 
+    bootdest + '/home?reviewed=' + which + '&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
 }

@@ -20,6 +20,8 @@ Credits:
  2. Offline chinese translation: https://pypi.python.org/pypi/cjklib
  3. Offline polyphome listings: https://github.com/lxyu/pinyin
  4. Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
+ 5. PDF extraction: pdfminer
+ 6. PDF creation: fpdf
 
 
 INSTALLATION:
@@ -31,7 +33,7 @@ There are several steps to perform before MICA can run:
 
 1) Install basic package dependencies
 
-$ sudo apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto
+$ sudo apt-get install python-dev python-openssl python-setuptools python-sqlalchemy python-twisted* python-beaker python-webob libstdc++5 python-simplejson python-daemon python-pip python-crypto python-zodb
 
 2) Create a developer account / Translator Application key/ID requests from Microsoft
 
@@ -56,7 +58,7 @@ $ sudo buildcjkdb -r build cjklibData
 
 4) Generated a self-signed certificate for Twisted
 
-$ openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1095
+$ openssl req -x509 -nodes -days 9000 -newkey rsa:2048 -keyout mica.key -out mica.crt
 
 5) Copy ICTCLAS (www.ictclas.org) libraries for linking 
 
@@ -75,6 +77,11 @@ $ python setup.py build
 $ sudo python setup.py install 
 
 $ cp build/*/mica_ictclas.so .
+
+7) Install PDF manipulation libraries:
+
+$ sudo pip install pdfminer
+$ sudo pip install fpdf
 
 
 RUNNING:
