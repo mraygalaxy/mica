@@ -12,7 +12,8 @@ import couchdbkit
 from couchdbkit import Server
 import simplejson as json
 
-''' These patterns must be ordered by depth.
+''' 
+    These patterns must be ordered by depth.
     Put the deepest patterns first and the
     shortest patters last.
 
@@ -23,10 +24,11 @@ import simplejson as json
 Example commands:
 $ cd /tmp
   # first one drops the whole databases
-$ cp /home/mrhines/mica-v0.2/databases/family@hinespot.com.db .; ~/convert_zodb_to_couchdb.py -i family@hinespot.com.db -o "https://admin:super_secret_password@localhost:6984" -d
-$ cp /home/mrhines/mica-v0.2/databases/admin.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i admin.db
-$ cp /home/mrhines/mica-v0.2/databases/jonathan.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i jonathan.db
+$ cp /home/mrhines/mica-v0.2/databases/family@hinespot.com.db .; ~/convert_zodb_to_couchdb.py -i family@hinespot.com.db -o "https://admin:super_secret_password@localhost:6984" -u family@hinespot.com -d
+$ cp /home/mrhines/mica-v0.2/databases/admin.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i admin.db -u admin
+$ cp /home/mrhines/mica-v0.2/databases/jonathan.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i jonathan.db -u jonathan
 $ cp /home/mrhines/mica-v0.2/accounts.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i accounts.db
+'''
 
 
 #	    Keep|Throw, Attachment?, Regex members
@@ -39,8 +41,7 @@ patterns = [
             (False, False, [ 'stories', 1, 'pages' ]),
             (False, False, [ 'stories', 1, 'units' ]),
             (True, False, [ 'stories', 1, 'original' ]),
-            (True, False, [ 'stories', 1, 'final', 1 ]),
-            (False, False, [ 'stories', 1, 'final' ]),
+            (True, False, [ 'stories', 1, 'final' ]),
             (True, False, [ 'stories', 1]),
             (False, False, [ 'accounts', 1]),
             (True, False, [ 'memorized', 1]),
@@ -117,6 +118,7 @@ parser = OptionParser()
 parser.add_option("-o", "--output", dest = "out_url", default = False, help ="destination couchdb URL string")
 parser.add_option("-i", "--input", dest = "in_file", default = False, help ="original database filename")
 parser.add_option("-d", "--drop", dest = "drop", action = "store_true", default = False, help = "drop and recreate database")
+parser.add_option("-u", "--user", dest = "user", default = False, help = "user account name to prefix in front of key")
 
 parser.set_defaults()
 options, args = parser.parse_args()
@@ -142,6 +144,12 @@ if options.drop :
 
 couch = s.get_or_create_db('mica')
 
+start_key = "MICA"
+
+if options.user :
+    start_key += ":"
+    start_key += options.user
+
 for (keep, attach, pattern) in patterns :
     extended = []
     for group in pattern :
@@ -149,11 +157,9 @@ for (keep, attach, pattern) in patterns :
             extended.append("[^:]+")
         else :
             extended.append(group)
-    final_pattern = "MICA:" + (":".join(extended)) + "$"
+    final_pattern = start_key + ":" + (":".join(extended)) + "$"
     print "Extended pattern: " + final_pattern
-    depth_first_deep_copy(root, couch, final_pattern, keep, attach, "MICA")
+    depth_first_deep_copy(root, couch, final_pattern, keep, attach, start_key)
 
 indb.close()
 instorage.close()
-                                        
-
