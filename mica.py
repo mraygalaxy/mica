@@ -32,13 +32,12 @@ from cjklib.dictionary import CEDICT
 from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
 from time import sleep
-from common import *
-
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
 from pdfminer.pdfpage import PDFPage
 from cStringIO import StringIO
+from common import *
 
 import threading
 import traceback
@@ -51,11 +50,6 @@ import copy
 import warnings
 import codecs
 import shelve
-#from bsddb3 import dbshelve as shelve
-import ZODB, ZODB.FileStorage
-from ZODB.PersistentMapping import PersistentMapping
-from ZODB.PersistentList import PersistentList
-from ZODB.POSException import ConflictError
 import transaction
 import uuid as uuid4
 import cjklib
@@ -68,6 +62,7 @@ import string
 import base64
 import __builtin__
 import sys
+import couchdbkit
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
@@ -77,8 +72,8 @@ for letter in (string.ascii_lowercase + string.ascii_uppercase) :
 pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
 
 def parse_lt_objs (lt_objs, page_number):
-    text_content = PersistentList() 
-    images = PersistentList() 
+    text_content = [] 
+    images = [] 
 
     for lt_obj in lt_objs:
         if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
@@ -97,17 +92,13 @@ def repeat(func, args, kwargs):
     transaction.commit()
     success = False
     while not success :
-        try :
-            ret = func(*args, **kwargs)
-            success = True
-        except ConflictError, con :
-            mwarn("Conflict during function: " + func.__name__ + ". Retrying...")
-            transaction.abort()
+        ret = func(*args, **kwargs)
+        success = True
    
     return [success] + ret 
 
 def filter_lines(data2) :
-    new_page = PersistentList()
+    new_page = []
 
     for line in data2 : 
         if line == "" :
@@ -142,27 +133,6 @@ def filter_lines(data2) :
         new_page.append(line)
 
     return new_page
-
-def sidestart(name, username, story, reviewed) :
-    rname = name.replace(".txt","").replace("\n","").replace("_", " ")
-    sideout = ""
-    sideout += "\n<tr>"
-    sideout += "<td style='font-size: x-small; width: 100px'>" 
-    sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid="
-    sideout += story["uuid"]
-    sideout += "\">"
-    sideout += rname
-    sideout += "</a>"
-    if "pages" in story and len(story["pages"]) and (reviewed or story["translated"]) :
-        pr = story["pr"]
-        sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
-        sideout += pr + "%;'> (" + pr + "%)</div>"
-    sideout += "</td>"
-    if "pages" in story and len(story["pages"]) and reviewed :
-        sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
-        sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
-
-    return sideout
 
 def itemhelp(pairs) :
     story = pairs[1]
@@ -364,7 +334,7 @@ class Translator(object):
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
         response = urllib2.urlopen(request).read()
-        rv =  json.loads(response.decode("UTF-8-sig"))
+        rv =  json.loads(response.decode("utf-8-sig"))
 
         if isinstance(rv, basestring) and \
                 rv.startswith("ArgumentOutOfRangeException"):
@@ -470,26 +440,26 @@ class Params(object) :
         minfo("Request: " + self.unparsed_uri + " action: " + self.action)
 
 def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin, match_pinyin) :
-  unit = PersistentMapping()
+  unit = {}
 
   if trans_idx > current_trans_idx :
           unit["trans"] = groups[current_trans_idx:trans_idx]
           unit["tpinyin"] = reversep[current_trans_idx:trans_idx]
-          english = PersistentList()
+          english = []
           for group in unit["trans"] :
               english.append(eng[group[0]])
           unit["english"] = english
   else :
           unit["trans"] = False
-          unit["english"] = PersistentList([""])
+          unit["english"] = [""]
 
   if source_idx > current_source_idx :
           unit["source"] = source[current_source_idx:source_idx]
           unit["spinyin"] = pinyin[current_source_idx:source_idx]
 
   unit["match_pinyin"] = match_pinyin
-  unit["multiple_spinyin"] = PersistentList()
-  unit["multiple_english"] = PersistentList()
+  unit["multiple_spinyin"] = []
+  unit["multiple_english"] = []
   unit["multiple_correct"] = -1
   return unit
 
@@ -531,15 +501,43 @@ def strip_punct(word) :
 
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
+
 class MICA(object):
-    def __init__(self, client_id, client_secret):
+    def acct(self, name) :
+        return "MICA:accounts:" + name
+
+    def story(self, req, key) :
+        ret = "MICA:" + req.session['username'] + ":stories:" + key
+        #mdebug("Returning: " + ret)
+        return ret 
+
+    def index(self, req, key) :
+        return "MICA:" + req.session['username'] + ":story_index:" + key 
+    
+    def merge(self, req, key) :
+        return "MICA:" + req.session['username'] + ":mergegroups:" + key 
+    
+    def splits(self, req, key) :
+        return "MICA:" + req.session['username'] + ":splits:" + key 
+    
+    def tones(self, req, key) :
+        return "MICA:" + req.session['username'] + ":tonechanges:" + key 
+    
+    def memorized(self, req, key):
+        return "MICA:" + req.session['username'] + ":memorized:" + key 
+
+    def __init__(self, client_id, client_secret, couch_url, couch_dbname):
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='span 1 hero-unit' style='padding: 5px'>"
         self.pid = "none"
 
-        if not os.path.isdir(cwd + "databases/") :
-           os.makedirs(cwd + "databases/")
+        self.cs = couchdbkit.Server(couch_url)
+        self.dbname = couch_dbname
+        self.db = self.cs.get_or_create_db(self.dbname)
+        self.db.compact("accounts")
+        self.db.compact("stories")
+        self.db.compact("memorized")
 
         self.first_request = {}
 
@@ -571,49 +569,13 @@ class MICA(object):
                                     "BOOTREMEMBER",
                                 ]
 
-        self.dbs = {}
-        self.zdbacctstorage = {} 
-        self.zdbacctdb = {}
-        self.zdbacctconnection = {}
-#        self.acctdb = shelve.open(cwd + "accounts.db", writeback=True)
-#        self.acctdb = shelve.open(cwd + "accounts.db")
-        self.zacctstorage = ZODB.FileStorage.FileStorage(cwd + 'accounts.db')
-        self.zacctdb = ZODB.DB(self.zacctstorage)
-#    	self.zacctdb.pack()
-        self.zacctconnection = False
-        acctdb, acctconn = self.acctopen()
-        
-        if "accounts" not in acctdb :
+        if not self.db.doc_exist(self.acct('admin')) :
             # default installations use 'admin' password of 'password'
-            acctdb["accounts"] = PersistentMapping()
-            acctdb["accounts"]["admin"] = PersistentMapping()
-            acctdb["accounts"]["admin"]['password'] = '5f4dcc3b5aa765d61d8327deb882cf99'
-            acctdb["accounts"]["admin"]['roles'] = PersistentList()
-            acctdb["accounts"]["admin"]['roles'].append('admin')
-            acctdb["accounts"]["admin"]['roles'].append('normal')
+            self.db[self.acct('admin')] = {
+                    'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
+                    'roles' : [ 'admin', 'normal' ],
+                } 
             
-            self.allcommit(acctdb)
-
-        self.acctclose(acctconn)
-
-    def allcommit(self, db):
-        '''
-        minfo("Committing db from " + \
-            inspect.currentframe().f_back.f_code.co_name \
-            + ", " + inspect.currentframe().f_back.f_code.co_name + "(" + str(inspect.currentframe().f_back.f_lineno) + ")" \
-            + ", " + inspect.currentframe().f_back.f_back.f_code.co_name + "(" + str(inspect.currentframe().f_back.f_back.f_lineno) + ")" \
-            + ", " + inspect.currentframe().f_back.f_back.f_back.f_code.co_name + "(" + str(inspect.currentframe().f_back.f_back.f_back.f_lineno) + ")" \
-            )
-        '''
-        transaction.commit()
-
-    def acctopen(self) :
-        zacctconnection = self.zacctdb.open()
-        return zacctconnection.root(), zacctconnection
-
-    def acctclose(self, conn) :
-        conn.close()
-        
     def __call__(self, environ, start_response):
         # Hack to make WebOb work with Twisted
         setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
@@ -649,35 +611,31 @@ class MICA(object):
                 print "RESPONSE MICA ********" + line
 
         return r
-
-    def dbcheck(self, req, pack = False) :
-        username = req.session['username']
-        if username not in self.zdbacctstorage :
-            self.zdbacctstorage[username] = ZODB.FileStorage.FileStorage(cwd + "databases/" + username + ".db")
-        if username not in self.zdbacctdb :
-            self.zdbacctdb[username] = ZODB.DB(self.zdbacctstorage[username])
-        if pack :
-            transaction.commit()
-            mdebug("Packing ZODB database. Please wait...")
-            self.zdbacctdb[username].pack()
-            mdebug("Packing complete.")
-        if not req.zdbacctconnection :
-            #mdebug("New connection on: " + req.unparsed_uri + " action: " + req.action)
-            req.zdbacctconnection = self.zdbacctdb[username].open()
-        if not req.zdb :
-            req.zdb = req.zdbacctconnection.root()
-        return req.zdb, username
-
-    def dbclose(self, req) :
-        if req.zdbacctconnection :
-            try :
-                self.allcommit(req.zdb)
-            except ConflictError, e :
-                obj = req.zdbacctconnection.get(e.oid)
-                mdebug("ConflictError oid: " + str(e.oid) + " contains keys : " + str(obj.keys()))
-                raise e
-            #mdebug("Closing connection on: " + req.unparsed_uri + " action: " + req.action)
-            req.zdbacctconnection.close()
+    
+    def sidestart(self, req, name, username, story, reviewed) :
+        rname = name.replace(".txt","").replace("\n","").replace("_", " ")
+        sideout = ""
+        sideout += "\n<tr>"
+        sideout += "<td style='font-size: x-small; width: 100px'>" 
+        sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid="
+        sideout += story["uuid"]
+        sideout += "\">"
+        sideout += rname
+        sideout += "</a>"
+        
+        nb_pages = self.nb_pages(req, name)
+            
+        if nb_pages and (reviewed or story["translated"]) :
+            pr = story["pr"]
+            sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
+            sideout += pr + "%;'> (" + pr + "%)</div>"
+            
+        sideout += "</td>"
+        if nb_pages and reviewed :
+            sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+            sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
+    
+        return sideout
 
     def template(self, template_prefix) :
         contents_fh = open(cwd + relative_prefix + "/" + template_prefix + "_template.html", "r")
@@ -713,10 +671,8 @@ class MICA(object):
                 navcontents += "><a href=\"BOOTDEST" + value[0] + "\">" + value[1] + "</a></li>\n"
         
             if req.session['connected'] and not pretend_disconnected :
-                db, username = self.dbcheck(req)
-
-                acctdb, acctconn = self.acctopen()
-                if 'admin' in acctdb["accounts"][username]["roles"] :
+                user = self.db[self.acct(req.session['username'])]
+                if 'admin' in user['roles'] :
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
                     """
@@ -778,7 +734,7 @@ class MICA(object):
                                  <ul class='dropdown-menu'>
                                 """
                 navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
-                if 'admin' in acctdb["accounts"][username]["roles"] :
+                if 'admin' in user['roles'] :
                     navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
                 navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
                 navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
@@ -786,7 +742,6 @@ class MICA(object):
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
-                self.acctclose(acctconn)
             else :
                 navcontents += """
                     <li><a id='connectpop'>Connect!</a></li>
@@ -823,19 +778,18 @@ class MICA(object):
                 y = self.replacement_keys[idx]
                 contents = contents.replace(y, x)
     
-        self.dbclose(req)
         return contents
 
     
     def online_cross_reference(self, uuid, name, story, all_source, cjk) :
         mdebug("Going online...")
-        ms = PersistentList()
-        eng = PersistentList()
-        trans = PersistentList()
-        source = PersistentList()
-        pinyin = PersistentList()
-        groups = PersistentList()
-        reversep = PersistentList()
+        ms = []
+        eng = []
+        trans = []
+        source = []
+        pinyin = []
+        groups = []
+        reversep = []
 
         msg = "source: \n"
         idx = 0
@@ -857,7 +811,7 @@ class MICA(object):
 #        mdebug("english translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
-            return PersistentList()
+            return []
         
         msenglish = result[0]["TranslatedText"]
 
@@ -891,7 +845,7 @@ class MICA(object):
         current_source_idx = 0
         current_trans_idx = 0
         current_eng_idx = 0
-        units = PersistentList()
+        units = []
 
         tmatch = ""
         match_pinyin = ""
@@ -910,11 +864,11 @@ class MICA(object):
           
           if source_idx > current_source_idx :
               # only append if there's something in the source
-              units.append(make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin, PersistentList())) 
+              units.append(make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin, [])) 
           current_source_idx = source_idx
           current_trans_idx = trans_idx
 
-          units.append(make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, eng, source, pinyin, PersistentList([match_pinyin])))
+          units.append(make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, eng, source, pinyin, [match_pinyin]))
 
           current_source_idx += 1
           current_trans_idx += 1
@@ -924,13 +878,13 @@ class MICA(object):
         try :
             while changes : 
     #            mdebug("passing: " + str(passes))
-                new_units = PersistentList()
+                new_units = []
                 idx = 0
                 changes = False
                 while idx < len(units) :
                     new_unit = copy.deepcopy(units[idx])
                     if new_unit["trans"] :
-                        new_english = PersistentList()
+                        new_english = []
                         for word in new_unit["english"] :
                            word = strip_punct(word)
                            if not len(new_english) or strip_punct(new_english[-1]) != word :
@@ -947,7 +901,7 @@ class MICA(object):
                         new_unit["trans"] = False
                         new_unit["english"] = ""
                     else :
-                        append_units = PersistentList()
+                        append_units = []
                         for fidx in range(idx + 1, min(idx + 2, len(units))) :
                             unit = units[fidx]
                             if not unit["trans"] :
@@ -979,12 +933,12 @@ class MICA(object):
                                 if new_unit["trans"] :
                                     new_unit["trans"].append(pair)
                                 else :
-                                    new_unit["trans"] = PersistentList([pair])
+                                    new_unit["trans"] = [pair]
                             for pinyin in unit["tpinyin"] :
                                 if "tpinyin" in new_unit :
                                     new_unit["tpinyin"].append(pinyin)
                                 else :
-                                    new_unit["tpinyin"] = PersistentList([pinyin])
+                                    new_unit["tpinyin"] = [pinyin]
                             if unit["trans"] :
                                 for word in unit["english"] :
                                     word = strip_punct(word)
@@ -1030,17 +984,17 @@ class MICA(object):
         return units 
 
     def add_unit(self, trans, uni_source, eng, online = False, punctuation = False) :
-        unit = PersistentMapping()
+        unit = {}
         unit["spinyin"] = trans
-        unit["source"] = PersistentList()
-        unit["multiple_spinyin"] = PersistentList()
-        unit["multiple_english"] = PersistentList()
+        unit["source"] = []
+        unit["multiple_spinyin"] = []
+        unit["multiple_english"] = []
         unit["multiple_correct"] = -1
         for char in uni_source : 
             unit["source"].append(char)
         if trans == u'' :
             unit["trans"] = False
-            unit["english"] = PersistentList()
+            unit["english"] = []
         else :
             unit["trans"] = True 
             unit["english"] = eng
@@ -1050,7 +1004,7 @@ class MICA(object):
         return unit
 
     def get_first_translation(self, d, char, pinyin, none_if_not_found = True) :
-        eng = PersistentList()
+        eng = []
         temp_r = d.getFor(char)
         for tr in temp_r :
             if not pinyin or tr[2].lower() == pinyin.lower() :
@@ -1060,7 +1014,7 @@ class MICA(object):
             
         if len(eng) == 0 :
             if none_if_not_found :
-                return PersistentList(["No english translation found."])
+                return ["No english translation found."]
             return False
         
         return eng
@@ -1071,8 +1025,8 @@ class MICA(object):
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
-    def recursive_translate(self, uuid, name, story, cjk, db, d, uni, storydb, temp_units, page) :
-        units = PersistentList()
+    def recursive_translate(self, req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page) :
+        units = []
         
         mdebug("Requested: " + uni)
         if uni == "人家" :
@@ -1085,22 +1039,22 @@ class MICA(object):
                 break
             
         if all_punct :
-            units.append(self.add_unit(PersistentList([uni]), uni, PersistentList([uni]), punctuation = True))
+            units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
-            trans = PersistentList()
-            eng = PersistentList()
+            trans = []
+            eng = []
 
             for e in d.getFor(uni) :
                 trans.append(e[2])
                 eng.append(e[3])
 
             if len(trans) == 1 :
-                unit = self.add_unit(trans[0].split(" "), uni, PersistentList([eng[0]]))
+                unit = self.add_unit(trans[0].split(" "), uni, [eng[0]])
                 units.append(unit)
             elif len(trans) == 0 :
                 if len(uni) > 1 :
                     for char in uni :
-                        self.recursive_translate(uuid, name, story, cjk, db, d, char, storydb, temp_units, page)
+                        self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, char, temp_units, page)
             elif len(trans) > 1 :
                             
                 for x in range(0, len(trans)) :
@@ -1123,25 +1077,29 @@ class MICA(object):
                     online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
                     if not online_units or not len(online_units) :
                         eng = self.get_first_translation(d, uni, readings[0])
-                        unit = self.add_unit(PersistentList([readings[0]]), uni, PersistentList([eng[0]]))
+                        unit = self.add_unit([readings[0]], uni, [eng[0]])
                         for x in readings :
                             eng = self.get_first_translation(d, uni, x, False)
                             if not eng :
                                 continue
                             for e in eng :
-                                unit["multiple_spinyin"].append(PersistentList([x]))
-                                unit["multiple_english"].append(PersistentList([e]))
+                                unit["multiple_spinyin"].append([x])
+                                unit["multiple_english"].append([e])
                         
                         if unit["multiple_correct"] == -1 :
                             source = "".join(unit["source"])
                             total_changes = 0.0
-                            changes = None
+                            changes = False
                             highest = -1
                             highest_percentage = -1.0
                             selector = -1
-
-                            if source in storydb["tonechanges"] :
-                                changes = storydb["tonechanges"][source]
+                            
+                            try :
+                                changes = self.db[self.tones(req, source)]
+                            except couchdbkit.exceptions.ResourceNotFound, e :
+                                pass
+                            
+                            if changes :
                                 total_changes = float(changes["total"])
 
                                 for idx in range(0, len(unit["multiple_spinyin"])) :
@@ -1190,7 +1148,7 @@ class MICA(object):
                            units.append(unit)
                 else :
                     eng = self.get_first_translation(d, uni, readings[0])
-                    units.append(self.add_unit(PersistentList(readings[0].split(" ")), uni, PersistentList([eng[0]])))
+                    units.append(self.add_unit(readings[0].split(" "), uni, [eng[0]]))
         
         for unit in units :
             if len(unit["spinyin"]) == 1 and unit["spinyin"][0] == u'' :
@@ -1206,78 +1164,96 @@ class MICA(object):
 
     def get_cjk_handle(self) :
         cjk = CharacterLookup('C')
-        db = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
-        d = CEDICT(dbConnectInst = db)
-        return (cjk, db, d)
+        cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
+        d = CEDICT(dbConnectInst = cjkdb)
+        return (cjk, cjkdb, d)
 
-    def parse_page(self, uuid, name, story, storydb, groups, page, temp_units = False) :
-        (cjk, db, d) = self.get_cjk_handle()
+    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False) :
+        (cjk, cjkdb, d) = self.get_cjk_handle()
 
         if temp_units :
-            story["temp_units"] = PersistentList()
+            story["temp_units"] = []
         else :
             if "pages" not in story :
-                story['pages'] = PersistentMapping()
-            story["pages"][page] = PersistentMapping()
-            story["pages"][page]["units"] = PersistentList()
+                story['pages'] = {}
+            story["pages"][page] = {}
+            story["pages"][page]["units"] = []
 
         for idx in range(0, len(groups)) :
             group = groups[idx]
             try :
-                uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "UTF-8")
+                uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
                 mwarn("Should we toss this group? " + str(group) + ": " + str(e))
                 raise e
-            self.recursive_translate(uuid, name, story, cjk, db, d, uni, storydb, temp_units, page)
+            self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page)
 
-            self.transmutex.acquire()
-            try :
-                storydb["stories"][name]["translating_current"] = idx 
-                self.allcommit(storydb)
-            except Exception, e :
-                mdebug("Failure to sync: " + str(e))
-            finally :
-                self.transmutex.release()
+            if idx % 10 == 0 :
+                self.transmutex.acquire()
+                try :
+                    tmpstory = self.db[self.story(req, name)]
+                    tmpstory["translating_current"] = idx 
+                    tmpstory["translating_page"] = int(page)
+                    tmpstory["translating_total"] = len(groups)
+                    self.db[self.story(req, name)] = tmpstory
+                except couchdbkit.exceptions.ResourceConflict, e :
+                    mdebug("Failure to sync translating_current. No big deal: " + str(e))
+                finally :
+                    self.transmutex.release()
 
-    def parse(self, uuid, name, story, username, storydb, page = False) :
-        mdebug("Ready to translate: " + name)
+    def parse(self, req, uuid, name, story, username, page = False) :
+        mdebug("Ready to translate: " + name + ". Counting pages...")
     
-        page_inputs = 1 if ("filetype" not in story or story["filetype"] == "txt") else len(story["original"])
-        
+        page_inputs = 0
+        if "filetype" not in story or story["filetype"] == "txt" :
+            page_inputs = 1
+        else :
+            for result in self.db.view('stories/original', startkey=[req.session['username'], name], endkey=[req.session['username'], name, {}]) :
+                page_inputs = result['value']
+       
+        assert(page_inputs != 0) 
+             
         if page :
             page_start = int(page)
             mdebug("Translating single page starting at " + str(page))
             page_inputs = page_start + 1 
         else :  
             page_start = 0
-            if "pages" in story :
-                page_start += len(story["pages"])
+            nb_pages = self.nb_pages(req, name)
+            if nb_pages :
+                page_start += nb_pages
                 
             if page_start != 0 :
                 mdebug("Some pages already translated. Restarting @ offset page " + str(page_start))
         
         self.transmutex.acquire()
         try :
-            storydb["stories"][name]["translating"] = True 
+            tmpstory = self.db[self.story(req, name)]
+            tmpstory["translating"] = True 
             if not page :
-                storydb["stories"][name]["translated"] = False
-                storydb["stories"][name]["translating_pages"] = page_inputs
-            storydb["stories"][name]["translating_current"] = 0
-            storydb["stories"][name]["translating_total"] = 100
-            self.allcommit(storydb)
+                tmpstory["translated"] = False
+                tmpstory["translating_pages"] = page_inputs
+            tmpstory["translating_current"] = 0
+            tmpstory["translating_total"] = 100
+            self.db[self.story(req, name)] = tmpstory
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
 
         for iidx in range(page_start, page_inputs) :
-            page_input = (story["original"] if ("filetype" not in story or story["filetype"] == "txt") else story["original"][str(iidx)]["contents"]).encode("utf-8")
-            parsed = mica_ictclas.trans(page_input)
+            if "filetype" not in story or story["filetype"] == "txt" :
+                page_input = self.db[self.story(req, name) + ":original"]["value"]
+            else :
+                page_input = eval(self.db.fetch_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
+                
+            mdebug("Parsing...")
+            parsed = mica_ictclas.trans(page_input.encode("utf-8"))
             mdebug("Parsed result: " + parsed + " for page: " + str(iidx))
             lines = parsed.split("\n")
-            groups = PersistentList()
+            groups = []
             for line in lines :
-                temp_groups = PersistentList()
+                temp_groups = []
                 save_char_group = "" 
                 for char_group in line.split(" ") :
                     if char_group not in punctuation_without_newlines :
@@ -1296,18 +1272,18 @@ class MICA(object):
 
             self.transmutex.acquire()
             try :
-                storydb["stories"][name]["translating_total"] = len(groups)
-                storydb["stories"][name]["translating_current"] = 1
-                storydb["stories"][name]["translating_page"] = iidx 
+                tmpstory = self.db[self.story(req, name)]
+                tmpstory["translating_total"] = len(groups)
+                tmpstory["translating_current"] = 1
+                tmpstory["translating_page"] = iidx 
+                self.db[self.story(req, name)] = tmpstory
             except Exception, e :
                 mdebug("Failure to sync: " + str(e))
             finally :
                 self.transmutex.release()
 
             try :
-                self.parse_page(uuid, name, story, storydb, groups, str(iidx))
-                if "pages" not in storydb["stories"][name] :
-                    storydb["stories"][name]['pages'] = PersistentMapping()
+                self.parse_page(req, uuid, name, story, groups, str(iidx))
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -1317,21 +1293,29 @@ class MICA(object):
                         else :
                             offline += 1 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
-                storydb["stories"][name]["pages"][str(iidx)] = story["pages"][str(iidx)]
-                self.allcommit(storydb)
+                page_key = self.story(req, name) + ":pages:" + str(iidx)
+                if self.db.doc_exist(page_key) :
+                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting.")
+                    del self.db[page_key]
+                self.db[page_key] = story["pages"][str(iidx)]
+                del story["pages"][str(iidx)]
             except Exception, e :
                 for line in traceback.format_exc().splitlines() :
                     merr(line)
-                storydb["stories"][name]["translating"] = False 
-                self.allcommit(storydb)
+                tmpstory = self.db[self.story(req, name)]
+                tmpstory["translating"] = False 
+                self.db[self.story(req, name)] = tmpstory
+                self.db.compact("stories")
                 raise e
 
         self.transmutex.acquire()
         try :
-            storydb["stories"][name] = story
-            storydb["stories"][name]["translating"] = False 
-            storydb["stories"][name]["translated"] = True 
-            self.allcommit(storydb)
+            tmpstory = self.db[self.story(req, name)]
+            # What is this for?
+            #storydb["stories"][name] = story
+            tmpstory["translating"] = False 
+            tmpstory["translated"] = True 
+            self.db[self.story(req, name)] = tmpstory
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
@@ -1339,15 +1323,18 @@ class MICA(object):
 
         self.transmutex.acquire()
         try :
-            if "translated" not in storydb["stories"][name] or not storydb["stories"][name]["translated"] :
-                if "pages" in storydb["stories"][name] :
-                    del storydb["stories"][name]["pages"]
-                    self.allcommit(storydb)
+            tmpstory = self.db[self.story(req, name)]
+            if "translated" not in tmpstory or not tmpstory["translated"] :
+                for result in self.db.view('stories/allpages', startkey=[req.session['username'], name], endkey=[req.session['username'], name, {}], stale='update_after') :
+                    tmppage = result["key"][2]
+                    del self.db[self.story(req, story['name']) + ":pages:" + str(tmppage)]
+                    
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
 
+        self.db.compact("stories")
         minfo("Translation complete.")
 
     def get_parts(self, unit) :
@@ -1387,7 +1374,7 @@ class MICA(object):
 
         return percent
 
-    def polyphomes(self, story, uuid, unit, nb_unit, trans_id, db, page) :
+    def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
         out = ""
         out += "\nThis character (" + " ".join(unit["source"]) + ") is polyphonic: (has more than one pronunciation):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
@@ -1395,9 +1382,13 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = None
-        if source in db["tonechanges"] :
-            changes = db["tonechanges"][source]
+        changes = False
+        try :
+            changes = self.db[self.tones(req, source)]
+        except couchdbkit.exceptions.ResourceNotFound, e :
+            pass
+        
+        if changes :
             total_changes = float(changes["total"])
 
         for x in range(0, len(unit["multiple_spinyin"])) :
@@ -1419,17 +1410,17 @@ class MICA(object):
 
         return out
 
-    def history(self, story, uuid, db, page) :
+    def history(self, req, story, uuid, page) :
         out = ""
-
-        
         history = []
         found = {}
         tid = 0
         online = 0
         offline = 0
+        page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
+        units = page_dict["units"]
 
-        for unit in story["pages"][str(page)]["units"] :
+        for unit in units :
             char = "".join(unit["source"])
             if char not in found :
                 if "punctuation" not in unit or not unit["punctuation"] :
@@ -1437,9 +1428,15 @@ class MICA(object):
                         online += 1
                     else :
                         offline += 1
-            if char not in db["tonechanges"] :
+                        
+            changes = False
+            try :
+                changes = self.db[self.tones(req, char)]
+            except couchdbkit.exceptions.ResourceNotFound, e :
+                pass
+            
+            if not changes :
                 continue
-            changes = db["tonechanges"][char]
             if unit["hash"] not in changes["record"] :
                 continue
             record = changes["record"][unit["hash"]]
@@ -1488,46 +1485,58 @@ class MICA(object):
 
         return out
 
-    def edits(self, req, story, uuid, db, page) :
+    def edits(self, req, story, uuid, page) :
         out = ""
 
         history = []
         found = {}
         tid = 0
+        page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
+        units = page_dict["units"]
 
-        for unit in story["pages"][str(page)]["units"] :
+        for unit in units :
             char = "".join(unit["source"])
             if char in punctuation_without_letters or len(char.strip()) == 0:
                 continue
             if char in found :
                 continue
 
-            if char in db["splits"] :
-                changes = db["splits"][char]
+            changes = False
+            try :
+                changes = self.db[self.splits(req, char)]
+            except couchdbkit.exceptions.ResourceNotFound, e :
+                pass
+            
+            if changes :
                 if unit["hash"] not in changes["record"] :
                     continue
                 record = changes["record"][unit["hash"]]
                 history.append([char, str(record["total_splits"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
-            elif char in db["mergegroups"] :
-                changes = db["mergegroups"][char]
-                if "hash" not in unit :
-                    continue
-                if unit["hash"] not in changes["record"] :
-                    continue
-                record = changes["record"][unit["hash"]]
-                memberlist = "<table class='table'>"
-                nb_singles = 0
-                for key, member in record["members"].iteritems() :
-                    if len(key) == 1 :
-                        nb_singles += 1
+            else: 
+                try :
+                    changes = self.db[self.merge(req, char)]
+                except couchdbkit.exceptions.ResourceNotFound, e :
+                    pass
+                
+                if changes : 
+                    if "hash" not in unit :
                         continue
-                    memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
-                memberlist += "</table>\n"
-                if nb_singles == len(record["members"]) :
+                    if unit["hash"] not in changes["record"] :
+                        continue
+                    record = changes["record"][unit["hash"]]
+                    memberlist = "<table class='table'>"
+                    nb_singles = 0
+                    for key, member in record["members"].iteritems() :
+                        if len(key) == 1 :
+                            nb_singles += 1
+                            continue
+                        memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
+                    memberlist += "</table>\n"
+                    if nb_singles == len(record["members"]) :
+                        continue
+                    history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
+                else :
                     continue
-                history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
-            else :
-                continue
 
             if char not in found :
                 found[char] = True
@@ -1588,7 +1597,7 @@ class MICA(object):
 
         return out
 
-    def view(self, uuid, name, story, action, db, start_page, view_mode) :
+    def view(self, req, uuid, name, story, action, start_page, view_mode) :
         if not story["translated"] :
             return "Untranslated story! Ahhhh!"
 
@@ -1641,13 +1650,21 @@ class MICA(object):
         output += "</div><!-- col-lg-2 stats section -->\n"
         output += "</div><!-- col-lg-12 for everything section -->\n"
         output += "</div><!-- row for everything -->\n"
-
-        output += "<script>install_pages('" + action + "', " + str(len(story["pages"])) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "');</script>"
+        output += "<script>install_pages('" + action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "');</script>"
         
         return output
 
-    def view_page(self, uuid, name, story, action, output, db, page, disk = False) :
-        units = story["pages"][page]["units"]
+    def nb_pages(self, req, name):
+        nb_pages = 0
+        for result in self.db.view('stories/pages', startkey=[req.session['username'], name], endkey=[req.session['username'], name, {}]) :
+            nb_pages = result['value']
+        return nb_pages
+
+    def view_page(self, req, uuid, name, story, action, output, page, disk = False) :
+        mdebug("View Page " + str(page) + " story " + name + " start...")
+        page_dict = self.db[self.story(req, name) + ":pages:" + str(page)]
+        mdebug("View Page " + str(page) + " story " + name + " fetched...")
+        units = page_dict["units"]
         chars_per_line = 60
         words = len(units)
         lines = [] 
@@ -1694,6 +1711,8 @@ class MICA(object):
         if len(line) :
             lines.append(line)
 
+        mdebug("View Page " + str(page) + " story " + name + " grouped...")
+        
         spacer = "<td style='margin-right: 20px'></td>"
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
         merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
@@ -1724,7 +1743,13 @@ class MICA(object):
                     line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
                     if py and action == "edit" :
-                        if source in db["mergegroups"] and (unit["hash"] in db["mergegroups"][source]["record"]) :
+                        sourcegroup = False
+                        try :
+                            sourcegroup = self.db[self.merge(req, source)]
+                        except couchdbkit.exceptions.ResourceNotFound, e :
+                            pass
+                        
+                        if sourcegroup and unit["hash"] in sourcegroup["record"] :
                             curr_merge = True
 
                             if word_idx < (len(line) - 1) :
@@ -1732,11 +1757,17 @@ class MICA(object):
                                 if endword[1] :
                                     endunit = endword[3]
                                     endchars = "".join(endunit["source"])
-                                    if endchars not in db["mergegroups"] or (endunit["hash"] not in db["mergegroups"][endchars]["record"]) :
+                                    endgroup = False
+                                    try :
+                                        endgroup = self.db[self.merge(req, endchars)]
+                                    except couchdbkit.exceptions.ResourceNotFound, e :
+                                        pass
+                                    
+                                    if not endgroup or (endunit["hash"] not in endgroup["record"]) :
                                         merge_end = True
                                     else :
-                                        end_members = db["mergegroups"][endchars]["record"][endunit["hash"]]["members"]
-                                        curr_members = db["mergegroups"][source]["record"][unit["hash"]]["members"]
+                                        end_members = endgroup["record"][endunit["hash"]]["members"]
+                                        curr_members = sourcegroup["record"][unit["hash"]]["members"]
                                         source_found = False
                                         end_found = False
                                         for mchars, member in end_members.iteritems() :
@@ -1770,10 +1801,16 @@ class MICA(object):
                             line_out += "'"
                             use_batch = "merge" 
                         else :
-                            if not curr_merge and source in db["splits"] and unit["hash"] in db["splits"][source]["record"] :
-                                batch += 1
-                                use_batch = "split" 
-                                line_out += "class='splittop splitbottom splitleft splitright'"
+                            if not curr_merge :
+                                sourcesplits = False
+                                try :
+                                    sourcesplits = self.db[self.splits(req, source)]
+                                except couchdbkit.exceptions.ResourceNotFound, e :
+                                    pass
+                                if sourcesplits and unit["hash"] in sourcesplits["record"] :
+                                    batch += 1
+                                    use_batch = "split" 
+                                    line_out += "class='splittop splitbottom splitleft splitright'"
 
                         prev_merge = curr_merge if not skip_prev_merge else False
 
@@ -1827,8 +1864,13 @@ class MICA(object):
                             if py and len(unit["multiple_spinyin"]) :
                                 color = "green"
 
-                            if source in db["tonechanges"] :
-                                changes = db["tonechanges"][source]
+                            changes = False
+                            try :
+                                changes = self.db[self.tones(req, source)]
+                            except couchdbkit.exceptions.ResourceNotFound, e :
+                                pass
+                            
+                            if changes :
                                 if unit["hash"] in changes["record"] :
                                     color = "black"
                                     add_count = " (" + str(changes["total"]) + ")"
@@ -1868,7 +1910,7 @@ class MICA(object):
 
                     if action == "home" and py and len(unit["multiple_spinyin"]) :
                         line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
-                        line_out += self.polyphomes(story, uuid, unit, nb_unit, trans_id, db, page)
+                        line_out += self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
                         line_out += "</div>"
                         line_out += "<script>"
                         line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
@@ -1896,7 +1938,12 @@ class MICA(object):
                     nb_unit = str(word[4])
                     py = word[1]
                     source = word[5]
-                    memorized = True if (py and unit["hash"] in db["memorized"]) else False
+                    memorized = False
+                    
+                    if py :
+                        if self.db.doc_exist(self.memorized(req, unit["hash"])) :
+                            memorized = True
+                            
                     tid = unit["hash"] if py else str(word[2])
                     line_out += "<td style='vertical-align: top; text-align: center'>"
                     line_out += "<table><tr>"
@@ -1937,6 +1984,7 @@ class MICA(object):
             else :
                 output += disk_out
 
+        mdebug("View Page " + str(page) + " story " + name + " complete.")
         return output
 
     def translate_and_check_array(self, requests, lang) :
@@ -1984,15 +2032,17 @@ class MICA(object):
         self.mutex.release()
         return result
     
-    def makestorylist(self, db, req):
+    def makestorylist(self, req):
         untrans_count = 0
         reading = self.template("reading")
         noreview = self.template("noreview")
         untrans = self.template("untrans")
         
         items = []
-        for name, story in db["stories"].iteritems() :
-            items.append((name, story))
+        for result in self.db.view("stories/all", startkey=[req.session['username']], endkey=[req.session['username'], {}]) :
+            tmp_story = result["value"]
+            tmp_storyname = tmp_story["name"]
+            items.append((tmp_storyname, tmp_story))
 
         items.sort(key = itemhelp, reverse = True)
 
@@ -2005,7 +2055,7 @@ class MICA(object):
 
             if not story["translated"] : 
                 untrans_count += 1
-                untrans += sidestart(name, username, story, reviewed)
+                untrans += self.sidestart(req, name, username, story, reviewed)
                 untrans += "\n<td style='font-size: x-small' colspan='3'>"
                 untrans += "<div id='transbutton" + story['uuid'] + "'>"
                 untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
@@ -2017,7 +2067,7 @@ class MICA(object):
                 untrans += "</td>"
                 untrans += "</tr>"
             else :
-                notsure = sidestart(name, username, story, reviewed)
+                notsure = self.sidestart(req, name, username, story, reviewed)
                 notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
                 notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
                 notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
@@ -2034,14 +2084,15 @@ class MICA(object):
                    
         return [untrans_count, reading, noreview, untrans] 
     
-    def memocount(self, db, req, story, page):
+    def memocount(self, req, story, page):
         added = {}
         unique = {}
         progress = []
         total_memorized = 0
         total_unique = 0
         trans_id = 0
-        units = story["pages"][str(page)]["units"]
+        page_dict = self.db[self.story(req, story["name"]) + ":pages:" + str(page)]
+        units = page_dict["units"]
 
         for x in range(0, len(units)) :
             unit = units[x]
@@ -2053,7 +2104,7 @@ class MICA(object):
                 trans_id += 1
                 continue
             py, english = ret
-            if unit["hash"] in db["memorized"] :
+            if self.db.doc_exist(self.memorized(req, unit["hash"])) :
                 if unit["hash"] not in added :
                     added[unit["hash"]] = unit
                     progress.append([py, english, unit, x, trans_id, page])
@@ -2069,32 +2120,63 @@ class MICA(object):
             story["total_memorized"] = total_memorized
         if "total_unique" not in story or story["total_unique"] != total_unique :
             story["total_unique"] = total_unique 
-        self.allcommit(db)
         
         return [total_memorized, total_unique, unique, progress]
 
-    def operation(self, db, req, story, edit, offset):
+    def add_record(self, req, unit, mindex, which, key) :
+        char = "".join(unit["source"])
+        hcode = self.get_polyphome_hash(mindex, unit["source"])
+
+        changes = False
+        try :
+            changes = self.db[which(req, char)]
+        except couchdbkit.exceptions.ResourceNotFound, e :
+            changes = {} 
+            changes["record"] = {}
+        
+        changes["source"] = unit["source"]
+
+        if hcode not in changes["record"] :
+            hcode_contents = {"total_" + key : 0}
+        else :
+            hcode_contents = changes["record"][hcode]
+
+        hcode_contents["total_" + key] += 1
+        hcode_contents["spinyin"] = unit["multiple_spinyin"][mindex] if mindex != -1 else unit["spinyin"]
+        hcode_contents["english"] = unit["multiple_english"][mindex] if mindex != -1 else unit["english"]
+
+        changes["record"][hcode] = hcode_contents
+
+        if "total" not in changes :
+            changes["total"] = 0
+
+        changes["total"] += 1
+
+        self.db[which(req, char)] = changes
+                
+    def operation(self, req, story, edit, offset):
         operation = edit["operation"]
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
             mindex = int(edit["index"])
             mhash = edit["tid"]
             page = edit["pagenum"]
-            units = db["stories"][name]["pages"][page]["units"]
-            before = units[:nb_unit] if (nb_unit > 0) else PersistentList()
-            after = units[nb_unit + 1:] if (nb_unit != (len(units) - 1)) else PersistentList()
+            page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            units = page_dict["units"]
+            before = units[:nb_unit] if (nb_unit > 0) else []
+            after = units[nb_unit + 1:] if (nb_unit != (len(units) - 1)) else []
             curr = units[nb_unit]
-            groups = PersistentList()
+            groups = []
 
             for char in curr["source"] :
-                groups.append(char.encode("UTF-8"))
+                groups.append(char.encode("utf-8"))
 
-            self.parse_page(uuid, name, story, db, groups, page, temp_units = True)
-            db["stories"][name]["pages"][page]["units"] = before + story["temp_units"] + after
+            self.parse_page(req, story['uuid'], story['name'], story, groups, page, temp_units = True)
+            page_dict["units"] = before + story["temp_units"] + after
+            self.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
             offset += (len(story["temp_units"]) - len(curr))
             del story["temp_units"]
-            add_record(db, curr, mindex, "splits", "splits")
-            self.allcommit(db)
+            self.add_record(req, curr, mindex, self.splits, "splits")
 
         elif operation == "merge" :
             nb_units = int(edit["units"])
@@ -2105,46 +2187,48 @@ class MICA(object):
             mindex_stop = int(edit["index" + str(nb_units - 1)])
             nb_unit_stop = int(edit["nbunit" + str(nb_units - 1)]) + offset
             mhash_stop = edit["tid" + str(nb_units - 1)]
-            units = story["pages"][str(page)]["units"]
-            before = units[:nb_unit_start] if (nb_unit_start > 0) else PersistentList() 
-            after = units[nb_unit_stop + 1:] if (nb_unit_stop != (len(units) - 1)) else PersistentList() 
+            page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            units = page_dict["units"]
+            before = units[:nb_unit_start] if (nb_unit_start > 0) else [] 
+            after = units[nb_unit_stop + 1:] if (nb_unit_stop != (len(units) - 1)) else [] 
             curr = units[nb_unit_start:(nb_unit_stop + 1)]
             group = ""
 
             for chargroup in curr :
                 for char in chargroup["source"] :
-                    group += char.encode("UTF-8")
+                    group += char.encode("utf-8")
 
-            self.parse_page(story["uuid"], story["name"], story, db, PersistentList([group]), page, temp_units = True)
+            self.parse_page(req, story["uuid"], story["name"], story, [group], page, temp_units = True)
 
             if len(story["temp_units"]) == 1 :
                 merged = story["temp_units"][0]
                 merged_chars = "".join(merged["source"])
-                story["pages"][str(page)]["units"] = before + PersistentList([merged]) + after
+                page_dict["units"] = before + [merged] + after
+                self.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
 
                 for unit in curr :
                     char = "".join(unit["source"])
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    if char in db["mergegroups"] :
-                        changes = db["mergegroups"][char]
-                    else :
-                        changes = PersistentMapping() 
-                        changes["record"] = PersistentMapping()
+                    try :
+                        changes = self.db[self.merge(req, char)]
+                    except couchdbkit.exceptions.ResourceNotFound, e :
+                        changes = {} 
+                        changes["record"] = {}
                         changes["source"] = unit["source"]
 
                     if hcode not in changes["record"] :
-                        hcode_contents = PersistentMapping()
+                        hcode_contents = {}
                         hcode_contents["spinyin"] = unit["multiple_spinyin"][mindex] if mindex != -1 else unit["spinyin"]
                         hcode_contents["english"] = unit["multiple_english"][mindex] if mindex != -1 else unit["english"]
-                        hcode_contents["members"] = PersistentMapping()
+                        hcode_contents["members"] = {}
                     else :
                         hcode_contents = changes["record"][hcode]
     
                     if merged_chars not in hcode_contents["members"] :
                         merged_pinyin = merged["multiple_spinyin"][merged["multiple_correct"]] if merged["multiple_correct"] != -1 else merged["spinyin"]
-                        hcode_contents["members"][merged_chars] = PersistentMapping({ "total_merges" : 0, "pinyin" : " ".join(merged_pinyin)})
+                        hcode_contents["members"][merged_chars] = { "total_merges" : 0, "pinyin" : " ".join(merged_pinyin)}
 
                     hcode_contents["members"][merged_chars]["total_merges"] += 1
 
@@ -2155,15 +2239,106 @@ class MICA(object):
 
                     changes["total"] += 1
 
-                    db["mergegroups"][char] = changes
+                    self.db[self.merge(req, char)] = changes
 
                 offset += (len(story["temp_units"]) - len(curr))
-            del story["temp_units"]
-            self.allcommit(db)
+            if "temp_units" in story :
+                del story["temp_units"]
             
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
+
+    def add_story_from_source(self, req, filename, source, filetype) :
+        if self.db.doc_exist(self.story(req, filename)) :
+            return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
+        mdebug("Received new story name: " + filename)
+        
+        if filetype == "txt" :
+            mdebug("Source: " + source)
+
+        new_uuid = str(uuid4.uuid4())
+
+        story = {
+            'uuid' : new_uuid,
+            'translated' : False,
+            'name' : filename,
+            'filetype' : filetype,
+        }
+        
+        if filetype == "pdf" :
+            new_source = {}
+            fp = StringIO(source)
+            pagenos = set()
+
+            pagecount = 0
+
+            rsrcmgr = PDFResourceManager()
+            device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+            interpreter = PDFPageInterpreter(rsrcmgr, device)
+
+            for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
+                interpreter.process_page(page)
+                layout = device.get_result()
+
+                data2 = []
+                images = []
+                for obj in layout :
+                    sub_data, sub_images = parse_lt_objs(obj, pagecount)
+                    data2 += sub_data
+                    images += sub_images
+
+                new_page = filter_lines(data2)
+
+                data = "\n".join(new_page)
+                mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
+                de_data = data.decode("utf-8") if isinstance(data, str) else data
+                wouldbe = self.story(req, filename) + ":original:" + str(pagecount)
+                mdebug("Would be add: " + wouldbe)
+                self.db[wouldbe] =  { '_attachments' :
+                                          { 'attach' :
+                                            { 'content_type' : 'text/plain', 
+                                              'data' : str({ 
+                                                            "images" : images, 
+                                                            "contents" : de_data 
+                                                            })
+                                             }
+                                          }
+                                    }
+
+                pagecount += 1
+
+            device.close()
+            fp.close()
+        elif filetype == "txt" :
+            self.db[self.story(req, filename) + ":original"] = { "value" : source.decode("utf-8") }
+        
+        self.db[self.story(req, filename)] = story
+        self.db[self.index(req, story["uuid"])] = { "value" : filename }
+
+        if "current_story" in req.session :
+            del req.session["current_story"]
+            req.session.save()
+        if "current_page" in req.session :
+            del req.session["current_page"]
+            req.session.save()
+
+        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
+        self.db.compact("stories")
+        return self.bootstrap(req, uc)
+        
+        
+    def flush_pages(self, req, name):
+        for result in self.db.view('stories/allpages', startkey=[req.session['username'], name], endkey=[req.session['username'], name, {}], stale='update_after') :
+            tmppage = result["key"][2]
+            mdebug("Deleting page " + str(tmppage) + " from story " + name)
+            del self.db[self.story(req, name) + ":pages:" + str(tmppage)]
+            
+        if self.db.doc_exist(self.story(req, name) + ":final") :
+            mdebug("Deleting final version from story " + name)
+            del self.db[self.story(req, name) + ":final"]
+        self.db.compact("stories")
+
     def common(self, req) :
         try :
             if req.http.params.get("connect") :
@@ -2171,11 +2346,16 @@ class MICA(object):
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
 
-                mhash = hashlib.md5(password).hexdigest()
+                auth = True
+                try :
+                    user = self.db[self.acct(username)]
+                except couchdbkit.exceptions.ResourceNotFound, e :
+                    auth = False
 
-                acctdb, acctconn = self.acctopen()
+                if auth and user["password"] != hashlib.md5(password).hexdigest() :
+                    auth = False
 
-                if username not in acctdb["accounts"] or acctdb["accounts"][username]["password"] != mhash :
+                if not auth :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid credentials. Please try again.</h4></div>")
 
                 req.action = "home"
@@ -2190,23 +2370,6 @@ class MICA(object):
 
                 req.session["username"] = username
 
-                db, unused = self.dbcheck(req)
-
-                if "stories" not in db :
-                    db["stories"] = PersistentMapping()
-                if "story_index" not in db :
-                    db["story_index"] = PersistentMapping()
-                if "memorized" not in db :
-                    db["memorized"] = PersistentMapping()
-                if "tonechanges" not in db :
-                    db["tonechanges"] = PersistentMapping()
-                if "splits" not in db :
-                    db["splits"] = PersistentMapping()
-                if "mergegroups" not in db :
-                    db["mergegroups"] = PersistentMapping()
-                if "tags" not in db :
-                    db["tags"] = PersistentMapping()
-
                 if "current_story" in req.session :
                     del req.session["current_story"]
                 if "current_page" in req.session :
@@ -2214,10 +2377,7 @@ class MICA(object):
 
                 req.session["last_refresh"] = str(timest())
                 req.session.save()
-
-                self.allcommit(db)
-                self.acctclose(acctconn)
-
+                
             if 'connected' not in req.session or req.session['connected'] != True :
                 msg = """
                         <h4>You need to connect, first.</h4>
@@ -2229,96 +2389,33 @@ class MICA(object):
                       """
                 return self.bootstrap(req, self.heromsg + msg)
                 
-            db, username = self.dbcheck(req)
-            req.db = db
+            username = req.session['username']
 
             if username not in self.first_request :
-               self.first_request[username] = True 
+                self.first_request[username] = True 
 
-               if "stories" in db :
-                   for name, story in db["stories"].iteritems() :
-                       if "translating" in story and story["translating"] :
-                           mdebug("Killing stale translation session: " + name)
-                           db["stories"][name]["translating"] = False
-                           self.allcommit(db)
-
-            def add_story_from_source(req, filename, source, db, filetype) :
-                if filename in db["stories"] :
-                    return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
-                mdebug("Received new story name: " + filename)
-                if filetype == "txt" :
-                    mdebug("Source: " + source)
-
-                new_uuid = str(uuid4.uuid4())
-
-                db["stories"][filename] = PersistentMapping()
-                db["stories"][filename]['uuid'] = new_uuid
-                db["stories"][filename]['translated'] = False
-                db["stories"][filename]['name'] = filename
-                db["stories"][filename]['filetype'] = filetype
-                
-                if filetype == "pdf" :
-                    new_source = PersistentMapping()
-                    fp = StringIO(source)
-                    pagenos = set()
-
-                    pagecount = 0
-
-                    rsrcmgr = PDFResourceManager()
-                    device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
-                    interpreter = PDFPageInterpreter(rsrcmgr, device)
-
-                    for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
-                        interpreter.process_page(page)
-                        layout = device.get_result()
-
-                        data2 = PersistentList()
-                        images = PersistentList()
-                        for obj in layout :
-                            sub_data, sub_images = parse_lt_objs(obj, pagecount)
-                            data2 += sub_data
-                            images += sub_images
-
-                        new_page = filter_lines(data2)
-
-                        data = "\n".join(new_page)
-                        mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
-                        de_data = data.decode("utf-8") if isinstance(data, str) else data
-                        new_source[str(pagecount)] = PersistentMapping()
-                        new_source[str(pagecount)]["contents"] = de_data
-                        new_source[str(pagecount)]["images"] = images
-
-                        pagecount += 1
-
-                    device.close()
-                    fp.close()
-                    db["stories"][filename]['original'] = new_source
-                elif filetype == "txt" :
-                    db["stories"][filename]['original'] = source.decode("utf-8")
-                
-                db["story_index"][new_uuid] = filename
-                self.allcommit(db)
-
-                if "current_story" in req.session :
-                    del req.session["current_story"]
-                    req.session.save()
-                if "current_page" in req.session :
-                    del req.session["current_page"]
-                    req.session.save()
-
-                uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
-                return self.bootstrap(req, uc)
-
+                for result in self.db.view("stories/translating", startkey=[req.session['username']], endkey=[req.session['username'], {}], stale='update_after') :
+                    tmp_storyname = result["key"][1]
+                    tmp_story = self.db[self.story(req, tmp_storyname)]
+                    mdebug("Killing stale translation session: " + tmp_storyname)
+                    tmp_story["translating"] = False
+                    try :
+                        self.db[self.story(req, tmp_storyname)] = tmp_story
+                    except couchdbkit.exceptions.ResourceConflict, e :
+                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+                        
+                    self.flush_pages(req, tmp_storyname)
+                    
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
                 source = fh.file.read()
-                return add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, db, filetype)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype)
 
             if req.http.params.get("uploadtext") :
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                return add_story_from_source(req, filename, source, db, "txt")
+                return self.add_story_from_source(req, filename, source, "txt")
 
             start_page = "0"
             view_mode = "text"
@@ -2328,37 +2425,54 @@ class MICA(object):
 
             if req.http.params.get("uuid") :
                 uuid = req.http.params.get("uuid") 
-                
-                if uuid in db["story_index"] :
-                    name = db["story_index"][uuid]
+                name_found = False 
+                try :
+                    name = self.db[self.index(req, uuid)]["value"]
+                    name_found = True
+                except couchdbkit.exceptions.ResourceNotFound, e :
+                    pass
                     
                 if not name :
                     if req.http.params.get("name") :
                         name = req.http.params.get("name")
                     
-                if name and name in db["stories"] :
-                    story = db["stories"][name]
+                if name and name_found :
+                    story = self.db[self.story(req, name)]
 
             if req.http.params.get("delete") :
-                if name and name not in db["stories"] :
+                story_found = False if not name else self.db.doc_exist(self.story(req, name))
+                if name and not story_found :
                     mdebug(name + " does not exist. =(")
                 else :
-                    if name and name in db["stories"] :
-                        del db["stories"][name]
+                    if name :
+                        tmp_story = self.db[self.story(req, name)]
+                        if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
+                            mdebug("Deleting txt original contents.")
+                            del self.db[self.story(req, name) + ":original"]
+                        else :
+                            for result in self.db.view('stories/alloriginal', startkey=[req.session['username'], name], endkey=[req.session['username'], name, {}], stale='update_after') :
+                                tmppage = result["key"][2]
+                                mdebug("Deleting original " + str(tmppage) + " from story " + name)
+                                del self.db[self.story(req, name) + ":original:" + str(tmppage)]
+                        
+                    if name and story_found :
+                        self.db.delete_doc(self.story(req, name))
                     
-                    if uuid in db["story_index"] :
-                        del db["story_index"][uuid]
-                    self.allcommit(db)
+                    if self.db.doc_exist(self.index(req, uuid)) :
+                        self.db.delete_doc(self.index(req, uuid))
+                
+                        
                 if "current_story" in req.session and req.session["current_story"] == uuid :
                     del req.session["current_story"]
                     if "current_page" in req.session :
                         del req.session["current_page"]
                     req.session.save()
                     uuid = False
+                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
             if uuid :
-                if uuid not in db["story_index"] :
+                if not self.db.doc_exist(self.index(req, uuid)) :
                     if "current_story" in req.session :
                         del req.session["current_story"]
                         req.session.save()
@@ -2369,7 +2483,7 @@ class MICA(object):
 
             if req.http.params.get("tstatus") :
                 out = "<div id='tstatusresult'>"
-                if uuid not in db["story_index"] :
+                if not self.db.doc_exist(self.index(req, uuid)) :
                     out += "error 25 0 0"
                 else :
                     if "translating" not in story or not story["translating"] :
@@ -2387,33 +2501,36 @@ class MICA(object):
 
             if req.http.params.get("reviewed") :
                 reviewed = True if req.http.params.get("reviewed") == "1" else False
-                db["stories"][name]["reviewed"] = reviewed 
+                tmp_story = self.db[self.story(req, name)]
+                tmp_story["reviewed"] = reviewed
                 if reviewed :
-                    db["stories"][name]["final"] = {}
+                    final = {}
                     minfo("Generating final pagesets...")
-                    for page in db["stories"][name]["pages"].keys() :
+                    
+                    for page in range(0, self.nb_pages(req, tmp_story["name"])) :
                         minfo("Page " + str(page) + "...")
-                        db["stories"][name]["final"][page] = self.view_page(uuid, name, story, req.action, "", db, page, disk = True)
-                self.allcommit(db)
+                        final[str(page)] = self.view_page(req, uuid, name, story, req.action, "", str(page), disk = True)
+                        
+                    self.db[self.story(req, name) + ":final"] = final
+                self.db[self.story(req, name)] = tmp_story 
                 return self.bootstrap(req, self.heromsg + "\n<h4>Reviewed.</h4></div>", now = True)
 
             if req.http.params.get("forget") :
-#                if "pages" not in db["stories"][name] or not len(db["stories"][name]["pages"]) :
-#                    return self.bootstrap(req, self.heromsg + "\n<h4>Invalid Forget request for story: " + name + ", uuid: " + uuid + "</h4></div>")
-                db["stories"][name]["translated"] = False
-                db["stories"][name]["reviewed"] = False
-                if "pages" in db["stories"][name] :
-                    del db["stories"][name]["pages"]
-                self.allcommit(db)
+                tmp_story = self.db[self.story(req, name)]
+                tmp_story["translated"] = False
+                tmp_story["reviewed"] = False
+                self.db[self.story(req, name)] = tmp_story 
+                self.flush_pages(req, name)
 
-                story = db["stories"][name]
-
+                story = tmp_story
+                
                 if "current_story" in req.session and req.session["current_story"] == uuid :
                     del req.session["current_story"]
                     if "current_page" in req.session :
                         del req.session["current_page"]
                     req.session.save()
                     uuid = False
+                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
@@ -2461,7 +2578,7 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, db, d) = self.get_cjk_handle()
+                    (cjk, cjkdb, d) = self.get_cjk_handle()
                     eng = self.get_first_translation(d, source.decode("utf-8"), False)
                     if eng :
                         for english in eng :
@@ -2473,43 +2590,13 @@ class MICA(object):
                 out += "</div>"
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
-            def add_record(db, unit, mindex, which, key) :
-                char = "".join(unit["source"])
-                hcode = self.get_polyphome_hash(mindex, unit["source"])
-
-                if char in db[which] :
-                    changes = db[which][char]
-                else :
-                    changes = PersistentMapping() 
-                    changes["record"] = PersistentMapping()
-
-                changes["source"] = unit["source"]
-
-                if hcode not in changes["record"] :
-                    hcode_contents = PersistentMapping({"total_" + key : 0})
-                else :
-                    hcode_contents = changes["record"][hcode]
-
-                hcode_contents["total_" + key] += 1
-                hcode_contents["spinyin"] = unit["multiple_spinyin"][mindex] if mindex != -1 else unit["spinyin"]
-                hcode_contents["english"] = unit["multiple_english"][mindex] if mindex != -1 else unit["english"]
-
-                changes["record"][hcode] = hcode_contents
-
-                if "total" not in changes :
-                    changes["total"] = 0
-
-                changes["total"] += 1
-
-                db[which][char] = changes
-                
             if req.http.params.get("translate") :
                 output = "<div id='translationstatusresult'>" + self.heromsg
                 if story["translated"] :
                     output += "Story already translated. To re-translate, please select 'Forget'."
                 else :
                     try :
-                        self.parse(uuid, name, story, username, db)
+                        self.parse(req, uuid, name, story, username)
                         output += self.heromsg + "Translation complete!"
                     except Exception, e :
                         output += "Failed to translate story: " + str(e)
@@ -2555,16 +2642,24 @@ class MICA(object):
                 mindex = int(req.http.params.get("index"))
                 trans_id = int(req.http.params.get("trans_id"))
                 page = req.http.params.get("page")
-                unit = db["stories"][name]["pages"][page]["units"][nb_unit]
+                
+                # This is also kind of silly: getting a whole page
+                # of units just to update one of them.
+                # Maybe it's not so high overhead. I dunno.
+                page_dict = self.db[self.story(req, name) + ":pages:" + str(page)]
+                unit = page_dict["units"][nb_unit]
+                
                 unit["multiple_correct"] = mindex
+                
                 self.rehash_correct_polyphome(unit) 
-                db["stories"][name]["pages"][page]["units"][nb_unit] = unit
+                
+                page_dict["units"][nb_unit] = unit
+                self.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
 
-                add_record(db, unit, mindex, "tonechanges", "selected") 
-                self.allcommit(db)
+                self.add_record(req, unit, mindex, self.tones, "selected") 
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
-                                           self.polyphomes(story, uuid, unit, nb_unit, trans_id, db, page) + \
+                                           self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page) + \
                                            "</div></div>", now = True)
 
             output = ""
@@ -2572,25 +2667,35 @@ class MICA(object):
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
-                                           self.history(story, uuid, db, page) + \
+                                           self.history(req, story, uuid, page) + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("editslist") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
-                                           self.edits(req, story, uuid, db, page) + \
+                                           self.edits(req, story, uuid, page) + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("memorized") :
                 memorized = int(req.http.params.get("memorized"))
                 nb_unit = int(req.http.params.get("nb_unit"))
                 page = req.http.params.get("page")
-                unit = db["stories"][name]["pages"][page]["units"][nb_unit]
+                
+                # FIXME This is kind of stupid - looking up the whole page
+                # just to get the hash of one unit.
+                # But, we are storing the whole unit dict inside
+                # the memorization link - maybe or maybe not we shouldn't
+                # be doing that, or we could put the whole unit's json
+                # into the original memorization request. I dunno.
+                
+                page_dict = self.db[self.story(req, name) + ":pages:" + str(page)]
+                unit = page_dict["units"][nb_unit]
+                
                 if memorized :
-                    db["memorized"][unit["hash"]] = unit
+                    self.db[self.memorized(req, unit["hash"])] = unit
                 else :
-                    del db["memorized"][unit["hash"]];
-                self.allcommit(db)
+                    del self.db[self.memorized(req, unit["hash"])]
+                    
                 return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>Memorized! " + \
                                            unit["hash"] + "</div></div>", now = True)
 
@@ -2604,7 +2709,7 @@ class MICA(object):
                     if edit["failed"] :
                         mdebug("This edit failed. Skipping.")
                         continue
-                    result = repeat(self.operation, args = [db, req, story, edit, offset], kwargs = {})
+                    result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
                     
                     if not result[0] and len(result) > 1 :
                         return self.bootstrap(req, result[1])
@@ -2620,7 +2725,7 @@ class MICA(object):
                 page = req.http.params.get("page")
                 output = ""
                         
-                result = repeat(self.memocount, args = [db, req, story, page], kwargs = {})
+                result = repeat(self.memocount, args = [req, story, page], kwargs = {})
                 
                 if not result[0] and len(result) > 1 :
                     return self.bootstrap(req, result[1])
@@ -2628,7 +2733,8 @@ class MICA(object):
                 total_memorized, total_unique, unique, progress = result[1:]
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
-                output += "Total words memorized from all stories: " + str(len(db["memorized"])) + "<br/>"
+                for result in self.db.view('memorized/allcount', startkey=[req.session['username']], endkey=[req.session['username'], {}]) :
+                    output += "Total words memorized from all stories: " + str(result['value']) + "<br/>"
                 output += "Total unique memorized from this page: " + str(total_memorized) + "<br/>"
                 output += "Total unique words from this page: " + str(len(unique)) + "<br/>"
                 output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
@@ -2668,46 +2774,59 @@ class MICA(object):
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
-                self.parse(uuid, name, story, username, db, page = page)
+                self.parse(req, uuid, name, story, username, page = page)
                 
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
                     # Reload just in case the translation changed anything
-                    name = db["story_index"][uuid]
-                    story = db["stories"][name]
-                    if req.http.params.get("page")  and not req.http.params.get("retranslate") :
+                    name = self.db[self.index(req, uuid)]["value"]
+                    story = self.db[self.story(req, name)]
+                    if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
                         req.session["current_page"] = str(page)
                         req.session.save()
                         if req.http.params.get("image") :
                             nb_image = req.http.params.get("image")
                             output = "<div><div id='pageresult'>"
-                            if "filetype" in story and story["filetype"] != "txt" and "images" in story["original"][str(page)] and int(nb_image) < len(story["original"][str(page)]["images"]) :
-                               output += "<img src='data:image/jpeg;base64," + base64.b64encode(story["original"][str(page)]["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
-                            else :
+                            image_found = False
+                            if "filetype" in story and story["filetype"] != "txt" :
+                                original = eval(self.db.fetch_attachment(self.story(req, name) + ":original:" + str(page), "attach"))
+                                if "images" in original and int(nb_image) < len(original["images"]) :
+                                    # I think couch is already base-64 encoding this, so if we can find
+                                    # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
+                                    output += "<img src='data:image/jpeg;base64," + base64.b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
+                                    image_found = True
+                            if not image_found :
                                output += "Image #" + str(nb_image) + " not available on this page"
                             output += "</div></div>"
                             return self.bootstrap(req, output, now = True)
                         else :
-                            output = self.view_page(uuid, name, story, req.action, output, db, page)
+                            output = self.view_page(req, uuid, name, story, req.action, output, page)
                                 
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
-                    output = self.view(uuid, name, story, req.action, db, start_page, view_mode)
+                    output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
                 output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
+                if story["filetype"] != "txt" :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + story["filetype"] + " file with multiple pages. Not yet implemented.</h4></div>\n")
+                
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
+                    
                     if which == "original" :
-                        return self.bootstrap(req, story["original"].encode("UTF-8").replace("\n","<br/>"))
+                        original = self.db[self.story(req, name) + ":original"]["value"]
+                        return self.bootstrap(req, original.encode("utf-8").replace("\n","<br/>"))
                     elif which == "pinyin" :
-                        return self.bootstrap(req, story["final"].encode("UTF-8").replace("\n","<br/>"))
+                        final = self.db[self.story(req, name) + ":final"]["0"]
+                        return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
+                    
             elif req.action == "storylist" :
                 storylist = self.template("storylist")
 
-                result = repeat(self.makestorylist, args = [db, req], kwargs = {})
+                result = repeat(self.makestorylist, args = [req], kwargs = {})
                 
                 if not result[0] and len(result) > 1 :
                     return self.bootstrap(req, result[1])
@@ -2740,25 +2859,24 @@ class MICA(object):
             
             elif req.action == "account" :
                 out = ""
-                pack = False
                 
                 if req.http.params.get("pack") :
-                    pack = True
+                    self.db.compact()
+                    design_docs = self.db.all_docs(startkey="_design", endkey="_design/"+u"\u9999")
+                    design_doc_names = [ d["id"][8:] for d in design_docs ]
+                    for name in design_doc_names :
+                        self.db.compact(name)
+                    out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
                     
-                db, username = self.dbcheck(req, pack)
-                
-                if pack :
-                    out += self.heromsg + "\n<h4>Database packing complete for your account.</h4></div>\n"
-                
-                req.db = db
+                user = self.db[self.acct(username)]
 
-                acctdb, acctconn = self.acctopen()
-
-                if 'admin' in acctdb["accounts"][username]["roles"] :
+                if 'admin' in user['roles'] :
                     out += "<h5>Accounts:</h5>"
                     out += "<table>"
-                    for u, acct in acctdb["accounts"].iteritems() :
-                        out += "<tr><td>" + u + "</td><td>Roles: " + ",".join(acct["roles"]) + "</td></tr>"
+                    for result in self.db.view('accounts/all') :
+                        tmp_user = result["value"]
+                        tmp_username = result["key"]
+                        out += "<tr><td>" + tmp_username + "</td><td>Roles: " + ",".join(tmp_user["roles"]) + "</td></tr>"
                     out += "</table>"
                 out += """
                     <p/>
@@ -2770,7 +2888,7 @@ class MICA(object):
                     <tr><td><button name='changepassword' type="submit" class="btn-primary" value='1'>Change Password</button></td></tr>
                     </table>
                     </form>                                   
-                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Pack ZODB file</a>
+                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
 
                 
@@ -2783,20 +2901,19 @@ class MICA(object):
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
 
-                    if newusername in acctdb["accounts"] :
+                    if self.db.doc_exist(self.acct(newusername)) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
-
-                    if 'admin' not in acctdb["accounts"][username]["roles"] and admin == 'on' :
+                    if 'admin' not in user["roles"] and admin == 'on' :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Non-admin users can't create admin accounts. What are you doing?!</h4></div>")
 
-                    roles = PersistentList(['normal'])
+                    roles = ['normal']
                     if admin == 'on' :
                         roles.append('admin')
 
-                    acctdb["accounts"][newusername] = PersistentMapping({ 'password' : hashlib.md5(newpassword).hexdigest(), 'roles' : roles })
-                    self.allcommit(acctdb)
+                    self.db[self.acct(newusername)] = { 'password' : hashlib.md5(newpassword).hexdigest(), 'roles' : roles }
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
+                    self.db.compact("accounts")
 
                 elif req.http.params.get("changepassword") :
                     oldpassword = req.http.params.get("oldpassword")
@@ -2807,18 +2924,17 @@ class MICA(object):
 
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-                    if oldhash != acctdb["accounts"][username]['password'] :
+                    if oldhash != user['password'] :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
-                    acctdb["accounts"][username]['password'] = newhash
-                    self.allcommit(acctdb)
+                    user['password'] = newhash
+                    self.db[self.acct(username)] = user
                     out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
-
-                self.acctclose(acctconn)
 
                 return self.bootstrap(req, out)
                     
             elif req.action == "disconnect" :
                 req.session['connected'] = False
+                del self.first_request[username]
                 #del req.session['cloud_name'] # delete whatever shouldn't be in the session
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
@@ -2860,18 +2976,18 @@ session_opts = {
     }
 
 class GUIDispatcher(Resource) :
-    def __init__(self, port, host) :
+    def __init__(self) :
 
         Resource.__init__(self)
         self.serve = File(cwd + relative_prefix)
-        # example of how to serve individual UTF-8 encoded files:
+        # example of how to serve individual utf-8 encoded files:
         # self.stories = File(cwd + relative_prefix + "/../stories/")
         # self.stories.contentTypes['.txt'] = 'text/html; charset=utf-8'
         self.files = File(cwd)
         self.icon = File(cwd + relative_prefix + "/favicon.ico")
         self.git = File(cwd + "/.git")
         self.git.indexNames = ["test.rpy"]
-        self.mica = MICA(options.client_id, options.client_secret)
+        self.mica = MICA(options.client_id, options.client_secret, options.couch, options.dbname)
             
         self.app = WSGIResource(reactor, reactor.threadpool, SessionMiddleware(self.mica, session_opts))
 
@@ -2909,7 +3025,7 @@ class NONSSLRedirect(object) :
         return resp(environ, start_response)
         
 class NONSSLDispatcher(Resource) :
-    def __init__(self, sslport, host) :
+    def __init__(self) :
 
         Resource.__init__(self)
             
@@ -2939,7 +3055,9 @@ parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path t
 parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
 parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
 parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050",
-help = "Port on which the slaves are running")
+                                            help = "Port on which the slaves are running")
+parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
+parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
 
 parser.set_defaults()
 options, args = parser.parse_args()
@@ -2978,8 +3096,8 @@ def main() :
         assert(len(slaves) >= 1)
 
         reactor._initThreadPool()
-        site = Site(GUIDispatcher(options.port, options.host))
-        nonsslsite = Site(NONSSLDispatcher(options.sslport, options.host))
+        site = Site(GUIDispatcher())
+        nonsslsite = Site(NONSSLDispatcher())
 
         reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
         reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cert), interface = options.host)
