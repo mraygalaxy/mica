@@ -1674,6 +1674,32 @@ class MICA(object):
         chars = 0
         batch = -1
 
+        mdebug("View Page " + str(page) + " story " + name + " building...")
+        source_queries = []
+        hash_queries = []
+        un = req.session['username']
+        for unit in units :
+            source_queries.append([un, "".join(unit["source"])])
+            if "hash" in unit :
+                hash_queries.append([un, unit["hash"]])         
+            
+        mdebug("View Page " + str(page) + " story " + name + " querying...")
+        
+        sources = {'mergegroups' : {}, 'splits' : {}, 'tonechanges' : {}, 'memorized' : {}}
+        
+        for cat in ['mergegroups', 'splits', 'tonechanges' ] :
+            for result in self.db.view(cat + "/all", keys = source_queries) :
+                sources[cat][result['key'][1]] = result['value']
+        for result in self.db.view("memorized/all", keys = hash_queries) :
+            sources['memorized'][result['key'][1]] = result['value']
+            
+        mdebug("View Page " + str(page) + " story " + name + " lines (" \
+                + str(len(sources['mergegroups'])) + " " \
+                + str(len(sources['splits'])) + " " \
+                + str(len(sources['tonechanges'])) + " " \
+                + str(len(sources['memorized'])) \
+                + ")...")
+        
         for x in range(0, len(units)) :
             if x >= 107 :
                 print "Breaking here"
@@ -1743,11 +1769,7 @@ class MICA(object):
                     line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
                     if py and action == "edit" :
-                        sourcegroup = False
-                        try :
-                            sourcegroup = self.db[self.merge(req, source)]
-                        except couchdbkit.exceptions.ResourceNotFound, e :
-                            pass
+                        sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
                         
                         if sourcegroup and unit["hash"] in sourcegroup["record"] :
                             curr_merge = True
@@ -1802,11 +1824,7 @@ class MICA(object):
                             use_batch = "merge" 
                         else :
                             if not curr_merge :
-                                sourcesplits = False
-                                try :
-                                    sourcesplits = self.db[self.splits(req, source)]
-                                except couchdbkit.exceptions.ResourceNotFound, e :
-                                    pass
+                                sourcesplits = False if source not in sources['splits'] else sources['splits'][source]
                                 if sourcesplits and unit["hash"] in sourcesplits["record"] :
                                     batch += 1
                                     use_batch = "split" 
@@ -1864,11 +1882,7 @@ class MICA(object):
                             if py and len(unit["multiple_spinyin"]) :
                                 color = "green"
 
-                            changes = False
-                            try :
-                                changes = self.db[self.tones(req, source)]
-                            except couchdbkit.exceptions.ResourceNotFound, e :
-                                pass
+                            changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
                             
                             if changes :
                                 if unit["hash"] in changes["record"] :
@@ -1941,7 +1955,7 @@ class MICA(object):
                     memorized = False
                     
                     if py :
-                        if self.db.doc_exist(self.memorized(req, unit["hash"])) :
+                        if unit["hash"] in sources['memorized'] :
                             memorized = True
                             
                     tid = unit["hash"] if py else str(word[2])
@@ -2084,6 +2098,14 @@ class MICA(object):
                    
         return [untrans_count, reading, noreview, untrans] 
     
+    # IMPROVE ALL OF THE SUMMARY FUNCTIONS LIKE THESE WITH THE NEW VIEWS
+    '''
+        for cat in ['mergegroups', 'splits', 'tonechanges' ] :
+            for result in self.db.view(cat + "/all", keys = source_queries) :
+                sources[cat][result['key'][1]] = result['value']
+        for result in self.db.view("memorized/all", keys = hash_queries) :
+            sources['memorized'][result['key'][1]] = result['value']
+    '''
     def memocount(self, req, story, page):
         added = {}
         unique = {}
