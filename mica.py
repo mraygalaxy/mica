@@ -1,43 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
-from cmd import Cmd
+
 from pwd import getpwuid
-from sys import stdout, path
-from subprocess import Popen, PIPE
+from sys import path
 from optparse import OptionParser
-from re import sub, compile
-from time import time as timest
-from os import listdir
-from os.path import isfile, join
+from time import sleep, time as timest
 from threading import Thread, Lock
-from daemon import DaemonContext
-from sys import _getframe
-from simplejson import JSONDecodeError
-from datetime import datetime
 from pwd import getpwuid
 from copy import deepcopy
-from operator import itemgetter
-from twisted.web.wsgi import WSGIResource
-from twisted.internet import reactor, ssl
-from twisted.web.static import File
-from twisted.web.resource import Resource
-from twisted.web.server import Site
-from twisted.web import proxy, server
-from twisted.python import log
-from twisted.python.logfile import DailyLogFile
-from twisted.python import log
-from webob import Request, Response, exc
-from beaker.middleware import SessionMiddleware
-from cjklib.dictionary import CEDICT
-from cjklib.characterlookup import CharacterLookup
-from cjklib.dbconnector import getDBConnector
-from time import sleep
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
-from pdfminer.pdfpage import PDFPage
 from cStringIO import StringIO
-from common import *
 
 import threading
 import traceback
@@ -49,11 +20,7 @@ import urllib2
 import copy
 import warnings
 import codecs
-import shelve
-import transaction
 import uuid as uuid4
-import cjklib
-import mica_ictclas
 import inspect
 import hashlib
 import errno
@@ -62,7 +29,35 @@ import string
 import base64
 import __builtin__
 import sys
+
+#Non-python-core
+from twisted.web.wsgi import WSGIResource
+from twisted.internet import reactor, ssl
+from twisted.web.static import File
+from twisted.web.resource import Resource
+from twisted.web.server import Site
+from twisted.web import proxy, server
+from twisted.python import log
+from twisted.python.logfile import DailyLogFile
+from twisted.python import log
+
+from webob import Request, Response, exc
+
+from beaker.middleware import SessionMiddleware
+
+from cjklib.dictionary import CEDICT
+from cjklib.characterlookup import CharacterLookup
+from cjklib.dbconnector import getDBConnector
+
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+from pdfminer.pdfpage import PDFPage
+
+import mica_ictclas
 import couchdbkit
+
+from common import *
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
@@ -538,6 +533,9 @@ class MICA(object):
         self.db.compact("accounts")
         self.db.compact("stories")
         self.db.compact("memorized")
+        self.db.compact("tonechanges") 
+        self.db.compact("mergegroups") 
+        self.db.compact("splits") 
 
         self.first_request = {}
 
@@ -1420,6 +1418,15 @@ class MICA(object):
         page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
         units = page_dict["units"]
 
+        tone_keys = {}
+        
+        source_queries = []
+        for unit in units :
+            source_queries.append([req.session['username'], "".join(unit["source"])])
+            
+        for result in self.db.view("tonechanges/all", keys = source_queries) :
+            tone_keys[result['key'][1]] = result['value']
+            
         for unit in units :
             char = "".join(unit["source"])
             if char not in found :
@@ -1429,11 +1436,7 @@ class MICA(object):
                     else :
                         offline += 1
                         
-            changes = False
-            try :
-                changes = self.db[self.tones(req, char)]
-            except couchdbkit.exceptions.ResourceNotFound, e :
-                pass
+            changes = False if char not in tone_keys else tone_keys[char]
             
             if not changes :
                 continue
@@ -1494,6 +1497,18 @@ class MICA(object):
         page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
         units = page_dict["units"]
 
+        merge_keys = {}
+        split_keys = {}
+        
+        source_queries = []
+        for unit in units :
+            source_queries.append([req.session['username'], "".join(unit["source"])])
+            
+        for result in self.db.view("mergegroups/all", keys = source_queries) :
+            merge_keys[result['key'][1]] = result['value']
+        for result in self.db.view("splits/all", keys = source_queries) :
+            split_keys[cat][result['key'][1]] = result['value']
+            
         for unit in units :
             char = "".join(unit["source"])
             if char in punctuation_without_letters or len(char.strip()) == 0:
@@ -1501,11 +1516,7 @@ class MICA(object):
             if char in found :
                 continue
 
-            changes = False
-            try :
-                changes = self.db[self.splits(req, char)]
-            except couchdbkit.exceptions.ResourceNotFound, e :
-                pass
+            changes = False if char not in split_keys else split_keys[char]
             
             if changes :
                 if unit["hash"] not in changes["record"] :
@@ -1513,10 +1524,7 @@ class MICA(object):
                 record = changes["record"][unit["hash"]]
                 history.append([char, str(record["total_splits"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
             else: 
-                try :
-                    changes = self.db[self.merge(req, char)]
-                except couchdbkit.exceptions.ResourceNotFound, e :
-                    pass
+                changes = False if char not in merge_keys else merge_keys[char]
                 
                 if changes : 
                     if "hash" not in unit :
@@ -1691,7 +1699,7 @@ class MICA(object):
             for result in self.db.view(cat + "/all", keys = source_queries) :
                 sources[cat][result['key'][1]] = result['value']
         for result in self.db.view("memorized/all", keys = hash_queries) :
-            sources['memorized'][result['key'][1]] = result['value']
+            sources['memorized'][result['key'][1]] = True 
             
         mdebug("View Page " + str(page) + " story " + name + " lines (" \
                 + str(len(sources['mergegroups'])) + " " \
@@ -2099,13 +2107,6 @@ class MICA(object):
         return [untrans_count, reading, noreview, untrans] 
     
     # IMPROVE ALL OF THE SUMMARY FUNCTIONS LIKE THESE WITH THE NEW VIEWS
-    '''
-        for cat in ['mergegroups', 'splits', 'tonechanges' ] :
-            for result in self.db.view(cat + "/all", keys = source_queries) :
-                sources[cat][result['key'][1]] = result['value']
-        for result in self.db.view("memorized/all", keys = hash_queries) :
-            sources['memorized'][result['key'][1]] = result['value']
-    '''
     def memocount(self, req, story, page):
         added = {}
         unique = {}
@@ -2115,6 +2116,15 @@ class MICA(object):
         trans_id = 0
         page_dict = self.db[self.story(req, story["name"]) + ":pages:" + str(page)]
         units = page_dict["units"]
+        
+        hash_queries = []
+        for unit in units :
+            if "hash" in unit :
+                hash_queries.append([req.session['username'], unit["hash"]])         
+                
+        memorized = {}
+        for result in self.db.view("memorized/all", keys = hash_queries) :
+            memorized[result['key'][1]] = True 
 
         for x in range(0, len(units)) :
             unit = units[x]
@@ -2126,7 +2136,7 @@ class MICA(object):
                 trans_id += 1
                 continue
             py, english = ret
-            if self.db.doc_exist(self.memorized(req, unit["hash"])) :
+            if unit["hash"] in memorized :
                 if unit["hash"] not in added :
                     added[unit["hash"]] = unit
                     progress.append([py, english, unit, x, trans_id, page])
@@ -3142,11 +3152,5 @@ def main() :
         for line in traceback.format_exc().splitlines() :
             merr(line)
 
-if options.daemon :
-    with DaemonContext(
-            working_directory=cwd,
-            pidfile=None,
-        ) :
-        main()
-else :
+if __name__ == "__main__":
     main()
