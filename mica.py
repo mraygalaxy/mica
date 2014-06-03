@@ -57,6 +57,8 @@ from pdfminer.pdfpage import PDFPage
 import mica_ictclas
 import couchdbkit
 
+from couchdbkit.designer import pushapps
+
 from common import *
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
@@ -84,7 +86,6 @@ def parse_lt_objs (lt_objs, page_number):
 
                 
 def repeat(func, args, kwargs):
-    transaction.commit()
     success = False
     while not success :
         ret = func(*args, **kwargs)
@@ -536,6 +537,8 @@ class MICA(object):
         self.db.compact("tonechanges") 
         self.db.compact("mergegroups") 
         self.db.compact("splits") 
+        
+        pushapps(cwd + "/views", self.db)
 
         self.first_request = {}
 
@@ -1408,6 +1411,21 @@ class MICA(object):
 
         return out
 
+    def view_keys(self, req, name, units) :
+        source_queries = []
+        for unit in units :
+            if name == "memorized" :
+                if "hash" in unit :
+                    source_queries.append([req.session['username'], unit["hash"]])
+            else :
+                source_queries.append([req.session['username'], "".join(unit["source"])])
+            
+        keys = {}
+        for result in self.db.view(name + "/all", keys = source_queries) :
+            keys[result['key'][1]] = result['value']
+        
+        return keys
+        
     def history(self, req, story, uuid, page) :
         out = ""
         history = []
@@ -1418,15 +1436,8 @@ class MICA(object):
         page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
         units = page_dict["units"]
 
-        tone_keys = {}
+        tone_keys = self.view_keys(req, "tonechanges", units) 
         
-        source_queries = []
-        for unit in units :
-            source_queries.append([req.session['username'], "".join(unit["source"])])
-            
-        for result in self.db.view("tonechanges/all", keys = source_queries) :
-            tone_keys[result['key'][1]] = result['value']
-            
         for unit in units :
             char = "".join(unit["source"])
             if char not in found :
@@ -1497,17 +1508,8 @@ class MICA(object):
         page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
         units = page_dict["units"]
 
-        merge_keys = {}
-        split_keys = {}
-        
-        source_queries = []
-        for unit in units :
-            source_queries.append([req.session['username'], "".join(unit["source"])])
-            
-        for result in self.db.view("mergegroups/all", keys = source_queries) :
-            merge_keys[result['key'][1]] = result['value']
-        for result in self.db.view("splits/all", keys = source_queries) :
-            split_keys[cat][result['key'][1]] = result['value']
+        merge_keys = self.view_keys(req, "mergegroups", units) 
+        split_keys = self.view_keys(req, "splits", units) 
             
         for unit in units :
             char = "".join(unit["source"])
@@ -1693,14 +1695,12 @@ class MICA(object):
             
         mdebug("View Page " + str(page) + " story " + name + " querying...")
         
-        sources = {'mergegroups' : {}, 'splits' : {}, 'tonechanges' : {}, 'memorized' : {}}
+        sources = {}
+        sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
+        sources['splits'] = self.view_keys(req, "splits", units) 
+        sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
+        sources['memorized'] = self.view_keys(req, "memorized", units) 
         
-        for cat in ['mergegroups', 'splits', 'tonechanges' ] :
-            for result in self.db.view(cat + "/all", keys = source_queries) :
-                sources[cat][result['key'][1]] = result['value']
-        for result in self.db.view("memorized/all", keys = hash_queries) :
-            sources['memorized'][result['key'][1]] = True 
-            
         mdebug("View Page " + str(page) + " story " + name + " lines (" \
                 + str(len(sources['mergegroups'])) + " " \
                 + str(len(sources['splits'])) + " " \
@@ -1746,6 +1746,39 @@ class MICA(object):
             lines.append(line)
 
         mdebug("View Page " + str(page) + " story " + name + " grouped...")
+        
+        # TODO: The rest of the code involed in viewing a page is just a bunch of
+        # loops. We have already finished querying the database and are simply
+        # splicing together content.
+        # 
+        # Nevertheless, putting together this content, even purely in memory
+        # is by far the largest source of overhead that we have. I definitely
+        # think the next optimization would be to cache this content and
+        # build it offline during translation time and then refresh the rendered
+        # page each time we perform edits.
+        #
+        # But even during the edit process, the time to perform individual
+        # page renders here is incredibly slow if we have to render each page again.
+        #
+        # The final solution may be to abandon building the page altogether
+        # and just send json to the client browser, but that's a problem to
+        # be solved for another day.....
+        # 
+        # Anothers solution may be to incrementally update portions of
+        # the page instead of the whole page.
+        #
+        # Another solution may be to attach HTML elements to the individual
+        # units of the page without re-generating them from scratch as each
+        # unit changes, but the problem there is that pages are not yet
+        # grouped into lines (nor can they be statically if we're dealing
+        # with free-flowing text.
+        #
+        # But at a minimum, we may at least be able to attach the unique
+        # HTML for those modified units into the page dictionary and then
+        # worry about line-groupings later....
+        # 
+        # Each unit would need to have a rendered HTML chunk for all three
+        # modes for which the unit could be viewed.
         
         spacer = "<td style='margin-right: 20px'></td>"
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
@@ -2117,14 +2150,7 @@ class MICA(object):
         page_dict = self.db[self.story(req, story["name"]) + ":pages:" + str(page)]
         units = page_dict["units"]
         
-        hash_queries = []
-        for unit in units :
-            if "hash" in unit :
-                hash_queries.append([req.session['username'], unit["hash"]])         
-                
-        memorized = {}
-        for result in self.db.view("memorized/all", keys = hash_queries) :
-            memorized[result['key'][1]] = True 
+        memorized = self.view_keys(req, "memorized", units) 
 
         for x in range(0, len(units)) :
             unit = units[x]
