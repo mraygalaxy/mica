@@ -3,7 +3,6 @@
 
 from pwd import getpwuid
 from sys import path
-from optparse import OptionParser
 from time import sleep, time as timest
 from threading import Thread, Lock
 from copy import deepcopy
@@ -27,6 +26,9 @@ import string
 import base64
 import __builtin__
 import sys
+
+from common import *
+mdebug("Initial imports complete")
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 path.append(cwd)
@@ -53,15 +55,20 @@ from cjklib.dictionary import CEDICT
 from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
 
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
-from pdfminer.pdfpage import PDFPage
+try :
+    from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+    from pdfminer.converter import PDFPageAggregator
+    from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+    from pdfminer.pdfpage import PDFPage
 
-import mica_ictclas
+    import mica_ictclas
+except ImportError, e :
+    mdebug("Could not import ICTCLAS library. Full translation will not work.")
+    pass
+
 import couchdb
 
-from common import *
+mdebug("Imports complete.")
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
@@ -69,6 +76,8 @@ for letter in (string.ascii_lowercase + string.ascii_uppercase) :
     pdf_punct += letter.decode("utf-8")
 
 pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
+
+mdebug("Punctuation complete.")
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -143,16 +152,7 @@ def itemhelp(pairs) :
 
 bins = dir(__builtin__)
 
-data_path = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
-
 cd = {}
-dpfh = open(data_path)
-for line in dpfh.readlines() :
-    k, v = line.split('\t')
-    cd[k] = v
-
-dpfh.close()
-
 def get_pinyin(chars=u'你好', splitter=''):
     result = []
     for char in chars:
@@ -209,6 +209,8 @@ def lcs(a, b):
             x -= 1
             y -= 1
     return result
+
+mdebug("Setting up prefixes.")
 
 username = getpwuid(os.getuid())[0]
 relative_prefix_suffix = "serve"
@@ -461,6 +463,7 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
   unit["multiple_correct"] = -1
   return unit
 
+mdebug("Additional punctuation.")
 punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
 punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
@@ -499,7 +502,6 @@ def strip_punct(word) :
 
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
-
 class MICA(object):
     def doc_exist(self, name) :
         try :
@@ -532,7 +534,7 @@ class MICA(object):
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
-    def __init__(self, client_id, client_secret, couch_url, couch_dbname):
+    def __init__(self, client_id, client_secret, couch_url, couch_dbname, cjklocation):
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='span 1 hero-unit' style='padding: 5px'>"
@@ -541,14 +543,11 @@ class MICA(object):
         self.cs = couchdb.Server(couch_url)
         self.dbname = couch_dbname
         self.db = self.cs[self.dbname]
-        self.db.compact("accounts")
-        self.db.compact("stories")
-        self.db.compact("memorized")
-        self.db.compact("tonechanges") 
-        self.db.compact("mergegroups") 
-        self.db.compact("splits") 
+        '''
+        '''
         
         #pushapps(cwd + "/views", self.db)
+        self.cjklocation = cjklocation
 
         self.first_request = {}
 
@@ -617,9 +616,9 @@ class MICA(object):
             else :
                 r = resp(environ, start_response)
         except Exception, e :
-            print "RESPONSE MICA ********Exception:"
+            merr("RESPONSE MICA ********Exception:")
             for line in traceback.format_exc().splitlines() :
-                print "RESPONSE MICA ********" + line
+                merr("RESPONSE MICA ********" + line)
 
         return r
     
@@ -1014,10 +1013,14 @@ class MICA(object):
         unit["punctuation"] = punctuation
         return unit
 
-    def get_first_translation(self, d, char, pinyin, none_if_not_found = True) :
+    def get_first_translation(self, d, char, pinyin, none_if_not_found = True, debug = False) :
         eng = []
         temp_r = d.getFor(char)
+        if debug :
+            mdebug("CJK result: " + str(temp_r))
         for tr in temp_r :
+            if debug :
+                mdebug("CJK iter result: " + str(tr))
             if not pinyin or tr[2].lower() == pinyin.lower() :
                 eng.append("" + tr[3])
                 if not pinyin :
@@ -1173,15 +1176,19 @@ class MICA(object):
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
-    def get_cjk_handle(self) :
+    def get_cjk_handle(self, location) :
         cjk = CharacterLookup('C')
-#        cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
-        cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + cwd + 'cedict.db', 'attach': ['cjklib']})
+        if location : 
+            mdebug("Opening CEDICT from: " + location)
+            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + location, 'attach': ['cjklib']})
+        else :
+            mdebug("Opening CEDICT from default location.")
+            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
         d = CEDICT(dbConnectInst = cjkdb)
         return (cjk, cjkdb, d)
 
     def parse_page(self, req, uuid, name, story, groups, page, temp_units = False) :
-        (cjk, cjkdb, d) = self.get_cjk_handle()
+        (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
 
         if temp_units :
             story["temp_units"] = []
@@ -1721,8 +1728,6 @@ class MICA(object):
                 + ")...")
         
         for x in range(0, len(units)) :
-            if x >= 107 :
-                print "Breaking here"
             unit = units[x]
 
             source = "".join(unit["source"])
@@ -2650,8 +2655,8 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, cjkdb, d) = self.get_cjk_handle()
-                    eng = self.get_first_translation(d, source.decode("utf-8"), False)
+                    (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+                    eng = self.get_first_translation(d, source.decode("utf-8"), False, debug = True)
                     if eng :
                         for english in eng :
                             out += english.encode("utf-8")
@@ -3037,9 +3042,9 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: Something bad happened: " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :
-                print "OTHER MICA ********Exception:"
+                merr("OTHER MICA ********Exception:")
                 for line in traceback.format_exc().splitlines() :
-                    print "OTHER MICA ********" + line
+                    merr("OTHER MICA ********" + line)
             return out
 
 '''
@@ -3062,7 +3067,7 @@ class CDict(object):
         pass
 
 class GUIDispatcher(Resource) :
-    def __init__(self) :
+    def __init__(self, mica) :
 
         Resource.__init__(self)
         self.serve = File(cwd + relative_prefix)
@@ -3073,7 +3078,7 @@ class GUIDispatcher(Resource) :
         self.icon = File(cwd + relative_prefix + "/favicon.ico")
         self.git = File(cwd + "/.git")
         self.git.indexNames = ["test.rpy"]
-        self.mica = MICA(options.client_id, options.client_secret, options.couch, options.dbname)
+        self.mica = mica
             
 #        self.app = WSGIResource(reactor, reactor.threadpool, SessionMiddleware(self.mica, session_opts))
         self.app = WSGIResource(reactor, reactor.threadpool, self.mica)
@@ -3108,7 +3113,7 @@ class NONSSLRedirect(object) :
     def __call__(self, environ, start_response):
         req = Params(environ, start_response.im_self.request.session)
         (req.dest, req.path) = prefix(req.unparsed_uri)
-        tossl = "https://" + req.dest + ":" + str(options.sslport) + "/" + req.path 
+        tossl = "https://" + req.dest + ":" + str(params["sslport"]) + "/" + req.path 
         mdebug("Redirecting non-ssl request to: " + tossl)
         resp = exc.HTTPTemporaryRedirect(location = tossl)
         return resp(environ, start_response)
@@ -3126,88 +3131,136 @@ class NONSSLDispatcher(Resource) :
         request.session = IDict(request.getSession())
         return self.app
 
+mdebug("Registering session adapter.")
 registerAdapter(CDict, Session, IDict)
 
-parser = OptionParser()
-client_id = "micalearning"
-client_secret = "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8="
+def get_options() :
+    from optparse import OptionParser
 
-parser.add_option("-p", "--port", dest = "port", default = "80", help ="port")
-parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
-parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
-parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
-parser.add_option("-D", "--daemon", dest = "daemon", action = "store_true", \
-                   default = False, help ="Daemonize the service.")
-parser.add_option("-d", "--debug_host", dest = "debug_host", \
-                   default = None, help ="Hostname for remote debugging")
-parser.add_option("-l", "--log", dest = "logfile", default = cwd + "logs/mica.log", help ="MICA main log file.")
-parser.add_option("-t", "--tlog", dest = "tlogfile", default = cwd + "logs/twisted.log", help ="Twisted log file.")
-parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
-parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
-parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
-parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
-parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
-parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050",
-                                            help = "Port on which the slaves are running")
-parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
-parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
+    parser = OptionParser()
 
-parser.set_defaults()
-options, args = parser.parse_args()
+    parser.add_option("-p", "--port", dest = "port", default = "80", help ="port")
+    parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
+    parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
+    parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
+    parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
+    parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
+    parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
+    parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
+    parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
+    parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
+    parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
+    parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
+    parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050", help = "Port on which the slaves are running")
+    parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
+    parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
+    parser.add_option("-e", "--cedict", dest = "cedict", default = False, help = "Location of cedict.db file used by cjklib library.")
+    parser.add_option("-T", "--tonefile", dest = "tonefile", default = False, help = "Location of pinyin tone txt file.")
 
-if not options.cert or not options.privkey :
-    print "Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README."
-    exit(1)
+    parser.set_defaults()
+    options, args = parser.parse_args()
 
-if not options.client_id or not options.client_secret:
-    print "Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)"
-    exit(1)
+    params = {
+               "port" : options.port,
+               "sslport" : options.sslport,
+               "host" : options.host,
+               "keepsession" : options.keepsession,
+               "debug_host" : options.debug_host,
+               "log" : options.log,
+               "tlog" : options.tlog,
+               "client_id" : options.client_id,
+               "client_secret" : options.client_secret,
+               "cert" : options.cert,
+               "privkey" : options.privkey,
+               "slaves" : options.slaves,
+               "slave_port" : options.slave_port,
+               "couch" : options.couch,
+               "dbname" : options.dbname,
+               "cedict" : options.cedict,
+               "tonefile" : options.tonefile,
+    }
 
-if not options.keepsession and 'session.data_dir' in session_opts and 'session.lock_dir' in session_opts :
-    try :
-        shutil.rmtree(session_opts['session.data_dir'])
-        shutil.rmtree(session_opts['session.lock_dir'])
-    except OSError :
-        pass
+    return params 
+
 
 slaves = {}
+params = None
 
-def main() :
-    cjk = CharacterLookup('C')
-    cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + cwd + 'cedict.db', 'attach': ['cjklib']})
-    d = CEDICT(dbConnectInst = cjkdb)
-    mica_init_logging(options.logfile)
+def go(params) :
+    mdebug("Verifying options.")
+    if not params["cert"] or not params["privkey"] :
+        merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
+        exit(1)
 
-    log.startLogging(DailyLogFile.fromFullPath(options.tlogfile), setStdout=True)
+    if not params["client_id"] or not params["client_secret"]:
+        merr("Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)")
+        exit(1)
+
+    '''
+    if not options.keepsession and 'session.data_dir' in session_opts and 'session.lock_dir' in session_opts :
+        try :
+            shutil.rmtree(session_opts['session.data_dir'])
+            shutil.rmtree(session_opts['session.lock_dir'])
+        except OSError :
+            pass
+    '''
+
+    
+    mdebug("Initializing logging.")
+    mica_init_logging(params["log"])
+
+    if not params["tonefile"] :
+        params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
+
+    mdebug("Building tone file")
+    dpfh = open(params["tonefile"])
+    for line in dpfh.readlines() :
+        k, v = line.split('\t')
+        cd[k] = v
+
+    dpfh.close()
+
+    if params["tlog"] :
+        if params["tlog"] != 1 :
+            mdebug("Initializing twisted log.")
+            log.startLogging(DailyLogFile.fromFullPath(params["tlog"]), setStdout=True)
+    else :
+        mdebug("Skipping twisted log")
 
     try :
-        slave_addresses = options.slaves.split(",")
+        if params["slaves"] :
+            slave_addresses = params["slaves"].split(",")
 
-        for slave_address in slave_addresses :
-            slave_uri = "http://" + slave_address + ":" + options.slave_port
-            minfo("Registering slave @ " + slave_uri)
-            slaves[slave_uri] = MICASlaveClient(slave_uri)
-            #slaves[slave_uri].foo("bar")
+            for slave_address in slave_addresses :
+                slave_uri = "http://" + slave_address + ":" + str(params["slave_port"])
+                minfo("Registering slave @ " + slave_uri)
+                slaves[slave_uri] = MICASlaveClient(slave_uri)
+                #slaves[slave_uri].foo("bar")
 
-        assert(len(slaves) >= 1)
+            assert(len(slaves) >= 1)
+
+        mica = MICA(params["client_id"], params["client_secret"], params["couch"], params["dbname"], params["cedict"])
+
+        mdebug("Testing cjk")
+        mica.get_cjk_handle(params["cedict"])
 
         reactor._initThreadPool()
-        site = Site(GUIDispatcher())
+        site = Site(GUIDispatcher(mica))
         nonsslsite = Site(NONSSLDispatcher())
 
-        reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
-        reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cert), interface = options.host)
-        minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
+        reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
+        reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
+        minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
 
-        if options.debug_host is not None :
+        if params["debug_host"] :
             try :
                 import debug
-                print str(sys.path)
+                mdebug(str(sys.path))
                 import pydevd
-                pydevd.settrace(host=options.debug_host)
+                pydevd.settrace(host=params["debug_host"])
             except ImportError, msg :
-                cbwarn("Failed to import debug file for remote debugging: " + str(msg), True)
-                options.debug_host = None
+                mwarn("Failed to import debug file for remote debugging: " + str(msg), True)
+                params["debug_host"] = None
                 exit(1)
 
         reactor.run()
@@ -3217,9 +3270,5 @@ def main() :
             merr(line)
 
 if __name__ == "__main__":
-    main()
-
-'''
-                                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                original = eval(attachment.read())
-'''
+    mdebug("Ready to go.")
+    go(get_options())
