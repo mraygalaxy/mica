@@ -1,8 +1,13 @@
-#!/usr/bin/env python
 # coding: utf-8
 import socket
 import logging
-import xmlrpclib
+
+try :
+    import xmlrpclib
+    from xmlrpclib import Server
+except ImportError, msg :
+    print "Uh oh. Importing these libraries not tested."
+
 import sys
 import copy
 import socket
@@ -10,37 +15,49 @@ import inspect
 import sys
 import threading
 from datetime import datetime
-from threading import Lock
-from logging.handlers import logging
-from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
-from xmlrpclib import Server
 from time import time, strftime, strptime, localtime
+from threading import Lock
 
 reload(sys).setdefaultencoding("utf-8")
-
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-WARN = logging.WARN
-ERROR = logging.ERROR
-CRITICAL = logging.CRITICAL
 
 micalogger = False
 txnlogger = False
 
 def minfo(msg) :
-   micalogger.info(msg)
+   if micalogger :
+       micalogger.info(msg)
+   else :
+       print msg
 
 def mdebug(msg) :
-   micalogger.debug(threading.current_thread().name + ": " + msg)
+   if micalogger :
+       micalogger.debug(threading.current_thread().name + ": " + msg)
+   else :
+       print msg
 
 def mwarn(msg) :
-   micalogger.warn(msg)
+   if micalogger :
+       micalogger.warn(msg)
+   else :
+       print msg
 
 def merr(msg) :
-   micalogger.error(msg)
+   if micalogger :
+       micalogger.error(msg)
+   else :
+       print msg
 
 def mica_init_logging(logfile) :
     global micalogger
+
+    from logging.handlers import logging
+    from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
+
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARN = logging.WARN
+    ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
 
     # Reset the logging handlers
     logger = getLogger()
@@ -53,14 +70,19 @@ def mica_init_logging(logfile) :
     txnlogger.setLevel(level=logging.INFO)
     micalogger = logging.getLogger("")
     micalogger.setLevel(logging.DEBUG)
-    handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
+
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    micalogger.addHandler(handler)
-    txnlogger.addHandler(handler)
-    restlogger.addHandler(handler)
+    if logfile and logfile != 1 :
+        handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
+        handler.setFormatter(formatter)
+
+        micalogger.addHandler(handler)
+        txnlogger.addHandler(handler)
+        restlogger.addHandler(handler)
+
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
+
     micalogger.addHandler(streamhandler)
     txnlogger.addHandler(streamhandler)
     restlogger.addHandler(streamhandler)
