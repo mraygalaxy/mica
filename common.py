@@ -8,6 +8,7 @@ import copy
 import socket
 import inspect
 import sys
+import threading
 from datetime import datetime
 from threading import Lock
 from logging.handlers import logging
@@ -30,7 +31,7 @@ def minfo(msg) :
    micalogger.info(msg)
 
 def mdebug(msg) :
-   micalogger.debug(msg)
+   micalogger.debug(threading.current_thread().name + ": " + msg)
 
 def mwarn(msg) :
    micalogger.warn(msg)
@@ -46,6 +47,8 @@ def mica_init_logging(logfile) :
     while len(logger.handlers) != 0 :
         logger.removeHandler(logger.handlers[0])
 
+    restlogger = logging.getLogger("restkit.client")
+    restlogger.setLevel(level=logging.INFO)
     txnlogger = logging.getLogger("txn")
     txnlogger.setLevel(level=logging.INFO)
     micalogger = logging.getLogger("")
@@ -55,10 +58,12 @@ def mica_init_logging(logfile) :
     handler.setFormatter(formatter)
     micalogger.addHandler(handler)
     txnlogger.addHandler(handler)
+    restlogger.addHandler(handler)
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
     micalogger.addHandler(streamhandler)
     txnlogger.addHandler(streamhandler)
+    restlogger.addHandler(streamhandler)
 
 def wait_for_port_ready(hostname, port, try_once = False) :
     '''
