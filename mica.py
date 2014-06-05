@@ -596,10 +596,8 @@ class MICA(object):
                     } 
         except TypeError, e :
             mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
-            sleep(1)
         except Exception, e :
             print "Database (" + couch_url + ") not available yet: " + str(e)
-            sleep(1)
 
         #pushapps(cwd + "/views", self.db)
             
