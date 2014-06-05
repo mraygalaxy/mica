@@ -31,8 +31,6 @@ from common import *
 mdebug("Initial imports complete")
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
-#path.append(cwd)
-#sys.path = [cwd] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
@@ -504,33 +502,44 @@ spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
 class MICA(object):
     def doc_exist(self, name) :
+        self.verify_db()
         try :
             self.db[name]
         except couchdb.http.ResourceNotFound, e :
             return False
         return True
     
+    def verify_db(self) :
+        self.db = self.cs[self.dbname]
+
     def acct(self, name) :
+        self.verify_db()
         return "MICA:accounts:" + name
 
     def story(self, req, key) :
+        self.verify_db()
         ret = "MICA:" + req.session.value['username'] + ":stories:" + key
         #mdebug("Returning: " + ret)
         return ret 
 
     def index(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":story_index:" + key 
     
     def merge(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":mergegroups:" + key 
     
     def splits(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":splits:" + key 
     
     def tones(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":tonechanges:" + key 
     
     def memorized(self, req, key):
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
@@ -576,23 +585,21 @@ class MICA(object):
                                 ]
 
 
-        while True :
-            try :
-                self.db = self.cs[self.dbname]
-                account_exists = self.doc_exist(self.acct('admin'))
-                if not account_exists:
-                    # default installations use 'admin' password of 'password'
-                    self.db[self.acct('admin')] = {
-                            'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
-                            'roles' : [ 'admin', 'normal' ],
-                        } 
-                break
-            except TypeError, e :
-                mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
-                sleep(1)
-            except Exception, e :
-                print "Database (" + couch_url + ") not available yet: " + str(e)
-                sleep(1)
+        self.db = False 
+        try :
+            account_exists = self.doc_exist(self.acct('admin'))
+            if not account_exists:
+                # default installations use 'admin' password of 'password'
+                self.db[self.acct('admin')] = {
+                        'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
+                        'roles' : [ 'admin', 'normal' ],
+                    } 
+        except TypeError, e :
+            mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+            sleep(1)
+        except Exception, e :
+            print "Database (" + couch_url + ") not available yet: " + str(e)
+            sleep(1)
 
         #pushapps(cwd + "/views", self.db)
             
@@ -1278,7 +1285,10 @@ class MICA(object):
                 page_input = eval(attachment.read())["contents"]
                 
             mdebug("Parsing...")
-            parsed = mica_ictclas.trans(page_input.encode("utf-8"))
+            try :
+                parsed = mica_ictclas.trans(page_input.encode("utf-8"))
+            except mica_ictclas.error, e :
+                raise e
             mdebug("Parsed result: " + parsed + " for page: " + str(iidx))
             lines = parsed.split("\n")
             groups = []
@@ -3037,8 +3047,6 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
-        except mica_ictclas.error, e :
-            return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: mica C-extension failed: " + str(e) + "</h4>")
         except Exception, msg:
             mdebug("Exception: " + str(msg))
             out = "Exception:\n" 
