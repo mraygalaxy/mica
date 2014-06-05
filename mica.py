@@ -579,7 +579,8 @@ class MICA(object):
         while True :
             try :
                 self.db = self.cs[self.dbname]
-                if not self.doc_exist(self.acct('admin')) :
+                account_exists = self.doc_exist(self.acct('admin'))
+                if not account_exists:
                     # default installations use 'admin' password of 'password'
                     self.db[self.acct('admin')] = {
                             'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
