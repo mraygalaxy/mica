@@ -21,3 +21,4 @@ obsolete.py
 *.crt
 *.key
 *.csr
+params.py
