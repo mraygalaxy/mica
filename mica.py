@@ -31,8 +31,8 @@ from common import *
 mdebug("Initial imports complete")
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
-path.append(cwd)
-sys.path = [cwd] + sys.path
+#path.append(cwd)
+#sys.path = [cwd] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
@@ -542,11 +542,7 @@ class MICA(object):
 
         self.cs = couchdb.Server(couch_url)
         self.dbname = couch_dbname
-        self.db = self.cs[self.dbname]
-        '''
-        '''
         
-        #pushapps(cwd + "/views", self.db)
         self.cjklocation = cjklocation
 
         self.first_request = {}
@@ -579,12 +575,25 @@ class MICA(object):
                                     "BOOTREMEMBER",
                                 ]
 
-        if not self.doc_exist(self.acct('admin')) :
-            # default installations use 'admin' password of 'password'
-            self.db[self.acct('admin')] = {
-                    'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
-                    'roles' : [ 'admin', 'normal' ],
-                } 
+
+        while True :
+            try :
+                self.db = self.cs[self.dbname]
+                if not self.doc_exist(self.acct('admin')) :
+                    # default installations use 'admin' password of 'password'
+                    self.db[self.acct('admin')] = {
+                            'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
+                            'roles' : [ 'admin', 'normal' ],
+                        } 
+                break
+            except TypeError, e :
+                mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+                sleep(1)
+            except Exception, e :
+                print "Database (" + couch_url + ") not available yet: " + str(e)
+                sleep(1)
+
+        #pushapps(cwd + "/views", self.db)
             
     def __call__(self, environ, start_response):
         # Hack to make WebOb work with Twisted

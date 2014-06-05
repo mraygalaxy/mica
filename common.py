@@ -1,13 +1,10 @@
 # coding: utf-8
-import socket
 import logging
-
-try :
-    import xmlrpclib
-    from xmlrpclib import Server
-except ImportError, msg :
-    print "Uh oh. Importing these libraries not tested."
-
+from logging.handlers import logging
+from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
+import socket
+import xmlrpclib
+from xmlrpclib import Server
 import sys
 import copy
 import socket
@@ -18,7 +15,18 @@ from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
 
-reload(sys).setdefaultencoding("utf-8")
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARN = logging.WARN
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+
+print sys.getdefaultencoding()
+
+# THIS SUCKS. NEED TO RESET THIS
+# BUT IT MAKES THE PRINT STATEMENTS ON ANDROID DISAPPEAR
+print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+#reload(sys).setdefaultencoding("utf-8")
 
 micalogger = False
 txnlogger = False
@@ -49,15 +57,6 @@ def merr(msg) :
 
 def mica_init_logging(logfile) :
     global micalogger
-
-    from logging.handlers import logging
-    from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
-
-    DEBUG = logging.DEBUG
-    INFO = logging.INFO
-    WARN = logging.WARN
-    ERROR = logging.ERROR
-    CRITICAL = logging.CRITICAL
 
     # Reset the logging handlers
     logger = getLogger()
