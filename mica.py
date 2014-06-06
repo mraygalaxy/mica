@@ -28,6 +28,9 @@ import __builtin__
 import sys
 
 from common import *
+
+import couch_adapter
+
 mdebug("Initial imports complete")
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
@@ -63,8 +66,6 @@ try :
 except ImportError, e :
     mdebug("Could not import ICTCLAS library. Full translation will not work.")
     pass
-
-import couchdb
 
 mdebug("Imports complete.")
 
@@ -501,16 +502,10 @@ def strip_punct(word) :
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
 class MICA(object):
-    def doc_exist(self, name) :
-        self.verify_db()
-        try :
-            self.db[name]
-        except couchdb.http.ResourceNotFound, e :
-            return False
-        return True
-    
     def verify_db(self) :
-        self.db = self.cs[self.dbname]
+        if not self.db : 
+            mdebug("Database not set. Requesting object.")
+            self.db = self.cs[self.dbname]
 
     def acct(self, name) :
         self.verify_db()
@@ -543,13 +538,13 @@ class MICA(object):
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
-    def __init__(self, client_id, client_secret, couch_url, couch_dbname, cjklocation):
+    def __init__(self, client_id, client_secret, couch_url_or_local_db, couch_dbname, cjklocation, db_adapter):
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='span 1 hero-unit' style='padding: 5px'>"
         self.pid = "none"
-
-        self.cs = couchdb.Server(couch_url)
+        self.couch_url_or_local_db = couch_url_or_local_db
+        self.cs = db_adapter(couch_url_or_local_db)
         self.dbname = couch_dbname
         
         self.cjklocation = cjklocation
@@ -587,7 +582,9 @@ class MICA(object):
 
         self.db = False 
         try :
-            account_exists = self.doc_exist(self.acct('admin'))
+            self.verify_db()
+            mdebug("Checking for initial account existence")
+            account_exists = self.db.doc_exist(self.acct('admin'))
             if not account_exists:
                 # default installations use 'admin' password of 'password'
                 self.db[self.acct('admin')] = {
@@ -596,8 +593,10 @@ class MICA(object):
                     } 
         except TypeError, e :
             mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+        except couch_adapter.ResourceNotFound, e :
+            mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
         except Exception, e :
-            print "Database (" + couch_url + ") not available yet: " + str(e)
+            mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
         #pushapps(cwd + "/views", self.db)
             
@@ -1125,7 +1124,7 @@ class MICA(object):
                             
                             try :
                                 changes = self.db[self.tones(req, source)]
-                            except couchdb.http.ResourceNotFound, e :
+                            except couch_adapter.ResourceNotFound, e :
                                 pass
                             
                             if changes :
@@ -1230,7 +1229,7 @@ class MICA(object):
                     tmpstory["translating_page"] = int(page)
                     tmpstory["translating_total"] = len(groups)
                     self.db[self.story(req, name)] = tmpstory
-                except couchdb.http.ResourceConflict, e :
+                except couch_adapter.ResourceConflict, e :
                     mdebug("Failure to sync translating_current. No big deal: " + str(e))
                 finally :
                     self.transmutex.release()
@@ -1279,8 +1278,7 @@ class MICA(object):
             if "filetype" not in story or story["filetype"] == "txt" :
                 page_input = self.db[self.story(req, name) + ":original"]["value"]
             else :
-                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach")
-                page_input = eval(attachment.read())["contents"]
+                page_input = eval(self.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
             mdebug("Parsing...")
             try :
@@ -1332,7 +1330,7 @@ class MICA(object):
                             offline += 1 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
                 page_key = self.story(req, name) + ":pages:" + str(iidx)
-                if self.doc_exist(page_key) :
+                if self.db.doc_exist(page_key) :
                     mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting.")
                     del self.db[page_key]
                 self.db[page_key] = story["pages"][str(iidx)]
@@ -1423,7 +1421,7 @@ class MICA(object):
         changes = False
         try :
             changes = self.db[self.tones(req, source)]
-        except couchdb.http.ResourceNotFound, e :
+        except couch_adapter.ResourceNotFound, e :
             pass
         
         if changes :
@@ -1858,7 +1856,7 @@ class MICA(object):
                                     endgroup = False
                                     try :
                                         endgroup = self.db[self.merge(req, endchars)]
-                                    except couchdb.http.ResourceNotFound, e :
+                                    except couch_adapter.ResourceNotFound, e :
                                         pass
                                     
                                     if not endgroup or (endunit["hash"] not in endgroup["record"]) :
@@ -2223,7 +2221,7 @@ class MICA(object):
         changes = False
         try :
             changes = self.db[which(req, char)]
-        except couchdb.http.ResourceNotFound, e :
+        except couch_adapter.ResourceNotFound, e :
             changes = {} 
             changes["record"] = {}
         
@@ -2306,7 +2304,7 @@ class MICA(object):
 
                     try :
                         changes = self.db[self.merge(req, char)]
-                    except couchdb.http.ResourceNotFound, e :
+                    except couch_adapter.ResourceNotFound, e :
                         changes = {} 
                         changes["record"] = {}
                         changes["source"] = unit["source"]
@@ -2342,7 +2340,7 @@ class MICA(object):
         return [True, offset]
 
     def add_story_from_source(self, req, filename, source, filetype) :
-        if self.doc_exist(self.story(req, filename)) :
+        if self.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
@@ -2386,19 +2384,13 @@ class MICA(object):
                 data = "\n".join(new_page)
                 mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
                 de_data = data.decode("utf-8") if isinstance(data, str) else data
-                wouldbe = self.story(req, filename) + ":original:" + str(pagecount)
-                mdebug("Would be add: " + wouldbe)
-                unused = {"nothing" : "yet" }
                 '''
                 FIXME: We're not deleting the attachments here properly upon failure.
                 '''
                 
-                if self.doc_exist(wouldbe) :
-                    del self.db[wouldbe]
-                self.db[wouldbe] = unused
-                self.db.put_attachment(unused, 
+                self.db.put_attachment(self.story(req, filename) + ":original:" + str(pagecount),
+                                        "attach",
                                         str({ "images" : images, "contents" : de_data }), 
-                                        "attach"
                                        )
 
                 pagecount += 1
@@ -2429,7 +2421,7 @@ class MICA(object):
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
             del self.db[self.story(req, name) + ":pages:" + str(tmppage)]
             
-        if self.doc_exist(self.story(req, name) + ":final") :
+        if self.db.doc_exist(self.story(req, name) + ":final") :
             mdebug("Deleting final version from story " + name)
             del self.db[self.story(req, name) + ":final"]
         self.db.compact("stories")
@@ -2444,7 +2436,7 @@ class MICA(object):
                 auth = True
                 try :
                     user = self.db[self.acct(username)]
-                except couchdb.http.ResourceNotFound, e :
+                except couch_adapter.ResourceNotFound, e :
                     auth = False
 
                 if auth and user["password"] != hashlib.md5(password).hexdigest() :
@@ -2496,7 +2488,7 @@ class MICA(object):
                     tmp_story["translating"] = False
                     try :
                         self.db[self.story(req, tmp_storyname)] = tmp_story
-                    except couchdb.http.ResourceConflict, e :
+                    except couch_adapter.ResourceConflict, e :
                         mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
                         
                     self.flush_pages(req, tmp_storyname)
@@ -2524,7 +2516,7 @@ class MICA(object):
                 try :
                     name = self.db[self.index(req, uuid)]["value"]
                     name_found = True
-                except couchdb.http.ResourceNotFound, e :
+                except couch_adapter.ResourceNotFound, e :
                     pass
                     
                 if not name :
@@ -2535,7 +2527,7 @@ class MICA(object):
                     story = self.db[self.story(req, name)]
 
             if req.http.params.get("delete") :
-                story_found = False if not name else self.doc_exist(self.story(req, name))
+                story_found = False if not name else self.db.doc_exist(self.story(req, name))
                 if name and not story_found :
                     mdebug(name + " does not exist. =(")
                 else :
@@ -2553,7 +2545,7 @@ class MICA(object):
                     if name and story_found :
                         del self.db[self.story(req, name)]
                     
-                    if self.doc_exist(self.index(req, uuid)) :
+                    if self.db.doc_exist(self.index(req, uuid)) :
                         del self.db[self.index(req, uuid)]
                 
                         
@@ -2567,7 +2559,7 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
             if uuid :
-                if not self.doc_exist(self.index(req, uuid)) :
+                if not self.db.doc_exist(self.index(req, uuid)) :
                     if "current_story" in req.session.value :
                         del req.session.value["current_story"]
                         req.session.save()
@@ -2578,7 +2570,7 @@ class MICA(object):
 
             if req.http.params.get("tstatus") :
                 out = "<div id='tstatusresult'>"
-                if not self.doc_exist(self.index(req, uuid)) :
+                if not self.db.doc_exist(self.index(req, uuid)) :
                     out += "error 25 0 0"
                 else :
                     if "translating" not in story or not story["translating"] :
@@ -2885,8 +2877,8 @@ class MICA(object):
                             output = "<div><div id='pageresult'>"
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
-                                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                original = eval(attachment.read())
+                                original = eval(self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach"))
+
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
                                     # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
@@ -2997,7 +2989,7 @@ class MICA(object):
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
 
-                    if self.doc_exist(self.acct(newusername)) :
+                    if self.db.doc_exist(self.acct(newusername)) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
                     if 'admin' not in user["roles"] and admin == 'on' :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Non-admin users can't create admin accounts. What are you doing?!</h4></div>")
@@ -3255,7 +3247,9 @@ def go(params) :
 
             assert(len(slaves) >= 1)
 
-        mica = MICA(params["client_id"], params["client_secret"], params["couch"], params["dbname"], params["cedict"])
+        db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
+
+        mica = MICA(params["client_id"], params["client_secret"], params["couch"], params["dbname"], params["cedict"], db_adapter)
 
         mdebug("Testing cjk")
         mica.get_cjk_handle(params["cedict"])
@@ -3287,4 +3281,6 @@ def go(params) :
 
 if __name__ == "__main__":
     mdebug("Ready to go.")
-    go(get_options())
+    params = get_options()
+    params["couch_adapter_type"] = "MicaServerCouchDB"
+    go(params)
