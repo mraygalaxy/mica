@@ -11,8 +11,9 @@ except ImportError, e :
 
 try :
     from jnius import autoclass
+    String = autoclass('java.lang.String')
 except ImportError, e :
-    mdebug("pyjnius not available. We must be on a desktop.")
+    mdebug("pyjnius not available. Probably on a server.")
 
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):
@@ -33,6 +34,15 @@ class CommunicationError(Exception) :
         return self.msg
 
 class ResourceConflict(Exception) :
+    def __init__(self, msg, e = False):
+        Exception.__init__(self)
+        self.msg = msg
+        self.e = e
+
+    def __str__(self) :
+        return self.msg
+
+class NotImplementedError(Exception) :
     def __init__(self, msg, e = False):
         Exception.__init__(self)
         self.msg = msg
@@ -111,7 +121,7 @@ class MicaDatabaseCouchbaseMobile(object) :
 
     def __setitem__(self, name, doc) :
         try :
-            err = self.db.put(self.dbname, name, json.dumps(doc))
+            err = self.db.put(self.dbname, name, String(json.dumps(doc)))
             if err != "" :
                 raise CommunicationError("Error occured putting document: " + name + " " + err)
         except Exception, e :
@@ -119,7 +129,7 @@ class MicaDatabaseCouchbaseMobile(object) :
 
     def __getitem__(self, name) :
         try :
-            doc = self.db.get(self.dbname, name)
+            doc = self.db.get(String(self.dbname), String(name))
             if doc == "" :
                 return False
             if doc is not None :
@@ -132,7 +142,7 @@ class MicaDatabaseCouchbaseMobile(object) :
 
     def __delitem__(self, name) :
         try :
-            err = self.db.delete(self.dbname, name)
+            err = self.db.delete(String(self.dbname), String(name))
         except Exception, e :
             raise CommunicationError("Error occured deleting document: " + name + " " + str(e), e)
         if err != "" :
@@ -143,24 +153,20 @@ class MicaDatabaseCouchbaseMobile(object) :
 
     def get_attachment(self, name, filename) :
         try :
-            attach = self.db.get_attachment(self.dbname, name, filename)
+            attach = self.db.get_attachment(String(self.dbname), String(name), String(filename))
         except Exception, e :
             raise CommunicationError("Error getting attachment: " + name + " " + str(e), e)
         if attach is None :
             raise ResourceNotFound("Could not find attachment for document: " + name)
-        #mdebug("Result is of type: " + str(type(attach)))
-        #mdebug("Got " + str(len(attach)) + " bytes from java.")
         # The ByteArray pyjnius is actually a 'memoryview' from java,
         # which you can google about
         joined = "".join(map(chr, attach))
-        #mdebug("Joining succeeded.")
         decoded = joined.decode("utf-8")
-        #mdebug("Decoding succeeded.")
         return decoded
 
     def doc_exist(self, name) :
         try :
-            result = self.db.doc_exist(self.dbname, name)
+            result = self.db.doc_exist(String(self.dbname), String(name))
             if result == "error" :
                 raise CommunicationError("Error occured checking document existence: " + name)
             return True if result == "true" else False
@@ -180,22 +186,18 @@ class MicaDatabaseCouchbaseMobile(object) :
             vname = parts[1]
             params = {}
             if startkey :
-                mdebug("Adding: *" + str(startkey) + "*")
                 params["startkey"] = startkey
             if endkey :
-                mdebug("Adding: *" + str(endkey) + "*")
                 params["endkey"] = endkey
             if keys :
-                mdebug("Adding " + str(len(keys)) + " to view seed.")
                 uuid = str(uuid4.uuid4())
                 for key in keys :
                     assert(isinstance(key, str) or isinstance(key, unicode))
-                    self.db.view_seed(uuid, username, key)
+                    self.db.view_seed(String(uuid), String(username), String(key))
                     seed = True
 
                 params["keys"] = uuid 
             if stale :
-                mdebug("Adding: *" + str(stale) + "*")
                 params["stale"] = stale
 
             if len(params) == 0 :
@@ -203,9 +205,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             else :
                 params = json.dumps(params)
 
-            mdebug("Final length of params input: " + str(len(params)))
-
-            it = self.db.view(self.dbname, design, vname, params, str(username))
+            it = self.db.view(String(self.dbname), String(design), String(vname), String(params), String(str(username)))
             if it is None :
                 raise CommunicationError("Error occured for view: " + name)
 
@@ -213,14 +213,12 @@ class MicaDatabaseCouchbaseMobile(object) :
                 has_next = self.db.view_has_next(it)
 
                 if not has_next :
-                   mdebug("Iterator is exhausted. Returning") 
                    break
 
                 result = self.db.view_next(it)
                 if result is None :
                     raise CommunicationError("Iteration error occured for view: " + name)
                 j = json.loads(result)
-                mdebug("Going to yield: " + str(j))
                 yield j["result"]
         except Exception, err :
             err_msg = "Error getting view: " + name + " " + str(err)
@@ -228,7 +226,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             err_msg = str(err) 
         finally :
             if seed and uuid:
-                self.db.view_seed_cleanup(uuid)
+                self.db.view_seed_cleanup(String(uuid))
             if err_msg :
                 raise CommunicationError(err_msg)
                 
@@ -239,5 +237,4 @@ class MicaServerCouchbaseMobile(object) :
 
     def __getitem__(self, dbname) :
         self.dbname = dbname
-        mdebug("Mobile Database " + dbname + " requested. Returning New Object")
         return MicaDatabaseCouchbaseMobile(self.db)
