@@ -12,6 +12,7 @@ accounts.db.index
 accounts.db.lock
 accounts.db.tmp
 accounts.db
+cedict.db
 mica_ictclas.so
 obsolete.py
 *.swp
@@ -20,3 +21,4 @@ obsolete.py
 *.crt
 *.key
 *.csr
+params.py
