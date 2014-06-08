@@ -1,21 +1,19 @@
-#!/usr/bin/env python
 # coding: utf-8
-import socket
 import logging
+from logging.handlers import logging
+from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
+import socket
 import xmlrpclib
+from xmlrpclib import Server
 import sys
 import copy
 import socket
 import inspect
 import sys
+import threading
 from datetime import datetime
-from threading import Lock
-from logging.handlers import logging
-from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
-from xmlrpclib import Server
 from time import time, strftime, strptime, localtime
-
-reload(sys).setdefaultencoding("utf-8")
+from threading import Lock
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
@@ -23,20 +21,37 @@ WARN = logging.WARN
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 
+if sys.getdefaultencoding() != "utf-8" :
+    print sys.getdefaultencoding()
+    print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    #reload(sys).setdefaultencoding("utf-8")
+
 micalogger = False
 txnlogger = False
 
 def minfo(msg) :
-   micalogger.info(msg)
+   if micalogger :
+       micalogger.info(msg)
+   else :
+       print msg
 
 def mdebug(msg) :
-   micalogger.debug(msg)
+   if micalogger :
+       micalogger.debug(threading.current_thread().name + ": " + msg)
+   else :
+       print msg
 
 def mwarn(msg) :
-   micalogger.warn(msg)
+   if micalogger :
+       micalogger.warn(msg)
+   else :
+       print msg
 
 def merr(msg) :
-   micalogger.error(msg)
+   if micalogger :
+       micalogger.error(msg)
+   else :
+       print msg
 
 def mica_init_logging(logfile) :
     global micalogger
@@ -46,19 +61,28 @@ def mica_init_logging(logfile) :
     while len(logger.handlers) != 0 :
         logger.removeHandler(logger.handlers[0])
 
+    restlogger = logging.getLogger("restkit.client")
+    restlogger.setLevel(level=logging.INFO)
     txnlogger = logging.getLogger("txn")
     txnlogger.setLevel(level=logging.INFO)
     micalogger = logging.getLogger("")
     micalogger.setLevel(logging.DEBUG)
-    handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
+
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    micalogger.addHandler(handler)
-    txnlogger.addHandler(handler)
+    if logfile and logfile != 1 :
+        handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
+        handler.setFormatter(formatter)
+
+        micalogger.addHandler(handler)
+        txnlogger.addHandler(handler)
+        restlogger.addHandler(handler)
+
     streamhandler = logging.StreamHandler()
     streamhandler.setFormatter(formatter)
+
     micalogger.addHandler(streamhandler)
     txnlogger.addHandler(streamhandler)
+    restlogger.addHandler(streamhandler)
 
 def wait_for_port_ready(hostname, port, try_once = False) :
     '''
