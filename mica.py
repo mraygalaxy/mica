@@ -3195,11 +3195,10 @@ def go(params) :
             pass
     '''
 
-    
     mdebug("Initializing logging.")
     mica_init_logging(params["log"])
 
-    if not params["tonefile"] :
+    if "tonefile" not in params or not params["tonefile"] :
         params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
 
     mdebug("Building tone file")
