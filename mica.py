@@ -1122,10 +1122,7 @@ class MICA(object):
                             highest_percentage = -1.0
                             selector = -1
                             
-                            try :
-                                changes = self.db[self.tones(req, source)]
-                            except couch_adapter.ResourceNotFound, e :
-                                pass
+                            changes = self.db[self.tones(req, source)]
                             
                             if changes :
                                 total_changes = float(changes["total"])
@@ -1418,11 +1415,7 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = False
-        try :
-            changes = self.db[self.tones(req, source)]
-        except couch_adapter.ResourceNotFound, e :
-            pass
+        changes = self.db[self.tones(req, source)]
         
         if changes :
             total_changes = float(changes["total"])
@@ -1451,12 +1444,12 @@ class MICA(object):
         for unit in units :
             if name == "memorized" :
                 if "hash" in unit :
-                    source_queries.append([req.session.value['username'], unit["hash"]])
+                    source_queries.append(unit["hash"])
             else :
-                source_queries.append([req.session.value['username'], "".join(unit["source"])])
+                source_queries.append("".join(unit["source"]))
             
         keys = {}
-        for result in self.db.view(name + "/all", keys = source_queries) :
+        for result in self.db.view(name + "/all", keys = source_queries, username = req.session.value['username']) :
             keys[result['key'][1]] = result['value']
         
         return keys
@@ -1497,11 +1490,11 @@ class MICA(object):
         
         # Add sort options here
         def by_total( a ):
-            return int(a[1])
+            return int(float(a[1]))
 
         history.sort( key=by_total, reverse = True )
 
-        out += "Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
+        out += "Breakdown: Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
         out += "<div class='panel-group' id='panelHistory'>\n"
         
         for x in history :
@@ -1516,7 +1509,7 @@ class MICA(object):
             if len(eng) and eng[0] == '/' :
                eng = eng[1:-1]
 
-            out += char + " (" + str(total) + "): "
+            out += char + " (" + str(int(float(total))) + "): "
 
             out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory'" + tid + " href='#collapse" + tid + "'>"
 
@@ -1589,7 +1582,7 @@ class MICA(object):
         
         # Add sort options here
         def by_total( a ):
-            return int(a[1])
+            return int(float(a[1]))
 
         history.sort( key=by_total, reverse = True )
 
@@ -1731,17 +1724,15 @@ class MICA(object):
         mdebug("View Page " + str(page) + " story " + name + " querying...")
         
         sources = {}
-        sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
-        sources['splits'] = self.view_keys(req, "splits", units) 
-        sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
-        sources['memorized'] = self.view_keys(req, "memorized", units) 
-        
-        mdebug("View Page " + str(page) + " story " + name + " lines (" \
-                + str(len(sources['mergegroups'])) + " " \
-                + str(len(sources['splits'])) + " " \
-                + str(len(sources['tonechanges'])) + " " \
-                + str(len(sources['memorized'])) \
-                + ")...")
+
+        if action == "edit" :
+            sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
+            sources['splits'] = self.view_keys(req, "splits", units) 
+
+        if action == "home" :
+            sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
+        if action == "read" :
+            sources['memorized'] = self.view_keys(req, "memorized", units) 
         
         for x in range(0, len(units)) :
             unit = units[x]
@@ -1853,12 +1844,7 @@ class MICA(object):
                                 if endword[1] :
                                     endunit = endword[3]
                                     endchars = "".join(endunit["source"])
-                                    endgroup = False
-                                    try :
-                                        endgroup = self.db[self.merge(req, endchars)]
-                                    except couch_adapter.ResourceNotFound, e :
-                                        pass
-                                    
+                                    endgroup = self.db[self.merge(req, endchars)]
                                     if not endgroup or (endunit["hash"] not in endgroup["record"]) :
                                         merge_end = True
                                     else :
@@ -1961,7 +1947,7 @@ class MICA(object):
                             if changes :
                                 if unit["hash"] in changes["record"] :
                                     color = "black"
-                                    add_count = " (" + str(changes["total"]) + ")"
+                                    add_count = " (" + str(int(changes["total"])) + ")"
 
                             if color != "black" and py and len(unit["multiple_spinyin"]) :
                                 fpy = " ".join(unit["multiple_spinyin"][0])
@@ -2028,7 +2014,7 @@ class MICA(object):
                     source = word[5]
                     memorized = False
                     
-                    if py :
+                    if py and action == 'read' :
                         if unit["hash"] in sources['memorized'] :
                             memorized = True
                             
@@ -2218,10 +2204,8 @@ class MICA(object):
         char = "".join(unit["source"])
         hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-        changes = False
-        try :
-            changes = self.db[which(req, char)]
-        except couch_adapter.ResourceNotFound, e :
+        changes = self.db[which(req, char)]
+        if not changes :
             changes = {} 
             changes["record"] = {}
         
@@ -2302,9 +2286,8 @@ class MICA(object):
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    try :
-                        changes = self.db[self.merge(req, char)]
-                    except couch_adapter.ResourceNotFound, e :
+                    changes = self.db[self.merge(req, char)]
+                    if not changes :
                         changes = {} 
                         changes["record"] = {}
                         changes["source"] = unit["source"]
@@ -2433,11 +2416,8 @@ class MICA(object):
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
 
-                auth = True
-                try :
-                    user = self.db[self.acct(username)]
-                except couch_adapter.ResourceNotFound, e :
-                    auth = False
+                user = self.db[self.acct(username)]
+                auth = True if user else False
 
                 if auth and user["password"] != hashlib.md5(password).hexdigest() :
                     auth = False
@@ -2512,12 +2492,9 @@ class MICA(object):
 
             if req.http.params.get("uuid") :
                 uuid = req.http.params.get("uuid") 
-                name_found = False 
-                try :
-                    name = self.db[self.index(req, uuid)]["value"]
-                    name_found = True
-                except couch_adapter.ResourceNotFound, e :
-                    pass
+
+                name = self.db[self.index(req, uuid)]["value"]
+                name_found = True if name else False
                     
                 if not name :
                     if req.http.params.get("name") :
@@ -2877,7 +2854,10 @@ class MICA(object):
                             output = "<div><div id='pageresult'>"
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
-                                original = eval(self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach"))
+                                attach_raw = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
+                                mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                original = eval(attach_raw)
+                                mdebug("OK, evaluated with keys: " + str(original.keys()))
 
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
@@ -3047,6 +3027,8 @@ class MICA(object):
             mdebug(out )
 
             try :
+                if isinstance(resp, str) :
+                    resp = resp.decode("utf-8")
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: Something bad happened: " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :

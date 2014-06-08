@@ -21,12 +21,10 @@ WARN = logging.WARN
 ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 
-print sys.getdefaultencoding()
-
-# THIS SUCKS. NEED TO RESET THIS
-# BUT IT MAKES THE PRINT STATEMENTS ON ANDROID DISAPPEAR
-print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-#reload(sys).setdefaultencoding("utf-8")
+if sys.getdefaultencoding() != "utf-8" :
+    print sys.getdefaultencoding()
+    print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    #reload(sys).setdefaultencoding("utf-8")
 
 micalogger = False
 txnlogger = False
