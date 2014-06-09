@@ -2770,6 +2770,9 @@ class MICA(object):
                 
                 for edit in edits :
                     mdebug("Processing edit: " + str(edit))
+                    if isinstance(edit, str) or str(edit).strip() == "" :
+                        merr("Skipping Wierd edit request: " + str(edit))
+                        continue
                     if edit["failed"] :
                         mdebug("This edit failed. Skipping.")
                         continue
@@ -3096,6 +3099,9 @@ class GUIDispatcher(Resource) :
         else :
             return self.app
 
+class MicaSession(Session) :
+    sessionTimeout = 604800 # one week 
+
 class NONSSLRedirect(object) :
     def __init__(self):
         pass
@@ -3237,7 +3243,9 @@ def go(params) :
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
+        site.sessionFactory = MicaSession
         nonsslsite = Site(NONSSLDispatcher())
+        nonsslsite.sessionFactory = MicaSession
 
         reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
         reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
