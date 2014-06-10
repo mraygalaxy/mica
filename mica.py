@@ -3247,9 +3247,14 @@ def go(params) :
         nonsslsite = Site(NONSSLDispatcher())
         nonsslsite.sessionFactory = MicaSession
 
-        reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-        reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
-        minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
+        if params["sslport"] != -1 :
+            reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
+            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
+            minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
+        else :
+            mwarn("Disabling SSL access. Be careful =)")
+            minfo("Point your browser at port: " + str(params["port"]) + ". (Bound to interface: " + params["host"] + ")")
+            reactor.listenTCP(int(params["port"]), site, interface = params["host"])
 
         if params["debug_host"] :
             try :
