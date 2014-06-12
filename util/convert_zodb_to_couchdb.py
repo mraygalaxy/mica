@@ -12,6 +12,8 @@ import couchdbkit
 from couchdbkit import Server
 import simplejson as json
 
+cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+
 ''' 
     These patterns must be ordered by depth.
     Put the deepest patterns first and the
@@ -33,31 +35,31 @@ $ cp /home/mrhines/mica-v0.2/accounts.db .; ~/convert_zodb_to_couchdb.py -o "htt
 
 '''
 patterns = [
-# Keep|Throw,   Attachment?,    Regex depth key 0,  1,  2,          3,  4,          5,    Stop-Index for DB
-  (True,        'text/plain',   [ 'stories',        1, 'original',  1, 'images',    1   ], 1),
-  (False,       False,          [ 'stories',        1, 'original',  1, 'images'         ], -1),
-  (True,        False,          [ 'stories',        1, 'original',  1                   ], 1),
-  (True,        False,          [ 'stories',        1, 'pages',     1                   ], 1),
-  (False,       False,          [ 'stories',        1, 'original',  1                   ], -1),
-  (False,       False,          [ 'stories',        1, 'temp_units'                     ], -1),
-  (False,       False,          [ 'stories',        1, 'pages'                          ], -1),
-  (False,       False,          [ 'stories',        1, 'units'                          ], -1),
+# Keep|Throw,   Attachment?,    Regex depth key 0,  1,  2,          3,  4, # 5,    Stop-Index for DB, Views?
+  (True,        'text/plain',   [ 'stories',        1, 'original',  1, 'images', 1   ], 1, [cwd + "../views/stories.js", cwd + "../views/groupings.js"]),
+  (False,       False,          [ 'stories',        1, 'original',  1, 'images'         ], -1, []),
+  (True,        False,          [ 'stories',        1, 'original',  1                   ], 1, []),
+  (True,        False,          [ 'stories',        1, 'pages',     1                   ], 1, []),
+  (False,       False,          [ 'stories',        1, 'original',  1                   ], -1, []),
+  (False,       False,          [ 'stories',        1, 'temp_units'                     ], -1, []),
+  (False,       False,          [ 'stories',        1, 'pages'                          ], -1, []),
+  (False,       False,          [ 'stories',        1, 'units'                          ], -1, []),
   # This 'original' is for single-page stories. kind of confusing.
-  (True,        False,          [ 'stories',        1, 'original'                       ], 1),
+  (True,        False,          [ 'stories',        1, 'original'                       ], 1, []),
 
   # 'final' is expected to be very infrequently accessed and only contains text
-  (True,        False,          [ 'stories',        1, 'final'                          ], 1),
-  (True,        False,          [ 'stories',        1                                   ], 0),
-  (False,       False,          [ 'accounts',       1                                   ], -1),
-  (True,        False,          [ 'memorized',      1                                   ], 0),
-  (True,        False,          [ 'story_index',    1                                   ], 0),
-  (True,        False,          [ 'tonechanges',    1                                   ], 0),
-  (True,        False,          [ 'mergegroups',    1                                   ], 0),
+  (True,        False,          [ 'stories',        1, 'final'                          ], 1, []),
+  (True,        False,          [ 'stories',        1                                   ], 0, [cwd + "../views/groupings.js"]),
+  (False,       False,          [ 'accounts',       1                                   ], -1, []),
+  (True,        False,          [ 'memorized',      1                                   ], 0, [cwd + "../views/groupings.js"]),
+  (True,        False,          [ 'story_index',    1                                   ], 0, [cwd + "../views/groupings.js"]),
+  (True,        False,          [ 'tonechanges',    1                                   ], 0, [cwd + "../views/groupings.js"]),
+  (True,        False,          [ 'mergegroups',    1                                   ], 0, [cwd + "../views/groupings.js"]),
 ]
 
 '''
 patterns = [
-  (True,        False,          [ 'accounts',       1                                   ], 0),
+  (True,        False,          [ 'accounts',       1                                   ], 0, [cwd + "../views/groupings.js"]),
 ]
 
 def make_obj(orig, attach) :
@@ -81,7 +83,7 @@ def make_obj(orig, attach) :
 dbs = {}
 
 # sometimes the above individual unique character is wierd, like a newline or an empty space, so strip() and throw out
-def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key) :
+def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key, designed) :
     delete_me = False
     if isinstance(src, dict) or isinstance(src, PersistentMapping) :
         for tmp_key in src.keys() :
@@ -91,7 +93,7 @@ def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key) :
 
             if len(re.compile(pattern).findall(new_key)) == 1 :
                 if keep :
-                    db, final_key = get_db(server, new_key, dbidx)
+                    db, final_key = get_db(server, new_key, dbidx, designs)
                     print "Dict Keep: " + new_key + ", final_key: " + final_key 
                     db[final_key] = make_obj(src[tmp_key], attach)
                 else :
@@ -100,7 +102,7 @@ def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key) :
                 transaction.commit()
             else :
                 #print "No match: " + new_key
-                if depth_first_deep_copy(src[tmp_key], server, pattern, keep, attach, dbidx, new_key) :
+                if depth_first_deep_copy(src[tmp_key], server, pattern, keep, attach, dbidx, new_key, designs) :
                     #print "Deleting: " + new_key
                     del src[tmp_key]
                     transaction.commit()
@@ -111,7 +113,7 @@ def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key) :
                 printed = new_key
                 if keep :
                     #print "Storing: " + str(src[idx])
-                    db, final_key = get_db(server, new_key, dbidx)
+                    db, final_key = get_db(server, new_key, dbidx, designs)
                     print "List Keep: " + printed + ", final_key: " + final_key
                     db[final_key] = make_obj(src[idx], attach)
                 else :
@@ -120,7 +122,7 @@ def depth_first_deep_copy(src, server, pattern, keep, attach, dbidx, key) :
                 delete_me = True
             else :
                 #print new_key
-                tmp_delete_me = depth_first_deep_copy(src[idx], server, pattern, keep, attach, dbidx, new_key)
+                tmp_delete_me = depth_first_deep_copy(src[idx], server, pattern, keep, attach, dbidx, new_key, designs)
                 if not delete_me :
                     delete_me = tmp_delete_me
 
@@ -150,7 +152,7 @@ root = indb.open().root()
 
 s = Server(options.out_url)
 
-def get_db(server, key, dbidx) :
+def get_db(server, key, dbidx, designs) :
     if options.user :
         dbidx += 2 # offset by two because of "mica$username"
     else :
@@ -179,7 +181,15 @@ def get_db(server, key, dbidx) :
         except couchdbkit.exceptions.ResourceNotFound, e :
             print filtered_key + " doesn't exist. proceeding."
 
+    
     db = s.get_or_create_db(filtered_key)
+
+    for f in designs :
+        fh = open(f, 'r')
+        design = fh.read()
+        dj = json.loads(design)
+        db[dj["_id"]] = dj
+        fh.close()
 
     dbs[filtered_key] = db
 
@@ -191,7 +201,7 @@ if options.user :
     start_key += ":"
     start_key += options.user
 
-for (keep, attach, pattern, dbidx) in patterns :
+for (keep, attach, pattern, dbidx, designs) in patterns :
     extended = []
     for group in pattern :
         if group == 1 :
@@ -200,7 +210,7 @@ for (keep, attach, pattern, dbidx) in patterns :
             extended.append(group)
     final_pattern = start_key + ":" + (":".join(extended)) + "$"
     print "Extended pattern: " + final_pattern + ", dbidx: " + str(dbidx)
-    depth_first_deep_copy(root, s, final_pattern, keep, attach, dbidx, start_key)
+    depth_first_deep_copy(root, s, final_pattern, keep, attach, dbidx, start_key, designs)
 
 indb.close()
 instorage.close()
