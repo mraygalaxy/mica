@@ -8,9 +8,9 @@
        },
        "all": {
            "map": "function(doc) { emit(doc._id, doc); }"
-       }
+       },
        "translating": {
            "map": "function(doc) { if ((doc.translating != undefined) && (doc.translating == true)) { emit(doc.name, doc); } }"
-       },
+       }
    }
 }
