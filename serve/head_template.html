@@ -207,7 +207,8 @@ BOOTBODY
     var connectpop = $('#connectpop').popover({ 
         html : true,
         title: "Connect:",
-        placement : $.browser.device ? 'bottom-right' : 'bottom',
+//        placement : $.browser.device ? 'bottom-right' : 'bottom',
+        placement : 'bottom',
         trigger: 'manual',
         template: getTemplate(),
         content: function() {
