@@ -3054,9 +3054,20 @@ class IDict(Interface):
 class CDict(object):
     implements(IDict)
     def __init__(self, session):
-        self.value = {}
+        start = {}
+
+        if params["keepsession"] and os.path.isfile(cwd + "mica.session") :
+            mdebug("Loading existing session file: " + cwd + "mica.session")
+            fh = open(cwd + "mica.session", 'r')
+            sc = fh.read().strip()
+            fh.close()
+            if sc != "" :
+                start = json.loads(sc)
+        self.value = start 
     def save(self) :
-        # Just here to emulate beaker. Doesn't really do anything.
+        fh = open(cwd + "mica.session", 'w')
+        fh.write(json.dumps(self.value))
+        fh.close()
         pass
 
 class GUIDispatcher(Resource) :
@@ -3127,9 +3138,6 @@ class NONSSLDispatcher(Resource) :
         request.session = IDict(request.getSession())
         return self.app
 
-mdebug("Registering session adapter.")
-registerAdapter(CDict, Session, IDict)
-
 def get_options() :
     from optparse import OptionParser
 
@@ -3192,14 +3200,8 @@ def go(params) :
         merr("Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)")
         exit(1)
 
-    '''
-    if not options.keepsession and 'session.data_dir' in session_opts and 'session.lock_dir' in session_opts :
-        try :
-            shutil.rmtree(session_opts['session.data_dir'])
-            shutil.rmtree(session_opts['session.lock_dir'])
-        except OSError :
-            pass
-    '''
+    mdebug("Registering session adapter.")
+    registerAdapter(CDict, Session, IDict)
 
     mdebug("Initializing logging.")
     mica_init_logging(params["log"])

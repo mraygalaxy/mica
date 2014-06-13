@@ -22,3 +22,4 @@ obsolete.py
 *.key
 *.csr
 params.py
+mica.session
