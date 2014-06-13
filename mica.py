@@ -3016,7 +3016,7 @@ class MICA(object):
                 helpfh.close()
                 return self.bootstrap(req, output)
             else :
-                return self.bootstrap(req, "Nothing to do!")
+                return self.bootstrap(req, "Read, Review, or Edit, my friend?")
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
@@ -3190,7 +3190,9 @@ def get_options() :
 slaves = {}
 params = None
 
-def go(params) :
+def go(p) :
+    global params
+    params = p
     mdebug("Verifying options.")
     if not params["cert"] or not params["privkey"] :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
