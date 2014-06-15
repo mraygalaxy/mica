@@ -2908,6 +2908,7 @@ class MICA(object):
                            for(var tidx = 0; tidx < translist.length; tidx++) {
                                trans_start(translist[tidx]);
                            }
+                           translist = [];
                            </script>
                           """
                 return self.bootstrap(req, "<div><div id='storylistresult'>" + storylist + "</div></div>", now = True)
@@ -2990,8 +2991,7 @@ class MICA(object):
                     
             elif req.action == "disconnect" :
                 req.session.value['connected'] = False
-                del self.first_request[username]
-                #del req.session.value['cloud_name'] # delete whatever shouldn't be in the session
+                #del self.first_request[username]
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
             elif req.action == "help" :
