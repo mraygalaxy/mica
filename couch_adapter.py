@@ -138,7 +138,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error occured getting document: " + name + " " + str(e), e)
 
         # return was None (null)
-        raise CommunicationError("Bad exception occured getting document: " + name)
+        raise CommunicationError("Bad exception occured getting document: " + name + " " + str(e))
 
     def __delitem__(self, name) :
         try :
