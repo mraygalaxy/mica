@@ -1338,7 +1338,6 @@ class MICA(object):
                 tmpstory = self.db[self.story(req, name)]
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
-                self.db.compact("stories")
                 raise e
 
         self.transmutex.acquire()
@@ -1367,7 +1366,6 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
-        self.db.compact("stories")
         minfo("Translation complete.")
 
     def get_parts(self, unit) :
@@ -1693,10 +1691,9 @@ class MICA(object):
         return output
 
     def nb_pages(self, req, name):
-        nb_pages = 0
         for result in self.db.view('stories/pages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
-            nb_pages = result['value']
-        return nb_pages
+            return result['value']
+        return 0
 
     def view_page(self, req, uuid, name, story, action, output, page, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
@@ -2158,7 +2155,6 @@ class MICA(object):
                    
         return [untrans_count, reading, noreview, untrans] 
     
-    # IMPROVE ALL OF THE SUMMARY FUNCTIONS LIKE THESE WITH THE NEW VIEWS
     def memocount(self, req, story, page):
         added = {}
         unique = {}
@@ -2386,15 +2382,9 @@ class MICA(object):
         self.db[self.story(req, filename)] = story
         self.db[self.index(req, story["uuid"])] = { "value" : filename }
 
-        if "current_story" in req.session.value :
-            del req.session.value["current_story"]
-            req.session.save()
-        if "current_page" in req.session.value :
-            del req.session.value["current_page"]
-            req.session.save()
+        self.clear_story(req)
 
         uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
-        self.db.compact("stories")
         return self.bootstrap(req, uc)
         
         
@@ -2407,7 +2397,24 @@ class MICA(object):
         if self.db.doc_exist(self.story(req, name) + ":final") :
             mdebug("Deleting final version from story " + name)
             del self.db[self.story(req, name) + ":final"]
-        self.db.compact("stories")
+
+    def view_check(self, name) :
+       fh = open(cwd + "views/" + name + ".js", 'rw')
+       vc = fh.read()
+       fh.close()
+       if not self.db.doc_exist("_design/" + name) :
+           mdebug("View " + name + " does not exist. Uploading.")
+           self.db["_design/" + name] = json.loads(vc)
+
+    def clear_story(self, req) :
+        uuid = False
+        if "current_story" in req.session.value :
+            uuid = req.session.value["current_story"]
+            del req.session.value["current_story"]
+            req.session.save()
+        if "current_page" in req.session.value :
+            del req.session.value["current_page"]
+            req.session.save()
 
     def common(self, req) :
         try :
@@ -2417,6 +2424,7 @@ class MICA(object):
                 password = req.http.params.get('password')
 
                 user = self.db[self.acct(username)]
+                assert(user)
                 auth = True if user else False
 
                 if auth and user["password"] != hashlib.md5(password).hexdigest() :
@@ -2437,10 +2445,7 @@ class MICA(object):
 
                 req.session.value["username"] = username
 
-                if "current_story" in req.session.value :
-                    del req.session.value["current_story"]
-                if "current_page" in req.session.value :
-                    del req.session.value["current_page"]
+                self.clear_story(req)
 
                 req.session.value["last_refresh"] = str(timest())
                 req.session.save()
@@ -2527,22 +2532,13 @@ class MICA(object):
                 
                         
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    del req.session.value["current_story"]
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                    req.session.save()
+                    self.clear_story(req)
                     uuid = False
-                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
             if uuid :
                 if not self.db.doc_exist(self.index(req, uuid)) :
-                    if "current_story" in req.session.value :
-                        del req.session.value["current_story"]
-                        req.session.save()
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                        req.session.save()
+                    self.clear_story(req)
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid story uuid: " + uuid + "</h4></div>")
 
             if req.http.params.get("tstatus") :
@@ -2589,12 +2585,8 @@ class MICA(object):
                 story = tmp_story
                 
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    del req.session.value["current_story"]
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                    req.session.save()
+                    self.clear_story(req)
                     uuid = False
-                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
@@ -2670,25 +2662,17 @@ class MICA(object):
             # Functions only go here if they are actions against the currently reading story
             # Functions above here can happen on any story
             
-            story_changed = False
             if "current_story" in req.session.value :
                 if uuid :
-                    if req.session.value["current_story"] != uuid :
-                        story_changed = True
+                    self.clear_story(req)
                     req.session.value["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session.value["current_story"]
             elif uuid :
-                story_changed = True
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
-            if story_changed :
-                if "current_page" in req.session.value:
-                    del req.session.value["current_page"]
-                    req.session.save()
-            
             if "current_page" in req.session.value :
                 start_page = req.session.value["current_page"]
             else :
@@ -2933,10 +2917,12 @@ class MICA(object):
                 
                 if req.http.params.get("pack") :
                     self.db.compact()
-                    design_docs = self.db.all_docs(startkey="_design", endkey="_design/"+u"\u9999")
-                    design_doc_names = [ d["id"][8:] for d in design_docs ]
-                    for name in design_doc_names :
-                        self.db.compact(name)
++                        design_docs = ["groupings", "stories", "]
++
++                        for name in design_docs :
++                            if db.doc_exist("_design/" + name) :
++                                mdebug("Compacting " + name + " from " + dbname)
++                                db.compact(name)
                     out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
                     
                 user = self.db[self.acct(username)]
@@ -2984,7 +2970,6 @@ class MICA(object):
                     self.db[self.acct(newusername)] = { 'password' : hashlib.md5(newpassword).hexdigest(), 'roles' : roles }
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
-                    self.db.compact("accounts")
 
                 elif req.http.params.get("changepassword") :
                     oldpassword = req.http.params.get("oldpassword")
