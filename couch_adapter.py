@@ -94,25 +94,24 @@ class MicaDatabaseCouchDB(object) :
         return True
 
     def view(self, *args, **kwargs) :
+        if "keys" in kwargs :
+            keylist = []
+            username = kwargs["username"]
+            for key in kwargs["keys"] :
+                keylist.append([username, key]) 
+            kwargs["keys"] = keylist
+
+        if "username" in kwargs :
+            del kwargs["username"]
         return self.db.view(*args, **kwargs)
-
-    def compact(self, *args, **kwargs) :
-        self.db.compat(*args, **kwargs)
-
+       
 class MicaServerCouchDB(object) :
     def __init__(self, url) :
         self.url = url
         self.server = Server(url)
 
-    def __delitem__(self, name) :
-        del self.server[name]
-
     def __getitem__(self, dbname) :
         return MicaDatabaseCouchDB(self.server[dbname])
-
-    def __contains__(self, dbname) :
-        return True if dbname in self.server else False
-
 
 class MicaDatabaseCouchbaseMobile(object) :
     def __init__(self, db) :
@@ -174,7 +173,7 @@ class MicaDatabaseCouchbaseMobile(object) :
         except Exception, e :
             raise CommunicationError("Could test document existence: " + name + " " + str(e), e)
 
-    def view(self, name, startkey = False, endkey = False, keys = False, stale = False) :
+    def view(self, name, startkey = False, endkey = False, keys = False, stale = False, username = False) :
         seed = False
         uuid = False
         err_msg = False
@@ -194,7 +193,7 @@ class MicaDatabaseCouchbaseMobile(object) :
                 uuid = str(uuid4.uuid4())
                 for key in keys :
                     assert(isinstance(key, str) or isinstance(key, unicode))
-                    self.db.view_seed(String(uuid), String(key))
+                    self.db.view_seed(String(uuid), String(username), String(key))
                     seed = True
 
                 params["keys"] = uuid 
@@ -206,7 +205,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             else :
                 params = json.dumps(params)
 
-            it = self.db.view(String(self.dbname), String(design), String(vname), String(params))
+            it = self.db.view(String(self.dbname), String(design), String(vname), String(params), String(str(username)))
             if it is None :
                 raise CommunicationError("Error occured for view: " + name)
 
@@ -230,26 +229,12 @@ class MicaDatabaseCouchbaseMobile(object) :
                 self.db.view_seed_cleanup(String(uuid))
             if err_msg :
                 raise CommunicationError(err_msg)
-
-    def compact(self, *args, **kwargs) :
-        if len(args) > 0 :
-            mwarn("Compacting a CBL doesn't exist. Just pass.")
-            return
-        self.db.compat(*args, **kwargs)
+                
 
 class MicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
 
-    def __delitem__(self, name) :
-        try :
-            self.db.drop(name)
-        except Exception, e :
-            raise CommunicationError("Database deletion failed for: " + name)
-
     def __getitem__(self, dbname) :
         self.dbname = dbname
         return MicaDatabaseCouchbaseMobile(self.db)
-
-    def __contains__(self, dbname) :
-        return True if self.db.exists(dbname) else False
