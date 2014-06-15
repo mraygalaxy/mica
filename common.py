@@ -24,7 +24,7 @@ CRITICAL = logging.CRITICAL
 if sys.getdefaultencoding() != "utf-8" :
     print sys.getdefaultencoding()
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    #reload(sys).setdefaultencoding("utf-8")
+    reload(sys).setdefaultencoding("utf-8")
 
 micalogger = False
 txnlogger = False
