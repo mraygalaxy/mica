@@ -81,10 +81,7 @@ class MicaDatabaseCouchDB(object) :
         return self.db.put_attachment(doc, contents, filename)
 
     def get_attachment(self, name, filename) :
-        attachment = self.db.get_attachment(name, filename).read()
-        if isinstance(attachment, str) :
-            return attachment.decode("utf-8")
-        return attachment
+        return self.db.get_attachment(name, filename).read()
 
     def doc_exist(self, name) :
         try :
@@ -97,7 +94,10 @@ class MicaDatabaseCouchDB(object) :
         return self.db.view(*args, **kwargs)
 
     def compact(self, *args, **kwargs) :
-        self.db.compat(*args, **kwargs)
+        self.db.compact(*args, **kwargs)
+
+    def close(self) :
+        pass
 
 class MicaServerCouchDB(object) :
     def __init__(self, url) :
@@ -108,16 +108,19 @@ class MicaServerCouchDB(object) :
         del self.server[name]
 
     def __getitem__(self, dbname) :
-        return MicaDatabaseCouchDB(self.server[dbname])
+        if dbname in self.server :
+            db = self.server[dbname]
+        else :
+            db = self.server.create(dbname)
+        return MicaDatabaseCouchDB(db)
 
     def __contains__(self, dbname) :
         return True if dbname in self.server else False
 
-
 class MicaDatabaseCouchbaseMobile(object) :
-    def __init__(self, db) :
+    def __init__(self, db, name) :
         self.db = db
-        self.dbname = 'mica'
+        self.dbname = name
         mdebug("CouchBase Mobile python adapter initialized")
 
     def __setitem__(self, name, doc) :
@@ -161,9 +164,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise ResourceNotFound("Could not find attachment for document: " + name)
         # The ByteArray pyjnius is actually a 'memoryview' from java,
         # which you can google about
-        joined = "".join(map(chr, attach))
-        decoded = joined.decode("utf-8")
-        return decoded
+        return "".join(map(chr, attach))
 
     def doc_exist(self, name) :
         try :
@@ -235,7 +236,13 @@ class MicaDatabaseCouchbaseMobile(object) :
         if len(args) > 0 :
             mwarn("Compacting a CBL doesn't exist. Just pass.")
             return
-        self.db.compat(*args, **kwargs)
+        self.db.compact(*args, **kwargs)
+
+    def close(self) :
+        try :
+            self.db.close(self.dbname)
+        except Exception, e :
+            raise CommunicationError("Database close failed for: " + name)
 
 class MicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
@@ -249,7 +256,7 @@ class MicaServerCouchbaseMobile(object) :
 
     def __getitem__(self, dbname) :
         self.dbname = dbname
-        return MicaDatabaseCouchbaseMobile(self.db)
+        return MicaDatabaseCouchbaseMobile(self.db, dbname)
 
     def __contains__(self, dbname) :
         return True if self.db.exists(dbname) else False

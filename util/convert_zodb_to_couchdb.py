@@ -51,15 +51,20 @@ patterns = [
   (True,        False,          [ 'stories',        1, 'final'                          ], 1, []),
   (True,        False,          [ 'stories',        1                                   ], 0, [cwd + "../views/groupings.js"]),
   (False,       False,          [ 'accounts',       1                                   ], -1, []),
+  (True,        False,          [ 'splits',         1                                   ], 0, [cwd + "../views/groupings.js"]),
   (True,        False,          [ 'memorized',      1                                   ], 0, [cwd + "../views/groupings.js"]),
   (True,        False,          [ 'story_index',    1                                   ], 0, [cwd + "../views/groupings.js"]),
   (True,        False,          [ 'tonechanges',    1                                   ], 0, [cwd + "../views/groupings.js"]),
   (True,        False,          [ 'mergegroups',    1                                   ], 0, [cwd + "../views/groupings.js"]),
 ]
 
-'''
 patterns = [
   (True,        False,          [ 'accounts',       1                                   ], 0, [cwd + "../views/groupings.js"]),
+]
+'''
+
+patterns = [
+  (True,        False,          [ 'splits',         1                                   ], 0, [cwd + "../views/groupings.js"]),
 ]
 
 def make_obj(orig, attach) :
