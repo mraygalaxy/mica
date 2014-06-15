@@ -81,10 +81,7 @@ class MicaDatabaseCouchDB(object) :
         return self.db.put_attachment(doc, contents, filename)
 
     def get_attachment(self, name, filename) :
-        attachment = self.db.get_attachment(name, filename).read()
-        if isinstance(attachment, str) :
-            return attachment.decode("utf-8")
-        return attachment
+        return self.db.get_attachment(name, filename).read()
 
     def doc_exist(self, name) :
         try :
@@ -104,14 +101,34 @@ class MicaDatabaseCouchDB(object) :
         if "username" in kwargs :
             del kwargs["username"]
         return self.db.view(*args, **kwargs)
+
+    def compact(self, *args, **kwargs) :
+        self.db.compact(*args, **kwargs)
+
+    def close(self) :
+        pass
+
        
+# FIXME: need try's here so we return our "NotFound"
+#        instead of our not found
+
 class MicaServerCouchDB(object) :
     def __init__(self, url) :
         self.url = url
         self.server = Server(url)
 
     def __getitem__(self, dbname) :
-        return MicaDatabaseCouchDB(self.server[dbname])
+        if dbname in self.server :
+            db = self.server[dbname]
+        else :
+            db = self.server.create(dbname)
+        return MicaDatabaseCouchDB(db)
+
+    def __delitem__(self, name) :
+        del self.server[name]
+
+    def __contains__(self, dbname) :
+        return True if dbname in self.server else False
 
 class MicaDatabaseCouchbaseMobile(object) :
     def __init__(self, db) :
@@ -138,7 +155,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error occured getting document: " + name + " " + str(e), e)
 
         # return was None (null)
-        raise CommunicationError("Bad exception occured getting document: " + name + " " + str(e))
+        raise CommunicationError("Bad exception occured getting document: " + name)
 
     def __delitem__(self, name) :
         try :
@@ -160,9 +177,7 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise ResourceNotFound("Could not find attachment for document: " + name)
         # The ByteArray pyjnius is actually a 'memoryview' from java,
         # which you can google about
-        joined = "".join(map(chr, attach))
-        decoded = joined.decode("utf-8")
-        return decoded
+        return "".join(map(chr, attach))
 
     def doc_exist(self, name) :
         try :
@@ -230,6 +245,17 @@ class MicaDatabaseCouchbaseMobile(object) :
             if err_msg :
                 raise CommunicationError(err_msg)
                 
+    def compact(self, *args, **kwargs) :
+        if len(args) > 0 :
+            mwarn("Compacting a CBL view doesn't exist. Just pass.")
+            return
+        self.db.compact(*args, **kwargs)
+
+    def close(self) :
+        try :
+            self.db.close(self.dbname)
+        except Exception, e :
+            raise CommunicationError("Database close failed for: " + name)
 
 class MicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
@@ -238,3 +264,12 @@ class MicaServerCouchbaseMobile(object) :
     def __getitem__(self, dbname) :
         self.dbname = dbname
         return MicaDatabaseCouchbaseMobile(self.db)
+
+    def __delitem__(self, name) :
+        try :
+            self.db.drop(name)
+        except Exception, e :
+            raise CommunicationError("Database deletion failed for: " + name)
+
+    def __contains__(self, dbname) :
+        return True if self.db.exists(dbname) else False
