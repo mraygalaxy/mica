@@ -584,6 +584,7 @@ class MICA(object):
         try :
             self.verify_db()
             mdebug("Checking for initial account existence")
+            self.view_check("accounts")
             account_exists = self.db.doc_exist(self.acct('admin'))
             if not account_exists:
                 # default installations use 'admin' password of 'password'
@@ -2465,6 +2466,11 @@ class MICA(object):
 
             if username not in self.first_request :
                 self.first_request[username] = True 
+                self.view_check("stories")
+                self.view_check("tonechanges")
+                self.view_check("mergegroups")
+                self.view_check("splits")
+                self.view_check("memorized")
 
                 for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
                     tmp_storyname = result["key"][1]
