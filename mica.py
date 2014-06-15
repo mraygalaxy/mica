@@ -2393,7 +2393,7 @@ class MICA(object):
             del req.session.value["current_page"]
             req.session.save()
 
-        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div>"
+        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
         self.db.compact("stories")
         return self.bootstrap(req, uc)
         
@@ -2878,6 +2878,7 @@ class MICA(object):
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
+                output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 if story["filetype"] != "txt" :
