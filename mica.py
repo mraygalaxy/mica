@@ -2701,12 +2701,14 @@ class MICA(object):
             
             if "current_story" in req.session.value :
                 if uuid :
-                    self.clear_story(req)
+                    if req.session.value["current_story"] != uuid :
+                        self.clear_story(req)
                     req.session.value["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session.value["current_story"]
             elif uuid :
+                self.clear_story(req)
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
