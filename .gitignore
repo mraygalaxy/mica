@@ -21,3 +21,8 @@ obsolete.py
 *.crt
 *.key
 *.csr
+params.py
+mica.session
+sessions
+resync.py
+databases.tar.bz2

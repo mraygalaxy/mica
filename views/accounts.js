@@ -1,5 +1,4 @@
 {
-   "_id":"_design/accounts",
    "language": "javascript",
    "views":
    {

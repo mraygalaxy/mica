@@ -1,5 +1,4 @@
 {
-   "_id": "_design/tonechanges",
    "language": "javascript",
    "views": {
        "all": {
