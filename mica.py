@@ -1123,6 +1123,7 @@ class MICA(object):
                             highest_percentage = -1.0
                             selector = -1
                             
+                            # FIXME: This totally needs to be a view. Fix it soon.
                             changes = self.db[self.tones(req, source)]
                             
                             if changes :
@@ -1199,8 +1200,11 @@ class MICA(object):
         d = CEDICT(dbConnectInst = cjkdb)
         return (cjk, cjkdb, d)
 
-    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False) :
-        (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
+        if not handle :
+            (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+        else :
+            (cjk, cjkdb, d) = handle
 
         if temp_units :
             story["temp_units"] = []
@@ -1272,6 +1276,8 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
+        handle = self.get_cjk_handle(self.cjklocation)
+
         for iidx in range(page_start, page_inputs) :
             if "filetype" not in story or story["filetype"] == "txt" :
                 page_input = self.db[self.story(req, name) + ":original"]["value"]
@@ -1317,7 +1323,7 @@ class MICA(object):
                 self.transmutex.release()
 
             try :
-                self.parse_page(req, uuid, name, story, groups, str(iidx))
+                self.parse_page(req, uuid, name, story, groups, str(iidx), handle = handle)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -2319,11 +2325,15 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype) :
+    def add_story_from_source(self, req, filename, source, filetype, removespaces) :
         if self.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
+        if removespaces :
+            mdebug("Remove spaces requested!")
+        else :
+            mdebug("Remove spaces not requested.")
         
         if filetype == "txt" :
             mdebug("Source: " + source)
@@ -2363,7 +2373,13 @@ class MICA(object):
 
                 data = "\n".join(new_page)
                 mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
+
                 de_data = data.decode("utf-8") if isinstance(data, str) else data
+
+                if removespaces :
+                    de_data = de_data.replace(u' ', u'')
+                    mdebug("After remove spaces:\n " + de_data + " \nfor page: " + str(pagecount))
+
                 '''
                 FIXME: We're not deleting the attachments here properly upon failure.
                 '''
@@ -2378,7 +2394,12 @@ class MICA(object):
             device.close()
             fp.close()
         elif filetype == "txt" :
-            self.db[self.story(req, filename) + ":original"] = { "value" : source.decode("utf-8") }
+            de_source = source.decode("utf-8") if isinstance(source, str) else source
+            mdebug("Page input:\n " + source)
+            if removespaces :
+                de_source = de_source.replace(u' ', u'')
+                mdebug("After remove spaces:\n " + de_source)
+            self.db[self.story(req, filename) + ":original"] = { "value" : de_source }
         
         self.db[self.story(req, filename)] = story
         self.db[self.index(req, story["uuid"])] = { "value" : filename }
@@ -2485,15 +2506,17 @@ class MICA(object):
                     self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
+                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces)
 
             if req.http.params.get("uploadtext") :
+                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                return self.add_story_from_source(req, filename, source, "txt")
+                return self.add_story_from_source(req, filename, source, "txt", removespaces)
 
             start_page = "0"
             view_mode = "text"
@@ -2871,8 +2894,9 @@ class MICA(object):
                 output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
-                if story["filetype"] != "txt" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + story["filetype"] + " file with multiple pages. Not yet implemented.</h4></div>\n")
+                ftype = "txt" if "filetype" not in story else story["filetype"]
+                if ftype != "txt" :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + ftype + ". Viewing original not finished with implementation.</h4></div>\n")
                 
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
@@ -2924,12 +2948,13 @@ class MICA(object):
                 
                 if req.http.params.get("pack") :
                     self.db.compact()
-+                        design_docs = ["groupings", "stories", "]
-+
-+                        for name in design_docs :
-+                            if db.doc_exist("_design/" + name) :
-+                                mdebug("Compacting " + name + " from " + dbname)
-+                                db.compact(name)
+                    design_docs = ["groupings", "stories", "mergegroups",
+                                   "tonechanges", "accounts", "splits" ]
+
+                    for name in design_docs :
+                        if self.db.doc_exist("_design/" + name) :
+                            mdebug("Compacting view " + name)
+                            self.db.compact(name)
                     out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
                     
                 user = self.db[self.acct(username)]
