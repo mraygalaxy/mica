@@ -1103,7 +1103,10 @@ class MICA(object):
                 assert(len(readings) > 0)
 
                 if uni not in punctuation and uni :
-                    online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
+                    online_units = False
+                    if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                        online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
+
                     if not online_units or not len(online_units) :
                         eng = self.get_first_translation(d, uni, readings[0])
                         unit = self.add_unit([readings[0]], uni, [eng[0]])
@@ -2409,7 +2412,7 @@ class MICA(object):
 
         self.clear_story(req)
 
-        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
+        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div>"
         return self.bootstrap(req, uc)
         
         
@@ -2630,35 +2633,38 @@ class MICA(object):
                 human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
                 out = ""
                 out += "<div id='instantresult'>"
-                final = { }
-                requests = [source]
-                breakout = source.decode("utf-8") if isinstance(source, str) else source
-                if len(breakout) > 1 :
-                    for x in range(0, len(breakout)) :
-                        requests.append(breakout[x].encode("utf-8"))
 
-                result = self.translate_and_check_array(requests, u"en")
                 p = ""
-                for x in range(0, len(requests)) : 
-                    part = result[x]
-                    if "TranslatedText" not in part :
-                        mdebug("Why didn't we get anything: " + json.dumps(result))
-                        english = "No english translation available."
-                    else :
-                        english = part["TranslatedText"].encode("utf-8")
-                    
-                    if x == 0 :
-                        p += "Selected translation (" + source + "): " + english + "<br/>\n"
-                        final["whole"] = (source, english)
-                    else :
-                        char = breakout[x-1].encode("utf-8")
-                        if "parts" not in final :
-                            p += "Piecemeal translation:<br/>\n"
-                            final["parts"] = []
-                        p += "(" + char + "): "
-                        p += english
-                        p += "<br/>\n"
-                        final["parts"].append((char, english))
+                if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                    final = { }
+                    requests = [source]
+                    breakout = source.decode("utf-8") if isinstance(source, str) else source
+                    if len(breakout) > 1 :
+                        for x in range(0, len(breakout)) :
+                            requests.append(breakout[x].encode("utf-8"))
+                    result = self.translate_and_check_array(requests, u"en")
+                    for x in range(0, len(requests)) : 
+                        part = result[x]
+                        if "TranslatedText" not in part :
+                            mdebug("Why didn't we get anything: " + json.dumps(result))
+                            english = "No english translation available."
+                        else :
+                            english = part["TranslatedText"].encode("utf-8")
+                        
+                        if x == 0 :
+                            p += "Selected translation (" + source + "): " + english + "<br/>\n"
+                            final["whole"] = (source, english)
+                        else :
+                            char = breakout[x-1].encode("utf-8")
+                            if "parts" not in final :
+                                p += "Piecemeal translation:<br/>\n"
+                                final["parts"] = []
+                            p += "(" + char + "): "
+                            p += english
+                            p += "<br/>\n"
+                            final["parts"].append((char, english))
+                else :
+                    p += "No internet access. Offline only."
                        
                 if human :
                     out += "<h4>Online translation:</h4>"
@@ -2873,9 +2879,10 @@ class MICA(object):
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
                                 attach_raw = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                #mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                mdebug(str(attach_raw))
                                 original = eval(attach_raw)
-                                mdebug("OK, evaluated with keys: " + str(original.keys()))
+                                #mdebug("OK, evaluated with keys: " + str(original.keys()))
 
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
@@ -2893,7 +2900,6 @@ class MICA(object):
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
-                output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
@@ -3233,6 +3239,7 @@ def get_options() :
                "dbname" : options.dbname,
                "cedict" : options.cedict,
                "tonefile" : options.tonefile,
+               "mobileinternet" : False,
     }
 
     return params 

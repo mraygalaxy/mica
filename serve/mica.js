@@ -853,6 +853,7 @@ function togglecanvas() {
         $('#offnav').attr('href', '#');
       } else {
         $('#offnav').attr('href', '#main-nav');
+        loadstories(false);
       }
 }
 
