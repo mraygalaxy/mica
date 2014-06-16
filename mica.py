@@ -3254,7 +3254,7 @@ def go(p) :
     global params
     params = p
     mdebug("Verifying options.")
-    if not params["cert"] or not params["privkey"] :
+    if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 
