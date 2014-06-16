@@ -1837,40 +1837,43 @@ class MICA(object):
 
                     line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
-                    if py and action == "edit" :
-                        sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
-                        
-                        if sourcegroup and unit["hash"] in sourcegroup["record"] :
-                            curr_merge = True
+                    if action == "edit" :
+                        if py :
+                            sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
+                            
+                            if sourcegroup and unit["hash"] in sourcegroup["record"] :
+                                curr_merge = True
 
-                            if word_idx < (len(line) - 1) :
-                                endword = line[word_idx + 1]
-                                if endword[1] :
-                                    endunit = endword[3]
-                                    endchars = "".join(endunit["source"])
-                                    endgroup = self.db[self.merge(req, endchars)]
-                                    if not endgroup or (endunit["hash"] not in endgroup["record"]) :
-                                        merge_end = True
-                                    else :
-                                        end_members = endgroup["record"][endunit["hash"]]["members"]
-                                        curr_members = sourcegroup["record"][unit["hash"]]["members"]
-                                        source_found = False
-                                        end_found = False
-                                        for mchars, member in end_members.iteritems() :
-                                            if source in mchars :
-                                                source_found = True
-                                        for mchars, member in curr_members.iteritems() :
-                                            if endchars in mchars :
-                                                end_found = True
-                                                
-                                        if not end_found or not source_found :
-                                            #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                                if word_idx < (len(line) - 1) :
+                                    endword = line[word_idx + 1]
+                                    if endword[1] :
+                                        endunit = endword[3]
+                                        endchars = "".join(endunit["source"])
+                                        #endgroup = self.db[self.merge(req, endchars)]
+                                        endgroup = False if endchars not in sources['mergegroups'] else sources['mergegroups'][endchars]
+                                        if not endgroup or (endunit["hash"] not in endgroup["record"]) :
                                             merge_end = True
-                                            skip_prev_merge = True
-                                            
-                                else :
-                                    merge_end = True
-
+                                        else :
+                                            end_members = endgroup["record"][endunit["hash"]]["members"]
+                                            curr_members = sourcegroup["record"][unit["hash"]]["members"]
+                                            source_found = False
+                                            end_found = False
+                                            for mchars, member in end_members.iteritems() :
+                                                if source in mchars :
+                                                    source_found = True
+                                            for mchars, member in curr_members.iteritems() :
+                                                if endchars in mchars :
+                                                    end_found = True
+                                                    
+                                            if not end_found or not source_found :
+                                                #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                                                merge_end = True
+                                                skip_prev_merge = True
+                                                
+                                    else :
+                                        merge_end = True
+                        else :
+                            prev_merge = False
 
                     if py and action == "edit" :
                         if curr_merge :
