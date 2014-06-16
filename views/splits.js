@@ -1,5 +1,4 @@
 {
-   "_id": "_design/splits",
    "language": "javascript",
    "views": {
        "all": {

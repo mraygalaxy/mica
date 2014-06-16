@@ -10,6 +10,7 @@ var prmstr = window.location.search.substr(1);
 var prmarr = prmstr.split ("&");
 var params = {};
 var heromsg = "<div class='hero-unit' style='padding: 5px'>";
+var translist = [];
 for ( var i = 0; i < prmarr.length; i++) {
     var tmparr = prmarr[i].split("=");
     params[tmparr[0]] = tmparr[1];

@@ -3,7 +3,6 @@
 
 from pwd import getpwuid
 from sys import path
-from optparse import OptionParser
 from time import sleep, time as timest
 from threading import Thread, Lock
 from copy import deepcopy
@@ -28,9 +27,13 @@ import base64
 import __builtin__
 import sys
 
+from common import *
+
+import couch_adapter
+
+mdebug("Initial imports complete")
+
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
-path.append(cwd)
-sys.path = [cwd] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
@@ -53,15 +56,18 @@ from cjklib.dictionary import CEDICT
 from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
 
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
-from pdfminer.pdfpage import PDFPage
+try :
+    from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+    from pdfminer.converter import PDFPageAggregator
+    from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+    from pdfminer.pdfpage import PDFPage
 
-import mica_ictclas
-import couchdb
+    import mica_ictclas
+except ImportError, e :
+    mdebug("Could not import ICTCLAS library. Full translation will not work.")
+    pass
 
-from common import *
+mdebug("Imports complete.")
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
@@ -69,6 +75,8 @@ for letter in (string.ascii_lowercase + string.ascii_uppercase) :
     pdf_punct += letter.decode("utf-8")
 
 pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
+
+mdebug("Punctuation complete.")
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -143,16 +151,7 @@ def itemhelp(pairs) :
 
 bins = dir(__builtin__)
 
-data_path = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
-
 cd = {}
-dpfh = open(data_path)
-for line in dpfh.readlines() :
-    k, v = line.split('\t')
-    cd[k] = v
-
-dpfh.close()
-
 def get_pinyin(chars=u'你好', splitter=''):
     result = []
     for char in chars:
@@ -209,6 +208,8 @@ def lcs(a, b):
             x -= 1
             y -= 1
     return result
+
+mdebug("Setting up prefixes.")
 
 username = getpwuid(os.getuid())[0]
 relative_prefix_suffix = "serve"
@@ -461,6 +462,7 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
   unit["multiple_correct"] = -1
   return unit
 
+mdebug("Additional punctuation.")
 punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
 punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
@@ -499,56 +501,53 @@ def strip_punct(word) :
 
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
-
 class MICA(object):
-    def doc_exist(self, name) :
-        try :
-            self.db[name]
-        except couchdb.http.ResourceNotFound, e :
-            return False
-        return True
-    
+    def verify_db(self) :
+        if not self.db : 
+            mdebug("Database not set. Requesting object.")
+            self.db = self.cs[self.dbname]
+
     def acct(self, name) :
+        self.verify_db()
         return "MICA:accounts:" + name
 
     def story(self, req, key) :
+        self.verify_db()
         ret = "MICA:" + req.session.value['username'] + ":stories:" + key
         #mdebug("Returning: " + ret)
         return ret 
 
     def index(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":story_index:" + key 
     
     def merge(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":mergegroups:" + key 
     
     def splits(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":splits:" + key 
     
     def tones(self, req, key) :
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":tonechanges:" + key 
     
     def memorized(self, req, key):
+        self.verify_db()
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
-    def __init__(self, client_id, client_secret, couch_url, couch_dbname):
+    def __init__(self, client_id, client_secret, couch_url_or_local_db, couch_dbname, cjklocation, db_adapter):
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='span 1 hero-unit' style='padding: 5px'>"
         self.pid = "none"
-
-        self.cs = couchdb.Server(couch_url)
+        self.couch_url_or_local_db = couch_url_or_local_db
+        self.cs = db_adapter(couch_url_or_local_db)
         self.dbname = couch_dbname
-        self.db = self.cs[self.dbname]
-        self.db.compact("accounts")
-        self.db.compact("stories")
-        self.db.compact("memorized")
-        self.db.compact("tonechanges") 
-        self.db.compact("mergegroups") 
-        self.db.compact("splits") 
         
-        #pushapps(cwd + "/views", self.db)
+        self.cjklocation = cjklocation
 
         self.first_request = {}
 
@@ -580,12 +579,27 @@ class MICA(object):
                                     "BOOTREMEMBER",
                                 ]
 
-        if not self.doc_exist(self.acct('admin')) :
-            # default installations use 'admin' password of 'password'
-            self.db[self.acct('admin')] = {
-                    'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
-                    'roles' : [ 'admin', 'normal' ],
-                } 
+
+        self.db = False 
+        try :
+            self.verify_db()
+            mdebug("Checking for initial account existence")
+            self.view_check("accounts")
+            account_exists = self.db.doc_exist(self.acct('admin'))
+            if not account_exists:
+                # default installations use 'admin' password of 'password'
+                self.db[self.acct('admin')] = {
+                        'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
+                        'roles' : [ 'admin', 'normal' ],
+                    } 
+        except TypeError, e :
+            mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+        except couch_adapter.ResourceNotFound, e :
+            mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
+        except Exception, e :
+            mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
+
+        #pushapps(cwd + "/views", self.db)
             
     def __call__(self, environ, start_response):
         # Hack to make WebOb work with Twisted
@@ -617,9 +631,9 @@ class MICA(object):
             else :
                 r = resp(environ, start_response)
         except Exception, e :
-            print "RESPONSE MICA ********Exception:"
+            merr("RESPONSE MICA ********Exception:")
             for line in traceback.format_exc().splitlines() :
-                print "RESPONSE MICA ********" + line
+                merr("RESPONSE MICA ********" + line)
 
         return r
     
@@ -1014,10 +1028,14 @@ class MICA(object):
         unit["punctuation"] = punctuation
         return unit
 
-    def get_first_translation(self, d, char, pinyin, none_if_not_found = True) :
+    def get_first_translation(self, d, char, pinyin, none_if_not_found = True, debug = False) :
         eng = []
         temp_r = d.getFor(char)
+        if debug :
+            mdebug("CJK result: " + str(temp_r))
         for tr in temp_r :
+            if debug :
+                mdebug("CJK iter result: " + str(tr))
             if not pinyin or tr[2].lower() == pinyin.lower() :
                 eng.append("" + tr[3])
                 if not pinyin :
@@ -1105,10 +1123,8 @@ class MICA(object):
                             highest_percentage = -1.0
                             selector = -1
                             
-                            try :
-                                changes = self.db[self.tones(req, source)]
-                            except couchdb.http.ResourceNotFound, e :
-                                pass
+                            # FIXME: This totally needs to be a view. Fix it soon.
+                            changes = self.db[self.tones(req, source)]
                             
                             if changes :
                                 total_changes = float(changes["total"])
@@ -1173,15 +1189,22 @@ class MICA(object):
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
-    def get_cjk_handle(self) :
+    def get_cjk_handle(self, location) :
         cjk = CharacterLookup('C')
-#        cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
-        cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + cwd + 'cedict.db', 'attach': ['cjklib']})
+        if location : 
+            mdebug("Opening CEDICT from: " + location)
+            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + location, 'attach': ['cjklib']})
+        else :
+            mdebug("Opening CEDICT from default location.")
+            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
         d = CEDICT(dbConnectInst = cjkdb)
         return (cjk, cjkdb, d)
 
-    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False) :
-        (cjk, cjkdb, d) = self.get_cjk_handle()
+    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
+        if not handle :
+            (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+        else :
+            (cjk, cjkdb, d) = handle
 
         if temp_units :
             story["temp_units"] = []
@@ -1208,7 +1231,7 @@ class MICA(object):
                     tmpstory["translating_page"] = int(page)
                     tmpstory["translating_total"] = len(groups)
                     self.db[self.story(req, name)] = tmpstory
-                except couchdb.http.ResourceConflict, e :
+                except couch_adapter.ResourceConflict, e :
                     mdebug("Failure to sync translating_current. No big deal: " + str(e))
                 finally :
                     self.transmutex.release()
@@ -1253,15 +1276,19 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
+        handle = self.get_cjk_handle(self.cjklocation)
+
         for iidx in range(page_start, page_inputs) :
             if "filetype" not in story or story["filetype"] == "txt" :
                 page_input = self.db[self.story(req, name) + ":original"]["value"]
             else :
-                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach")
-                page_input = eval(attachment.read())["contents"]
+                page_input = eval(self.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
             mdebug("Parsing...")
-            parsed = mica_ictclas.trans(page_input.encode("utf-8"))
+            try :
+                parsed = mica_ictclas.trans(page_input.encode("utf-8"))
+            except mica_ictclas.error, e :
+                raise e
             mdebug("Parsed result: " + parsed + " for page: " + str(iidx))
             lines = parsed.split("\n")
             groups = []
@@ -1296,7 +1323,7 @@ class MICA(object):
                 self.transmutex.release()
 
             try :
-                self.parse_page(req, uuid, name, story, groups, str(iidx))
+                self.parse_page(req, uuid, name, story, groups, str(iidx), handle = handle)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -1307,7 +1334,7 @@ class MICA(object):
                             offline += 1 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
                 page_key = self.story(req, name) + ":pages:" + str(iidx)
-                if self.doc_exist(page_key) :
+                if self.db.doc_exist(page_key) :
                     mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting.")
                     del self.db[page_key]
                 self.db[page_key] = story["pages"][str(iidx)]
@@ -1318,7 +1345,6 @@ class MICA(object):
                 tmpstory = self.db[self.story(req, name)]
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
-                self.db.compact("stories")
                 raise e
 
         self.transmutex.acquire()
@@ -1347,7 +1373,6 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
-        self.db.compact("stories")
         minfo("Translation complete.")
 
     def get_parts(self, unit) :
@@ -1395,11 +1420,7 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = False
-        try :
-            changes = self.db[self.tones(req, source)]
-        except couchdb.http.ResourceNotFound, e :
-            pass
+        changes = self.db[self.tones(req, source)]
         
         if changes :
             total_changes = float(changes["total"])
@@ -1428,12 +1449,12 @@ class MICA(object):
         for unit in units :
             if name == "memorized" :
                 if "hash" in unit :
-                    source_queries.append([req.session.value['username'], unit["hash"]])
+                    source_queries.append(unit["hash"])
             else :
-                source_queries.append([req.session.value['username'], "".join(unit["source"])])
+                source_queries.append("".join(unit["source"]))
             
         keys = {}
-        for result in self.db.view(name + "/all", keys = source_queries) :
+        for result in self.db.view(name + "/all", keys = source_queries, username = req.session.value['username']) :
             keys[result['key'][1]] = result['value']
         
         return keys
@@ -1474,11 +1495,11 @@ class MICA(object):
         
         # Add sort options here
         def by_total( a ):
-            return int(a[1])
+            return int(float(a[1]))
 
         history.sort( key=by_total, reverse = True )
 
-        out += "Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
+        out += "Breakdown: Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
         out += "<div class='panel-group' id='panelHistory'>\n"
         
         for x in history :
@@ -1493,7 +1514,7 @@ class MICA(object):
             if len(eng) and eng[0] == '/' :
                eng = eng[1:-1]
 
-            out += char + " (" + str(total) + "): "
+            out += char + " (" + str(int(float(total))) + "): "
 
             out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory'" + tid + " href='#collapse" + tid + "'>"
 
@@ -1566,7 +1587,7 @@ class MICA(object):
         
         # Add sort options here
         def by_total( a ):
-            return int(a[1])
+            return int(float(a[1]))
 
         history.sort( key=by_total, reverse = True )
 
@@ -1677,10 +1698,9 @@ class MICA(object):
         return output
 
     def nb_pages(self, req, name):
-        nb_pages = 0
         for result in self.db.view('stories/pages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
-            nb_pages = result['value']
-        return nb_pages
+            return result['value']
+        return 0
 
     def view_page(self, req, uuid, name, story, action, output, page, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
@@ -1708,21 +1728,17 @@ class MICA(object):
         mdebug("View Page " + str(page) + " story " + name + " querying...")
         
         sources = {}
-        sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
-        sources['splits'] = self.view_keys(req, "splits", units) 
-        sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
-        sources['memorized'] = self.view_keys(req, "memorized", units) 
-        
-        mdebug("View Page " + str(page) + " story " + name + " lines (" \
-                + str(len(sources['mergegroups'])) + " " \
-                + str(len(sources['splits'])) + " " \
-                + str(len(sources['tonechanges'])) + " " \
-                + str(len(sources['memorized'])) \
-                + ")...")
+
+        if action == "edit" :
+            sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
+            sources['splits'] = self.view_keys(req, "splits", units) 
+
+        if action == "home" :
+            sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
+        if action == "read" :
+            sources['memorized'] = self.view_keys(req, "memorized", units) 
         
         for x in range(0, len(units)) :
-            if x >= 107 :
-                print "Breaking here"
             unit = units[x]
 
             source = "".join(unit["source"])
@@ -1821,45 +1837,43 @@ class MICA(object):
 
                     line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
 
-                    if py and action == "edit" :
-                        sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
-                        
-                        if sourcegroup and unit["hash"] in sourcegroup["record"] :
-                            curr_merge = True
+                    if action == "edit" :
+                        if py :
+                            sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
+                            
+                            if sourcegroup and unit["hash"] in sourcegroup["record"] :
+                                curr_merge = True
 
-                            if word_idx < (len(line) - 1) :
-                                endword = line[word_idx + 1]
-                                if endword[1] :
-                                    endunit = endword[3]
-                                    endchars = "".join(endunit["source"])
-                                    endgroup = False
-                                    try :
-                                        endgroup = self.db[self.merge(req, endchars)]
-                                    except couchdb.http.ResourceNotFound, e :
-                                        pass
-                                    
-                                    if not endgroup or (endunit["hash"] not in endgroup["record"]) :
-                                        merge_end = True
-                                    else :
-                                        end_members = endgroup["record"][endunit["hash"]]["members"]
-                                        curr_members = sourcegroup["record"][unit["hash"]]["members"]
-                                        source_found = False
-                                        end_found = False
-                                        for mchars, member in end_members.iteritems() :
-                                            if source in mchars :
-                                                source_found = True
-                                        for mchars, member in curr_members.iteritems() :
-                                            if endchars in mchars :
-                                                end_found = True
-                                                
-                                        if not end_found or not source_found :
-                                            #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                                if word_idx < (len(line) - 1) :
+                                    endword = line[word_idx + 1]
+                                    if endword[1] :
+                                        endunit = endword[3]
+                                        endchars = "".join(endunit["source"])
+                                        #endgroup = self.db[self.merge(req, endchars)]
+                                        endgroup = False if endchars not in sources['mergegroups'] else sources['mergegroups'][endchars]
+                                        if not endgroup or (endunit["hash"] not in endgroup["record"]) :
                                             merge_end = True
-                                            skip_prev_merge = True
-                                            
-                                else :
-                                    merge_end = True
-
+                                        else :
+                                            end_members = endgroup["record"][endunit["hash"]]["members"]
+                                            curr_members = sourcegroup["record"][unit["hash"]]["members"]
+                                            source_found = False
+                                            end_found = False
+                                            for mchars, member in end_members.iteritems() :
+                                                if source in mchars :
+                                                    source_found = True
+                                            for mchars, member in curr_members.iteritems() :
+                                                if endchars in mchars :
+                                                    end_found = True
+                                                    
+                                            if not end_found or not source_found :
+                                                #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                                                merge_end = True
+                                                skip_prev_merge = True
+                                                
+                                    else :
+                                        merge_end = True
+                        else :
+                            prev_merge = False
 
                     if py and action == "edit" :
                         if curr_merge :
@@ -1940,7 +1954,7 @@ class MICA(object):
                             if changes :
                                 if unit["hash"] in changes["record"] :
                                     color = "black"
-                                    add_count = " (" + str(changes["total"]) + ")"
+                                    add_count = " (" + str(int(changes["total"])) + ")"
 
                             if color != "black" and py and len(unit["multiple_spinyin"]) :
                                 fpy = " ".join(unit["multiple_spinyin"][0])
@@ -2007,7 +2021,7 @@ class MICA(object):
                     source = word[5]
                     memorized = False
                     
-                    if py :
+                    if py and action == 'read' :
                         if unit["hash"] in sources['memorized'] :
                             memorized = True
                             
@@ -2151,7 +2165,6 @@ class MICA(object):
                    
         return [untrans_count, reading, noreview, untrans] 
     
-    # IMPROVE ALL OF THE SUMMARY FUNCTIONS LIKE THESE WITH THE NEW VIEWS
     def memocount(self, req, story, page):
         added = {}
         unique = {}
@@ -2197,10 +2210,8 @@ class MICA(object):
         char = "".join(unit["source"])
         hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-        changes = False
-        try :
-            changes = self.db[which(req, char)]
-        except couchdb.http.ResourceNotFound, e :
+        changes = self.db[which(req, char)]
+        if not changes :
             changes = {} 
             changes["record"] = {}
         
@@ -2281,9 +2292,8 @@ class MICA(object):
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    try :
-                        changes = self.db[self.merge(req, char)]
-                    except couchdb.http.ResourceNotFound, e :
+                    changes = self.db[self.merge(req, char)]
+                    if not changes :
                         changes = {} 
                         changes["record"] = {}
                         changes["source"] = unit["source"]
@@ -2318,11 +2328,15 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype) :
-        if self.doc_exist(self.story(req, filename)) :
+    def add_story_from_source(self, req, filename, source, filetype, removespaces) :
+        if self.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
+        if removespaces :
+            mdebug("Remove spaces requested!")
+        else :
+            mdebug("Remove spaces not requested.")
         
         if filetype == "txt" :
             mdebug("Source: " + source)
@@ -2362,20 +2376,20 @@ class MICA(object):
 
                 data = "\n".join(new_page)
                 mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
+
                 de_data = data.decode("utf-8") if isinstance(data, str) else data
-                wouldbe = self.story(req, filename) + ":original:" + str(pagecount)
-                mdebug("Would be add: " + wouldbe)
-                unused = {"nothing" : "yet" }
+
+                if removespaces :
+                    de_data = de_data.replace(u' ', u'')
+                    mdebug("After remove spaces:\n " + de_data + " \nfor page: " + str(pagecount))
+
                 '''
                 FIXME: We're not deleting the attachments here properly upon failure.
                 '''
                 
-                if self.doc_exist(wouldbe) :
-                    del self.db[wouldbe]
-                self.db[wouldbe] = unused
-                self.db.put_attachment(unused, 
+                self.db.put_attachment(self.story(req, filename) + ":original:" + str(pagecount),
+                                        "attach",
                                         str({ "images" : images, "contents" : de_data }), 
-                                        "attach"
                                        )
 
                 pagecount += 1
@@ -2383,20 +2397,19 @@ class MICA(object):
             device.close()
             fp.close()
         elif filetype == "txt" :
-            self.db[self.story(req, filename) + ":original"] = { "value" : source.decode("utf-8") }
+            de_source = source.decode("utf-8") if isinstance(source, str) else source
+            mdebug("Page input:\n " + source)
+            if removespaces :
+                de_source = de_source.replace(u' ', u'')
+                mdebug("After remove spaces:\n " + de_source)
+            self.db[self.story(req, filename) + ":original"] = { "value" : de_source }
         
         self.db[self.story(req, filename)] = story
         self.db[self.index(req, story["uuid"])] = { "value" : filename }
 
-        if "current_story" in req.session.value :
-            del req.session.value["current_story"]
-            req.session.save()
-        if "current_page" in req.session.value :
-            del req.session.value["current_page"]
-            req.session.save()
+        self.clear_story(req)
 
         uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
-        self.db.compact("stories")
         return self.bootstrap(req, uc)
         
         
@@ -2406,10 +2419,27 @@ class MICA(object):
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
             del self.db[self.story(req, name) + ":pages:" + str(tmppage)]
             
-        if self.doc_exist(self.story(req, name) + ":final") :
+        if self.db.doc_exist(self.story(req, name) + ":final") :
             mdebug("Deleting final version from story " + name)
             del self.db[self.story(req, name) + ":final"]
-        self.db.compact("stories")
+
+    def view_check(self, name) :
+       fh = open(cwd + "views/" + name + ".js", 'rw')
+       vc = fh.read()
+       fh.close()
+       if not self.db.doc_exist("_design/" + name) :
+           mdebug("View " + name + " does not exist. Uploading.")
+           self.db["_design/" + name] = json.loads(vc)
+
+    def clear_story(self, req) :
+        uuid = False
+        if "current_story" in req.session.value :
+            uuid = req.session.value["current_story"]
+            del req.session.value["current_story"]
+            req.session.save()
+        if "current_page" in req.session.value :
+            del req.session.value["current_page"]
+            req.session.save()
 
     def common(self, req) :
         try :
@@ -2418,11 +2448,8 @@ class MICA(object):
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
 
-                auth = True
-                try :
-                    user = self.db[self.acct(username)]
-                except couchdb.http.ResourceNotFound, e :
-                    auth = False
+                user = self.db[self.acct(username)]
+                auth = True if user else False
 
                 if auth and user["password"] != hashlib.md5(password).hexdigest() :
                     auth = False
@@ -2442,10 +2469,7 @@ class MICA(object):
 
                 req.session.value["username"] = username
 
-                if "current_story" in req.session.value :
-                    del req.session.value["current_story"]
-                if "current_page" in req.session.value :
-                    del req.session.value["current_page"]
+                self.clear_story(req)
 
                 req.session.value["last_refresh"] = str(timest())
                 req.session.save()
@@ -2465,6 +2489,11 @@ class MICA(object):
 
             if username not in self.first_request :
                 self.first_request[username] = True 
+                self.view_check("stories")
+                self.view_check("tonechanges")
+                self.view_check("mergegroups")
+                self.view_check("splits")
+                self.view_check("memorized")
 
                 for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
                     tmp_storyname = result["key"][1]
@@ -2473,21 +2502,23 @@ class MICA(object):
                     tmp_story["translating"] = False
                     try :
                         self.db[self.story(req, tmp_storyname)] = tmp_story
-                    except couchdb.http.ResourceConflict, e :
+                    except couch_adapter.ResourceConflict, e :
                         mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
                         
                     self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
+                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces)
 
             if req.http.params.get("uploadtext") :
+                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                return self.add_story_from_source(req, filename, source, "txt")
+                return self.add_story_from_source(req, filename, source, "txt", removespaces)
 
             start_page = "0"
             view_mode = "text"
@@ -2497,12 +2528,9 @@ class MICA(object):
 
             if req.http.params.get("uuid") :
                 uuid = req.http.params.get("uuid") 
-                name_found = False 
-                try :
-                    name = self.db[self.index(req, uuid)]["value"]
-                    name_found = True
-                except couchdb.http.ResourceNotFound, e :
-                    pass
+
+                name = self.db[self.index(req, uuid)]["value"]
+                name_found = True if name else False
                     
                 if not name :
                     if req.http.params.get("name") :
@@ -2512,7 +2540,7 @@ class MICA(object):
                     story = self.db[self.story(req, name)]
 
             if req.http.params.get("delete") :
-                story_found = False if not name else self.doc_exist(self.story(req, name))
+                story_found = False if not name else self.db.doc_exist(self.story(req, name))
                 if name and not story_found :
                     mdebug(name + " does not exist. =(")
                 else :
@@ -2530,32 +2558,23 @@ class MICA(object):
                     if name and story_found :
                         del self.db[self.story(req, name)]
                     
-                    if self.doc_exist(self.index(req, uuid)) :
+                    if self.db.doc_exist(self.index(req, uuid)) :
                         del self.db[self.index(req, uuid)]
                 
                         
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    del req.session.value["current_story"]
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                    req.session.save()
+                    self.clear_story(req)
                     uuid = False
-                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
 
             if uuid :
-                if not self.doc_exist(self.index(req, uuid)) :
-                    if "current_story" in req.session.value :
-                        del req.session.value["current_story"]
-                        req.session.save()
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                        req.session.save()
+                if not self.db.doc_exist(self.index(req, uuid)) :
+                    self.clear_story(req)
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid story uuid: " + uuid + "</h4></div>")
 
             if req.http.params.get("tstatus") :
                 out = "<div id='tstatusresult'>"
-                if not self.doc_exist(self.index(req, uuid)) :
+                if not self.db.doc_exist(self.index(req, uuid)) :
                     out += "error 25 0 0"
                 else :
                     if "translating" not in story or not story["translating"] :
@@ -2597,12 +2616,8 @@ class MICA(object):
                 story = tmp_story
                 
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    del req.session.value["current_story"]
-                    if "current_page" in req.session.value :
-                        del req.session.value["current_page"]
-                    req.session.save()
+                    self.clear_story(req)
                     uuid = False
-                self.db.compact("stories")
                 return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
@@ -2650,8 +2665,8 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, cjkdb, d) = self.get_cjk_handle()
-                    eng = self.get_first_translation(d, source.decode("utf-8"), False)
+                    (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+                    eng = self.get_first_translation(d, source.decode("utf-8"), False, debug = True)
                     if eng :
                         for english in eng :
                             out += english.encode("utf-8")
@@ -2678,25 +2693,17 @@ class MICA(object):
             # Functions only go here if they are actions against the currently reading story
             # Functions above here can happen on any story
             
-            story_changed = False
             if "current_story" in req.session.value :
                 if uuid :
-                    if req.session.value["current_story"] != uuid :
-                        story_changed = True
+                    self.clear_story(req)
                     req.session.value["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session.value["current_story"]
             elif uuid :
-                story_changed = True
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
-            if story_changed :
-                if "current_page" in req.session.value:
-                    del req.session.value["current_page"]
-                    req.session.save()
-            
             if "current_page" in req.session.value :
                 start_page = req.session.value["current_page"]
             else :
@@ -2778,6 +2785,9 @@ class MICA(object):
                 
                 for edit in edits :
                     mdebug("Processing edit: " + str(edit))
+                    if isinstance(edit, str) or str(edit).strip() == "" :
+                        merr("Skipping Wierd edit request: " + str(edit))
+                        continue
                     if edit["failed"] :
                         mdebug("This edit failed. Skipping.")
                         continue
@@ -2862,8 +2872,11 @@ class MICA(object):
                             output = "<div><div id='pageresult'>"
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
-                                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                original = eval(attachment.read())
+                                attach_raw = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
+                                mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                original = eval(attach_raw)
+                                mdebug("OK, evaluated with keys: " + str(original.keys()))
+
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
                                     # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
@@ -2883,8 +2896,9 @@ class MICA(object):
                 output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
-                if story["filetype"] != "txt" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + story["filetype"] + " file with multiple pages. Not yet implemented.</h4></div>\n")
+                ftype = "txt" if "filetype" not in story else story["filetype"]
+                if ftype != "txt" :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + ftype + ". Viewing original not finished with implementation.</h4></div>\n")
                 
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
@@ -2926,6 +2940,7 @@ class MICA(object):
                            for(var tidx = 0; tidx < translist.length; tidx++) {
                                trans_start(translist[tidx]);
                            }
+                           translist = [];
                            </script>
                           """
                 return self.bootstrap(req, "<div><div id='storylistresult'>" + storylist + "</div></div>", now = True)
@@ -2935,10 +2950,13 @@ class MICA(object):
                 
                 if req.http.params.get("pack") :
                     self.db.compact()
-                    design_docs = self.db.all_docs(startkey="_design", endkey="_design/"+u"\u9999")
-                    design_doc_names = [ d["id"][8:] for d in design_docs ]
-                    for name in design_doc_names :
-                        self.db.compact(name)
+                    design_docs = ["groupings", "stories", "mergegroups",
+                                   "tonechanges", "accounts", "splits" ]
+
+                    for name in design_docs :
+                        if self.db.doc_exist("_design/" + name) :
+                            mdebug("Compacting view " + name)
+                            self.db.compact(name)
                     out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
                     
                 user = self.db[self.acct(username)]
@@ -2974,7 +2992,7 @@ class MICA(object):
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
 
-                    if self.doc_exist(self.acct(newusername)) :
+                    if self.db.doc_exist(self.acct(newusername)) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
                     if 'admin' not in user["roles"] and admin == 'on' :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Non-admin users can't create admin accounts. What are you doing?!</h4></div>")
@@ -2986,7 +3004,6 @@ class MICA(object):
                     self.db[self.acct(newusername)] = { 'password' : hashlib.md5(newpassword).hexdigest(), 'roles' : roles }
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
-                    self.db.compact("accounts")
 
                 elif req.http.params.get("changepassword") :
                     oldpassword = req.http.params.get("oldpassword")
@@ -3007,8 +3024,7 @@ class MICA(object):
                     
             elif req.action == "disconnect" :
                 req.session.value['connected'] = False
-                del self.first_request[username]
-                #del req.session.value['cloud_name'] # delete whatever shouldn't be in the session
+                #del self.first_request[username]
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
             elif req.action == "help" :
@@ -3018,12 +3034,10 @@ class MICA(object):
                 helpfh.close()
                 return self.bootstrap(req, output)
             else :
-                return self.bootstrap(req, "Nothing to do!")
+                return self.bootstrap(req, "Read, Review, or Edit, my friend?")
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
-        except mica_ictclas.error, e :
-            return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: mica C-extension failed: " + str(e) + "</h4>")
         except Exception, msg:
             mdebug("Exception: " + str(msg))
             out = "Exception:\n" 
@@ -3034,12 +3048,14 @@ class MICA(object):
             mdebug(out )
 
             try :
+                if isinstance(resp, str) :
+                    resp = resp.decode("utf-8")
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: Something bad happened: " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :
-                print "OTHER MICA ********Exception:"
+                merr("OTHER MICA ********Exception:")
                 for line in traceback.format_exc().splitlines() :
-                    print "OTHER MICA ********" + line
+                    merr("OTHER MICA ********" + line)
             return out
 
 '''
@@ -3056,13 +3072,49 @@ class IDict(Interface):
 class CDict(object):
     implements(IDict)
     def __init__(self, session):
-        self.value = {}
+        start = {}
+        uid = session.uid
+
+        if params["keepsession"] :
+            sfn = cwd + "sessions/debug.session"
+        else :
+            sfn = cwd + "sessions/" + uid + ".session"
+
+        if os.path.isfile(sfn) :
+            mdebug("Loading existing session file: " + sfn)
+            fh = open(sfn, 'r')
+            sc = fh.read().strip()
+            fh.close()
+            if sc != "" :
+                start = json.loads(sc)
+        else :
+            mdebug("No session existing session file: " + sfn)
+
+        self.value = start 
+        self.value["session_uid"] = uid
     def save(self) :
-        # Just here to emulate beaker. Doesn't really do anything.
+        if params["keepsession"] :
+            sfn = cwd + "sessions/debug.session"
+        else :
+            sfn = cwd + "sessions/" + self.value["session_uid"] + ".session"
+
+        mdebug("Saving to session file: " + sfn)
+        fh = open(sfn, 'w')
+        fh.write(json.dumps(self.value))
+        fh.close()
         pass
 
+sessions = set()
+
+def expired(uid):
+   sfn = cwd + "sessions/" + uid + ".session"
+   mdebug("Session " + uid + " has expired.")
+   sessions.remove(uid)
+   mdebug("Removing session file.")
+   os.remove(sfn)
+        
 class GUIDispatcher(Resource) :
-    def __init__(self) :
+    def __init__(self, mica) :
 
         Resource.__init__(self)
         self.serve = File(cwd + relative_prefix)
@@ -3073,7 +3125,7 @@ class GUIDispatcher(Resource) :
         self.icon = File(cwd + relative_prefix + "/favicon.ico")
         self.git = File(cwd + "/.git")
         self.git.indexNames = ["test.rpy"]
-        self.mica = MICA(options.client_id, options.client_secret, options.couch, options.dbname)
+        self.mica = mica
             
 #        self.app = WSGIResource(reactor, reactor.threadpool, SessionMiddleware(self.mica, session_opts))
         self.app = WSGIResource(reactor, reactor.threadpool, self.mica)
@@ -3088,8 +3140,12 @@ class GUIDispatcher(Resource) :
         request.setHeader('Access-Control-Max-Age', 2520)
         request.setHeader('Content-Type', 'text/html; charset=utf-8')
 
-        request.session = IDict(request.getSession())
-        
+        s = request.getSession()
+        request.session = IDict(s)
+        if s.uid not in sessions :
+            sessions.add(s.uid)
+            s.notifyOnExpire(lambda: expired(s.uid))
+
         if name.count(relative_prefix_suffix):
             return self.serve
         #if name.count("stories") :
@@ -3101,6 +3157,9 @@ class GUIDispatcher(Resource) :
         else :
             return self.app
 
+class MicaSession(Session) :
+    sessionTimeout = 604800 # one week 
+
 class NONSSLRedirect(object) :
     def __init__(self):
         pass
@@ -3108,7 +3167,7 @@ class NONSSLRedirect(object) :
     def __call__(self, environ, start_response):
         req = Params(environ, start_response.im_self.request.session)
         (req.dest, req.path) = prefix(req.unparsed_uri)
-        tossl = "https://" + req.dest + ":" + str(options.sslport) + "/" + req.path 
+        tossl = "https://" + req.dest + ":" + str(params["sslport"]) + "/" + req.path 
         mdebug("Redirecting non-ssl request to: " + tossl)
         resp = exc.HTTPTemporaryRedirect(location = tossl)
         return resp(environ, start_response)
@@ -3123,91 +3182,153 @@ class NONSSLDispatcher(Resource) :
         self.app = WSGIResource(reactor, reactor.threadpool, self.nonssl)
 
     def getChild(self, name, request) :
-        request.session = IDict(request.getSession())
+        s = request.getSession()
+        request.session = IDict(s)
+        if s.uid not in sessions :
+            sessions.add(s.uid)
+            s.notifyOnExpire(lambda: expired(s.uid))
         return self.app
 
-registerAdapter(CDict, Session, IDict)
+def get_options() :
+    from optparse import OptionParser
 
-parser = OptionParser()
-client_id = "micalearning"
-client_secret = "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8="
+    parser = OptionParser()
 
-parser.add_option("-p", "--port", dest = "port", default = "80", help ="port")
-parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
-parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
-parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
-parser.add_option("-D", "--daemon", dest = "daemon", action = "store_true", \
-                   default = False, help ="Daemonize the service.")
-parser.add_option("-d", "--debug_host", dest = "debug_host", \
-                   default = None, help ="Hostname for remote debugging")
-parser.add_option("-l", "--log", dest = "logfile", default = cwd + "logs/mica.log", help ="MICA main log file.")
-parser.add_option("-t", "--tlog", dest = "tlogfile", default = cwd + "logs/twisted.log", help ="Twisted log file.")
-parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
-parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
-parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
-parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
-parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
-parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050",
-                                            help = "Port on which the slaves are running")
-parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
-parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
+    parser.add_option("-p", "--port", dest = "port", default = "80", help ="port")
+    parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
+    parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
+    parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
+    parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
+    parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
+    parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
+    parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
+    parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
+    parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
+    parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
+    parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
+    parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050", help = "Port on which the slaves are running")
+    parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
+    parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
+    parser.add_option("-e", "--cedict", dest = "cedict", default = False, help = "Location of cedict.db file used by cjklib library.")
+    parser.add_option("-T", "--tonefile", dest = "tonefile", default = False, help = "Location of pinyin tone txt file.")
 
-parser.set_defaults()
-options, args = parser.parse_args()
+    parser.set_defaults()
+    options, args = parser.parse_args()
 
-if not options.cert or not options.privkey :
-    print "Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README."
-    exit(1)
+    params = {
+               "port" : options.port,
+               "sslport" : options.sslport,
+               "host" : options.host,
+               "keepsession" : options.keepsession,
+               "debug_host" : options.debug_host,
+               "log" : options.log,
+               "tlog" : options.tlog,
+               "client_id" : options.client_id,
+               "client_secret" : options.client_secret,
+               "cert" : options.cert,
+               "privkey" : options.privkey,
+               "slaves" : options.slaves,
+               "slave_port" : options.slave_port,
+               "couch" : options.couch,
+               "dbname" : options.dbname,
+               "cedict" : options.cedict,
+               "tonefile" : options.tonefile,
+    }
 
-if not options.client_id or not options.client_secret:
-    print "Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)"
-    exit(1)
+    return params 
 
-if not options.keepsession and 'session.data_dir' in session_opts and 'session.lock_dir' in session_opts :
-    try :
-        shutil.rmtree(session_opts['session.data_dir'])
-        shutil.rmtree(session_opts['session.lock_dir'])
-    except OSError :
-        pass
 
 slaves = {}
+params = None
 
-def main() :
-    cjk = CharacterLookup('C')
-    cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + cwd + 'cedict.db', 'attach': ['cjklib']})
-    d = CEDICT(dbConnectInst = cjkdb)
-    mica_init_logging(options.logfile)
+def go(p) :
+    global params
+    params = p
+    mdebug("Verifying options.")
+    if not params["cert"] or not params["privkey"] :
+        merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
+        exit(1)
 
-    log.startLogging(DailyLogFile.fromFullPath(options.tlogfile), setStdout=True)
+    if not params["client_id"] or not params["client_secret"]:
+        merr("Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)")
+        exit(1)
+
+    if not params["keepsession"] :
+        if os.path.isdir(cwd + "sessions/") :
+            mdebug("Destroying all session files")
+            shutil.rmtree(cwd + "sessions/")
+
+    if not os.path.isdir(cwd + "sessions/") :
+        mdebug("Making new session folder.")
+        os.makedirs(cwd + "sessions/")
+
+    mdebug("Registering session adapter.")
+    registerAdapter(CDict, Session, IDict)
+
+    mdebug("Initializing logging.")
+    mica_init_logging(params["log"])
+
+    if "tonefile" not in params or not params["tonefile"] :
+        params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
+
+    mdebug("Building tone file")
+    dpfh = open(params["tonefile"])
+    for line in dpfh.readlines() :
+        k, v = line.split('\t')
+        cd[k] = v
+
+    dpfh.close()
+
+    if params["tlog"] :
+        if params["tlog"] != 1 :
+            mdebug("Initializing twisted log.")
+            log.startLogging(DailyLogFile.fromFullPath(params["tlog"]), setStdout=True)
+    else :
+        mdebug("Skipping twisted log")
 
     try :
-        slave_addresses = options.slaves.split(",")
+        if params["slaves"] :
+            slave_addresses = params["slaves"].split(",")
 
-        for slave_address in slave_addresses :
-            slave_uri = "http://" + slave_address + ":" + options.slave_port
-            minfo("Registering slave @ " + slave_uri)
-            slaves[slave_uri] = MICASlaveClient(slave_uri)
-            #slaves[slave_uri].foo("bar")
+            for slave_address in slave_addresses :
+                slave_uri = "http://" + slave_address + ":" + str(params["slave_port"])
+                minfo("Registering slave @ " + slave_uri)
+                slaves[slave_uri] = MICASlaveClient(slave_uri)
+                #slaves[slave_uri].foo("bar")
 
-        assert(len(slaves) >= 1)
+            assert(len(slaves) >= 1)
+
+        db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
+
+        mica = MICA(params["client_id"], params["client_secret"], params["couch"], params["dbname"], params["cedict"], db_adapter)
+
+        mdebug("Testing cjk")
+        mica.get_cjk_handle(params["cedict"])
 
         reactor._initThreadPool()
-        site = Site(GUIDispatcher())
+        site = Site(GUIDispatcher(mica))
+        site.sessionFactory = MicaSession
         nonsslsite = Site(NONSSLDispatcher())
+        nonsslsite.sessionFactory = MicaSession
 
-        reactor.listenTCP(int(options.port), nonsslsite, interface = options.host)
-        reactor.listenSSL(int(options.sslport), site, ssl.DefaultOpenSSLContextFactory(options.privkey, options.cert), interface = options.host)
-        minfo("Point your browser at port: " + str(options.sslport) + ". (Bound to interface: " + options.host + ")")
+        if params["sslport"] != -1 :
+            reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
+            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
+            minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
+        else :
+            mwarn("Disabling SSL access. Be careful =)")
+            minfo("Point your browser at port: " + str(params["port"]) + ". (Bound to interface: " + params["host"] + ")")
+            reactor.listenTCP(int(params["port"]), site, interface = params["host"])
 
-        if options.debug_host is not None :
+        if params["debug_host"] :
             try :
                 import debug
-                print str(sys.path)
+                mdebug(str(sys.path))
                 import pydevd
-                pydevd.settrace(host=options.debug_host)
+                pydevd.settrace(host=params["debug_host"])
             except ImportError, msg :
-                cbwarn("Failed to import debug file for remote debugging: " + str(msg), True)
-                options.debug_host = None
+                mwarn("Failed to import debug file for remote debugging: " + str(msg), True)
+                params["debug_host"] = None
                 exit(1)
 
         reactor.run()
@@ -3217,9 +3338,7 @@ def main() :
             merr(line)
 
 if __name__ == "__main__":
-    main()
-
-'''
-                                attachment = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                original = eval(attachment.read())
-'''
+    mdebug("Ready to go.")
+    params = get_options()
+    params["couch_adapter_type"] = "MicaServerCouchDB"
+    go(params)

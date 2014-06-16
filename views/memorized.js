@@ -1,5 +1,4 @@
 {
-   "_id": "_design/memorized",
    "language": "javascript",
    "views": {
        "allcount": {

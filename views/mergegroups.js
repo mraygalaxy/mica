@@ -1,5 +1,4 @@
 {
-   "_id": "_design/mergegroups",
    "language": "javascript",
    "views": {
        "all": {

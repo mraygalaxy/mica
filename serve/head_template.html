@@ -168,6 +168,7 @@
                                    &nbsp;Unique Name: <input type='text' name='storyname' value=''></input>
                                 </h5>
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
+                                <h5>&nbsp;<input type="checkbox" name="removespaces" checked/>&nbsp;Remove Spaces?</h5>
                                 </form>                                   
                                 <p/>
                                 <h4><b>Or Upload a File Instead:</b></h4>
@@ -183,6 +184,7 @@
                                       <option disabled value='epub'>EPUB (not implemented, utf-8, multi-page)</option>
                                       <option disabled value='json'>JSON (not implemented, utf-8, multi-page</option>
                                       </select>
+                                      <h5>&nbsp;<input type="checkbox" name="removespaces" checked/>&nbsp;Remove Spaces?</h5>
                                 </h5>
                                 </form>                                   
                                 <h5>NOTE: Story *must* be UTF-8 encoded.</h5>
@@ -207,7 +209,8 @@ BOOTBODY
     var connectpop = $('#connectpop').popover({ 
         html : true,
         title: "Connect:",
-        placement : $.browser.device ? 'bottom-right' : 'bottom',
+//        placement : $.browser.device ? 'bottom-right' : 'bottom',
+        placement : 'bottom',
         trigger: 'manual',
         template: getTemplate(),
         content: function() {
