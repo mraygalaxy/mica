@@ -18,7 +18,6 @@ obsolete.py
 *.swp
 *.swo
 *.pyc
-*.crt
 *.key
 *.csr
 params.py
