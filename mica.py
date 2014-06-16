@@ -2449,7 +2449,6 @@ class MICA(object):
                 password = req.http.params.get('password')
 
                 user = self.db[self.acct(username)]
-                assert(user)
                 auth = True if user else False
 
                 if auth and user["password"] != hashlib.md5(password).hexdigest() :
@@ -3074,21 +3073,46 @@ class CDict(object):
     implements(IDict)
     def __init__(self, session):
         start = {}
+        uid = session.uid
 
-        if params["keepsession"] and os.path.isfile(cwd + "mica.session") :
-            mdebug("Loading existing session file: " + cwd + "mica.session")
-            fh = open(cwd + "mica.session", 'r')
+        if params["keepsession"] :
+            sfn = cwd + "sessions/debug.session"
+        else :
+            sfn = cwd + "sessions/" + uid + ".session"
+
+        if os.path.isfile(sfn) :
+            mdebug("Loading existing session file: " + sfn)
+            fh = open(sfn, 'r')
             sc = fh.read().strip()
             fh.close()
             if sc != "" :
                 start = json.loads(sc)
+        else :
+            mdebug("No session existing session file: " + sfn)
+
         self.value = start 
+        self.value["session_uid"] = uid
     def save(self) :
-        fh = open(cwd + "mica.session", 'w')
+        if params["keepsession"] :
+            sfn = cwd + "sessions/debug.session"
+        else :
+            sfn = cwd + "sessions/" + self.value["session_uid"] + ".session"
+
+        mdebug("Saving to session file: " + sfn)
+        fh = open(sfn, 'w')
         fh.write(json.dumps(self.value))
         fh.close()
         pass
 
+sessions = set()
+
+def expired(uid):
+   sfn = cwd + "sessions/" + uid + ".session"
+   mdebug("Session " + uid + " has expired.")
+   sessions.remove(uid)
+   mdebug("Removing session file.")
+   os.remove(sfn)
+        
 class GUIDispatcher(Resource) :
     def __init__(self, mica) :
 
@@ -3116,8 +3140,12 @@ class GUIDispatcher(Resource) :
         request.setHeader('Access-Control-Max-Age', 2520)
         request.setHeader('Content-Type', 'text/html; charset=utf-8')
 
-        request.session = IDict(request.getSession())
-        
+        s = request.getSession()
+        request.session = IDict(s)
+        if s.uid not in sessions :
+            sessions.add(s.uid)
+            s.notifyOnExpire(lambda: expired(s.uid))
+
         if name.count(relative_prefix_suffix):
             return self.serve
         #if name.count("stories") :
@@ -3154,7 +3182,11 @@ class NONSSLDispatcher(Resource) :
         self.app = WSGIResource(reactor, reactor.threadpool, self.nonssl)
 
     def getChild(self, name, request) :
-        request.session = IDict(request.getSession())
+        s = request.getSession()
+        request.session = IDict(s)
+        if s.uid not in sessions :
+            sessions.add(s.uid)
+            s.notifyOnExpire(lambda: expired(s.uid))
         return self.app
 
 def get_options() :
@@ -3220,6 +3252,15 @@ def go(p) :
     if not params["client_id"] or not params["client_secret"]:
         merr("Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)")
         exit(1)
+
+    if not params["keepsession"] :
+        if os.path.isdir(cwd + "sessions/") :
+            mdebug("Destroying all session files")
+            shutil.rmtree(cwd + "sessions/")
+
+    if not os.path.isdir(cwd + "sessions/") :
+        mdebug("Making new session folder.")
+        os.makedirs(cwd + "sessions/")
 
     mdebug("Registering session adapter.")
     registerAdapter(CDict, Session, IDict)
