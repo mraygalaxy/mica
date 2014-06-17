@@ -1222,7 +1222,7 @@ class MICA(object):
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
-                mwarn("Should we toss this group? " + str(group) + ": " + str(e))
+                mwarn("Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
             self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page)
 
@@ -2498,17 +2498,18 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
-                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
-                    tmp_storyname = result["key"][1]
-                    tmp_story = self.db[self.story(req, tmp_storyname)]
-                    mdebug("Killing stale translation session: " + tmp_storyname)
-                    tmp_story["translating"] = False
-                    try :
-                        self.db[self.story(req, tmp_storyname)] = tmp_story
-                    except couch_adapter.ResourceConflict, e :
-                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
-                        
-                    self.flush_pages(req, tmp_storyname)
+                if params["transreset"] :
+                    for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
+                        tmp_storyname = result["key"][1]
+                        tmp_story = self.db[self.story(req, tmp_storyname)]
+                        mdebug("Killing stale translation session: " + tmp_storyname)
+                        tmp_story["translating"] = False
+                        try :
+                            self.db[self.story(req, tmp_storyname)] = tmp_story
+                        except couch_adapter.ResourceConflict, e :
+                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+                            
+                        self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
@@ -3206,6 +3207,7 @@ def get_options() :
     parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
     parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
     parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
+    parser.add_option("-r", "--transreset", dest = "transreset", action = "store_true", default = False, help ="Throw away old, failed translation sessions")
     parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
     parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
     parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
@@ -3242,6 +3244,7 @@ def get_options() :
                "cedict" : options.cedict,
                "tonefile" : options.tonefile,
                "mobileinternet" : False,
+               "transreset" : options.transreset,
     }
 
     return params 
