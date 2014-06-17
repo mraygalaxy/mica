@@ -1200,6 +1200,20 @@ class MICA(object):
         d = CEDICT(dbConnectInst = cjkdb)
         return (cjk, cjkdb, d)
 
+    def store_error(self, req, name, msg) :
+	merr(msg)
+	self.transmutex.acquire()
+	try :
+	    tmpstory = self.db[self.story(req, name)]
+	    if "last_error" not in tmpstory or isinstance(tmpstory["last_error"], str) :
+		tmpstory["last_error"] = []
+	    tmpstory["last_error"] = [msg] + tmpstory["last_error"]
+	    self.db[self.story(req, name)] = tmpstory
+	except couch_adapter.ResourceConflict, e :
+	    mdebug("Failure to sync error message. No big deal: " + str(e))
+	finally :
+	    self.transmutex.release()
+
     def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
         if not handle :
             (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
@@ -1219,8 +1233,9 @@ class MICA(object):
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
-                mwarn("Should we toss this group? " + str(group) + ": " + str(e))
+		self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
+
             self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page)
 
             if idx % 10 == 0 :
@@ -1318,7 +1333,8 @@ class MICA(object):
                 tmpstory["translating_page"] = iidx 
                 self.db[self.story(req, name)] = tmpstory
             except Exception, e :
-                mdebug("Failure to sync: " + str(e))
+		self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
+		raise e
             finally :
                 self.transmutex.release()
 
@@ -1340,11 +1356,14 @@ class MICA(object):
                 self.db[page_key] = story["pages"][str(iidx)]
                 del story["pages"][str(iidx)]
             except Exception, e :
+		msg = ""
                 for line in traceback.format_exc().splitlines() :
-                    merr(line)
+                    msg += line
+		merr(msg)
                 tmpstory = self.db[self.story(req, name)]
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
+		self.store_error(req, name, msg)
                 raise e
 
         self.transmutex.acquire()
@@ -2140,7 +2159,11 @@ class MICA(object):
                 untrans += "\n<td style='font-size: x-small' colspan='3'>"
                 untrans += "<div id='transbutton" + story['uuid'] + "'>"
                 untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
-                untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a></div>&nbsp;"
+                untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
+		if "last_error" in story and not isinstance(story["last_error"], str) :
+		    for err in story["last_error"] :
+                        untrans += "<br/>" + err 
+		untrans += "</div>&nbsp;"
                 untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                 untrans += "</div>"
                 if "translating" in story and story["translating"] :
@@ -2409,7 +2432,7 @@ class MICA(object):
 
         self.clear_story(req)
 
-        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div><script>loadstories();</script>"
+        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div>"
         return self.bootstrap(req, uc)
         
         
@@ -2495,6 +2518,7 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
+		'''
                 for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
                     tmp_storyname = result["key"][1]
                     tmp_story = self.db[self.story(req, tmp_storyname)]
@@ -2506,6 +2530,7 @@ class MICA(object):
                         mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
                         
                     self.flush_pages(req, tmp_storyname)
+		'''
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
@@ -2695,12 +2720,14 @@ class MICA(object):
             
             if "current_story" in req.session.value :
                 if uuid :
-                    self.clear_story(req)
+		    if req.session.value["current_story"] != uuid :
+		        self.clear_story(req)
                     req.session.value["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session.value["current_story"]
             elif uuid :
+		self.clear_story(req)
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
@@ -2893,7 +2920,6 @@ class MICA(object):
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
-                output += "<script>loadstories();</script>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
@@ -3098,7 +3124,7 @@ class CDict(object):
         else :
             sfn = cwd + "sessions/" + self.value["session_uid"] + ".session"
 
-        mdebug("Saving to session file: " + sfn)
+        #mdebug("Saving to session file: " + sfn)
         fh = open(sfn, 'w')
         fh.write(json.dumps(self.value))
         fh.close()
