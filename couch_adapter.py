@@ -175,8 +175,11 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error getting attachment: " + name + " " + str(e), e)
         if attach is None :
             raise ResourceNotFound("Could not find attachment for document: " + name)
-        # The ByteArray pyjnius is actually a 'memoryview' from java,
-        # which you can google about
+        # The ByteArray pyjnius is actually a 'memoryview' from python that
+        # represents the native java byte[] object that was returned,
+        # which you can google about. MemoryViews are shared-memory versions
+        # of native python bytearrays which can be maped into a string,
+        # like this.
         return "".join(map(chr, attach))
 
     def doc_exist(self, name) :
