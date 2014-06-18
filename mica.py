@@ -300,15 +300,19 @@ class Translator(object):
             'grant_type': self.grant_type
         })
         
+	response = False
         try :
             response = json.loads(urllib.urlopen(
                 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args
             ).read())
         except IOError, e :
-            raise TranslateApiException(
-                response.get('error_description', 'Failed to authenticate with translation service'),
-                response.get('error', str(e))
-            )
+	    if response :
+		raise TranslateApiException(
+			response.get('error_description', 'Failed to authenticate with translation service'),
+			response.get('error', str(e))
+		    )
+	    else :
+		raise TranslateApiException("Translation Service Authentication failed", str(e))
         
 
         self.logger.debug(response)
@@ -1054,20 +1058,20 @@ class MICA(object):
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
-    def recursive_translate(self, req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page) :
+    def all_punct(self, uni) :
+        all = True
+        for char in uni :
+            if len(uni) and char not in punctuation :
+                all = False
+                break
+	return all
+
+    def recursive_translate(self, req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page, tone_keys) :
         units = []
         
         mdebug("Requested: " + uni)
-        if uni == "人家" :
-            mdebug("Found our breakpoint")
 
-        all_punct = True
-        for char in uni :
-            if len(uni) and char not in punctuation :
-                all_punct = False
-                break
-            
-        if all_punct :
+        if self.all_punct(uni) :
             units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
             trans = []
@@ -1083,7 +1087,7 @@ class MICA(object):
             elif len(trans) == 0 :
                 if len(uni) > 1 :
                     for char in uni :
-                        self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, char, temp_units, page)
+                        self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, char, temp_units, page, tone_keys)
             elif len(trans) > 1 :
                             
                 for x in range(0, len(trans)) :
@@ -1103,7 +1107,10 @@ class MICA(object):
                 assert(len(readings) > 0)
 
                 if uni not in punctuation and uni :
-                    online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
+                    online_units = False
+                    if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                        online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
+
                     if not online_units or not len(online_units) :
                         eng = self.get_first_translation(d, uni, readings[0])
                         unit = self.add_unit([readings[0]], uni, [eng[0]])
@@ -1124,7 +1131,7 @@ class MICA(object):
                             selector = -1
                             
                             # FIXME: This totally needs to be a view. Fix it soon.
-                            changes = self.db[self.tones(req, source)]
+			    changes = tone_keys[source] if source in tone_keys else False
                             
                             if changes :
                                 total_changes = float(changes["total"])
@@ -1228,15 +1235,30 @@ class MICA(object):
             story["pages"][page] = {}
             story["pages"][page]["units"] = []
 
-        for idx in range(0, len(groups)) :
-            group = groups[idx]
+	unigroups = []
+	unikeys = []
+
+	for idx in range(0, len(groups)) :
+	    group = groups[idx]
+	    assert(isinstance(group, str))
+
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
 		self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
 
-            self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page)
+	    if not self.all_punct(uni) :
+		for unichar in uni :
+		    if unichar not in unikeys :
+			unikeys.append(unichar)
+	    unigroups.append(uni)
+
+        tone_keys = self.view_keys(req, "tonechanges", False, source_queries = unikeys) 
+	mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
+
+        for idx in range(0, len(unigroups)) :
+            self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, unigroups[idx], temp_units, page, tone_keys)
 
             if idx % 10 == 0 :
                 self.transmutex.acquire()
@@ -1304,7 +1326,7 @@ class MICA(object):
                 parsed = mica_ictclas.trans(page_input.encode("utf-8"))
             except mica_ictclas.error, e :
                 raise e
-            mdebug("Parsed result: " + parsed + " for page: " + str(iidx))
+            mdebug("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
             lines = parsed.split("\n")
             groups = []
             for line in lines :
@@ -1463,15 +1485,18 @@ class MICA(object):
 
         return out
 
-    def view_keys(self, req, name, units) :
-        source_queries = []
-        for unit in units :
-            if name == "memorized" :
-                if "hash" in unit :
-                    source_queries.append(unit["hash"])
-            else :
-                source_queries.append("".join(unit["source"]))
+    def view_keys(self, req, name, units, source_queries = []) :
+	if units :
+		for unit in units :
+		    if name == "memorized" :
+			if "hash" in unit :
+			    source_queries.append(unit["hash"])
+		    else :
+			source_queries.append("".join(unit["source"]))
             
+	if len(source_queries) == 0 :
+	    return {} 
+
         keys = {}
         for result in self.db.view(name + "/all", keys = source_queries, username = req.session.value['username']) :
             keys[result['key'][1]] = result['value']
@@ -2518,19 +2543,20 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
-		'''
-                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
-                    tmp_storyname = result["key"][1]
-                    tmp_story = self.db[self.story(req, tmp_storyname)]
-                    mdebug("Killing stale translation session: " + tmp_storyname)
-                    tmp_story["translating"] = False
-                    try :
-                        self.db[self.story(req, tmp_storyname)] = tmp_story
-                    except couch_adapter.ResourceConflict, e :
-                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
-                        
-                    self.flush_pages(req, tmp_storyname)
-		'''
+                if params["transreset"] :
+                    for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
+                        tmp_storyname = result["key"][1]
+                        tmp_story = self.db[self.story(req, tmp_storyname)]
+                        mdebug("Killing stale translation session: " + tmp_storyname)
+                        tmp_story["translating"] = False
+			if "last_error" in tmp_story :
+			    del tmp_story["last_error"]
+                        try :
+                            self.db[self.story(req, tmp_storyname)] = tmp_story
+                        except couch_adapter.ResourceConflict, e :
+                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+                            
+                        self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
@@ -2655,35 +2681,38 @@ class MICA(object):
                 human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
                 out = ""
                 out += "<div id='instantresult'>"
-                final = { }
-                requests = [source]
-                breakout = source.decode("utf-8") if isinstance(source, str) else source
-                if len(breakout) > 1 :
-                    for x in range(0, len(breakout)) :
-                        requests.append(breakout[x].encode("utf-8"))
 
-                result = self.translate_and_check_array(requests, u"en")
                 p = ""
-                for x in range(0, len(requests)) : 
-                    part = result[x]
-                    if "TranslatedText" not in part :
-                        mdebug("Why didn't we get anything: " + json.dumps(result))
-                        english = "No english translation available."
-                    else :
-                        english = part["TranslatedText"].encode("utf-8")
-                    
-                    if x == 0 :
-                        p += "Selected translation (" + source + "): " + english + "<br/>\n"
-                        final["whole"] = (source, english)
-                    else :
-                        char = breakout[x-1].encode("utf-8")
-                        if "parts" not in final :
-                            p += "Piecemeal translation:<br/>\n"
-                            final["parts"] = []
-                        p += "(" + char + "): "
-                        p += english
-                        p += "<br/>\n"
-                        final["parts"].append((char, english))
+                if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                    final = { }
+                    requests = [source]
+                    breakout = source.decode("utf-8") if isinstance(source, str) else source
+                    if len(breakout) > 1 :
+                        for x in range(0, len(breakout)) :
+                            requests.append(breakout[x].encode("utf-8"))
+                    result = self.translate_and_check_array(requests, u"en")
+                    for x in range(0, len(requests)) : 
+                        part = result[x]
+                        if "TranslatedText" not in part :
+                            mdebug("Why didn't we get anything: " + json.dumps(result))
+                            english = "No english translation available."
+                        else :
+                            english = part["TranslatedText"].encode("utf-8")
+                        
+                        if x == 0 :
+                            p += "Selected translation (" + source + "): " + english + "<br/>\n"
+                            final["whole"] = (source, english)
+                        else :
+                            char = breakout[x-1].encode("utf-8")
+                            if "parts" not in final :
+                                p += "Piecemeal translation:<br/>\n"
+                                final["parts"] = []
+                            p += "(" + char + "): "
+                            p += english
+                            p += "<br/>\n"
+                            final["parts"].append((char, english))
+                else :
+                    p += "No internet access. Offline only."
                        
                 if human :
                     out += "<h4>Online translation:</h4>"
@@ -2720,14 +2749,14 @@ class MICA(object):
             
             if "current_story" in req.session.value :
                 if uuid :
-		    if req.session.value["current_story"] != uuid :
-		        self.clear_story(req)
+                    if req.session.value["current_story"] != uuid :
+                        self.clear_story(req)
                     req.session.value["current_story"] = uuid
                     req.session.save()
                 else :
                     uuid = req.session.value["current_story"]
             elif uuid :
-		self.clear_story(req)
+                self.clear_story(req)
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
@@ -2900,9 +2929,10 @@ class MICA(object):
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
                                 attach_raw = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                #mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
+                                mdebug(str(attach_raw))
                                 original = eval(attach_raw)
-                                mdebug("OK, evaluated with keys: " + str(original.keys()))
+                                #mdebug("OK, evaluated with keys: " + str(original.keys()))
 
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
@@ -3224,6 +3254,7 @@ def get_options() :
     parser.add_option("-s", "--sslport", dest = "sslport", default = "443", help ="sslport")
     parser.add_option("-H", "--host", dest = "host", default = "0.0.0.0", help ="hostname")
     parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
+    parser.add_option("-r", "--transreset", dest = "transreset", action = "store_true", default = False, help ="Throw away old, failed translation sessions")
     parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
     parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
     parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
@@ -3259,6 +3290,8 @@ def get_options() :
                "dbname" : options.dbname,
                "cedict" : options.cedict,
                "tonefile" : options.tonefile,
+               "mobileinternet" : False,
+               "transreset" : options.transreset,
     }
 
     return params 
@@ -3271,7 +3304,7 @@ def go(p) :
     global params
     params = p
     mdebug("Verifying options.")
-    if not params["cert"] or not params["privkey"] :
+    if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 

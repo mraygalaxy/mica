@@ -37,7 +37,8 @@ def minfo(msg) :
 
 def mdebug(msg) :
    if micalogger :
-       micalogger.debug(threading.current_thread().name + ": " + msg)
+       micalogger.debug(msg)
+       #micalogger.debug(threading.current_thread().name + ": " + msg)
    else :
        print msg
 

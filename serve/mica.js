@@ -854,6 +854,7 @@ function togglecanvas() {
       } else {
         loadstories(false);
         $('#offnav').attr('href', '#main-nav');
+        loadstories(false);
       }
 }
 
