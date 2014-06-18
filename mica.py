@@ -26,6 +26,7 @@ import string
 import base64
 import __builtin__
 import sys
+import socket
 
 from common import *
 
@@ -271,10 +272,6 @@ class Translator(object):
         self.scope = scope
         self.grant_type = grant_type
         self.access_token = None
-        self.debug = debug
-        self.logger = logging.getLogger("microsofttranslator")
-        if self.debug:
-            self.logger.setLevel(level=logging.DEBUG)
 
     def get_access_token(self):
         """Bing AppID mechanism is deprecated and is no longer supported.
@@ -300,10 +297,11 @@ class Translator(object):
             'grant_type': self.grant_type
         })
         
+	mdebug("Authenticating...")
 	response = False
         try :
-            response = json.loads(urllib.urlopen(
-                'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args
+            response = json.loads(urllib2.urlopen(
+                'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args, timeout=30
             ).read())
         except IOError, e :
 	    if response :
@@ -315,7 +313,8 @@ class Translator(object):
 		raise TranslateApiException("Translation Service Authentication failed", str(e))
         
 
-        self.logger.debug(response)
+	mdebug("Authenticated")
+        mdebug(response)
 
         if "error" in response:
             raise TranslateApiException(
@@ -324,17 +323,23 @@ class Translator(object):
             )
         return response['access_token']
 
-    def call(self, url, params):
+    def call(self, url, p):
         """Calls the given url with the params urlencoded
         """
         if not self.access_token:
             self.access_token = self.get_access_token()
 
+	mdebug("urllib request start.")
+
         request = urllib2.Request(
-            "%s?%s" % (url, urllib.urlencode(params)),
+            "%s?%s" % (url, urllib.urlencode(p)),
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
-        response = urllib2.urlopen(request).read()
+
+	mdebug("urllib get response")
+        response = urllib2.urlopen(request, timeout=30).read()
+
+	mdebug("json load")
         rv =  json.loads(response.decode("utf-8-sig"))
 
         if isinstance(rv, basestring) and \
@@ -363,17 +368,17 @@ class Translator(object):
         :param category: The category of the text to translate. The only
             supported category is "general".
         """
-        params = {
+        p = {
             'text': text.encode('utf8'),
             'to': to_lang,
             'contentType': content_type,
             'category': category,
             }
         if from_lang is not None:
-            params['from'] = from_lang
+            p['from'] = from_lang
         return self.call(
             "http://api.microsofttranslator.com/V2/Ajax.svc/Translate",
-            params)
+            p)
 
     def translate_array(self, texts, to_lang, from_lang=None, **options):
         """Translates an array of text strings from one language to another.
@@ -405,17 +410,17 @@ class Translator(object):
             'User': u'default',
             'State': u''
             }.update(options)
-        params = {
+        p = {
             'texts': json.dumps(texts),
             'to': to_lang,
             'options': json.dumps(options),
             }
         if from_lang is not None:
-            params['from'] = from_lang
+            p['from'] = from_lang
 
         return self.call(
                 "http://api.microsofttranslator.com/V2/Ajax.svc/TranslateArray",
-                params)
+                p)
 
 class Params(object) :
     def __init__(self, environ, session):
@@ -836,7 +841,7 @@ class MICA(object):
 #        mdebug(msg.replace("\n",""))
 
 #        minfo("translating chinese to english....")
-        result = self.translate_and_check_array([all_source], u"en")
+        result = self.translate_and_check_array([all_source], u"en", u"zh-CHS")
 #        mdebug("english translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
@@ -848,7 +853,7 @@ class MICA(object):
         msenglish = msenglish.split(" ")
 
 #        mdebug("Translating english pieces back to chinese")
-        result = self.translate_and_check_array(msenglish, u"zh-CHS")
+        result = self.translate_and_check_array(msenglish, u"zh-CHS", u"en")
 #        mdebug("Translation finished. Writing in json.")
 
         for idx in range(0, len(result)) :
@@ -2112,13 +2117,13 @@ class MICA(object):
         mdebug("View Page " + str(page) + " story " + name + " complete.")
         return output
 
-    def translate_and_check_array(self, requests, lang) :
+    def translate_and_check_array(self, requests, lang, from_lang) :
         again = True 
 
         self.mutex.acquire()
 
         try : 
-            result = self.client.translate_array(requests, lang)
+            result = self.client.translate_array(requests, lang, from_lang = from_lang)
             if not len(result) or "TranslatedText" not in result[0] :
                 mdebug("Probably key expired: " + str(result))
             else :
@@ -2128,7 +2133,11 @@ class MICA(object):
         except TranslateApiException, e :
             merr("First-try translation failed: " + str(e))
         except IOError, e :
-            merr("Connection error. Will try one more time:" + str(e))
+            merr("Connection error. Will try one more time: " + str(e))
+	except urllib2.URLError, e :
+	    merr("Response was probably too slow. Will try again: " + str(e))
+	except socket.timeout, e :
+	    merr("Response was probably too slow. Will try again: " + str(e))
 
         finally :
             finished = not again
@@ -2136,7 +2145,7 @@ class MICA(object):
             if again :
                 try : 
                     self.client.access_token = self.client.get_access_token()
-                    result = self.client.translate_array(requests, lang)
+                    result = self.client.translate_array(requests, lang, from_lang = from_lang)
                     if len(result) and "TranslatedText" in result[0] :
                         mdebug("Finished this translation on second try")
                         finished = True
@@ -2543,19 +2552,19 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
-                if params["transreset"] :
-                    for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
-                        tmp_storyname = result["key"][1]
-                        tmp_story = self.db[self.story(req, tmp_storyname)]
-                        mdebug("Killing stale translation session: " + tmp_storyname)
-                        tmp_story["translating"] = False
-			if "last_error" in tmp_story :
-			    del tmp_story["last_error"]
-                        try :
-                            self.db[self.story(req, tmp_storyname)] = tmp_story
-                        except couch_adapter.ResourceConflict, e :
-                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
-                            
+   	        for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
+		    tmp_storyname = result["key"][1]
+		    tmp_story = self.db[self.story(req, tmp_storyname)]
+		    mdebug("Killing stale translation session: " + tmp_storyname)
+		    tmp_story["translating"] = False
+		    if "last_error" in tmp_story :
+		        del tmp_story["last_error"]
+		    try :
+		        self.db[self.story(req, tmp_storyname)] = tmp_story
+		    except couch_adapter.ResourceConflict, e :
+		        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+
+		    if params["transreset"] :
                         self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
@@ -2690,7 +2699,7 @@ class MICA(object):
                     if len(breakout) > 1 :
                         for x in range(0, len(breakout)) :
                             requests.append(breakout[x].encode("utf-8"))
-                    result = self.translate_and_check_array(requests, u"en")
+                    result = self.translate_and_check_array(requests, u"en", u"zh-CHS")
                     for x in range(0, len(requests)) : 
                         part = result[x]
                         if "TranslatedText" not in part :
