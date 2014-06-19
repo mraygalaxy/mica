@@ -297,23 +297,23 @@ class Translator(object):
             'grant_type': self.grant_type
         })
         
-	mdebug("Authenticating...")
-	response = False
+        mdebug("Authenticating...")
+        response = False
         try :
             response = json.loads(urllib2.urlopen(
                 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args, timeout=30
             ).read())
         except IOError, e :
-	    if response :
-		raise TranslateApiException(
-			response.get('error_description', 'Failed to authenticate with translation service'),
-			response.get('error', str(e))
-		    )
-	    else :
-		raise TranslateApiException("Translation Service Authentication failed", str(e))
+            if response :
+                raise TranslateApiException(
+                    response.get('error_description', 'Failed to authenticate with translation service'),
+                    response.get('error', str(e))
+                    )
+            else :
+                raise TranslateApiException("Translation Service Authentication failed", str(e))
         
 
-	mdebug("Authenticated")
+        mdebug("Authenticated")
         mdebug(response)
 
         if "error" in response:
@@ -329,17 +329,17 @@ class Translator(object):
         if not self.access_token:
             self.access_token = self.get_access_token()
 
-	mdebug("urllib request start.")
+        mdebug("urllib request start.")
 
         request = urllib2.Request(
             "%s?%s" % (url, urllib.urlencode(p)),
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
 
-	mdebug("urllib get response")
+        mdebug("urllib get response")
         response = urllib2.urlopen(request, timeout=30).read()
 
-	mdebug("json load")
+        mdebug("json load")
         rv =  json.loads(response.decode("utf-8-sig"))
 
         if isinstance(rv, basestring) and \
@@ -815,7 +815,7 @@ class MICA(object):
         return contents
 
     
-    def online_cross_reference(self, uuid, name, story, all_source, cjk) :
+    def online_cross_reference(self, req, uuid, name, story, all_source, cjk) :
         mdebug("Going online...")
         ms = []
         eng = []
@@ -838,23 +838,23 @@ class MICA(object):
            msg += " " + py + "(" + char + "," + str(idx) + ")"
            idx += 1
 
-#        mdebug(msg.replace("\n",""))
+        mdebug(msg.replace("\n",""))
 
-#        minfo("translating chinese to english....")
-        result = self.translate_and_check_array([all_source], u"en", u"zh-CHS")
-#        mdebug("english translation finished." + str(result))
+        minfo("translating chinese to english....")
+        result = self.translate_and_check_array(req, name, [all_source], u"en", u"zh-CHS")
+        mdebug("english translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
             return []
         
         msenglish = result[0]["TranslatedText"]
 
-#        mdebug("english is: " + str(msenglish))
+        mdebug("english is: " + str(msenglish))
         msenglish = msenglish.split(" ")
 
-#        mdebug("Translating english pieces back to chinese")
-        result = self.translate_and_check_array(msenglish, u"zh-CHS", u"en")
-#        mdebug("Translation finished. Writing in json.")
+        mdebug("Translating english pieces back to chinese")
+        result = self.translate_and_check_array(req, name, msenglish, u"zh-CHS", u"en")
+        mdebug("Translation finished. Writing in json.")
 
         for idx in range(0, len(result)) :
             ms.append((msenglish[idx], result[idx]["TranslatedText"]))
@@ -1069,7 +1069,7 @@ class MICA(object):
             if len(uni) and char not in punctuation :
                 all = False
                 break
-	return all
+        return all
 
     def recursive_translate(self, req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page, tone_keys) :
         units = []
@@ -1114,7 +1114,7 @@ class MICA(object):
                 if uni not in punctuation and uni :
                     online_units = False
                     if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
-                        online_units = self.online_cross_reference(uuid, name, story, uni, cjk) if len(uni) > 1 else False
+                        online_units = self.online_cross_reference(req, uuid, name, story, uni, cjk) if len(uni) > 1 else False
 
                     if not online_units or not len(online_units) :
                         eng = self.get_first_translation(d, uni, readings[0])
@@ -1136,7 +1136,7 @@ class MICA(object):
                             selector = -1
                             
                             # FIXME: This totally needs to be a view. Fix it soon.
-			    changes = tone_keys[source] if source in tone_keys else False
+                            changes = tone_keys[source] if source in tone_keys else False
                             
                             if changes :
                                 total_changes = float(changes["total"])
@@ -1213,18 +1213,19 @@ class MICA(object):
         return (cjk, cjkdb, d)
 
     def store_error(self, req, name, msg) :
-	merr(msg)
-	self.transmutex.acquire()
-	try :
-	    tmpstory = self.db[self.story(req, name)]
-	    if "last_error" not in tmpstory or isinstance(tmpstory["last_error"], str) :
-		tmpstory["last_error"] = []
-	    tmpstory["last_error"] = [msg] + tmpstory["last_error"]
-	    self.db[self.story(req, name)] = tmpstory
-	except couch_adapter.ResourceConflict, e :
-	    mdebug("Failure to sync error message. No big deal: " + str(e))
-	finally :
-	    self.transmutex.release()
+        merr(msg)
+        if name :
+            self.transmutex.acquire()
+            try :
+                tmpstory = self.db[self.story(req, name)]
+                if "last_error" not in tmpstory or isinstance(tmpstory["last_error"], str) :
+                    tmpstory["last_error"] = []
+                tmpstory["last_error"] = [msg] + tmpstory["last_error"]
+                self.db[self.story(req, name)] = tmpstory
+            except couch_adapter.ResourceConflict, e :
+                mdebug("Failure to sync error message. No big deal: " + str(e))
+            finally :
+                self.transmutex.release()
 
     def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
         if not handle :
@@ -1240,27 +1241,27 @@ class MICA(object):
             story["pages"][page] = {}
             story["pages"][page]["units"] = []
 
-	unigroups = []
-	unikeys = []
+        unigroups = []
+        unikeys = []
 
-	for idx in range(0, len(groups)) :
-	    group = groups[idx]
-	    assert(isinstance(group, str))
+        for idx in range(0, len(groups)) :
+            group = groups[idx]
+            assert(isinstance(group, str))
 
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
-		self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
+                self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
 
-	    if not self.all_punct(uni) :
-		for unichar in uni :
-		    if unichar not in unikeys :
-			unikeys.append(unichar)
-	    unigroups.append(uni)
+            if not self.all_punct(uni) :
+                for unichar in uni :
+                    if unichar not in unikeys :
+                        unikeys.append(unichar)
+            unigroups.append(uni)
 
         tone_keys = self.view_keys(req, "tonechanges", False, source_queries = unikeys) 
-	mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
+        mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
 
         for idx in range(0, len(unigroups)) :
             self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, unigroups[idx], temp_units, page, tone_keys)
@@ -1360,8 +1361,8 @@ class MICA(object):
                 tmpstory["translating_page"] = iidx 
                 self.db[self.story(req, name)] = tmpstory
             except Exception, e :
-		self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
-		raise e
+                self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
+                raise e
             finally :
                 self.transmutex.release()
 
@@ -1383,14 +1384,14 @@ class MICA(object):
                 self.db[page_key] = story["pages"][str(iidx)]
                 del story["pages"][str(iidx)]
             except Exception, e :
-		msg = ""
+                msg = ""
                 for line in traceback.format_exc().splitlines() :
                     msg += line
-		merr(msg)
+                merr(msg)
                 tmpstory = self.db[self.story(req, name)]
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
-		self.store_error(req, name, msg)
+                self.store_error(req, name, msg)
                 raise e
 
         self.transmutex.acquire()
@@ -1491,16 +1492,16 @@ class MICA(object):
         return out
 
     def view_keys(self, req, name, units, source_queries = []) :
-	if units :
-		for unit in units :
-		    if name == "memorized" :
-			if "hash" in unit :
-			    source_queries.append(unit["hash"])
-		    else :
-			source_queries.append("".join(unit["source"]))
+        if units :
+            for unit in units :
+                if name == "memorized" :
+                    if "hash" in unit :
+                        source_queries.append(unit["hash"])
+                else :
+                    source_queries.append("".join(unit["source"]))
             
-	if len(source_queries) == 0 :
-	    return {} 
+        if len(source_queries) == 0 :
+            return {} 
 
         keys = {}
         for result in self.db.view(name + "/all", keys = source_queries, username = req.session.value['username']) :
@@ -2117,10 +2118,12 @@ class MICA(object):
         mdebug("View Page " + str(page) + " story " + name + " complete.")
         return output
 
-    def translate_and_check_array(self, requests, lang, from_lang) :
+    def translate_and_check_array(self, req, name, requests, lang, from_lang) :
         again = True 
 
+        mdebug("Acquiring mutex?")
         self.mutex.acquire()
+        mdebug("Acquired.")
 
         try : 
             result = self.client.translate_array(requests, lang, from_lang = from_lang)
@@ -2129,15 +2132,15 @@ class MICA(object):
             else :
                 again = False 
         except ArgumentOutOfRangeException, e :
-            merr("Missing results. Probably we timed out. Trying again: " + str(e))
+            self.store_error(req, name, "Missing results. Probably we timed out. Trying again: " + str(e))
         except TranslateApiException, e :
-            merr("First-try translation failed: " + str(e))
+            self.store_error(req, name, "First-try translation failed: " + str(e))
         except IOError, e :
-            merr("Connection error. Will try one more time: " + str(e))
-	except urllib2.URLError, e :
-	    merr("Response was probably too slow. Will try again: " + str(e))
-	except socket.timeout, e :
-	    merr("Response was probably too slow. Will try again: " + str(e))
+            self.store_error(req, name, "Connection error. Will try one more time: " + str(e))
+        except urllib2.URLError, e :
+            self.store_error(req, name, "Response was probably too slow. Will try again: " + str(e))
+        except socket.timeout, e :
+            self.store_error(req, name, "Response was probably too slow. Will try again: " + str(e))
 
         finally :
             finished = not again
@@ -2150,13 +2153,12 @@ class MICA(object):
                         mdebug("Finished this translation on second try")
                         finished = True
                     else :
-                        error = "Second try failed: " + str(result)
-                        mdebug(error)
+                        error = "Got no result from translate API: " + str(result)
                         raise Exception(error)
                 except Exception, e :
-                    error = str(e)
-                    mdebug("Second try still failed: " + error )
-                    raise Exception(error)
+                    self.mutex.release()
+                    self.store_error(req, name, "Second try still failed: " + str(e))
+                    raise e
 
             if not finished :
                 result = []
@@ -2194,10 +2196,10 @@ class MICA(object):
                 untrans += "<div id='transbutton" + story['uuid'] + "'>"
                 untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
                 untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
-		if "last_error" in story and not isinstance(story["last_error"], str) :
-		    for err in story["last_error"] :
-                        untrans += "<br/>" + err 
-		untrans += "</div>&nbsp;"
+                if "last_error" in story and not isinstance(story["last_error"], str) :
+                    for err in story["last_error"] :
+                        untrans += "<br/>" + err.replace("\n", "<br/>")
+                untrans += "</div>&nbsp;"
                 untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                 untrans += "</div>"
                 if "translating" in story and story["translating"] :
@@ -2552,19 +2554,21 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
-   	        for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
-		    tmp_storyname = result["key"][1]
-		    tmp_story = self.db[self.story(req, tmp_storyname)]
-		    mdebug("Killing stale translation session: " + tmp_storyname)
-		    tmp_story["translating"] = False
-		    if "last_error" in tmp_story :
-		        del tmp_story["last_error"]
-		    try :
-		        self.db[self.story(req, tmp_storyname)] = tmp_story
-		    except couch_adapter.ResourceConflict, e :
-		        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
+                    tmp_storyname = result["key"][1]
+                    tmp_story = self.db[self.story(req, tmp_storyname)]
+                    mdebug("Killing stale translation session: " + tmp_storyname)
+                    tmp_story["translating"] = False
 
-		    if params["transreset"] :
+                    if "last_error" in tmp_story :
+                        del tmp_story["last_error"]
+
+                    try :
+                        self.db[self.story(req, tmp_storyname)] = tmp_story
+                    except couch_adapter.ResourceConflict, e :
+                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+
+                    if params["transreset"] :
                         self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
@@ -2699,7 +2703,7 @@ class MICA(object):
                     if len(breakout) > 1 :
                         for x in range(0, len(breakout)) :
                             requests.append(breakout[x].encode("utf-8"))
-                    result = self.translate_and_check_array(requests, u"en", u"zh-CHS")
+                    result = self.translate_and_check_array(req, False, requests, u"en", u"zh-CHS")
                     for x in range(0, len(requests)) : 
                         part = result[x]
                         if "TranslatedText" not in part :
