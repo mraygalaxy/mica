@@ -1286,10 +1286,13 @@ class MICA(object):
         if "filetype" not in story or story["filetype"] == "txt" :
             page_inputs = 1
         else :
+            mdebug("Counting now...")
             for result in self.db.view('stories/original', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
+                mdebug("Got count.")
                 page_inputs = result['value']
        
-        assert(page_inputs != 0) 
+        mdebug("Page inputs: " + str(page_inputs))
+        assert(int(page_inputs) != 0) 
              
         if page :
             page_start = int(page)
@@ -1307,6 +1310,9 @@ class MICA(object):
         self.transmutex.acquire()
         try :
             tmpstory = self.db[self.story(req, name)]
+            if "last_error" in tmpstory :
+                del tmpstory["last_error"]
+
             tmpstory["translating"] = True 
             if not page :
                 tmpstory["translated"] = False
@@ -1411,9 +1417,7 @@ class MICA(object):
         try :
             tmpstory = self.db[self.story(req, name)]
             if "translated" not in tmpstory or not tmpstory["translated"] :
-                for result in self.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}], stale='update_after') :
-                    tmppage = result["key"][2]
-                    del self.db[self.story(req, story['name']) + ":pages:" + str(tmppage)]
+                self.flush_pages(req, name)
                     
         except Exception, e :
             mdebug("Failure to sync: " + str(e))
@@ -1767,16 +1771,7 @@ class MICA(object):
         batch = -1
 
         mdebug("View Page " + str(page) + " story " + name + " building...")
-        source_queries = []
-        hash_queries = []
-        un = req.session.value['username']
-        for unit in units :
-            source_queries.append([un, "".join(unit["source"])])
-            if "hash" in unit :
-                hash_queries.append([un, unit["hash"]])         
             
-        mdebug("View Page " + str(page) + " story " + name + " querying...")
-        
         sources = {}
 
         if action == "edit" :
@@ -1788,6 +1783,8 @@ class MICA(object):
         if action == "read" :
             sources['memorized'] = self.view_keys(req, "memorized", units) 
         
+        mdebug("View Page " + str(page) + " story " + name + " querying...")
+
         for x in range(0, len(units)) :
             unit = units[x]
 
@@ -2473,10 +2470,17 @@ class MICA(object):
         
         
     def flush_pages(self, req, name):
+        mdebug("Ready to flush translated pages.")
+        allpages = []
         for result in self.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}], stale='update_after') :
-            tmppage = result["key"][2]
+            allpages.append(result["key"][2])
+
+        mdebug("List complete.")
+        for tmppage in allpages :
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
             del self.db[self.story(req, name) + ":pages:" + str(tmppage)]
+
+        mdebug("Completed flushing translated pages.")
             
         if self.db.doc_exist(self.story(req, name) + ":final") :
             mdebug("Deleting final version from story " + name)
@@ -2610,14 +2614,21 @@ class MICA(object):
                 else :
                     if name :
                         tmp_story = self.db[self.story(req, name)]
+                        self.flush_pages(req, name)
                         if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
                             mdebug("Deleting txt original contents.")
                             del self.db[self.story(req, name) + ":original"]
                         else :
+                            mdebug("Deleting original pages")
+                            allorig = []
                             for result in self.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}], stale='update_after') :
-                                tmppage = result["key"][2]
+                                allorig.append(result["key"][2])
+                            mdebug("List built.")
+                            for tmppage in allorig :
                                 mdebug("Deleting original " + str(tmppage) + " from story " + name)
                                 del self.db[self.story(req, name) + ":original:" + str(tmppage)]
+                            mdebug("Deleted.")
+
                         
                     if name and story_found :
                         del self.db[self.story(req, name)]
@@ -2674,6 +2685,10 @@ class MICA(object):
                 tmp_story = self.db[self.story(req, name)]
                 tmp_story["translated"] = False
                 tmp_story["reviewed"] = False
+
+                if "last_error" in tmp_story :
+                    del tmp_story["last_error"]
+
                 self.db[self.story(req, name)] = tmp_story 
                 self.flush_pages(req, name)
 
@@ -3019,6 +3034,7 @@ class MICA(object):
                 
                 if req.http.params.get("pack") :
                     self.db.compact()
+                    self.db.cleanup()
                     design_docs = ["groupings", "stories", "mergegroups",
                                    "tonechanges", "accounts", "splits" ]
 
