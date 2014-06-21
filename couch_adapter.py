@@ -170,7 +170,7 @@ class MicaDatabaseCouchDB(object) :
         else :
             args = [self.db]
             kwargs["view_name"] = view_name
-            kwargs["bulk"] = 10
+            kwargs["bulk"] = 50
 
             for result in couchdb_pager(*args, **kwargs) :
                 yield result
