@@ -2116,53 +2116,60 @@ class MICA(object):
         return output
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
-        again = True 
-
         mdebug("Acquiring mutex?")
         self.mutex.acquire()
         mdebug("Acquired.")
 
-        try : 
-            result = self.client.translate_array(requests, lang, from_lang = from_lang)
-            if not len(result) or "TranslatedText" not in result[0] :
-                mdebug("Probably key expired: " + str(result))
-            else :
-                again = False 
-        except ArgumentOutOfRangeException, e :
-            self.store_error(req, name, "Missing results. Probably we timed out. Trying again: " + str(e))
-        except TranslateApiException, e :
-            self.store_error(req, name, "First-try translation failed: " + str(e))
-        except IOError, e :
-            self.store_error(req, name, "Connection error. Will try one more time: " + str(e))
-        except urllib2.URLError, e :
-            self.store_error(req, name, "Response was probably too slow. Will try again: " + str(e))
-        except socket.timeout, e :
-            self.store_error(req, name, "Response was probably too slow. Will try again: " + str(e))
+        attempts = 3
+        finished = False
+        stop = False
 
-        finally :
-            finished = not again
-            error = ""
-            if again :
-                try : 
+        for attempt in range(0, attempts) :
+            error = False 
+            try : 
+                if attempt > 0 :
+                    mdebug("Previous attempt failed. Re-authenticating")
                     self.client.access_token = self.client.get_access_token()
-                    result = self.client.translate_array(requests, lang, from_lang = from_lang)
-                    if len(result) and "TranslatedText" in result[0] :
-                        mdebug("Finished this translation on second try")
-                        finished = True
-                    else :
-                        error = "Got no result from translate API: " + str(result)
-                        raise Exception(error)
-                except Exception, e :
-                    self.mutex.release()
-                    self.store_error(req, name, "Second try still failed: " + str(e))
-                    raise e
 
-            if not finished :
-                result = []
-                for x in range(0, len(requests)) :
-                    result.append(str("Service is down: " + error))
+                result = self.client.translate_array(requests, lang, from_lang = from_lang)
+
+                if not len(result) or "TranslatedText" not in result[0] :
+                    mdebug("Probably key expired: " + str(result))
+                else :
+                    mdebug("Translation complete on attempt: " + str(attempt))
+                    finished = True
+
+            except ArgumentOutOfRangeException, e :
+                error = "Missing results. Probably we timed out. Trying again: " + str(e)
+            except TranslateApiException, e :
+                error = "First-try translation failed: " + str(e)
+            except IOError, e :
+                error = "Connection error. Will try one more time: " + str(e)
+            except urllib2.URLError, e :
+                error = "Response was probably too slow. Will try again: " + str(e)
+            except socket.timeout, e :
+                error = "Response was probably too slow. Will try again: " + str(e)
+            except Exception, e :
+                error = "Unknown fatal translation error: " + str(e)
+                stop = True
+            finally :
+                mdebug("Attempt: " + str(attempt) + " finally.")
+                if not finished and not error :
+                    error = "Translation API not available for some reason. =("
+                if error :
+                    self.store_error(req, name, error)
+
+            if finished or stop :
+                mdebug("Breaking attempt loop.")
+                break
 
         self.mutex.release()
+
+        if not finished :
+            mdebug("Raising fatal error.")
+            raise Exception(error)
+
+        mdebug("Yay, finished.")
         return result
     
     def makestorylist(self, req):
