@@ -27,6 +27,7 @@ import base64
 import __builtin__
 import sys
 import socket
+import pdb
 
 from common import *
 
@@ -472,8 +473,8 @@ def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, grou
   return unit
 
 mdebug("Additional punctuation.")
-punctuation = [u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
-punctuation += [']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
+punctuation = [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+punctuation += ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
 
 punctuation_without_letters = copy.deepcopy(punctuation)
 
@@ -1082,9 +1083,11 @@ class MICA(object):
             trans = []
             eng = []
 
-            for e in d.getFor(uni) :
-                trans.append(e[2])
-                eng.append(e[3])
+            results = d.getFor(uni)
+            if results is not None :
+                for e in results :
+                    trans.append(e[2])
+                    eng.append(e[3])
 
             if len(trans) == 1 :
                 unit = self.add_unit(trans[0].split(" "), uni, [eng[0]])
@@ -1251,6 +1254,7 @@ class MICA(object):
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
+                pdb.set_trace()
                 self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
 
@@ -2120,7 +2124,7 @@ class MICA(object):
         self.mutex.acquire()
         mdebug("Acquired.")
 
-        attempts = 3
+        attempts = 5
         finished = False
         stop = False
 
@@ -2965,7 +2969,7 @@ class MICA(object):
                             if "filetype" in story and story["filetype"] != "txt" :
                                 attach_raw = self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
                                 #mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
-                                mdebug(str(attach_raw))
+                                #mdebug(str(attach_raw))
                                 original = eval(attach_raw)
                                 #mdebug("OK, evaluated with keys: " + str(original.keys()))
 
