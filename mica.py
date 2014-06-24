@@ -2681,14 +2681,16 @@ class MICA(object):
                 tmp_story = self.db[self.story(req, name)]
                 tmp_story["reviewed"] = reviewed
                 if reviewed :
-                    final = {}
-                    minfo("Generating final pagesets...")
-                    
-                    for page in range(0, self.nb_pages(req, tmp_story["name"])) :
-                        minfo("Page " + str(page) + "...")
-                        final[str(page)] = self.view_page(req, uuid, name, story, req.action, "", str(page), disk = True)
+                    pages = self.nb_pages(req, tmp_story["name"])
+                    if pages == 1 :
+                        final = {}
+                        minfo("Generating final pagesets...")
                         
-                    self.db[self.story(req, name) + ":final"] = final
+                        for page in range(0, pages) :
+                            minfo("Page " + str(page) + "...")
+                            final[str(page)] = self.view_page(req, uuid, name, story, req.action, "", str(page), disk = True)
+                            
+                        self.db[self.story(req, name) + ":final"] = final
                 self.db[self.story(req, name)] = tmp_story 
                 return self.bootstrap(req, self.heromsg + "\n<h4>Reviewed.</h4></div>", now = True)
 
