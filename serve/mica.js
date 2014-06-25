@@ -707,10 +707,12 @@ function history(uuid, page) {
 
 var view_images = false;
 var show_both = false;
+var current_view_mode = "text";
 var current_page = 0;
 var current_mode = "read";
 var current_uuid = "uuid";
 var curr_img_num = 0;
+var curr_pages = 0;
 
 function change_pageimg_width() {
     $('#pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
@@ -723,6 +725,8 @@ function restore_pageimg_width() {
 }
 
 function view(mode, uuid, page) {
+   $("#gotoval").val(page + 1);
+   $("#pagetotal").html(current_pages);
    var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
@@ -755,18 +759,18 @@ function view(mode, uuid, page) {
               false,
               true);
    } else {
+       $("#pagecontent").html("<div class='col-md-12'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
-	       $("#pagecontent").html(spinner + "&nbsp;Loading Image...");
+	       $("#pagesingle").html(spinner + "&nbsp;Loading Image...");
        } else {
-	       $("#pagecontent").html(spinner + "&nbsp;Loading Text...");
+	       $("#pagesingle").html(spinner + "&nbsp;Loading Text...");
        	
        }
        
-       
-       go('#pagecontent', 
+       go('#pagesingle', 
               url, 
-              '#pageresult', 
+              '#pageresult',
               unavailable, 
               true, 
               false,
@@ -786,6 +790,8 @@ function view(mode, uuid, page) {
 }
 
 function install_pages(mode, pages, uuid, start, view_mode) {
+        current_pages = pages;
+        current_view_mode = view_mode;
 		if (view_mode == "text") {
            view_images = false;
 	       show_both = false;
@@ -799,7 +805,7 @@ function install_pages(mode, pages, uuid, start, view_mode) {
         $('#pagenav').bootpag({
             total: pages,
                    page: start + 1,
-                   maxVisible: 10 
+                   maxVisible: 5 
         }).on('page', function(event, num){
           view(mode, uuid, num-1);
         });
@@ -935,37 +941,51 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 }
 
 function installreading() {
+    $('#goto').click(function() {
+        var page = parseInt($('#gotoval').val());
+        if (page > current_pages) {
+            page = current_pages;
+        }
+
+        page -= 1;
+        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode);
+    });
+    $("#gotoval").keyup(function(event){
+            if(event.keyCode == 13){ $("#goto").click(); }
+    });
     $('#imageButton').click(function () {
-        if($('#imageButton').attr('class') == 'active') {
-           $('#imageButton').attr('class', '');
-           $('#textButton').attr('class', 'active');
+        if($('#imageButton').attr('class') == 'active btn btn-default') {
+           $('#imageButton').attr('class', 'btn btn-default');
+           $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
 	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
-           $('#imageButton').attr('class', 'active');
-           $('#textButton').attr('class', '');
+           $('#imageButton').attr('class', 'active btn btn-default');
+           $('#textButton').attr('class', 'btn btn-default');
 	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
-       $('#sideButton').attr('class', '');
+       $('#sideButton').attr('class', 'btn rtn-default');
+       current_view_mode = "images";
        view(current_mode, current_uuid, current_page);
        
     });
     $('#sideButton').click(function () {
-        if($('#sideButton').attr('class') == 'active') {
-           $('#sideButton').attr('class', '');
-           $('#textButton').attr('class', 'active');
+        if($('#sideButton').attr('class') == 'active btn btn-default') {
+           $('#sideButton').attr('class', 'btn btn-default');
+           $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
 	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            show_both = true; 
-           $('#sideButton').attr('class', 'active');
-           $('#textButton').attr('class', '');
+           $('#sideButton').attr('class', 'active btn btn-default');
+           $('#textButton').attr('class', 'btn btn-default');
 	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
         }
+       current_view_mode = "both";
        view_images = false;
-       $('#imageButton').attr('class', '');
+       $('#imageButton').attr('class', 'btn btn-default');
        view(current_mode, current_uuid, current_page);
     });
     
@@ -975,9 +995,10 @@ function installreading() {
 	   	  // already in text mode
 	   	  return;
 	   }
-       $('#imageButton').attr('class', '');
-       $('#sideButton').attr('class', '');
-       $('#textButton').attr('class', 'active');
+       $('#imageButton').attr('class', 'btn btn-default');
+       $('#sideButton').attr('class', 'btn btn-default');
+       $('#textButton').attr('class', 'active btn btn-default');
+       current_view_mode = "text";
        show_both = false;
        view_images = false;
        view(current_mode, current_uuid, current_page);
