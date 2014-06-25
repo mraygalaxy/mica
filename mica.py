@@ -2552,10 +2552,6 @@ class MICA(object):
                 req.action = "home"
                 req.session.value['connected'] = True 
 
-                if "translator_credentials" in user :
-                    self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
-                    mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
-
                 if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
                     req.session.value['last_username'] = username
                     req.session.value['last_remember'] = 'checked'
@@ -2591,7 +2587,14 @@ class MICA(object):
                 self.view_check("splits")
                 self.view_check("memorized")
 
-                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}], stale='update_after') :
+                user = self.db[self.acct(username)]
+
+                if "translator_credentials" in user :
+                    if username not in self.client :
+                        self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
+                        mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
+
+                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
                     tmp_storyname = result["key"][1]
                     tmp_story = self.db[self.story(req, tmp_storyname)]
                     mdebug("Killing stale translation session: " + tmp_storyname)
