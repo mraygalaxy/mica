@@ -52,8 +52,6 @@ from twisted.python.logfile import DailyLogFile
 
 from webob import Request, Response, exc
 
-#from beaker.middleware import SessionMiddleware
-
 from cjklib.dictionary import CEDICT
 from cjklib.characterlookup import CharacterLookup
 from cjklib.dbconnector import getDBConnector
@@ -432,7 +430,6 @@ class Params(object) :
             self.action = "index"
 
         self.session = session
-        #self.session = environ['beaker.session']
         
         if 'connected' not in self.session.value :
             self.session.value['connected'] = False
@@ -524,7 +521,6 @@ class MICA(object):
     def story(self, req, key) :
         self.verify_db()
         ret = "MICA:" + req.session.value['username'] + ":stories:" + key
-        #mdebug("Returning: " + ret)
         return ret 
 
     def index(self, req, key) :
@@ -548,10 +544,10 @@ class MICA(object):
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
-    def __init__(self, client_id, client_secret, couch_url_or_local_db, couch_dbname, cjklocation, db_adapter):
+    def __init__(self, couch_url_or_local_db, couch_dbname, cjklocation, db_adapter):
         self.mutex = Lock()
         self.transmutex = Lock()
-        self.heromsg = "<div class='span 1 hero-unit' style='padding: 5px'>"
+        self.heromsg = "<div class='jumbotron' style='padding: 5px'>"
         self.pid = "none"
         self.couch_url_or_local_db = couch_url_or_local_db
         self.cs = db_adapter(couch_url_or_local_db)
@@ -561,7 +557,7 @@ class MICA(object):
 
         self.first_request = {}
 
-        self.client = Translator(client_id, client_secret)
+        self.client = {}
 
         self.menu = [ 
              ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;Review")), 
@@ -664,7 +660,7 @@ class MICA(object):
             sideout += pr + "%;'> (" + pr + "%)</div>"
             
         sideout += "</td>"
-        if nb_pages and reviewed :
+        if reviewed :
             sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
             sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
@@ -732,37 +728,11 @@ class MICA(object):
                 if req.action != "help" :
                     navcontents += """
                                 <li><a onclick='process_instant()' href='#'><i class='glyphicon glyphicon-share'></i>&nbsp;Instant</a></li>
-                                <li class='dropdown'>
-                                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='glyphicon glyphicon-eye-open'></i>&nbsp;View
-                                 <b class='caret'></b>
-                                 </a>
-                                <ul class='dropdown-menu'>
-                                """
-                    navcontents += "<li id='textButton' "
-                    if "view_mode" in req.session.value :
-                         if req.session.value["view_mode"] == "text" :
-                             navcontents += " class='active'"
-                    navcontents += "><a href='#'><i class='glyphicon glyphicon-font'></i>&nbsp;Text Only</a></li>"
-                    navcontents += "<li id='sideButton' "
-                    if "view_mode" in req.session.value :
-                         if req.session.value["view_mode"] == "both" :
-                             navcontents += " class='active'"
-                    navcontents += "><a href='#'><i class='glyphicon glyphicon-th-list'></i>&nbsp;Side-By-Side</a></li>"
-                    navcontents += "<li id='imageButton' "
-                    if "view_mode" in req.session.value :
-                         if req.session.value["view_mode"] == "images" :
-                             navcontents += " class='active'"
-                    navcontents += "><a href='#'><i class='glyphicon glyphicon-picture'></i>&nbsp;Image Only</a></li>"
-                    navcontents += """
-                                </ul>
-                                </li>
                                 """
                 navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='glyphicon glyphicon-user'></i>&nbsp;Account
-                                 <b class='caret'></b>
+                                 <i class='glyphicon glyphicon-user'></i>&nbsp;<b class='caret'></b>
                                  </a>
                                  <ul class='dropdown-menu'>
                                 """
@@ -790,7 +760,7 @@ class MICA(object):
         replacements = [    
                          navcontents, 
                          newaccountadmin,
-                         "[MICA LEARNING]" if req.session.value['connected'] else "Disconnected",
+                         "[MICA]" if req.session.value['connected'] else "Disconnected",
                          cloudcontents,
                          availablecontents,
                          body,
@@ -1712,23 +1682,59 @@ class MICA(object):
                                     units of 12 -->
                                     <div class='col-lg-12'>
                                         <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
-                                        <div id='translationstatus'></div>
-                                        <table><tr>
-                                        <td><div style='display: inline' id='pagenav'></div></td>
-                                        </tr></table>
-                                        <script>installreading();</script>
-                                        </div>
-                                    </div><!-- col-lg-10 header section -->
-                                </div><!-- row for header section -->
-                                <div id='pagecontent' class='row-fluid'></div>
-                            </div><!-- outer md-9 all section --> 
+                                            <div id='translationstatus'></div>
+                                            <table>
+                                                <tr>
+                                                    <td><button type='button' id='goto' class='btn btn-default'>Go:</button>
+                                                    <input id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
+                                                    <td>&nbsp;&nbsp;&nbsp;</td>
+                                                    <td><div class='btn-group'>
+        """
 
-                """
+        output += "<button type='button' id='textButton' "
+        if "view_mode" in req.session.value :
+             output += " class='"
+             if req.session.value["view_mode"] == "text" :
+                 output += "active "
+
+        output += "btn btn-default'><i class='glyphicon glyphicon-font'></i></button>"
+        output += "<button type='button' id='sideButton' "
+
+        if "view_mode" in req.session.value :
+             output += " class='"
+             if req.session.value["view_mode"] == "both" :
+                 output += "active "
+
+        output += "btn btn-default'><i class='glyphicon glyphicon-th-list'></i></button>"
+        output += "<button type='button' id='imageButton' "
+
+        if "view_mode" in req.session.value :
+             output += " class='"
+             if req.session.value["view_mode"] == "images" :
+                 output += "active "
+
+        output += "btn btn-default'><i class='glyphicon glyphicon-picture'></i></button>"
+
+        output += """
+                                                        </div>
+                                                    </td>
+                                                    <td>&nbsp;&nbsp;&nbsp;</td>
+                                                    <td><div id='pagenav'></div></td>
+                                                </tr>
+                                            </table>
+                                            <script>installreading();</script>
+                                        </div><!-- affix reading header -->
+                                    </div><!-- col-lg-12 header section -->
+                                </div><!-- row for header section -->
+                                <div id='pagecontent'></div>
+                            </div><!-- outer md-10 all section --> 
+
+        """
 
         output += """
                             <div class='col-lg-2'>
                             <!--data-spy='affix'--><div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
-                """
+        """
         output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
         output += "<h4><b>" + name + "</b></h4>"
 
@@ -1761,6 +1767,8 @@ class MICA(object):
     def view_page(self, req, uuid, name, story, action, output, page, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = self.db[self.story(req, name) + ":pages:" + str(page)]
+        if not page_dict :
+            return "What the hell is going on?"
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
         chars_per_line = 60
@@ -2122,6 +2130,10 @@ class MICA(object):
         self.mutex.acquire()
         mdebug("Acquired.")
 
+        assert(req.session.value['username'] in self.client)
+
+        client = self.client[req.session.value['username']]
+
         attempts = 5
         finished = False
         stop = False
@@ -2131,9 +2143,9 @@ class MICA(object):
             try : 
                 if attempt > 0 :
                     mdebug("Previous attempt failed. Re-authenticating")
-                    self.client.access_token = self.client.get_access_token()
+                    client.access_token = client.get_access_token()
 
-                result = self.client.translate_array(requests, lang, from_lang = from_lang)
+                result = client.translate_array(requests, lang, from_lang = from_lang)
 
                 if not len(result) or "TranslatedText" not in result[0] :
                     mdebug("Probably key expired: " + str(result))
@@ -2201,7 +2213,10 @@ class MICA(object):
                 untrans += "\n<td style='font-size: x-small' colspan='3'>"
                 untrans += "<div id='transbutton" + story['uuid'] + "'>"
                 untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
-                untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
+                if req.session.value['username'] not in self.client :
+                    untrans += "Please add a translation API key in your account preferences to begin learning with this story.<br/>"
+                else :
+                    untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
                 if "last_error" in story and not isinstance(story["last_error"], str) :
                     for err in story["last_error"] :
                         untrans += "<br/>" + err.replace("\n", "<br/>")
@@ -2238,6 +2253,8 @@ class MICA(object):
         total_unique = 0
         trans_id = 0
         page_dict = self.db[self.story(req, story["name"]) + ":pages:" + str(page)]
+        if not page_dict :
+            return False 
         units = page_dict["units"]
         
         memorized = self.view_keys(req, "memorized", units) 
@@ -2509,9 +2526,12 @@ class MICA(object):
             uuid = req.session.value["current_story"]
             del req.session.value["current_story"]
             req.session.save()
-        if "current_page" in req.session.value :
-            del req.session.value["current_page"]
-            req.session.save()
+
+    def set_page(self, req, story, page) :
+        if "current_page" not in story or story["current_page"] != str(page) :
+            tmp_story = self.db[self.story(req, story["name"])]
+            tmp_story["current_page"] = story["current_page"] = str(page)
+            self.db[self.story(req, story["name"])] = tmp_story
 
     def common(self, req) :
         try :
@@ -2531,6 +2551,10 @@ class MICA(object):
 
                 req.action = "home"
                 req.session.value['connected'] = True 
+
+                if "translator_credentials" in user :
+                    self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
+                    mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
 
                 if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
                     req.session.value['last_username'] = username
@@ -2722,7 +2746,9 @@ class MICA(object):
                 out += "<div id='instantresult'>"
 
                 p = ""
-                if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                if req.session.value['username'] not in self.client :
+                    p += "Offline only. Missing a translation API key in your account preferences."
+                elif not params["mobileinternet"] or params["mobileinternet"].connected() == True :
                     final = { }
                     requests = [source]
                     breakout = source.decode("utf-8") if isinstance(source, str) else source
@@ -2759,7 +2785,7 @@ class MICA(object):
                     out += "<h4>Offline translation:</h4>"
 
                     (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
-                    eng = self.get_first_translation(d, source.decode("utf-8"), False, debug = True)
+                    eng = self.get_first_translation(d, source.decode("utf-8"), False)
                     if eng :
                         for english in eng :
                             out += english.encode("utf-8")
@@ -2799,11 +2825,11 @@ class MICA(object):
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
-            if "current_page" in req.session.value :
-                start_page = req.session.value["current_page"]
-            else :
-                req.session.value["current_page"] = start_page 
-                req.session.save()
+            if story : 
+                if "current_page" in story :
+                    start_page = story["current_page"]
+                else :
+                    self.set_page(req, story, start_page)
                 
             if "view_mode" in req.session.value :
                 view_mode = req.session.value["view_mode"]
@@ -2902,8 +2928,10 @@ class MICA(object):
                 page = req.http.params.get("page")
                 output = ""
                         
-                result = repeat(self.memocount, args = [req, story, page], kwargs = {})
+                result = self.memocount(req, story, page)
                 
+                if not result :
+                    return "What the hell is going on?"
                 if not result[0] and len(result) > 1 :
                     return self.bootstrap(req, result[1])
                 
@@ -2960,8 +2988,6 @@ class MICA(object):
                     story = self.db[self.story(req, name)]
                     if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
-                        req.session.value["current_page"] = str(page)
-                        req.session.save()
                         if req.http.params.get("image") :
                             nb_image = req.http.params.get("image")
                             output = "<div><div id='pageresult'>"
@@ -2983,6 +3009,7 @@ class MICA(object):
                             output += "</div></div>"
                             return self.bootstrap(req, output, now = True)
                         else :
+                            self.set_page(req, story, page)
                             output = self.view_page(req, uuid, name, story, req.action, output, page)
                                 
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
@@ -2993,7 +3020,7 @@ class MICA(object):
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
                 if ftype != "txt" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + ftype + ". Viewing original not finished with implementation.</h4></div>\n")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + ftype + ". Viewing original not yet implemented.</h4></div>\n")
                 
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
@@ -3042,6 +3069,8 @@ class MICA(object):
             
             elif req.action == "account" :
                 out = ""
+
+                user = self.db[self.acct(username)]
                 
                 if req.http.params.get("pack") :
                     self.db.compact()
@@ -3053,42 +3082,45 @@ class MICA(object):
                         if self.db.doc_exist("_design/" + name) :
                             mdebug("Compacting view " + name)
                             self.db.compact(name)
-                    out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
-                    
-                user = self.db[self.acct(username)]
 
-                if 'admin' in user['roles'] :
-                    out += "<h5>Accounts:</h5>"
-                    out += "<table>"
-                    for result in self.db.view('accounts/all') :
-                        tmp_user = result["value"]
-                        tmp_username = result["key"]
-                        out += "<tr><td>" + tmp_username + "</td><td>Roles: " + ",".join(tmp_user["roles"]) + "</td></tr>"
-                    out += "</table>"
-                out += """
-                    <p/>
-                    <h3>Change Password?</h3>
-                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
-                    <table>
-                    <tr><td><h5>&nbsp;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
-                    <tr><td><h5>&nbsp;Password: </td><td><input type="password" name="password"/></h5></td></tr>
-                    <tr><td><h5>&nbsp;Confirm:&nbsp; </td><td><input type="password" name="confirm"/></h5></td></tr>
-                    <tr><td><button name='changepassword' type="submit" class="btn-primary" value='1'>Change Password</button></td></tr>
-                    </table>
-                    </form>                                   
-                    <h3>Input Microsoft Translation API Credentials?</h3>
-                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
-                    <table>
-                    <tr><td><h5>&nbsp;Client ID: </td><td><input type="text" name="id"/></h5></td></tr>
-                    <tr><td><h5>&nbsp;Client Secret: </td><td><input type="text" name="password"/></h5></td></tr>
-                    <tr><td><button name='changems' type="submit" class="btn-primary" value='1'>Change Credentials</button></td></tr>
-                    </table>
-                    </form>
-                    <p>
-                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
-                    """
-                
-                if req.http.params.get("newaccount") :
+                    out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
+                elif req.http.params.get("changepassword") :
+                    oldpassword = req.http.params.get("oldpassword")
+                    newpassword = req.http.params.get("password")
+                    newpasswordconfirm = req.http.params.get("confirm")
+                    newhash = hashlib.md5(newpassword).hexdigest()
+                    oldhash = hashlib.md5(oldpassword).hexdigest()
+
+                    if newpassword != newpasswordconfirm :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
+                    if oldhash != user['password'] :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
+                    user['password'] = newhash
+                    self.db[self.acct(username)] = user
+                    out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
+
+                elif req.http.params.get("changecredentials") :
+                    client_id = req.http.params.get("id")
+                    client_secret = req.http.params.get("secret")
+                    self.client[req.session.value['username']] = Translator(client_id, client_secret)
+
+                    try :
+                        result = self.translate_and_check_array(req, False, ["开源"], u"en", u"zh-CHS")
+
+                        if not len(result) or "TranslatedText" not in result[0] :
+                            tmsg = "We tried to test your translation API credentials, but they didn't work. Please check them and try again =)"
+                            del self.client[req.session.value['username']]
+                        else :
+                            user['translator_credentials'] = { 'id' : client_id, 'secret' : client_secret }
+                            self.db[self.acct(username)] = user
+                            tmsg = "Your MS translation credentials have been changed to: " + client_id + " => " + client_secret
+                    except Exception, e :
+                        del self.client[req.session.value['username']]
+                        tmsg = "We tried to test your translation API credentials, but they didn't work because: " + str(e)
+
+                    out += self.heromsg + "\n<h4>" + tmsg + "</h4></div>"
+
+                elif req.http.params.get("newaccount") :
                     newusername = req.http.params.get("username")
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
@@ -3110,26 +3142,56 @@ class MICA(object):
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
 
-                elif req.http.params.get("changepassword") :
-                    oldpassword = req.http.params.get("oldpassword")
-                    newpassword = req.http.params.get("password")
-                    newpasswordconfirm = req.http.params.get("confirm")
-                    newhash = hashlib.md5(newpassword).hexdigest()
-                    oldhash = hashlib.md5(oldpassword).hexdigest()
+                if 'admin' in user['roles'] :
+                    out += "<h4><b>Accounts</b>:</h4>"
+                    out += "<table>"
+                    for result in self.db.view('accounts/all') :
+                        tmp_user = result["value"]
+                        tmp_username = result["key"]
+                        out += "<tr><td>" + tmp_username + "</td><td>&nbsp;&nbsp;</td><td>Roles: " + ",".join(tmp_user["roles"]) + "</td></tr>"
+                    out += "</table>"
 
-                    if newpassword != newpasswordconfirm :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-                    if oldhash != user['password'] :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
-                    user['password'] = newhash
-                    self.db[self.acct(username)] = user
-                    out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
+                out += """
+                    <p/>
+                    <h4><b>Change Password</b>?</h4>
+                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                    <table>
+                    <tr><td><h5>&nbsp;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
+                    <tr><td><h5>&nbsp;Password: </td><td><input type="password" name="password"/></h5></td></tr>
+                    <tr><td><h5>&nbsp;Confirm:&nbsp; </td><td><input type="password" name="confirm"/></h5></td></tr>
+                    <tr><td><button name='changepassword' type="submit" class="btn btn-default btn-primary" value='1'>Change Password</button></td></tr>
+                    </table>
+                    </form>                                   
+                    <h4><b>Input Microsoft Translation API Credentials</b>?</h4>
+                    <h5>You can request free credentials <a href='http://msdn.microsoft.com/en-us/library/hh454950.aspx'>by going here</a>.</h5>
+                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                    <table>
+                """
+
+                client_id = "Need your client ID"
+                client_secret = "Need your client secret"
+
+                if 'translator_credentials' in user :
+                     client_id = user['translator_credentials']['id']
+                     client_secret = user['translator_credentials']['secret']
+                 
+                out += "<tr><td><h5>&nbsp;Client ID: </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&nbsp;Client Secret: </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
+                out += """
+                    <tr><td><button name='changecredentials' type="submit" class="btn btn-default btn-primary" value='1'>Change Credentials</button></td></tr>
+                    </table>
+                    </form>
+                    <p>
+                    <br/>
+                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
+                    """
 
                 return self.bootstrap(req, out)
                     
             elif req.action == "disconnect" :
                 req.session.value['connected'] = False
-                #del self.first_request[username]
+                if req.session.value['username'] in self.client :
+                    del self.client[req.session.value['username']]
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
             elif req.action == "help" :
@@ -3232,7 +3294,6 @@ class GUIDispatcher(Resource) :
         self.git.indexNames = ["test.rpy"]
         self.mica = mica
             
-#        self.app = WSGIResource(reactor, reactor.threadpool, SessionMiddleware(self.mica, session_opts))
         self.app = WSGIResource(reactor, reactor.threadpool, self.mica)
 
     def getChild(self, name, request) :
@@ -3283,7 +3344,6 @@ class NONSSLDispatcher(Resource) :
         Resource.__init__(self)
             
         self.nonssl = NONSSLRedirect()
-#        self.app = WSGIResource(reactor, reactor.threadpool, SessionMiddleware(self.nonssl, session_opts))
         self.app = WSGIResource(reactor, reactor.threadpool, self.nonssl)
 
     def getChild(self, name, request) :
@@ -3307,8 +3367,6 @@ def get_options() :
     parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
     parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
     parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
-    parser.add_option("-I", "--client-id", dest = "client_id", default = False, help = "Microsoft Translation Client App ID (why? Because it's free, and google is not)")
-    parser.add_option("-S", "--client-secret", dest = "client_secret", default = False, help = "Microsoft Translation Client App Secret (why? Because it's free, and google is not)")
     parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
     parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
     parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
@@ -3329,8 +3387,6 @@ def get_options() :
                "debug_host" : options.debug_host,
                "log" : options.log,
                "tlog" : options.tlog,
-               "client_id" : options.client_id,
-               "client_secret" : options.client_secret,
                "cert" : options.cert,
                "privkey" : options.privkey,
                "slaves" : options.slaves,
@@ -3355,10 +3411,6 @@ def go(p) :
     mdebug("Verifying options.")
     if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
-        exit(1)
-
-    if not params["client_id"] or not params["client_secret"]:
-        merr("Microsoft Client ID and Secret are for their translation service is required (options -I and -S). Why? Because it's free and google is not =)")
         exit(1)
 
     if not params["keepsession"] :
@@ -3408,7 +3460,7 @@ def go(p) :
 
         db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
 
-        mica = MICA(params["client_id"], params["client_secret"], params["couch"], params["dbname"], params["cedict"], db_adapter)
+        mica = MICA(params["couch"], params["dbname"], params["cedict"], db_adapter)
 
         mdebug("Testing cjk")
         mica.get_cjk_handle(params["cedict"])
