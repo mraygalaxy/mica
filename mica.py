@@ -658,9 +658,7 @@ class MICA(object):
         sideout += rname
         sideout += "</a>"
         
-        nb_pages = self.nb_pages(req, name)
-            
-        if nb_pages and (reviewed or story["translated"]) :
+        if (reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
             sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
             sideout += pr + "%;'> (" + pr + "%)</div>"
@@ -3069,6 +3067,7 @@ class MICA(object):
                     out += "</table>"
                 out += """
                     <p/>
+                    <h3>Change Password?</h3>
                     <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
                     <table>
                     <tr><td><h5>&nbsp;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
@@ -3077,9 +3076,17 @@ class MICA(object):
                     <tr><td><button name='changepassword' type="submit" class="btn-primary" value='1'>Change Password</button></td></tr>
                     </table>
                     </form>                                   
+                    <h3>Input Microsoft Translation API Credentials?</h3>
+                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                    <table>
+                    <tr><td><h5>&nbsp;Client ID: </td><td><input type="text" name="id"/></h5></td></tr>
+                    <tr><td><h5>&nbsp;Client Secret: </td><td><input type="text" name="password"/></h5></td></tr>
+                    <tr><td><button name='changems' type="submit" class="btn-primary" value='1'>Change Credentials</button></td></tr>
+                    </table>
+                    </form>
+                    <p>
                     <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
-
                 
                 if req.http.params.get("newaccount") :
                     newusername = req.http.params.get("username")
