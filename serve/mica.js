@@ -708,7 +708,7 @@ function history(uuid, page) {
 var view_images = false;
 var show_both = false;
 var current_view_mode = "text";
-var current_page = 0;
+var current_page = -1;
 var current_mode = "read";
 var current_uuid = "uuid";
 var curr_img_num = 0;
