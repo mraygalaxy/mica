@@ -1087,7 +1087,7 @@ class MICA(object):
 
                 if uni not in punctuation and uni :
                     online_units = False
-                    if not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
                         online_units = self.online_cross_reference(req, uuid, name, story, uni, cjk) if len(uni) > 1 else False
 
                     if not online_units or not len(online_units) :
@@ -2782,7 +2782,7 @@ class MICA(object):
                 p = ""
                 if req.session.value['username'] not in self.client :
                     p += "Offline only. Missing a translation API key in your account preferences."
-                elif not params["mobileinternet"] or params["mobileinternet"].connected() == True :
+                elif not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
                     final = { }
                     requests = [source]
                     breakout = source.decode("utf-8") if isinstance(source, str) else source
