@@ -2624,22 +2624,23 @@ class MICA(object):
                         self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
                         mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
 
-                for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                    tmp_storyname = result["key"][1]
-                    tmp_story = self.db[self.story(req, tmp_storyname)]
-                    mdebug("Killing stale translation session: " + tmp_storyname)
-                    tmp_story["translating"] = False
+                if params["transcheck"] :
+                    for result in self.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                        tmp_storyname = result["key"][1]
+                        tmp_story = self.db[self.story(req, tmp_storyname)]
+                        mdebug("Killing stale translation session: " + tmp_storyname)
+                        tmp_story["translating"] = False
 
-                    if "last_error" in tmp_story :
-                        del tmp_story["last_error"]
+                        if "last_error" in tmp_story :
+                            del tmp_story["last_error"]
 
-                    try :
-                        self.db[self.story(req, tmp_storyname)] = tmp_story
-                    except couch_adapter.ResourceConflict, e :
-                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+                        try :
+                            self.db[self.story(req, tmp_storyname)] = tmp_story
+                        except couch_adapter.ResourceConflict, e :
+                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
-                    if params["transreset"] :
-                        self.flush_pages(req, tmp_storyname)
+                        if params["transreset"] :
+                            self.flush_pages(req, tmp_storyname)
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
@@ -3440,6 +3441,7 @@ def get_options() :
                "tonefile" : options.tonefile,
                "mobileinternet" : False,
                "transreset" : options.transreset,
+               "transcheck" : True,
                "duplicate_logger" : False,
     }
 
