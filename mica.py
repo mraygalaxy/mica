@@ -313,18 +313,21 @@ class Translator(object):
         
 
         mdebug("Authenticated")
-        mdebug(response)
+        mdebug(str(response))
 
-        if "error" in response:
+        if response and "error" in response:
+            mdebug("Error in authentication response.")
             raise TranslateApiException(
                 response.get('error_description', 'No Error Description'),
                 response.get('error', 'Unknown Error')
             )
+        mdebug("Authentication returning")
         return response['access_token']
 
     def call(self, url, p):
         """Calls the given url with the params urlencoded
         """
+        mdebug("Translator ready for call.")
         if not self.access_token:
             self.access_token = self.get_access_token()
 
@@ -402,6 +405,7 @@ class Translator(object):
                 State: User state to help correlate request and response. The 
                     same contents will be returned in the response.
         """
+        mdebug("Translator preparing options.")
         options = {
             'Category': u"general",
             'Contenttype': u"text/plain",
@@ -414,6 +418,7 @@ class Translator(object):
             'to': to_lang,
             'options': json.dumps(options),
             }
+        mdebug("Translator options set.")
         if from_lang is not None:
             p['from'] = from_lang
 
@@ -2162,6 +2167,7 @@ class MICA(object):
         assert(req.session.value['username'] in self.client)
 
         client = self.client[req.session.value['username']]
+        assert(client)
 
         attempts = 15
         finished = False
@@ -2174,6 +2180,7 @@ class MICA(object):
                     mdebug("Previous attempt failed. Re-authenticating")
                     client.access_token = client.get_access_token()
 
+                mdebug("Entering online translation.")
                 result = client.translate_array(requests, lang, from_lang = from_lang)
 
                 if not len(result) or "TranslatedText" not in result[0] :
