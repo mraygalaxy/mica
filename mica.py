@@ -779,6 +779,9 @@ class MICA(object):
             for idx in range(0, len(self.replacement_keys)) :
                 x = replacements[idx]
                 y = self.replacement_keys[idx]
+                if (not isinstance(x, str) and not isinstance(x, unicode)) or (not isinstance(y, str) and not isinstance(y, unicode)) :
+                    mdebug("Skipping replacment combinations: x " + str(x) + " y " + str(y))
+                    continue
                 contents = contents.replace(y, x)
     
         return contents
@@ -1480,8 +1483,28 @@ class MICA(object):
             return {} 
 
         keys = {}
-        for result in self.db.view(name + "/all", keys = source_queries, username = req.session.value['username']) :
-            keys[result['key'][1]] = result['value']
+        mdebug("Generating query for view: " + name + " with " + str(len(source_queries)) + " keys.")
+        
+        # android sqllite has a query limit of 1000 values in a prepared sql statement,
+        # so let's do 500 at a time.
+        inc = 500
+        start = 0
+        stop = inc 
+        total = len(source_queries)
+        finished = False
+
+        while not finished :
+            if stop >= total :
+                stop = total 
+                finished = True
+
+            mdebug("Issuing query for indexes: start " + str(start) + " stop " + str(stop) + " total " + str(total) )
+            for result in self.db.view(name + "/all", keys = source_queries[start:(stop)], username = req.session.value['username']) :
+                keys[result['key'][1]] = result['value']
+
+            if not finished :
+                start += inc 
+                stop += inc 
         
         return keys
         
@@ -2934,11 +2957,9 @@ class MICA(object):
                 result = self.memocount(req, story, page)
                 
                 if not result :
-                    return "What the hell is going on?"
-                if not result[0] and len(result) > 1 :
-                    return self.bootstrap(req, result[1])
+                    return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>What the hell is going on?</div></div>", now = True)
                 
-                total_memorized, total_unique, unique, progress = result[1:]
+                total_memorized, total_unique, unique, progress = result
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
                 for result in self.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -3400,6 +3421,7 @@ def get_options() :
                "tonefile" : options.tonefile,
                "mobileinternet" : False,
                "transreset" : options.transreset,
+               "duplicate_logger" : False,
     }
 
     return params 
@@ -3429,7 +3451,7 @@ def go(p) :
     registerAdapter(CDict, Session, IDict)
 
     mdebug("Initializing logging.")
-    mica_init_logging(params["log"])
+    mica_init_logging(params["log"], duplicate = params["duplicate_logger"])
 
     if "tonefile" not in params or not params["tonefile"] :
         params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
