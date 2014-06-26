@@ -1275,12 +1275,6 @@ class MICA(object):
             page_inputs = page_start + 1 
         else :  
             page_start = 0
-            nb_pages = self.nb_pages(req, name)
-            if nb_pages :
-                page_start += nb_pages
-                
-            if page_start != 0 :
-                mdebug("Some pages already translated. Restarting @ offset page " + str(page_start))
         
         self.transmutex.acquire()
         try :
@@ -1303,6 +1297,16 @@ class MICA(object):
         handle = self.get_cjk_handle(self.cjklocation)
 
         for iidx in range(page_start, page_inputs) :
+            page_key = self.story(req, name) + ":pages:" + str(iidx)
+
+            if self.db.doc_exist(page_key) :
+                if page :
+                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting for re-translation.")
+                    del self.db[page_key]
+                else :
+                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Not going to re-create.")
+                    continue
+
             if "filetype" not in story or story["filetype"] == "txt" :
                 page_input = self.db[self.story(req, name) + ":original"]["value"]
             else :
@@ -1358,10 +1362,6 @@ class MICA(object):
                         else :
                             offline += 1 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
-                page_key = self.story(req, name) + ":pages:" + str(iidx)
-                if self.db.doc_exist(page_key) :
-                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting.")
-                    del self.db[page_key]
                 self.db[page_key] = story["pages"][str(iidx)]
                 del story["pages"][str(iidx)]
             except Exception, e :
@@ -1470,27 +1470,33 @@ class MICA(object):
 
         return out
 
-    def view_keys(self, req, name, units, source_queries = []) :
-        if units :
-            for unit in units :
+    def view_keys(self, req, name, _units, source_queries = False) :
+        sources = []
+
+        if source_queries :
+            sources = source_queries
+
+        if _units :
+            mdebug("Input units: " + str(len(_units)))
+            for unit in _units :
                 if name == "memorized" :
                     if "hash" in unit :
-                        source_queries.append(unit["hash"])
+                        sources.append(unit["hash"])
                 else :
-                    source_queries.append("".join(unit["source"]))
+                    sources.append("".join(unit["source"]))
             
-        if len(source_queries) == 0 :
+        if len(sources) == 0 :
             return {} 
 
         keys = {}
-        mdebug("Generating query for view: " + name + " with " + str(len(source_queries)) + " keys.")
+        mdebug("Generating query for view: " + name + " with " + str(len(sources)) + " keys.")
         
         # android sqllite has a query limit of 1000 values in a prepared sql statement,
         # so let's do 500 at a time.
         inc = 500
         start = 0
         stop = inc 
-        total = len(source_queries)
+        total = len(sources)
         finished = False
 
         while not finished :
@@ -1499,7 +1505,7 @@ class MICA(object):
                 finished = True
 
             mdebug("Issuing query for indexes: start " + str(start) + " stop " + str(stop) + " total " + str(total) )
-            for result in self.db.view(name + "/all", keys = source_queries[start:(stop)], username = req.session.value['username']) :
+            for result in self.db.view(name + "/all", keys = sources[start:(stop)], username = req.session.value['username']) :
                 keys[result['key'][1]] = result['value']
 
             if not finished :
@@ -1759,7 +1765,7 @@ class MICA(object):
                             <!--data-spy='affix'--><div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
         """
         output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
-        output += "<h4><b>" + name + "</b></h4>"
+        output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
 
         if action in ["read"] :
             output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
@@ -2157,7 +2163,7 @@ class MICA(object):
 
         client = self.client[req.session.value['username']]
 
-        attempts = 5
+        attempts = 15
         finished = False
         stop = False
 
@@ -2552,6 +2558,7 @@ class MICA(object):
 
     def set_page(self, req, story, page) :
         if "current_page" not in story or story["current_page"] != str(page) :
+            mdebug("Setting story " + story["name"] + " to page: " + str(page))
             tmp_story = self.db[self.story(req, story["name"])]
             tmp_story["current_page"] = story["current_page"] = str(page)
             self.db[self.story(req, story["name"])] = tmp_story
@@ -2851,12 +2858,20 @@ class MICA(object):
                 req.session.value["current_story"] = uuid
                 req.session.save()
                 
-            if story : 
-                if "current_page" in story :
-                    start_page = story["current_page"]
+            if uuid : 
+                tmp_story = story
+                if not tmp_story :
+                    name = self.db[self.index(req, uuid)]["value"]
+                    tmp_story = self.db[self.story(req, name)]
+
+                if "current_page" in tmp_story :
+                    start_page = tmp_story["current_page"]
+                    mdebug("Loading start page: " + str(start_page))
                 else :
-                    self.set_page(req, story, start_page)
+                    self.set_page(req, tmp_story, start_page)
                 
+            mdebug("Start page will be: " + str(start_page))
+
             if "view_mode" in req.session.value :
                 view_mode = req.session.value["view_mode"]
             else :
@@ -3012,6 +3027,10 @@ class MICA(object):
                     story = self.db[self.story(req, name)]
                     if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
+                        mdebug("Request for page: " + str(page))
+                        if page == "-1" :
+                            page = start_page
+
                         if req.http.params.get("image") :
                             nb_image = req.http.params.get("image")
                             output = "<div><div id='pageresult'>"
