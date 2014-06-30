@@ -26,35 +26,58 @@ if sys.getdefaultencoding() != "utf-8" :
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
 
+try :
+    from jnius import autoclass
+    String = autoclass('java.lang.String')
+except ImportError, e :
+    String = False
+    print("pyjnius not available. Probably on a server.")
+
+
 micalogger = False
 txnlogger = False
+duplicate_logger = False
 
 def minfo(msg) :
    if micalogger :
        micalogger.info(msg)
    else :
        print msg
+   if duplicate_logger and String :
+      duplicate_logger.info(String(msg))
 
 def mdebug(msg) :
    if micalogger :
-       micalogger.debug(threading.current_thread().name + ": " + msg)
+       micalogger.debug(msg)
+       #micalogger.debug(threading.current_thread().name + ": " + msg)
    else :
        print msg
+
+   if duplicate_logger and String :
+      duplicate_logger.debug(String(msg))
 
 def mwarn(msg) :
    if micalogger :
        micalogger.warn(msg)
    else :
        print msg
+   if duplicate_logger and String :
+      duplicate_logger.warn(String(msg))
 
 def merr(msg) :
    if micalogger :
        micalogger.error(msg)
    else :
        print msg
+   if duplicate_logger and String :
+      duplicate_logger.err(String(msg))
 
-def mica_init_logging(logfile) :
+def mica_init_logging(logfile, duplicate = False) :
     global micalogger
+    global duplicate_logger
+
+    if duplicate :
+        duplicate_logger = duplicate
 
     # Reset the logging handlers
     logger = getLogger()
