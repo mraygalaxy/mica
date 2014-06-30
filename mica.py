@@ -49,6 +49,7 @@ from twisted.web.server import Site
 from twisted.web import proxy, server
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
+from OpenSSL import SSL
 
 from webob import Request, Response, exc
 
@@ -3405,6 +3406,24 @@ class NONSSLDispatcher(Resource) :
             s.notifyOnExpire(lambda: expired(s.uid))
         return self.app
 
+class ChainedOpenSSLContextFactory(ssl.DefaultOpenSSLContextFactory):
+    def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.SSLv23_METHOD):
+        """
+        @param privateKeyFileName: Name of a file containing a private key
+        @param certificateChainFileName: Name of a file containing a certificate chain
+        @param sslmethod: The SSL method to use
+        """
+        self.privateKeyFileName = privateKeyFileName
+        self.certificateChainFileName = certificateChainFileName
+        self.sslmethod = sslmethod
+        self.cacheContext()
+    
+    def cacheContext(self):
+        ctx = SSL.Context(self.sslmethod)
+        ctx.use_certificate_chain_file(self.certificateChainFileName)
+        ctx.use_privatekey_file(self.privateKeyFileName)
+        self._context = ctx
+
 def get_options() :
     from optparse import OptionParser
 
@@ -3526,7 +3545,8 @@ def go(p) :
 
         if params["sslport"] != -1 :
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
+#            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
+            reactor.listenSSL(int(params["sslport"]), site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
             minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
         else :
             mwarn("Disabling SSL access. Be careful =)")
@@ -3555,3 +3575,4 @@ if __name__ == "__main__":
     params = get_options()
     params["couch_adapter_type"] = "MicaServerCouchDB"
     go(params)
+
