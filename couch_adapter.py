@@ -15,6 +15,39 @@ try :
 except ImportError, e :
     mdebug("pyjnius not available. Probably on a server.")
 
+def couchdb_pager(db, view_name='_all_docs',
+                  startkey=None, startkey_docid=None,
+                  endkey=None, endkey_docid=None, bulk=5000, stale = False):
+    # Request one extra row to resume the listing there later.
+    options = {'limit': bulk + 1}
+    if stale :
+        options["stale"] = stale
+    if startkey:
+        options['startkey'] = startkey
+        if startkey_docid:
+            options['startkey_docid'] = startkey_docid
+    if endkey:
+        options['endkey'] = endkey
+        if endkey_docid:
+            options['endkey_docid'] = endkey_docid
+    done = False
+    while not done:
+        view = db.view(view_name, **options)
+        rows = []
+        # If we got a short result (< limit + 1), we know we are done.
+        if len(view) <= bulk:
+            done = True
+            rows = view.rows
+        else:
+            # Otherwise, continue at the new start position.
+            rows = view.rows[:-1]
+            last = view.rows[-1]
+            options['startkey'] = last.key
+            options['startkey_docid'] = last.id
+
+        for row in rows:
+            yield row
+
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):
         Exception.__init__(self)
@@ -68,29 +101,59 @@ class MicaDatabaseCouchDB(object) :
             return False
 
     def __delitem__(self, name) :
+        doc = self.db[name]
         del self.db[name]
+        self.db.purge([doc])
 
-    def put_attachment(self, name, filename, contents, doc = False) :
-        if not doc :
-            doc = { "Nothing" : "yet" }
-
-        if self.doc_exist(name) :
+    def put_attachment(self, name, filename, contents, new_doc = False) :
+        trydelete = True
+        if self.doc_exist(name, true_if_deleted = True) is True :
+            mdebug("Deleting original @ " + name)
+            doc = self.db[name]
             del self.db[name]
+            self.db.purge([doc])
+            trydelete = True
+
+
+        if not new_doc :
+            doc = { "foo" : "bar"}
+        else :
+            doc = new_doc
+
+        if trydelete :
+            try :
+                doc["_rev"] = self.db[name]["_rev"]
+                mdebug("Old revision found.")
+            except couchdb.http.ResourceNotFound, e :
+                mdebug("No old revision found.")
+                pass
+
+        mdebug("Going to write: " + str(doc))
         self.db[name] = doc
+        doc = self.db[name]
+
+        mdebug("Putting attachment..")
 
         return self.db.put_attachment(doc, contents, filename)
 
     def get_attachment(self, name, filename) :
         return self.db.get_attachment(name, filename).read()
 
-    def doc_exist(self, name) :
+    def doc_exist(self, name, true_if_deleted = False) :
         try :
             self.db[name]
         except couchdb.http.ResourceNotFound, e :
+            mdebug(str(e.args))
+            ((error, reason),) = e.args
+            mdebug("Doc exist returns not found: " + reason)
+            if true_if_deleted and reason == "deleted" :
+                mdebug("Doc was deleted, returning true")
+                return None 
             return False
         return True
 
     def view(self, *args, **kwargs) :
+        view_name = args[0]
         if "keys" in kwargs :
             keylist = []
             username = kwargs["username"]
@@ -100,10 +163,23 @@ class MicaDatabaseCouchDB(object) :
 
         if "username" in kwargs :
             del kwargs["username"]
-        return self.db.view(*args, **kwargs)
+
+        if "keys" in kwargs :
+            for result in self.db.view(*args, **kwargs) :
+                yield result
+        else :
+            args = [self.db]
+            kwargs["view_name"] = view_name
+            kwargs["bulk"] = 50
+
+            for result in couchdb_pager(*args, **kwargs) :
+                yield result
 
     def compact(self, *args, **kwargs) :
         self.db.compact(*args, **kwargs)
+
+    def cleanup(self, *args, **kwargs) :
+        self.db.cleanup(*args, **kwargs)
 
     def close(self) :
         pass
@@ -175,8 +251,11 @@ class MicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error getting attachment: " + name + " " + str(e), e)
         if attach is None :
             raise ResourceNotFound("Could not find attachment for document: " + name)
-        # The ByteArray pyjnius is actually a 'memoryview' from java,
-        # which you can google about
+        # The ByteArray pyjnius is actually a 'memoryview' from python that
+        # represents the native java byte[] object that was returned,
+        # which you can google about. MemoryViews are shared-memory versions
+        # of native python bytearrays which can be maped into a string,
+        # like this.
         return "".join(map(chr, attach))
 
     def doc_exist(self, name) :
@@ -250,6 +329,11 @@ class MicaDatabaseCouchbaseMobile(object) :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
             return
         self.db.compact(*args, **kwargs)
+
+    def cleanup(self, *args, **kwargs) :
+        # Does couchbase mobile have this?
+        #self.db.cleanup(*args, **kwargs)
+        pass
 
     def close(self) :
         try :
