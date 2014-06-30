@@ -22,6 +22,7 @@ Credits:
  4. Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
  5. PDF extraction: pdfminer
  6. PDF creation: fpdf
+ 7. CouchDB
 
 
 INSTALLATION:
@@ -83,14 +84,30 @@ $ cp build/*/mica_ictclas.so .
 $ sudo pip install pdfminer
 $ sudo pip install fpdf
 
+8) Next, install CouchDB (at least version 1.5). I recommend modifying your /etc/couchdb/local.ini to setup SSL support if you want to use the Android version of MICA Reader.
+
+9) Next, install python-couchdb (pip install couchdb, if it's not in your distribution).
+
 
 RUNNING:
 ========
 
-If all the dependencies are in place, then you should be able to do the following:
+1) If all the dependencies are in place, then you should be able to do the following:
 
-$ ./mica.py -I client_id -S client_key_long_string_of_characters -C path_to_cacert -K path_to_private_key
+$ ./mica.py -C path_to_cacert -K path_to_private_key -c "http://couchdb_username:couchdb_password@localhost:5984"
 
-   # Where the first to 'I' and 'S' parameters are the ID and key you got from the microsoft translation free application developer accounts and the last two parameters 'C' and 'K' are from the openssl command from above if you needed to needed to create a self-signed certificate.
+  - Where the parameters 'C' and 'K' are from the openssl command from above if you needed to needed to create a self-signed certificate and the parameters '-c' is the address used to reach your couchdb server
 
-   # You can add the '-k' option if you want to restart the process without throwing away all the cookies used in the web interfaces in case you want to easily update the software.
+2) Open your browser and view the web page on port (on port 443 instead of 80 if you used SSL).
+
+   - The default username is 'admin' and the default password is 'password'. 
+
+3) After logging in, click on the User icon in the top right corner and select 'Preferences':
+
+   - Change your password now or create a new user account.
+   - Set your Microsoft Translator API id and secret
+
+4) Try uploading a story or searchable PDF and happy reading!
+
+
+
