@@ -110,4 +110,11 @@ $ ./mica.py -C path_to_cacert -K path_to_private_key -c "http://couchdb_username
 4) Try uploading a story or searchable PDF and happy reading!
 
 
+FAQ:
+=======
 
+1) Do you have a mobile version?
+
+   - Yes, it's called "MICA Reader". Go to the <a href='http://github.com/hinesmr/mica-android'>MICA Reader</a> project to try to build yourself an APK and try it out.
+     We're working hard to release it on the android market as soon as possible.
+   - I do not own any apple products, so I cannot make an IOS version. Contributions welcome =)
