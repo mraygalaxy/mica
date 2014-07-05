@@ -575,6 +575,7 @@ class MICA(object):
         
         self.replacement_keys = [ 
                                     "BOOTNAV", 
+                                    "BOOTCANVASTOGGLE",
                                     "BOOTNEWACCOUNTADMIN",
                                     "BOOTCLOUDNAME", 
                                     "BOOTCLOUDS", 
@@ -684,6 +685,7 @@ class MICA(object):
             body = body.decode("utf-8")
 
         navcontents = ""
+        bootcanvastoggle = ""
         newaccountadmin = ""
         cloudcontents = "None Available"
         availablecontents = "None Available"
@@ -751,10 +753,7 @@ class MICA(object):
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
-            else :
-                navcontents += """
-                    <li><a id='connectpop'>Connect!</a></li>
-                """
+                bootcanvastoggle = " onclick=\"togglecanvas()\" "
     
         if req.action == "index" :
             mpath = req.uri + relative_prefix_suffix
@@ -765,8 +764,9 @@ class MICA(object):
     
         replacements = [    
                          navcontents, 
+                         bootcanvastoggle,
                          newaccountadmin,
-                         "[MICA]" if req.session.value['connected'] else "Disconnected",
+                         "[MICA]" if req.session.value['connected'] else "<div style='display: inline' id='connectpop'>[MICA Disconnected]</div>",
                          cloudcontents,
                          availablecontents,
                          body,
@@ -1768,7 +1768,7 @@ class MICA(object):
 
         output += """
                             <div class='col-lg-2'>
-                            <!--data-spy='affix'--><div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
+                            <div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
         """
         output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
         output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
@@ -1790,7 +1790,7 @@ class MICA(object):
         output += "</div><!-- col-lg-2 stats section -->\n"
         output += "</div><!-- col-lg-12 for everything section -->\n"
         output += "</div><!-- row for everything -->\n"
-        output += "<script>install_pages('" + action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "');</script>"
+        output += "<script>install_pages('" + action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true);</script>"
         
         return output
 
