@@ -965,7 +965,7 @@ function installreading() {
 	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
-       $('#sideButton').attr('class', 'btn rtn-default');
+       $('#sideButton').attr('class', 'btn btn-default');
        current_view_mode = "images";
        view(current_mode, current_uuid, current_page);
        
