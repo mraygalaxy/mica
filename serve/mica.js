@@ -724,6 +724,19 @@ function restore_pageimg_width() {
     $('#pageimg' + curr_img_num).css('width', '100%');
 }
 
+function resetIndex(data) {
+   /*
+   install_pages(current_mode, current_pages, current_uuid, current_page, current_view_mode, false);
+   $('#allcontent').goDeep(100, function(deep){ // $.fn.goDeep(levels, callback)
+    $(this).css("z-index", "5");
+   });
+   $('#readingheader').goDeep(20, function(deep){ // $.fn.goDeep(levels, callback)
+    $(this).css("z-index", "9999");
+   });
+   */
+   
+}
+
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
@@ -746,7 +759,8 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              false,
+              //resetIndex, // doesn't work. =(
+	      false,
               true);
 
        url += "&image=0";
@@ -756,7 +770,8 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              false,
+              //resetIndex, // doesn't work. =(
+	      false,
               true);
    } else {
        $("#pagecontent").html("<div class='col-md-12'><div id='pagesingle'></div></div>");
@@ -773,7 +788,8 @@ function view(mode, uuid, page) {
               '#pageresult',
               unavailable, 
               true, 
-              false,
+              //resetIndex, // doesn't work. =(
+	      false,
               true);
    }
 
@@ -789,7 +805,7 @@ function view(mode, uuid, page) {
    current_uuid = uuid;
 }
 
-function install_pages(mode, pages, uuid, start, view_mode) {
+function install_pages(mode, pages, uuid, start, view_mode, reload) {
         current_pages = pages;
         current_view_mode = view_mode;
 		if (view_mode == "text") {
@@ -810,7 +826,9 @@ function install_pages(mode, pages, uuid, start, view_mode) {
           view(mode, uuid, num-1);
         });
 
-        view(mode, uuid, start);
+	if(reload) {
+            view(mode, uuid, start);
+	}
 }
 
 function memory_finish(data, opaque1, opaque2) {
@@ -858,7 +876,6 @@ function togglecanvas() {
       if ($('#offnav').attr('href') == '#main-nav') {
         $('#offnav').attr('href', '#');
       } else {
-        loadstories(false);
         $('#offnav').attr('href', '#main-nav');
         loadstories(false);
       }
@@ -948,7 +965,7 @@ function installreading() {
         }
 
         page -= 1;
-        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode);
+        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true);
     });
     $("#gotoval").keyup(function(event){
             if(event.keyCode == 13){ $("#goto").click(); }
@@ -958,7 +975,7 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
@@ -966,7 +983,7 @@ function installreading() {
 	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
-       $('#sideButton').attr('class', 'btn rtn-default');
+       $('#sideButton').attr('class', 'btn btn-default');
        current_view_mode = "images";
        view(current_mode, current_uuid, current_page);
        
@@ -1046,3 +1063,19 @@ function reviewstory(uuid, which) {
     loadstories,
     false);
 }
+
+$.fn.goDeep = function(levels, func){
+    var iterateChildren = function(current, levelsDeep){
+        func.call(current, levelsDeep);
+
+        if(levelsDeep > 0)
+            $.each(current.children(), function(index, element){
+                iterateChildren($(element), levelsDeep-1);
+            });
+    };
+
+    return this.each(function(){
+        iterateChildren($(this), levels);
+    });
+};
+
