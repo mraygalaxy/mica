@@ -575,6 +575,7 @@ class MICA(object):
         
         self.replacement_keys = [ 
                                     "BOOTNAV", 
+                                    "BOOTCANVASTOGGLE",
                                     "BOOTNEWACCOUNTADMIN",
                                     "BOOTCLOUDNAME", 
                                     "BOOTCLOUDS", 
@@ -684,6 +685,7 @@ class MICA(object):
             body = body.decode("utf-8")
 
         navcontents = ""
+        bootcanvastoggle = ""
         newaccountadmin = ""
         cloudcontents = "None Available"
         availablecontents = "None Available"
@@ -751,6 +753,7 @@ class MICA(object):
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
+                bootcanvastoggle = " onclick=\"togglecanvas()\" "
     
         if req.action == "index" :
             mpath = req.uri + relative_prefix_suffix
@@ -761,6 +764,7 @@ class MICA(object):
     
         replacements = [    
                          navcontents, 
+                         bootcanvastoggle,
                          newaccountadmin,
                          "[MICA]" if req.session.value['connected'] else "<div style='display: inline' id='connectpop'>[MICA Disconnected]</div>",
                          cloudcontents,

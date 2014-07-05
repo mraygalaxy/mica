@@ -858,7 +858,6 @@ function togglecanvas() {
       if ($('#offnav').attr('href') == '#main-nav') {
         $('#offnav').attr('href', '#');
       } else {
-        loadstories(false);
         $('#offnav').attr('href', '#main-nav');
         loadstories(false);
       }
