@@ -751,10 +751,6 @@ class MICA(object):
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
-            else :
-                navcontents += """
-                    <li><a id='connectpop'>Connect!</a></li>
-                """
     
         if req.action == "index" :
             mpath = req.uri + relative_prefix_suffix
@@ -766,7 +762,7 @@ class MICA(object):
         replacements = [    
                          navcontents, 
                          newaccountadmin,
-                         "[MICA]" if req.session.value['connected'] else "Disconnected",
+                         "[MICA]" if req.session.value['connected'] else "<div style='display: inline' id='connectpop'>[MICA Disconnected]</div>",
                          cloudcontents,
                          availablecontents,
                          body,
