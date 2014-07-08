@@ -2535,7 +2535,7 @@ class MICA(object):
     def flush_pages(self, req, name):
         mdebug("Ready to flush translated pages.")
         allpages = []
-        for result in self.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}], stale='update_after') :
+        for result in self.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
             allpages.append(result["key"][2])
 
         mdebug("List complete.")
@@ -2696,7 +2696,7 @@ class MICA(object):
                         else :
                             mdebug("Deleting original pages")
                             allorig = []
-                            for result in self.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}], stale='update_after') :
+                            for result in self.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
                                 allorig.append(result["key"][2])
                             mdebug("List built.")
                             for tmppage in allorig :
