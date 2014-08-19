@@ -27,6 +27,7 @@ import base64
 import __builtin__
 import sys
 import socket
+import Queue
 import pdb
 
 from common import *
@@ -613,16 +614,8 @@ class MICA(object):
             mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
         #pushapps(cwd + "/views", self.db)
-            
-    def __call__(self, environ, start_response):
-        # Hack to make WebOb work with Twisted
-        setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
 
-        req = Params(environ, start_response.im_self.request.session)
-        req.dest = ""#prefix(req.unparsed_uri)
-        req.zdbacctconnection = False
-        req.zdb = False
-        
+    def run_common(self, req) :
         try:
             resp = self.common(req)
         except exc.HTTPTemporaryRedirect, e :
@@ -635,6 +628,35 @@ class MICA(object):
             resp = "<h4>Exception:</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
+
+        return resp
+            
+    # Only used on iOS
+    def serial_common(self) :
+        (req, rq) = (yield)
+
+        resp = self.run_common(req)
+
+        rq.put(resp)
+        rq.task_done()
+
+    def __call__(self, environ, start_response):
+        # Hack to make WebOb work with Twisted
+        setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
+
+        req = Params(environ, start_response.im_self.request.session)
+        req.dest = ""#prefix(req.unparsed_uri)
+        req.zdbacctconnection = False
+        req.zdb = False
+        
+        if params["serialize_couch_on_mobile"] :
+            rq = Queue.Queue()
+            co = self.serial_common()
+            co.next()
+            params["q"].put((co, req, rq))
+            resp = rq.get()
+        else :
+            resp = self.run_common(req)
 
         r = None
 
@@ -3469,6 +3491,7 @@ def get_options() :
                "transreset" : options.transreset,
                "transcheck" : True,
                "duplicate_logger" : False,
+               "serialize_couch_on_mobile" : False,
     }
 
     return params 
@@ -3484,6 +3507,9 @@ def go(p) :
     if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
+
+    if "serialize_couch_on_mobile" not in params :
+        params["serialize_couch_on_mobile"] = False
 
     if not params["keepsession"] :
         if os.path.isdir(cwd + "sessions/") :
@@ -3564,7 +3590,28 @@ def go(p) :
                 params["debug_host"] = None
                 exit(1)
 
-        reactor.run()
+        if params["serialize_couch_on_mobile"] :
+            minfo("We will serialize couchdb access. Setting up queue and coroutine.")
+            params["q"] = Queue.Queue()
+            rt = Thread(target = reactor.run)
+            rt.start()
+
+            while True :
+                (co, req, rq) = params["q"].get()
+                try :
+                    # Send the input from the thread to the coroutine
+                    # The coroutine's function will execute in the
+                    # context of the main thread (or other thread if
+                    # you wish.
+                    co.send((req, rq))
+                except StopIteration :
+                    continue
+
+                params["q"].task_done()
+
+            rt.join()
+        else :
+            reactor.run()
     except Exception, e :
         merr("Startup exception: " + str(e))
         for line in traceback.format_exc().splitlines() :
