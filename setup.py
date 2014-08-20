@@ -4,7 +4,7 @@ module1 = Extension('mica_ictclas',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
                     libraries = ['ICTCLAS50'],
-                    library_dirs = ['.'],
+                    library_dirs = ['.', 'ictc_64bit', 'ictc_32bit'],
                     sources = ['mica_ictclas.cpp'])
 
 setup (name = 'PackageName',

@@ -4,7 +4,7 @@
 from pwd import getpwuid
 from sys import path
 from time import sleep, time as timest
-from threading import Thread, Lock
+from threading import Thread, Lock, current_thread
 from copy import deepcopy
 from cStringIO import StringIO
 
@@ -43,14 +43,14 @@ from zope.interface import Interface, Attribute, implements
 from twisted.python.components import registerAdapter
 from twisted.web.server import Session
 from twisted.web.wsgi import WSGIResource
-from twisted.internet import reactor, ssl
+from twisted.internet import reactor
 from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.web.server import Site
 from twisted.web import proxy, server
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
-from OpenSSL import SSL
+import twisted
 
 from webob import Request, Response, exc
 
@@ -595,29 +595,29 @@ class MICA(object):
 
 
         self.db = False 
-        try :
-            self.verify_db()
-            mdebug("Checking for initial account existence")
-            self.view_check("accounts")
-            account_exists = self.db.doc_exist(self.acct('admin'))
-            if not account_exists:
-                # default installations use 'admin' password of 'password'
-                self.db[self.acct('admin')] = {
-                        'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
-                        'roles' : [ 'admin', 'normal' ],
-                    } 
-        except TypeError, e :
-            mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
-        except couch_adapter.ResourceNotFound, e :
-            mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
-        except Exception, e :
-            mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
-
-        #pushapps(cwd + "/views", self.db)
+        if couch_url_or_local_db != False :
+            try :
+                self.verify_db()
+                mdebug("Checking for initial account existence")
+                self.view_check("accounts")
+                account_exists = self.db.doc_exist(self.acct('admin'))
+                if not account_exists:
+                    # default installations use 'admin' password of 'password'
+                    self.db[self.acct('admin')] = {
+                            'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
+                            'roles' : [ 'admin', 'normal' ],
+                        } 
+            except TypeError, e :
+                mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+            except couch_adapter.ResourceNotFound, e :
+                mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
+            except Exception, e :
+                mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
     def run_common(self, req) :
         try:
             resp = self.common(req)
+            mdebug("Common returned")
         except exc.HTTPTemporaryRedirect, e :
             resp = e
             resp.location = req.dest + resp.location# + req.active
@@ -629,6 +629,7 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
 
+        mdebug("sending response")
         return resp
             
     # Only used on iOS
@@ -637,7 +638,9 @@ class MICA(object):
 
         resp = self.run_common(req)
 
+        mdebug("putting into RQ")
         rq.put(resp)
+        mdebug("signalling RQ done")
         rq.task_done()
 
     def __call__(self, environ, start_response):
@@ -654,6 +657,7 @@ class MICA(object):
             co = self.serial_common()
             co.next()
             params["q"].put((co, req, rq))
+            mdebug("twisted waiting for RQ result")
             resp = rq.get()
         else :
             resp = self.run_common(req)
@@ -670,6 +674,7 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 merr("RESPONSE MICA ********" + line)
 
+        mdebug("Returning back to twisted")
         return r
     
     def sidestart(self, req, name, username, story, reviewed) :
@@ -2572,9 +2577,12 @@ class MICA(object):
             del self.db[self.story(req, name) + ":final"]
 
     def view_check(self, name) :
-       fh = open(cwd + "views/" + name + ".js", 'rw')
+       fh = open(cwd + "views/" + name + ".js", 'r')
        vc = fh.read()
        fh.close()
+       # You can refresh the views from new updates on disk by
+       # upcommenting this line
+       #del self.db["_design/" + name]
        if not self.db.doc_exist("_design/" + name) :
            mdebug("View " + name + " does not exist. Uploading.")
            self.db["_design/" + name] = json.loads(vc)
@@ -2909,6 +2917,8 @@ class MICA(object):
                 req.session.value["view_mode"] = view_mode 
                 req.session.save()
 
+            mdebug("one")
+
             if req.http.params.get("multiple_select") :
                 nb_unit = int(req.http.params.get("nb_unit"))
                 mindex = int(req.http.params.get("index"))
@@ -2936,6 +2946,7 @@ class MICA(object):
 
             output = ""
 
+            mdebug("two")
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
@@ -3051,6 +3062,7 @@ class MICA(object):
                 page = req.http.params.get("page")
                 self.parse(req, uuid, name, story, username, page = page)
                 
+            mdebug("three")
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
                     # Reload just in case the translation changed anything
@@ -3299,14 +3311,6 @@ class MICA(object):
                     merr("OTHER MICA ********" + line)
             return out
 
-'''
-session_opts = {
-    'session.data_dir' : '/tmp/mica_sessions_' + getpwuid(os.getuid())[0] + '_data',
-    'session.lock_dir' : '/tmp/mica_sessions_' + getpwuid(os.getuid())[0] + '_lock',
-    'session.type' : 'file',
-    }
-'''
-
 class IDict(Interface):
     value = Attribute("Dictionary for holding session keys and values.")
 
@@ -3317,9 +3321,9 @@ class CDict(object):
         uid = session.uid
 
         if params["keepsession"] :
-            sfn = cwd + "sessions/debug.session"
+            sfn = params["session_dir"] + "debug.session"
         else :
-            sfn = cwd + "sessions/" + uid + ".session"
+            sfn = params["session_dir"] + uid + ".session"
 
         if os.path.isfile(sfn) :
             mdebug("Loading existing session file: " + sfn)
@@ -3335,9 +3339,9 @@ class CDict(object):
         self.value["session_uid"] = uid
     def save(self) :
         if params["keepsession"] :
-            sfn = cwd + "sessions/debug.session"
+            sfn = params["session_dir"] + "debug.session"
         else :
-            sfn = cwd + "sessions/" + self.value["session_uid"] + ".session"
+            sfn = params["session_dir"] + self.value["session_uid"] + ".session"
 
         #mdebug("Saving to session file: " + sfn)
         fh = open(sfn, 'w')
@@ -3348,7 +3352,7 @@ class CDict(object):
 sessions = set()
 
 def expired(uid):
-   sfn = cwd + "sessions/" + uid + ".session"
+   sfn = params["session_dir"] + uid + ".session"
    mdebug("Session " + uid + " has expired.")
    sessions.remove(uid)
    mdebug("Removing session file.")
@@ -3428,24 +3432,6 @@ class NONSSLDispatcher(Resource) :
             s.notifyOnExpire(lambda: expired(s.uid))
         return self.app
 
-class ChainedOpenSSLContextFactory(ssl.DefaultOpenSSLContextFactory):
-    def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.SSLv23_METHOD):
-        """
-        @param privateKeyFileName: Name of a file containing a private key
-        @param certificateChainFileName: Name of a file containing a certificate chain
-        @param sslmethod: The SSL method to use
-        """
-        self.privateKeyFileName = privateKeyFileName
-        self.certificateChainFileName = certificateChainFileName
-        self.sslmethod = sslmethod
-        self.cacheContext()
-    
-    def cacheContext(self):
-        ctx = SSL.Context(self.sslmethod)
-        ctx.use_certificate_chain_file(self.certificateChainFileName)
-        ctx.use_privatekey_file(self.privateKeyFileName)
-        self._context = ctx
-
 def get_options() :
     from optparse import OptionParser
 
@@ -3504,6 +3490,12 @@ def go(p) :
     global params
     params = p
     mdebug("Verifying options.")
+
+    if "session_dir" not in params :
+        params["session_dir"] = cwd + "mica_session/"
+
+    mdebug("Session dir: " + params["session_dir"])
+
     if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
@@ -3512,13 +3504,16 @@ def go(p) :
         params["serialize_couch_on_mobile"] = False
 
     if not params["keepsession"] :
-        if os.path.isdir(cwd + "sessions/") :
+        if os.path.isdir(params["session_dir"]) :
             mdebug("Destroying all session files")
-            shutil.rmtree(cwd + "sessions/")
+            try :
+                shutil.rmtree(params["session_dir"])
+            except Exception, e :
+                merr("Failed to remove tree: " + str(e))
 
-    if not os.path.isdir(cwd + "sessions/") :
+    if not os.path.isdir(params["session_dir"]) :
         mdebug("Making new session folder.")
-        os.makedirs(cwd + "sessions/")
+        os.makedirs(params["session_dir"])
 
     mdebug("Registering session adapter.")
     registerAdapter(CDict, Session, IDict)
@@ -3570,6 +3565,27 @@ def go(p) :
         nonsslsite.sessionFactory = MicaSession
 
         if params["sslport"] != -1 :
+            from twisted.internet import ssl
+            from OpenSSL import SSL
+
+            class ChainedOpenSSLContextFactory(ssl.DefaultOpenSSLContextFactory):
+                def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.SSLv23_METHOD):
+                    """
+                    @param privateKeyFileName: Name of a file containing a private key
+                    @param certificateChainFileName: Name of a file containing a certificate chain
+                    @param sslmethod: The SSL method to use
+                    """
+                    self.privateKeyFileName = privateKeyFileName
+                    self.certificateChainFileName = certificateChainFileName
+                    self.sslmethod = sslmethod
+                    self.cacheContext()
+                
+                def cacheContext(self):
+                    ctx = SSL.Context(self.sslmethod)
+                    ctx.use_certificate_chain_file(self.certificateChainFileName)
+                    ctx.use_privatekey_file(self.privateKeyFileName)
+                    self._context = ctx
+
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
 #            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
             reactor.listenSSL(int(params["sslport"]), site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
@@ -3591,23 +3607,31 @@ def go(p) :
                 exit(1)
 
         if params["serialize_couch_on_mobile"] :
+            mdebug("Python coroutine, we are on thread: " + str(current_thread()))
             minfo("We will serialize couchdb access. Setting up queue and coroutine.")
             params["q"] = Queue.Queue()
-            rt = Thread(target = reactor.run)
+            rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
+            rt.daemon = True
             rt.start()
 
             while True :
                 (co, req, rq) = params["q"].get()
+                mdebug("Request received in main thread")
                 try :
                     # Send the input from the thread to the coroutine
                     # The coroutine's function will execute in the
                     # context of the main thread (or other thread if
                     # you wish.
                     co.send((req, rq))
+                    mdebug("Request propogated from main thread")
                 except StopIteration :
+                    mdebug("Stop exception. Continuing.")
+                    params["q"].task_done()
                     continue
 
+                mdebug("main Signalling task done")
                 params["q"].task_done()
+                mdebug("main waiting for next task")
 
             rt.join()
         else :
