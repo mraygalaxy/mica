@@ -187,6 +187,9 @@ class MicaDatabaseCouchDB(object) :
     def close(self) :
         pass
 
+    def runloop(self) :
+        mdebug("Server runloop - nothing to do.")
+
        
 # FIXME: need try's here so we return our "NotFound"
 #        instead of our not found
@@ -343,6 +346,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
             self.db.close(self.dbname)
         except Exception, e :
             raise CommunicationError("Database close failed for: " + name)
+
+    def runloop(self) :
+        pass
 
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
@@ -504,6 +510,10 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         except Exception, e :
             raise CommunicationError("Database close failed for: " + name)
 
+    def runloop(self) :
+        mdebug("Wanted to do runloop execution here!")
+        self.db.runloop()
+
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
@@ -520,3 +530,4 @@ class iosMicaServerCouchbaseMobile(object) :
 
     def __contains__(self, dbname) :
         return True if self.db.exists(dbname) else False
+

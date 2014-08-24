@@ -613,6 +613,7 @@ class MICA(object):
                 mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
             except Exception, e :
                 mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
+        threading.Timer(1, self.runloop_sched).start()
 
     def run_common(self, req) :
         try:
@@ -642,6 +643,24 @@ class MICA(object):
         rq.put(resp)
         mdebug("signalling RQ done")
         rq.task_done()
+
+    def runloop(self) :
+        (unused, rq) = (yield)
+        mdebug("Runloop timer fired.")
+        self.db.runloop()
+        rq.put(None)
+        mdebug("Runloop signalling done.")
+        rq.task_done()
+
+    def runloop_sched(self) :
+        rq = Queue.Queue()
+        mdebug("Creating runloop co")
+        co = self.runloop()
+        co.next()
+        params["q"].put((co, None, rq))
+        mdebug("Waiting for runloop to finish")
+        resp = rq.get()
+        threading.Timer(1, self.runloop_sched).start()
 
     def __call__(self, environ, start_response):
         # Hack to make WebOb work with Twisted
@@ -3553,6 +3572,9 @@ def go(p) :
 
         db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
 
+        if params["serialize_couch_on_mobile"] :
+            params["q"] = Queue.Queue()
+
         mica = MICA(params["couch"], params["dbname"], params["cedict"], db_adapter)
 
         mdebug("Testing cjk")
@@ -3609,7 +3631,6 @@ def go(p) :
         if params["serialize_couch_on_mobile"] :
             mdebug("Python coroutine, we are on thread: " + str(current_thread()))
             minfo("We will serialize couchdb access. Setting up queue and coroutine.")
-            params["q"] = Queue.Queue()
             rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
             rt.daemon = True
             rt.start()
