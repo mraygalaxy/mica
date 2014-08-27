@@ -350,7 +350,7 @@ class AndroidMicaServerCouchbaseMobile(object) :
 
     def __getitem__(self, dbname) :
         self.dbname = dbname
-        return MicaDatabaseCouchbaseMobile(self.db)
+        return AndroidMicaDatabaseCouchbaseMobile(self.db)
 
     def __delitem__(self, name) :
         try :
