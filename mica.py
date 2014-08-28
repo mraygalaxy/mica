@@ -618,7 +618,6 @@ class MICA(object):
     def run_common(self, req) :
         try:
             resp = self.common(req)
-            mdebug("Common returned")
         except exc.HTTPTemporaryRedirect, e :
             resp = e
             resp.location = req.dest + resp.location# + req.active
@@ -639,26 +638,20 @@ class MICA(object):
 
         resp = self.run_common(req)
 
-        mdebug("putting into RQ")
         rq.put(resp)
-        mdebug("signalling RQ done")
         rq.task_done()
 
     def runloop(self) :
         (unused, rq) = (yield)
-        mdebug("Runloop timer fired.")
         self.db.runloop()
         rq.put(None)
-        mdebug("Runloop signalling done.")
         rq.task_done()
 
     def runloop_sched(self) :
         rq = Queue.Queue()
-        mdebug("Creating runloop co")
         co = self.runloop()
         co.next()
         params["q"].put((co, None, rq))
-        mdebug("Waiting for runloop to finish")
         resp = rq.get()
         threading.Timer(1, self.runloop_sched).start()
 
@@ -676,7 +669,6 @@ class MICA(object):
             co = self.serial_common()
             co.next()
             params["q"].put((co, req, rq))
-            mdebug("twisted waiting for RQ result")
             resp = rq.get()
         else :
             resp = self.run_common(req)
@@ -693,7 +685,6 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 merr("RESPONSE MICA ********" + line)
 
-        mdebug("Returning back to twisted")
         return r
     
     def sidestart(self, req, name, username, story, reviewed) :
