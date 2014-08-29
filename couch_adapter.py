@@ -334,7 +334,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         if len(args) > 0 :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
             return
-        self.db.compact(*args, **kwargs)
+        result = self.db.compact(self.dbname)
+        if result != "" :
+            raise CommunicationError("Compaction failed: " + result)
 
     def cleanup(self, *args, **kwargs) :
         # Does couchbase mobile have this?
