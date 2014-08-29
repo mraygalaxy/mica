@@ -628,6 +628,8 @@ class MICA(object):
                         self.db.put_attachment(self.acct('admin'), 'cedict.db', fh, new_doc = admin)
                         fh.close()
                         minfo("Uploaded.")
+                else :
+                    self.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
 
             except TypeError, e :
                 mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
