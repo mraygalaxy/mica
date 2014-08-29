@@ -248,6 +248,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
     def put_attachment(self, name, filename, contents, doc = False) :
         raise NotImplementedError("Sorry, the mobile version does not allow importing new stories, so creating new attachments is not required today.")
 
+    def get_attachment_to_path(self, name, filename, path) :
+        pass
+
     def get_attachment(self, name, filename) :
         try :
             attach = self.db.get_attachment(String(self.dbname), String(name), String(filename))
