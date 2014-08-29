@@ -22,7 +22,7 @@ ERROR = logging.ERROR
 CRITICAL = logging.CRITICAL
 
 if sys.getdefaultencoding() != "utf-8" :
-    #print sys.getdefaultencoding()
+    print sys.getdefaultencoding()
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
 
