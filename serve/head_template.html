@@ -216,6 +216,19 @@ BOOTBODY
    </div>  <!--content -->
   </div>  <!--page-wrap -->
     <script>
+
+    /* 
+     * Only functions defined in the main HTML page
+     * seem to be visible from Android. No idea why.
+     */
+    function pushstat(info) {
+        $("#pushstat").html(info);
+        return "Success pushstat";
+    }
+    function pullstat(info) {
+        $("#pullstat").html(info);
+        return "Success pullstat";
+    }
     var ConnectisVisible = false;
     var ConnectclickedAway = false;
     function getTemplate() {

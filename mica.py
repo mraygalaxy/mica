@@ -37,6 +37,7 @@ import couch_adapter
 mdebug("Initial imports complete")
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+sys.path = [cwd, cwd + "mica/"] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
@@ -629,7 +630,6 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
 
-        mdebug("sending response")
         return resp
             
     # Only used on iOS
@@ -2927,8 +2927,6 @@ class MICA(object):
                 req.session.value["view_mode"] = view_mode 
                 req.session.save()
 
-            mdebug("one")
-
             if req.http.params.get("multiple_select") :
                 nb_unit = int(req.http.params.get("nb_unit"))
                 mindex = int(req.http.params.get("index"))
@@ -2956,7 +2954,6 @@ class MICA(object):
 
             output = ""
 
-            mdebug("two")
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
@@ -3072,7 +3069,6 @@ class MICA(object):
                 page = req.http.params.get("page")
                 self.parse(req, uuid, name, story, username, page = page)
                 
-            mdebug("three")
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
                     # Reload just in case the translation changed anything

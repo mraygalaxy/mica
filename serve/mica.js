@@ -1079,9 +1079,3 @@ $.fn.goDeep = function(levels, func){
     });
 };
 
-function pushstat(info) {
-    $("#pushstat").html(info);
-}
-function pullstat(info) {
-    $("#pullstat").html(info);
-}
