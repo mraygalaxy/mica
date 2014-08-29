@@ -249,7 +249,12 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         raise NotImplementedError("Sorry, the mobile version does not allow importing new stories, so creating new attachments is not required today.")
 
     def get_attachment_to_path(self, name, filename, path) :
-        pass
+        try :
+            attach = self.db.get_attachment_to_path(String(self.dbname), String(name), String(filename), String(path))
+        except Exception, e :
+            raise CommunicationError("Error getting attachment to path: " + name + " " + str(e), e)
+        if attach is None :
+            raise ResourceNotFound("Could not find attachment to path for document: " + name)
 
     def get_attachment(self, name, filename) :
         try :
