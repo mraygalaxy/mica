@@ -70,6 +70,17 @@ except ImportError, e :
     mdebug("Could not import ICTCLAS library. Full translation will not work.")
     pass
 
+mobile = True 
+try :
+    from jnius import autoclass
+    String = autoclass('java.lang.String')
+except ImportError, e :
+    try :
+        from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
+    except ImportError, e :
+        mdebug("pyjnius and pyobjus not available. Probably on a server.")
+        mobile = False
+
 mdebug("Imports complete.")
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
@@ -608,13 +619,25 @@ class MICA(object):
                             'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
                             'roles' : [ 'admin', 'normal' ],
                         } 
+                if not mobile :
+                    admin = self.db[self.acct('admin')];
+                    if '_attachments' not in admin or 'cedict.db' not in admin['_attachments'] :
+                        minfo("Opening cedict file: " + params["cedict"])
+                        fh = open(params["cedict"], 'r')
+                        minfo("Uploading cedict to admin account...")
+                        self.db.put_attachment(self.acct('admin'), 'cedict.db', fh, new_doc = admin)
+                        fh.close()
+                        minfo("Uploaded.")
+
             except TypeError, e :
                 mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
             except couch_adapter.ResourceNotFound, e :
                 mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
             except Exception, e :
                 mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
-        threading.Timer(1, self.runloop_sched).start()
+
+        if mobile :
+            threading.Timer(1, self.runloop_sched).start()
 
     def run_common(self, req) :
         try:
@@ -3504,6 +3527,10 @@ def go(p) :
 
     if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
+        exit(1)
+
+    if not params["cedict"] :
+        merr("You must provide the path to a compatible CJKLIB file named 'cedict.db'. If you don't have one, you'll need to steal one from somewhere, like a linux box where CJKLIB has been installed or build one yourself following their instructions. If you build it, it will be located in the corresponding python installation directory for CJK.")
         exit(1)
 
     if "serialize_couch_on_mobile" not in params :

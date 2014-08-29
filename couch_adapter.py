@@ -109,31 +109,29 @@ class MicaDatabaseCouchDB(object) :
         self.db.purge([doc])
 
     def put_attachment(self, name, filename, contents, new_doc = False) :
-        trydelete = True
-        if self.doc_exist(name, true_if_deleted = True) is True :
-            mdebug("Deleting original @ " + name)
-            doc = self.db[name]
-            del self.db[name]
-            self.db.purge([doc])
-            trydelete = True
-
-
         if not new_doc :
-            doc = { "foo" : "bar"}
+            trydelete = True
+            if self.doc_exist(name, true_if_deleted = True) is True :
+                mdebug("Deleting original @ " + name)
+                doc = self.db[name]
+                del self.db[name]
+                self.db.purge([doc])
+                trydelete = True
+                doc = { "foo" : "bar"}
+
+            if trydelete :
+                try :
+                    doc["_rev"] = self.db[name]["_rev"]
+                    mdebug("Old revision found.")
+                except couchdb.http.ResourceNotFound, e :
+                    mdebug("No old revision found.")
+                    pass
+
+            mdebug("Going to write: " + str(doc))
+            self.db[name] = doc
+            doc = self.db[name]
         else :
             doc = new_doc
-
-        if trydelete :
-            try :
-                doc["_rev"] = self.db[name]["_rev"]
-                mdebug("Old revision found.")
-            except couchdb.http.ResourceNotFound, e :
-                mdebug("No old revision found.")
-                pass
-
-        mdebug("Going to write: " + str(doc))
-        self.db[name] = doc
-        doc = self.db[name]
 
         mdebug("Putting attachment..")
 
