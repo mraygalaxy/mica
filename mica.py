@@ -620,12 +620,21 @@ class MICA(object):
                             'roles' : [ 'admin', 'normal' ],
                         } 
                 if not mobile :
-                    admin = self.db[self.acct('admin')];
+                    admin = self.db[self.acct('admin')]
                     if '_attachments' not in admin or 'cedict.db' not in admin['_attachments'] :
                         minfo("Opening cedict file: " + params["cedict"])
                         fh = open(params["cedict"], 'r')
                         minfo("Uploading cedict to admin account...")
                         self.db.put_attachment(self.acct('admin'), 'cedict.db', fh, new_doc = admin)
+                        fh.close()
+                        minfo("Uploaded.")
+                        admin = self.db[self.acct('admin')]
+
+                    if '_attachments' not in admin or 'cjklib.db' not in admin['_attachments'] :
+                        minfo("Opening cjklib file: " + params["cjklib"])
+                        fh = open(params["cjklib"], 'r')
+                        minfo("Uploading cjklib to admin account...")
+                        self.db.put_attachment(self.acct('admin'), 'cjklib.db', fh, new_doc = admin)
                         fh.close()
                         minfo("Uploaded.")
 
@@ -3481,6 +3490,7 @@ def get_options() :
     parser.add_option("-c", "--couch", dest = "couch", default = "https://admin:super_secret_pass@localhost:6984", help = "URL of remote apache couchdb database")
     parser.add_option("-n", "--dbname", dest = "dbname", default = "mica", help = "Name of the couchdb database to use for this server")
     parser.add_option("-e", "--cedict", dest = "cedict", default = False, help = "Location of cedict.db file used by cjklib library.")
+    parser.add_option("-j", "--cjklib", dest = "cjklib", default = False, help = "Location of cjklib.db file used by cjklib library.")
     parser.add_option("-T", "--tonefile", dest = "tonefile", default = False, help = "Location of pinyin tone txt file.")
 
     parser.set_defaults()
@@ -3501,6 +3511,7 @@ def get_options() :
                "couch" : options.couch,
                "dbname" : options.dbname,
                "cedict" : options.cedict,
+               "cjklib" : options.cjklib,
                "tonefile" : options.tonefile,
                "mobileinternet" : False,
                "transreset" : options.transreset,
@@ -3529,8 +3540,8 @@ def go(p) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 
-    if not params["cedict"] :
-        merr("You must provide the path to a compatible CJKLIB file named 'cedict.db'. If you don't have one, you'll need to steal one from somewhere, like a linux box where CJKLIB has been installed or build one yourself following their instructions. If you build it, it will be located in the corresponding python installation directory for CJK.")
+    if not params["cedict"] or not params["cjklib"]:
+        merr("You must provide the path to compatible CJKLIB and CEDICT files named 'cedict.db' and 'cjklib.db'. If you don't have them, you'll need to steal them from somewhere, like a linux box where CJKLIB has been installed or build them yourself following their instructions. If you build them, they will be located in the corresponding python installation directory for CJK.")
         exit(1)
 
     if "serialize_couch_on_mobile" not in params :
