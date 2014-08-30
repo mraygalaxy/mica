@@ -877,7 +877,7 @@ class MICA(object):
                          navcontents, 
                          bootcanvastoggle,
                          newaccountadmin,
-                         "[MICA]" if req.session.value['connected'] else "<div style='display: inline' id='connectpop'>[MICA Disconnected]</div>",
+                         "<img " + ("id='connectpop'" if not req.session.value['connected'] else "") + " src='MSTRAP/favicon.ico' width='20px'/>",
                          cloudcontents,
                          availablecontents,
                          body,
