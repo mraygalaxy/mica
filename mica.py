@@ -661,11 +661,11 @@ class MICA(object):
         mdebug("INIT Testing cjk thread")
         threading.Thread(target=self.get_cjk_handle, args=[params["cedict"]], kwargs = {"test" : True}).start()
         if mobile :
-            mdebug("INIT Launching timer")
+            mdebug("INIT Launching runloop timer")
             threading.Timer(1, self.runloop_sched).start()
 
-        mdebug("Starting view runner timer every 20 minutes")
-        threading.Timer(1, self.view_runner_sched).start()
+        mdebug("Starting view runner thread")
+        threading.Thread(target=self.view_runner_sched).start()
 
     def view_runner_common(self) :
         self.views_ready = 0
@@ -694,16 +694,18 @@ class MICA(object):
             rq.task_done()
 
     def view_runner_sched(self) :
-        if params["serialize_couch_on_mobile"] :
-            rq = Queue.Queue()
-            co = self.view_runner()
-            co.next()
-            params["q"].put((co, None, rq))
-            resp = rq.get()
-        else :
-            self.view_runner_common()
+        while True :
+            if params["serialize_couch_on_mobile"] :
+                rq = Queue.Queue()
+                co = self.view_runner()
+                co.next()
+                params["q"].put((co, None, rq))
+                resp = rq.get()
+            else :
+                self.view_runner_common()
 
-        threading.Timer(1800, self.view_runner_sched).start()
+            mdebug("View runner complete. Waiting until next time...")
+            sleep(1800)
 
     def run_common(self, req) :
         try:
