@@ -64,6 +64,10 @@
 				   </td><td>
 				   <span id='pullstat' class="badge pull-right">100.0</span>
 				   </td><td>
+				   <i class='glyphicon glyphicon-eye-open'></i>
+				   </td><td>
+				   <span id='viewstat' class="badge pull-right">BOOTVIEWS</span>
+				   </td><td>
 				   &nbsp;
 				   </td><td>
 				   <a><img src='MSTRAP/favicon.ico' width='20px'/></a>
@@ -223,11 +227,12 @@ BOOTBODY
      */
     function pushstat(info) {
         $("#pushstat").html(info);
-        return "Success pushstat";
     }
     function pullstat(info) {
         $("#pullstat").html(info);
-        return "Success pullstat";
+    }
+    function viewstat(info) {
+        $("#viewstat").html(info);
     }
     var ConnectisVisible = false;
     var ConnectclickedAway = false;
