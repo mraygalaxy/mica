@@ -16,6 +16,8 @@ mica_ictclas.so
 obsolete.py
 *.swp
 *.swo
+*.swn
+*.swm
 *.pyc
 *.key
 *.csr
