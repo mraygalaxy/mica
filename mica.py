@@ -844,30 +844,6 @@ class MICA(object):
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
                     """
-                if req.action == "edit" :
-                    navcontents += """
-                                 <li class='dropdown'>
-                                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='glyphicon glyphicon-random'></i>&nbsp;Re-Group
-                                 <b class='caret'></b>
-                                 </a>
-                                 <ul class='dropdown-menu'>
-                                 """
-                    uuid = 'bad_uuid';
-                    navcontents += "<li><a href='#' onclick=\"process_edits('"
-                    if "current_story" in req.session.value :
-                        uuid = req.session.value["current_story"]
-                    navcontents += uuid
-                    navcontents += "', 'split', false)\"><i class='glyphicon glyphicon-resize-full'></i>&nbsp;Split Word Apart</a></li>"
-                    navcontents += "<li><a href='#' onclick=\"process_edits('"
-                    navcontents += uuid
-                    navcontents += "','merge', false)\"><i class='glyphicon glyphicon-resize-small'></i>&nbsp;Merge Characters</a></li>"
-                    navcontents += "</ul>"
-                    navcontents += "</li>"
-                if req.action != "help" :
-                    navcontents += """
-                                <li><a onclick='process_instant()' href='#'><i class='glyphicon glyphicon-share'></i>&nbsp;Instant</a></li>
-                                """
                 navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
@@ -1933,6 +1909,19 @@ class MICA(object):
                  output += "active "
 
         output += "btn btn-default'><i class='glyphicon glyphicon-picture'></i></button>"
+
+        output += "<button type='button' class='btn btn-default' onclick='process_instant()' href='#'><i class='glyphicon glyphicon-share'></i></button>"
+
+        if req.action == "edit" :
+            uuid = 'bad_uuid';
+            output += "<button type='button' class='btn btn-default' href='#' onclick=\"process_edits('"
+            if "current_story" in req.session.value :
+                uuid = req.session.value["current_story"]
+            output += uuid
+            output += "', 'split', false)\"><i class='glyphicon glyphicon-resize-full'></i></button>"
+            output += "<button type='button' class='btn btn-default' href='#' onclick=\"process_edits('"
+            output += uuid
+            output += "','merge', false)\"><i class='glyphicon glyphicon-resize-small'></i></button>"
 
         output += """
                                                         </div>
