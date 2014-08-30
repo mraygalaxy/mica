@@ -600,8 +600,24 @@ class MICA(object):
                                     "MSTRAP",
                                     "BOOTUSERHOLD",
                                     "BOOTREMEMBER",
+                                    "BOOTVIEWS",
                                 ]
 
+        self.views_ready = 0
+        self.view_runs = [ #name , #startend key or regular keys
+                ('accounts/all', True),
+                ('memorized/allcount', True),
+                ('stories/original', True),
+                ('stories/pages', True),
+                ('stories/allpages', True),
+                ('stories/all', True),
+                ('stories/translating', True),
+                ('stories/alloriginal', True),
+                ('memorized/all', False), 
+                ('tonechanges/all', False),
+                ('mergegroups/all', False),
+                ('splits/all', False),
+               ]
 
         self.db = False 
         if couch_url_or_local_db != False :
@@ -648,25 +664,46 @@ class MICA(object):
             mdebug("INIT Launching timer")
             threading.Timer(1, self.runloop_sched).start()
 
-        mdebug("Starting view runner thread")
-        threading.Thread(target=self.view_runner).start()
+        mdebug("Starting view runner timer every 20 minutes")
+        threading.Timer(1, self.view_runner_sched).start()
 
-    def view_runner(self) :
-        while True :
-            for name in ['accounts/all', 'memorized/allcount', 'stories/original', 'stories/pages', 'stories/allpages', 'stories/all', 'stories/translating', 'stories/alloriginal' ] :
-                mdebug("Priming view for: " + name)
+    def view_runner_common(self) :
+        self.views_ready = 0
+
+        for (name, startend) in self.view_runs :
+            mdebug("Priming view for: " + name)
+
+            if startend :
                 for unused in self.db.view(name, startkey=["foo", "bar"], endkey=["foo", "bar", "baz"]) :
                     pass
-                mdebug("Done priming view for: " + name)
-
-            for name in ['memorized/all', 'tonechanges/all', 'mergegroups/all', 'splits/all' ] :
-                mdebug("Priming view for: " + name)
+            else :
                 for unused in self.db.view(name, keys = ["foo"], username = "bar") :
                     pass
-                mdebug("Done priming view for: " + name)
 
-            mdebug("Sleeping before next view runner iteration")
-            sleep(1800)
+            mdebug("Done priming view for: " + name)
+            self.views_ready += 1
+
+    def view_runner(self) :
+        if params["serialize_couch_on_mobile"] :
+            (unused, rq) = (yield)
+
+        self.view_runner_common()
+
+        if params["serialize_couch_on_mobile"] :
+            rq.put(None)
+            rq.task_done()
+
+    def view_runner_sched(self) :
+        if params["serialize_couch_on_mobile"] :
+            rq = Queue.Queue()
+            co = self.view_runner()
+            co.next()
+            params["q"].put((co, None, rq))
+            resp = rq.get()
+        else :
+            self.view_runner_common()
+
+        threading.Timer(1800, self.view_runner_sched).start()
 
     def run_common(self, req) :
         try:
@@ -686,18 +723,23 @@ class MICA(object):
             
     # Only used on iOS
     def serial_common(self) :
-        (req, rq) = (yield)
+        if params["serialize_couch_on_mobile"] :
+            (req, rq) = (yield)
 
         resp = self.run_common(req)
 
-        rq.put(resp)
-        rq.task_done()
+        if params["serialize_couch_on_mobile"] :
+            rq.put(resp)
+            rq.task_done()
 
     def runloop(self) :
-        (unused, rq) = (yield)
-        self.db.runloop()
-        rq.put(None)
-        rq.task_done()
+        if params["serialize_couch_on_mobile"] :
+            (unused, rq) = (yield)
+            self.db.runloop()
+            rq.put(None)
+            rq.task_done()
+        else :
+            self.db.runloop()
 
     def runloop_sched(self) :
         rq = Queue.Queue()
@@ -850,7 +892,9 @@ class MICA(object):
         else :
             mpath = req.uri + "/.." + relative_prefix
             bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
-    
+
+        view_percent = '{0:.1f}'.format(float(self.views_ready) / float(len(self.view_runs)) * 100.0)
+        mdebug("View percent: " + view_percent)
         replacements = [    
                          navcontents, 
                          bootcanvastoggle,
@@ -868,6 +912,7 @@ class MICA(object):
                          mpath,
                          req.session.value['last_username'] if 'last_username' in req.session.value else '',
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
+                         view_percent,
                       ]
     
         if not nodecode :
@@ -3562,6 +3607,7 @@ def get_options() :
     parser.add_option("-e", "--cedict", dest = "cedict", default = False, help = "Location of cedict.db file used by cjklib library.")
     parser.add_option("-j", "--cjklib", dest = "cjklib", default = False, help = "Location of cjklib.db file used by cjklib library.")
     parser.add_option("-T", "--tonefile", dest = "tonefile", default = False, help = "Location of pinyin tone txt file.")
+    parser.add_option("-z", "--serialize", dest = "serialize", action = "store_true", default = False, help ="Serialize accesses to the couchbase database on mobile.")
 
     parser.set_defaults()
     options, args = parser.parse_args()
@@ -3587,7 +3633,7 @@ def get_options() :
                "transreset" : options.transreset,
                "transcheck" : True,
                "duplicate_logger" : False,
-               "serialize_couch_on_mobile" : False,
+               "serialize_couch_on_mobile" : options.serialize,
     }
 
     return params 
