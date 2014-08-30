@@ -894,7 +894,7 @@ class MICA(object):
             bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
 
         view_percent = '{0:.1f}'.format(float(self.views_ready) / float(len(self.view_runs)) * 100.0)
-        mdebug("View percent: " + view_percent)
+        #mdebug("View percent: " + view_percent)
         replacements = [    
                          navcontents, 
                          bootcanvastoggle,
