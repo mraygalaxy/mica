@@ -648,6 +648,26 @@ class MICA(object):
             mdebug("INIT Launching timer")
             threading.Timer(1, self.runloop_sched).start()
 
+        mdebug("Starting view runner thread")
+        threading.Thread(target=self.view_runner).start()
+
+    def view_runner(self) :
+        while True :
+            for name in ['accounts/all', 'memorized/allcount', 'stories/original', 'stories/pages', 'stories/allpages', 'stories/all', 'stories/translating', 'stories/alloriginal' ] :
+                mdebug("Priming view for: " + name)
+                for unused in self.db.view(name, startkey=["foo", "bar"], endkey=["foo", "bar", "baz"]) :
+                    pass
+                mdebug("Done priming view for: " + name)
+
+            for name in ['memorized/all', 'tonechanges/all', 'mergegroups/all', 'splits/all' ] :
+                mdebug("Priming view for: " + name)
+                for unused in self.db.view(name, keys = ["foo"], username = "bar") :
+                    pass
+                mdebug("Done priming view for: " + name)
+
+            mdebug("Sleeping before next view runner iteration")
+            sleep(1800)
+
     def run_common(self, req) :
         try:
             resp = self.common(req)
