@@ -55,9 +55,6 @@ import twisted
 
 from webob import Request, Response, exc
 
-from cjklib.dictionary import CEDICT
-from cjklib.characterlookup import CharacterLookup
-from cjklib.dbconnector import getDBConnector
 
 try :
     from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
@@ -645,7 +642,10 @@ class MICA(object):
             except Exception, e :
                 mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
+        mdebug("INIT Testing cjk thread")
+        threading.Thread(target=self.get_cjk_handle, args=[params["cedict"]], kwargs = {"test" : True}).start()
         if mobile :
+            mdebug("INIT Launching timer")
             threading.Timer(1, self.runloop_sched).start()
 
     def run_common(self, req) :
@@ -1250,25 +1250,65 @@ class MICA(object):
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
-    def get_cjk_handle(self, location) :
-        if not os.path.isfile(params["cjklib"]) :
-            mdebug(params["cjklib"] + " is missing. Exporting...")
-            self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
-            mdebug("Exported.")
+    def get_cjk_handle(self, location, test = False) :
+        if test and mobile :
+            if not os.path.isfile(params["cjklib"]) :
+                mdebug(params["cjklib"] + " is missing. Exporting...")
+                while True :
+                    try :
+                        self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
+                        mdebug("Exported.")
+                        break
+                    except couch_adapter.CommunicationError, e :
+                        mdebug("Not fully replicated yet. Waiting...")
+                        sleep(5)
 
-        if not os.path.isfile(location) :
-            mdebug(location + " is missing. Exporting...")
-            self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", location)
-            mdebug("Exported.")
+            if not os.path.isfile(location) :
+                mdebug(location + " is missing. Exporting...")
+                while True :
+                    try :
+                        self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", location)
+                        mdebug("Exported.")
+                        break
+                    except couch_adapter.CommunicationError, e :
+                        mdebug("Not fully replicated yet. Waiting...")
+                        sleep(5)
 
-        cjk = CharacterLookup('C')
-        if location : 
-            mdebug("Opening CEDICT from: " + location)
-            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + location, 'attach': ['cjklib']})
-        else :
-            mdebug("Opening CEDICT from default location.")
-            cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
-        d = CEDICT(dbConnectInst = cjkdb)
+            mdebug("CJKLIB Size: " + str(os.path.getsize(params["cjklib"])))
+            mdebug("CEDICT Size: " + str(os.path.getsize(params["cedict"])))
+
+        def tracefunc(frame, event, arg, indent=[0]):
+            if event == "call":
+                indent[0] += 2
+                mdebug("-" * indent[0] + "> call function: " + frame.f_code.co_name)
+            elif event == "return":
+                mdebug("<" + "-" * indent[0] + " exit function: " + frame.f_code.co_name)
+                indent[0] -= 2
+
+            return tracefunc
+
+#        sys.settrace(tracefunc)
+        try :
+            from cjklib.dictionary import CEDICT
+            from cjklib.characterlookup import CharacterLookup
+            from cjklib.dbconnector import getDBConnector
+            cjk = CharacterLookup('C')
+            if location : 
+                mdebug("Opening CEDICT from: " + location)
+                cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + location, 'attach': ['cjklib']})
+            else :
+                cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
+            d = CEDICT(dbConnectInst = cjkdb)
+        except Exception, e :
+            merr("Open failed: " + str(e))
+        
+        if mobile and test :
+            # We are in a thread, but because of this bug, we cannot exit by ourselves:
+            # https://github.com/kivy/pyjnius/issues/107
+            while True :
+                mdebug("CJK test infinite sleep.")
+                sleep(100000)
+
         return (cjk, cjkdb, d)
 
     def store_error(self, req, name, msg) :
@@ -3612,9 +3652,6 @@ def go(p) :
 
         mica = MICA(params["couch"], params["dbname"], params["cedict"], db_adapter)
 
-        mdebug("Testing cjk")
-        mica.get_cjk_handle(params["cedict"])
-
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
         site.sessionFactory = MicaSession
@@ -3692,6 +3729,8 @@ def go(p) :
             rt.join()
         else :
             reactor.run()
+
+        merr("Reactor returned prematurely!")
     except Exception, e :
         merr("Startup exception: " + str(e))
         for line in traceback.format_exc().splitlines() :
