@@ -2,6 +2,10 @@ body {
 	padding-top: 55px;
 }
 
+.nopadding {
+      padding-left: 0;
+      padding-right: 0;
+}
 .bwizard-steps li {
 	border: 0;
 }
@@ -138,3 +142,5 @@ td.splitright { border-right: solid blue  }
 }
 
 .navbar-nav .open .dropdown-menu > li > a;
+
+}
