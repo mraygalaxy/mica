@@ -701,7 +701,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7'>" + spinner + "&nbsp;Loading Text...</div>");
+       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;Loading Text...</div>");
     
         $('#pageimg' + curr_img_num).affix();
         $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -726,7 +726,7 @@ function view(mode, uuid, page) {
 	      false,
               true);
    } else {
-       $("#pagecontent").html("<div class='col-md-12'><div id='pagesingle'></div></div>");
+       $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
 	       $("#pagesingle").html(spinner + "&nbsp;Loading Image...");

@@ -1878,16 +1878,16 @@ class MICA(object):
         output = ""
 
         output += "<div class='row-fluid'>\n"
-        output += "<div class='col-lg-12'>\n"
+        output += "<div class='col-lg-12 nopadding'>\n"
         output += """
                         <div class='row-fluid'>
-                            <div class='col-lg-10'>
+                            <div class='col-lg-10 nopadding'>
                                 <div class='row-fluid'>
                                     <!-- this '12' is not intuitive, but it
                                     indicates the start of a new fluid
                                     nesting level that also is subdivided by
                                     units of 12 -->
-                                    <div class='col-lg-12'>
+                                    <div class='col-lg-12 nopadding'>
                                         <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
                                             <div id='translationstatus'></div>
                                             <table>
@@ -1952,7 +1952,7 @@ class MICA(object):
         """
 
         output += """
-                            <div class='col-lg-2'>
+                            <div class='col-lg-2 nopadding'>
                             <div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
         """
         output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
@@ -1991,7 +1991,7 @@ class MICA(object):
             return "What the hell is going on?"
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
-        chars_per_line = 60
+        chars_per_line = 70
         words = len(units)
         lines = [] 
         line = [] 
