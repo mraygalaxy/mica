@@ -560,7 +560,7 @@ class MICA(object):
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
 
     
-    def __init__(self, couch_url_or_local_db, couch_dbname, cjklocation, db_adapter):
+    def __init__(self, couch_url_or_local_db, couch_dbname, db_adapter):
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='jumbotron' style='padding: 5px'>"
@@ -569,8 +569,6 @@ class MICA(object):
         self.cs = db_adapter(couch_url_or_local_db)
         self.dbname = couch_dbname
         
-        self.cjklocation = cjklocation
-
         self.first_request = {}
 
         self.client = {}
@@ -1429,6 +1427,10 @@ class MICA(object):
             except UnicodeDecodeError, e :
                 pdb.set_trace()
                 self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
+                if not handle :
+                    mdebug("Closing CJK 6")
+                    cjk.db.connection.close()
+                    d.db.connection.close()
                 raise e
 
             if not self.all_punct(uni) :
@@ -1457,6 +1459,7 @@ class MICA(object):
                     self.transmutex.release()
 
         if not handle :
+            mdebug("Closing CJK 7")
             cjk.db.connection.close()
             d.db.connection.close()
 
@@ -1523,6 +1526,7 @@ class MICA(object):
             try :
                 parsed = mica_ictclas.trans(page_input.encode("utf-8"))
             except mica_ictclas.error, e :
+                mdebug("Closing CJK 8")
                 cjk.db.connection.close()
                 d.db.connection.close()
                 raise e
@@ -1558,8 +1562,6 @@ class MICA(object):
                 self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
                 raise e
             finally :
-                cjk.db.connection.close()
-                d.db.connection.close()
                 self.transmutex.release()
 
             try :
@@ -1578,12 +1580,13 @@ class MICA(object):
             except Exception, e :
                 msg = ""
                 for line in traceback.format_exc().splitlines() :
-                    msg += line
+                    msg += line + "\n"
                 merr(msg)
                 tmpstory = self.db[self.story(req, name)]
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
                 self.store_error(req, name, msg)
+                mdebug("Closing CJK 2")
                 cjk.db.connection.close()
                 d.db.connection.close()
                 raise e
@@ -1600,8 +1603,6 @@ class MICA(object):
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
-            cjk.db.connection.close()
-            d.db.connection.close()
 
         self.transmutex.acquire()
         try :
@@ -1613,10 +1614,9 @@ class MICA(object):
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
-            cjk.db.connection.close()
-            d.db.connection.close()
 
         minfo("Translation complete.")
+        mdebug("Closing CJK 5")
         cjk.db.connection.close()
         d.db.connection.close()
 
@@ -3781,7 +3781,7 @@ def go(p) :
         if params["serialize_couch_on_mobile"] :
             params["q"] = Queue.Queue()
 
-        mica = MICA(params["couch"], params["dbname"], params["cedict"], db_adapter)
+        mica = MICA(params["couch"], params["dbname"], db_adapter)
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
