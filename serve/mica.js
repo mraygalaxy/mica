@@ -903,15 +903,6 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 
 var list_mode = true;
 
-function switchinstall(initlist) {
-    list_mode = initlist;
-    if (list_mode) {
-           $("#switchlisttext").html('Stats Shown');
-    } else {
-           $("#switchlisttext").html('Stats Hidden');
-    }
-}
-
 function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
@@ -944,12 +935,6 @@ function listreload(mode, uuid, page) {
                   false,
                   true);
        }
-}
-
-function switchlist() {
-       go('#switchlisttext', bootdest + '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
-       switchinstall(list_mode ? false : true);
-       listreload(current_mode, current_uuid, current_page);
 }
 
 function installreading() {

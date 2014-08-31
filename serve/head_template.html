@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>MICA</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.2">
+  <meta name="viewport" content="width=device-width, initial-scale=1.15">
   <meta name="description" content="MICA">
   <meta name="author" content="Michael R. Hines">
 
@@ -237,6 +237,21 @@ BOOTBODY
     function viewstat(info) {
         $("#viewstat").html(info);
     }
+	function switchinstall(initlist) {
+	    list_mode = initlist;
+	    if (list_mode) {
+		   $("#switchlisttext").html('Stats Shown');
+	    } else {
+		   $("#switchlisttext").html('Stats Hidden');
+	    }
+	}
+
+	function switchlist() {
+	       go('#switchlisttext', bootdest + '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
+	       switchinstall(list_mode ? false : true);
+	       listreload(current_mode, current_uuid, current_page);
+	}
+
     var ConnectisVisible = false;
     var ConnectclickedAway = false;
     function getTemplate() {
