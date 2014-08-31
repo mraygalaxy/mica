@@ -673,38 +673,6 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           spy);
 }
 
-function memolist(uuid, page) {
-   go('#memolist', 
-          bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
-          '#memolistresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
-function editslist(uuid, page) {
-   go('#editslist', 
-          bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
-          '#editsresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
-
-
-function history(uuid, page) {
-   go('#history', 
-          bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
-          '#historyresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
 var view_images = false;
 var show_both = false;
 var current_view_mode = "text";
@@ -724,19 +692,6 @@ function restore_pageimg_width() {
     $('#pageimg' + curr_img_num).css('width', '100%');
 }
 
-function resetIndex(data) {
-   /*
-   install_pages(current_mode, current_pages, current_uuid, current_page, current_view_mode, false);
-   $('#allcontent').goDeep(100, function(deep){ // $.fn.goDeep(levels, callback)
-    $(this).css("z-index", "5");
-   });
-   $('#readingheader').goDeep(20, function(deep){ // $.fn.goDeep(levels, callback)
-    $(this).css("z-index", "9999");
-   });
-   */
-   
-}
-
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
@@ -746,7 +701,6 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-    
        $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7'>" + spinner + "&nbsp;Loading Text...</div>");
     
         $('#pageimg' + curr_img_num).affix();
@@ -759,8 +713,7 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              //resetIndex, // doesn't work. =(
-	      false,
+	          false,
               true);
 
        url += "&image=0";
@@ -770,7 +723,6 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              //resetIndex, // doesn't work. =(
 	      false,
               true);
    } else {
@@ -788,17 +740,11 @@ function view(mode, uuid, page) {
               '#pageresult',
               unavailable, 
               true, 
-              //resetIndex, // doesn't work. =(
 	      false,
               true);
    }
 
-   if (mode == "read")
-   	   memolist(uuid, page)
-   else if (mode == "edit")
-   	   editslist(uuid, page)
-   else if (mode == "home")
-	   history(uuid, page)
+   listreload(mode, uuid, page);
    	   
    current_page = page;
    current_mode = mode;
@@ -834,8 +780,6 @@ function install_pages(mode, pages, uuid, start, view_mode, reload) {
 function memory_finish(data, opaque1, opaque2) {
     var hash = opaque1;
     var uuid = opaque2;
-//    memolist(uuid);
-//    history(uuid);
     toggle(hash, 0);
     toggle_specific('memory', hash, 0);
 }
@@ -955,6 +899,57 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             }
         }
     }
+}
+
+var list_mode = true;
+
+function switchinstall(initlist) {
+    list_mode = initlist;
+    if (list_mode) {
+           $("#switchlisttext").html('Stats Shown');
+    } else {
+           $("#switchlisttext").html('Stats Hidden');
+    }
+}
+
+function listreload(mode, uuid, page) {
+       if (mode == "read") {
+           if (list_mode)
+               $("#memolist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#memolist', 
+              bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+              '#memolistresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+       } else if (mode == "edit") {
+           if (list_mode)
+               $("#editslist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#editslist', 
+                  bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+                  '#editsresult', 
+                  unavailable, 
+                  true, 
+                  false,
+                  true);
+       } else if (mode == "home") {
+           if (list_mode)
+               $("#history").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#history', 
+                  bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+                  '#historyresult', 
+                  unavailable, 
+                  true, 
+                  false,
+                  true);
+       }
+}
+
+function switchlist() {
+       go('#switchlisttext', bootdest + '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
+       switchinstall(list_mode ? false : true);
+       listreload(current_mode, current_uuid, current_page);
 }
 
 function installreading() {

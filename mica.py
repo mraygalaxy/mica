@@ -601,6 +601,7 @@ class MICA(object):
                                     "BOOTUSERHOLD",
                                     "BOOTREMEMBER",
                                     "BOOTVIEWS",
+                                    "BOOTSWITCH",
                                 ]
 
         self.views_ready = 0
@@ -857,6 +858,7 @@ class MICA(object):
                 if 'admin' in user['roles'] :
                     navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
                 navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
+                navcontents += "<li><a onclick='switchlist()' href=\"#\"><i class='glyphicon glyphicon-tasks'></i>&nbsp;<div id='switchlisttext' style='display: inline'></div></a></li>\n"
                 navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
                 navcontents += "<li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&nbsp;About</a></li>\n"
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
@@ -891,6 +893,7 @@ class MICA(object):
                          req.session.value['last_username'] if 'last_username' in req.session.value else '',
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
                          view_percent,
+                         "switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n",
                       ]
     
         if not nodecode :
@@ -1755,64 +1758,65 @@ class MICA(object):
 
         return out
 
-    def edits(self, req, story, uuid, page) :
+    def edits(self, req, story, uuid, page, list_mode) :
         out = ""
 
-        history = []
-        found = {}
-        tid = 0
-        page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
-        units = page_dict["units"]
+        if list_mode :
+            history = []
+            found = {}
+            tid = 0
+            page_dict = self.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            units = page_dict["units"]
 
-        merge_keys = self.view_keys(req, "mergegroups", units) 
-        split_keys = self.view_keys(req, "splits", units) 
-            
-        for unit in units :
-            char = "".join(unit["source"])
-            if char in punctuation_without_letters or len(char.strip()) == 0:
-                continue
-            if char in found :
-                continue
-
-            changes = False if char not in split_keys else split_keys[char]
-            
-            if changes :
-                if unit["hash"] not in changes["record"] :
-                    continue
-                record = changes["record"][unit["hash"]]
-                history.append([char, str(record["total_splits"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
-            else: 
-                changes = False if char not in merge_keys else merge_keys[char]
+            merge_keys = self.view_keys(req, "mergegroups", units) 
+            split_keys = self.view_keys(req, "splits", units) 
                 
-                if changes : 
-                    if "hash" not in unit :
-                        continue
+            for unit in units :
+                char = "".join(unit["source"])
+                if char in punctuation_without_letters or len(char.strip()) == 0:
+                    continue
+                if char in found :
+                    continue
+
+                changes = False if char not in split_keys else split_keys[char]
+                
+                if changes :
                     if unit["hash"] not in changes["record"] :
                         continue
                     record = changes["record"][unit["hash"]]
-                    memberlist = "<table class='table'>"
-                    nb_singles = 0
-                    for key, member in record["members"].iteritems() :
-                        if len(key) == 1 :
-                            nb_singles += 1
+                    history.append([char, str(record["total_splits"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
+                else: 
+                    changes = False if char not in merge_keys else merge_keys[char]
+                    
+                    if changes : 
+                        if "hash" not in unit :
                             continue
-                        memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
-                    memberlist += "</table>\n"
-                    if nb_singles == len(record["members"]) :
+                        if unit["hash"] not in changes["record"] :
+                            continue
+                        record = changes["record"][unit["hash"]]
+                        memberlist = "<table class='table'>"
+                        nb_singles = 0
+                        for key, member in record["members"].iteritems() :
+                            if len(key) == 1 :
+                                nb_singles += 1
+                                continue
+                            memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
+                        memberlist += "</table>\n"
+                        if nb_singles == len(record["members"]) :
+                            continue
+                        history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
+                    else :
                         continue
-                    history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
-                else :
-                    continue
 
-            if char not in found :
-                found[char] = True
-            tid += 1
-        
-        # Add sort options here
-        def by_total( a ):
-            return int(float(a[1]))
+                if char not in found :
+                    found[char] = True
+                tid += 1
+            
+            # Add sort options here
+            def by_total( a ):
+                return int(float(a[1]))
 
-        history.sort( key=by_total, reverse = True )
+            history.sort( key=by_total, reverse = True )
 
         out += """
             <h5>Edit Legend:</h5>
@@ -1826,40 +1830,44 @@ class MICA(object):
             """
         out += "<a href='#' class='btn btn-info' onclick=\"process_edits('" + uuid + "', 'all', true)\">Try Recommendations</a>\n<p/>\n"
         out += "<a href='BOOTDEST/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page) + "' class='btn btn-info'>Re-translate page</a>\n<p/>\n"
-        if len(history) != 0 :
-            out += """
-                <div class='panel-group' id='panelEdit'>
-                """
-            
-            for x in history :
+
+        if list_mode :
+            if len(history) != 0 :
                 out += """
-                    <div class='panel panel-default'>
-                      <div class="panel-heading">
-                      """
+                    <div class='panel-group' id='panelEdit'>
+                    """
+                
+                for x in history :
+                    out += """
+                        <div class='panel panel-default'>
+                          <div class="panel-heading">
+                          """
 
-                char, total, spy, result, tid, op = x
-                tid = str(tid)
+                    char, total, spy, result, tid, op = x
+                    tid = str(tid)
 
-                if len(result) and result[0] == '/' :
-                   result = result[1:-1]
+                    if len(result) and result[0] == '/' :
+                       result = result[1:-1]
 
-                out +=  op + " (" + str(total) + "): " + char + ": "
+                    out +=  op + " (" + str(total) + "): " + char + ": "
 
-                out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse" + tid + "'>"
+                    out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse" + tid + "'>"
 
-                out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
+                    out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
 
-                out += "</a>"
+                    out += "</a>"
+                    out += "</div>"
+                    out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
+                    out += "<div class='panel-inner'>" + result + "</div>"
+
+                    out += "</div>"
+                    out += "</div>"
+
                 out += "</div>"
-                out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-                out += "<div class='panel-inner'>" + result + "</div>"
-
-                out += "</div>"
-                out += "</div>"
-
-            out += "</div>"
+            else :
+                out += "<h4>No edit history available.</h4>"
         else :
-            out += "<h4>No edit history available.</h4>"
+            out += "<h4>Edit List Disabled.</h4>"
 
         return out
 
@@ -1867,7 +1875,9 @@ class MICA(object):
         if not story["translated"] :
             return "Untranslated story! Ahhhh!"
 
-        output = "<div class='row-fluid'>\n"
+        output = ""
+
+        output += "<div class='row-fluid'>\n"
         output += "<div class='col-lg-12'>\n"
         output += """
                         <div class='row-fluid'>
@@ -1949,9 +1959,9 @@ class MICA(object):
         output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
 
         if action in ["read"] :
-            output += "<div id='memolist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+            output += "<div id='memolist'></div>"
         elif action == "edit" :
-            output += "<div id='editslist'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+            output += "<div id='editslist'></div>"
         elif action == "home" :
             output += "<br/>Polyphome Legend:<br/>"
             output += self.template("legend")
@@ -1959,7 +1969,7 @@ class MICA(object):
                 <br/>
                 Polyphome Change History:<br/>
             """
-            output += "<div id='history'>" + spinner + "&nbsp;<h4>Loading statistics</h4></div>"
+            output += "<div id='history'></div>"
 
         output += "</div><!-- statsheader -->"
         output += "</div><!-- col-lg-2 stats section -->\n"
@@ -2843,6 +2853,7 @@ class MICA(object):
 
             start_page = "0"
             view_mode = "text"
+            list_mode = True
             uuid = False
             name = False
             story = False
@@ -2959,6 +2970,10 @@ class MICA(object):
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>View mode changed.</h4></div>", now = True)
 
+            if req.http.params.get("switchlist") :
+                req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
+                req.session.save()
+                return self.bootstrap(req, self.heromsg + "\n<h4>List statistics changed.</h4></div>", now = True)
             if req.http.params.get("instant") :
                 source = req.http.params.get("instant")
                 human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
@@ -3065,6 +3080,12 @@ class MICA(object):
                 req.session.value["view_mode"] = view_mode 
                 req.session.save()
 
+            if "list_mode" in req.session.value :
+                list_mode = req.session.value["list_mode"]
+            else :
+                req.session.value["list_mode"] = list_mode 
+                req.session.save()
+
             if req.http.params.get("multiple_select") :
                 nb_unit = int(req.http.params.get("nb_unit"))
                 mindex = int(req.http.params.get("index"))
@@ -3095,13 +3116,13 @@ class MICA(object):
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
-                                           self.history(req, story, uuid, page) + \
+                                           (self.history(req, story, uuid, page) if list_mode else "<h4>Review History List Disabled.</h4>") + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("editslist") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
-                                           self.edits(req, story, uuid, page) + \
+                                           self.edits(req, story, uuid, page, list_mode) + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("memorized") :
@@ -3165,41 +3186,44 @@ class MICA(object):
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
                 for result in self.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                    output += "Total words memorized from all stories: " + str(result['value']) + "<br/>"
-                output += "Total unique memorized from this page: " + str(total_memorized) + "<br/>"
-                output += "Total unique words from this page: " + str(len(unique)) + "<br/>"
-                output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
-                output += str(pr) + "%;'> (" + str(pr) + "%)</div></div>"
+                    output += "Memorized all stories: " + str(result['value']) + "<br/>"
+                output += "Unique memorized page: " + str(total_memorized) + "<br/>"
+                output += "Unique words page: " + str(len(unique)) + "<br/>"
+                if list_mode :
+                    output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
+                    output += str(pr) + "%;'> (" + str(pr) + "%)</div></div>"
 
-                if total_memorized :
-                    output += "<div class='panel-group' id='panelMemorized'>\n"
-                    for p in progress :
-                        output += """
-                                <div class='panel panel-default'>
-                                  <div class="panel-heading">
-                                  """
-                        py, english, unit, nb_unit, trans_id, page_idx = p
-                        if len(english) and english[0] == '/' :
-                            english = english[1:-1]
-                        tid = unit["hash"] if py else trans_id 
+                    if total_memorized :
+                        output += "<div class='panel-group' id='panelMemorized'>\n"
+                        for p in progress :
+                            output += """
+                                    <div class='panel panel-default'>
+                                      <div class="panel-heading">
+                                      """
+                            py, english, unit, nb_unit, trans_id, page_idx = p
+                            if len(english) and english[0] == '/' :
+                                english = english[1:-1]
+                            tid = unit["hash"] if py else trans_id 
 
-                        output += "<a class='trans btn-default btn-xs' onclick=\"forget('" + \
-                                str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
-                                "<i class='glyphicon glyphicon-remove'></i></a>"
+                            output += "<a class='trans btn-default btn-xs' onclick=\"forget('" + \
+                                    str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
+                                    "<i class='glyphicon glyphicon-remove'></i></a>"
 
-                        output += "&nbsp; " + "".join(unit["source"]) + ": "
-                        output += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>"
+                            output += "&nbsp; " + "".join(unit["source"]) + ": "
+                            output += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>"
 
-                        output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + py
-                        output += "</a>"
+                            output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + py
+                            output += "</a>"
+                            output += "</div>"
+                            output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
+                            output += "<div class='panel-inner'>" + english.replace("/"," /") + "</div>"
+                            output += "</div>"
+                            output += "</div>"
                         output += "</div>"
-                        output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-                        output += "<div class='panel-inner'>" + english.replace("/"," /") + "</div>"
-                        output += "</div>"
-                        output += "</div>"
-                    output += "</div>"
+                    else :
+                        output += "<h4>No words memorized. Get to work!</h4>"
                 else :
-                    output += "No words memorized. Get to work!"
+                    output += "<h4>Memorization History List Disabled.</h4>"
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + output + "</div></div>", now = True)
                
