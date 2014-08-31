@@ -115,6 +115,6 @@ FAQ:
 
 1) Do you have a mobile version?
 
-   - Yes, it's called "MICA Reader". Go to the <a href='http://github.com/hinesmr/mica-android'>MICA Reader</a> project to try to build yourself an APK and try it out.
-     We're working hard to release it on the android market as soon as possible.
-   - I do not own any apple products, so I cannot make an IOS version. Contributions welcome =)
+   - Yes, it's called "MICA Reader", both for Android and iOS. In fact, I use the mobile version much more frequently than the web-based version. The mobile version does not allow upload of new stories. You first must upload them to the web version and then the phone will automatically stay synchronized with the website at all times so that you can use the mobile application in an offline mode while you are learning.
+   - The iOS version is here: <a href='http://github.com/hinesmr/mica-ios'>MICA Reader for iOS</a>
+   - The android version is here: <a href='http://github.com/hinesmr/mica-android'>MICA Reader for Android</a>.
