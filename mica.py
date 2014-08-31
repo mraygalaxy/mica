@@ -3865,36 +3865,34 @@ def go(p) :
                 exit(1)
 
         if params["serialize_couch_on_mobile"] :
-            mdebug("Python coroutine, we are on thread: " + str(current_thread()))
             minfo("We will serialize couchdb access. Setting up queue and coroutine.")
-            rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
+            if mobile :
+                rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
+            else :
+                rt = Thread(target = reactor.run)
+
             rt.daemon = True
             rt.start()
 
             while True :
-                (co, req, rq) = params["q"].get()
-                #mdebug("Request received in main thread")
+                while True :
+                    try :
+                        (co, req, rq) = params["q"].get(timeout=1)
+                        break
+                    except Queue.Empty :
+                        pass
                 try :
-                    # Send the input from the thread to the coroutine
-                    # The coroutine's function will execute in the
-                    # context of the main thread (or other thread if
-                    # you wish.
                     co.send((req, rq))
-                    #mdebug("Request propogated from main thread")
                 except StopIteration :
-                    #mdebug("Stop exception. Continuing.")
                     params["q"].task_done()
                     continue
 
-                mdebug("main Signalling task done")
                 params["q"].task_done()
-                mdebug("main waiting for next task")
 
             rt.join()
         else :
             reactor.run()
 
-        merr("Reactor returned prematurely!")
     except Exception, e :
         merr("Startup exception: " + str(e))
         for line in traceback.format_exc().splitlines() :
