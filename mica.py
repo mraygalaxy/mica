@@ -61,7 +61,11 @@ try :
     from pdfminer.converter import PDFPageAggregator
     from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
     from pdfminer.pdfpage import PDFPage
+except ImportError, e :
+    mdebug("Could not import pdfminer. Full translation will not work.")
+    pass
 
+try :
     import mica_ictclas
 except ImportError, e :
     mdebug("Could not import ICTCLAS library. Full translation will not work.")
