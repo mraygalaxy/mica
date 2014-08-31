@@ -1361,7 +1361,6 @@ class MICA(object):
             mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
             cjkurl = 'sqlite:///' + params['cjklib']
             cedicturl = 'sqlite:///' + params['cedict']
-            #cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
             cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
             mdebug("MICA cjklib success!")
             # CEDICT must use a connector, just a url which includes both dictionaries.
