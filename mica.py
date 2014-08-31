@@ -1296,6 +1296,21 @@ class MICA(object):
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
     def get_cjk_handle(self, test = False) :
+        if test :
+            for fn in ["cedict.db", "cjklib.db"] :
+                mdebug("Searching for instances of " + fn)
+                for f in os.walk(cwd) :
+                     if ("" + str(f)).count(fn) :
+                         if f[0][-1] != "/" :
+                             fnd = f[0] + "/" + fn 
+                         else :
+                             fnd = f[0] + fn 
+                         mdebug("Found: " + fnd)
+                         mdebug("Size: " + str(os.path.getsize(fnd)))
+                         if fnd != params["cedict"] and fnd != params["cjklib"] :
+                             mwarn("This file should not be here. Blowing away...")
+                             os.unlink(fnd)
+            mdebug("Moving on with test.")
         if test and mobile :
             if not os.path.isfile(params["cjklib"]) :
                 mdebug(params["cjklib"] + " is missing. Exporting...")
@@ -1348,14 +1363,21 @@ class MICA(object):
             mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
             cjkurl = 'sqlite:///' + params['cjklib']
             cedicturl = 'sqlite:///' + params['cedict']
-            cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
+            #cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
+            cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl}))
             mdebug("MICA cjklib success!")
             # CEDICT must use a connector, just a url which includes both dictionaries.
             # CEDICT internally references pinyin syllables from the main dictionary or crash.
-            d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cjkurl]}))
+            d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
+            if test :
+                for x in d.getFor(u'白鹭'.decode('utf-8')) :
+                    print str(x)
+
+                cjk.db.connection.close()
+                d.db.connection.close()
             mdebug("MICA cedict success!")
         except Exception, e :
-            merr("MICA offline Open failed: " + str(e))
+            merr("MICA offline open failed: " + str(e))
         
         if mobile and test :
             # We are in a thread, but because of this bug, we cannot exit by ourselves:
@@ -1434,6 +1456,10 @@ class MICA(object):
                 finally :
                     self.transmutex.release()
 
+        if not handle :
+            cjk.db.connection.close()
+            d.db.connection.close()
+
     def parse(self, req, uuid, name, story, username, page = False) :
         mdebug("Ready to translate: " + name + ". Counting pages...")
     
@@ -1475,6 +1501,7 @@ class MICA(object):
             self.transmutex.release()
 
         handle = self.get_cjk_handle()
+        (cjk, d) = handle
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -1496,6 +1523,8 @@ class MICA(object):
             try :
                 parsed = mica_ictclas.trans(page_input.encode("utf-8"))
             except mica_ictclas.error, e :
+                cjk.db.connection.close()
+                d.db.connection.close()
                 raise e
             mdebug("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
             lines = parsed.split("\n")
@@ -1529,6 +1558,8 @@ class MICA(object):
                 self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
                 raise e
             finally :
+                cjk.db.connection.close()
+                d.db.connection.close()
                 self.transmutex.release()
 
             try :
@@ -1553,6 +1584,8 @@ class MICA(object):
                 tmpstory["translating"] = False 
                 self.db[self.story(req, name)] = tmpstory
                 self.store_error(req, name, msg)
+                cjk.db.connection.close()
+                d.db.connection.close()
                 raise e
 
         self.transmutex.acquire()
@@ -1567,6 +1600,8 @@ class MICA(object):
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
+            cjk.db.connection.close()
+            d.db.connection.close()
 
         self.transmutex.acquire()
         try :
@@ -1578,8 +1613,12 @@ class MICA(object):
             mdebug("Failure to sync: " + str(e))
         finally :
             self.transmutex.release()
+            cjk.db.connection.close()
+            d.db.connection.close()
 
         minfo("Translation complete.")
+        cjk.db.connection.close()
+        d.db.connection.close()
 
     def get_parts(self, unit) :
         py = ""
@@ -3035,6 +3074,8 @@ class MICA(object):
                             out += english.encode("utf-8")
                     else :
                         out += "None found."
+                    cjk.db.connection.close()
+                    d.db.connection.close()
                 else :
                     out += json.dumps(final)
                 out += "</div>"
