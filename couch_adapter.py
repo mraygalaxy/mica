@@ -116,8 +116,9 @@ class MicaDatabaseCouchDB(object) :
                 doc = self.db[name]
                 del self.db[name]
                 self.db.purge([doc])
-                trydelete = True
-                doc = { "foo" : "bar"}
+                trydelete = False 
+
+            doc = { "foo" : "bar"}
 
             if trydelete :
                 try :
@@ -148,6 +149,19 @@ class MicaDatabaseCouchDB(object) :
             ((error, reason),) = e.args
             mdebug("Doc exist returns not found: " + reason)
             if true_if_deleted and reason == "deleted" :
+                try :
+                    old = self.db.get(name, open_revs = "all")
+                    for olddocp in old :
+                        mdebug("Got old revision: " + str(olddocp))
+                        olddoc = self.db.get(name, rev=olddocp["ok"]["_rev"])
+                        mdebug("Got old doc too.")
+                        mwarn("Purging old revision...")
+                        self.db.purge([olddoc])
+                        mwarn("Purged")
+                    return False
+                except couchdb.http.ResourceNotFound, e :
+                    merr( "Failed to purge old revisions.")
+
                 mdebug("Doc was deleted, returning true")
                 return None 
             return False
