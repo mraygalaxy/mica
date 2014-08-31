@@ -664,13 +664,18 @@ class MICA(object):
                 mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
         mdebug("INIT Testing cjk thread")
-        threading.Thread(target=self.get_cjk_handle, kwargs = {"test" : True}).start()
+        ct = threading.Thread(target=self.get_cjk_handle, kwargs = {"test" : True})
+        ct.daemon = True
+        ct.start()
+
         if mobile :
             mdebug("INIT Launching runloop timer")
             threading.Timer(1, self.runloop_sched).start()
 
         mdebug("Starting view runner thread")
-        threading.Thread(target=self.view_runner_sched).start()
+        vt = threading.Thread(target=self.view_runner_sched)
+        vt.daemon = True
+        vt.start()
 
     def view_runner_common(self) :
         self.views_ready = 0
