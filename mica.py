@@ -660,7 +660,7 @@ class MICA(object):
                 mwarn("Database (" + str(couch_url_or_local_db) + ") not available yet: " + str(e))
 
         mdebug("INIT Testing cjk thread")
-        threading.Thread(target=self.get_cjk_handle, args=[params["cedict"]], kwargs = {"test" : True}).start()
+        threading.Thread(target=self.get_cjk_handle, kwargs = {"test" : True}).start()
         if mobile :
             mdebug("INIT Launching runloop timer")
             threading.Timer(1, self.runloop_sched).start()
@@ -681,7 +681,6 @@ class MICA(object):
                 for unused in self.db.view(name, keys = ["foo"], username = "bar") :
                     pass
 
-            mdebug("Done priming view for: " + name)
             self.views_ready += 1
 
     def view_runner(self) :
@@ -1164,7 +1163,7 @@ class MICA(object):
                 break
         return all
 
-    def recursive_translate(self, req, uuid, name, story, cjk, cjkdb, d, uni, temp_units, page, tone_keys) :
+    def recursive_translate(self, req, uuid, name, story, cjk, d, uni, temp_units, page, tone_keys) :
         units = []
         
         mdebug("Requested: " + uni)
@@ -1187,7 +1186,7 @@ class MICA(object):
             elif len(trans) == 0 :
                 if len(uni) > 1 :
                     for char in uni :
-                        self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, char, temp_units, page, tone_keys)
+                        self.recursive_translate(req, uuid, name, story, cjk, d, char, temp_units, page, tone_keys)
             elif len(trans) > 1 :
                             
                 for x in range(0, len(trans)) :
@@ -1296,7 +1295,7 @@ class MICA(object):
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
-    def get_cjk_handle(self, location, test = False) :
+    def get_cjk_handle(self, test = False) :
         if test and mobile :
             if not os.path.isfile(params["cjklib"]) :
                 mdebug(params["cjklib"] + " is missing. Exporting...")
@@ -1309,19 +1308,25 @@ class MICA(object):
                         mdebug("Not fully replicated yet. Waiting...")
                         sleep(5)
 
-            if not os.path.isfile(location) :
-                mdebug(location + " is missing. Exporting...")
+            if not os.path.isfile(params["cedict"]) :
+                mdebug(params["cedict"] + " is missing. Exporting...")
                 while True :
                     try :
-                        self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", location)
+                        self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", params["cedict"])
                         mdebug("Exported.")
                         break
                     except couch_adapter.CommunicationError, e :
                         mdebug("Not fully replicated yet. Waiting...")
                         sleep(5)
 
-            mdebug("CJKLIB Size: " + str(os.path.getsize(params["cjklib"])))
-            mdebug("CEDICT Size: " + str(os.path.getsize(params["cedict"])))
+        cjksize = os.path.getsize(params["cjklib"])
+        cesize = os.path.getsize(params["cedict"])
+
+        mdebug("CJKLIB Size: " + str(cjksize))
+        mdebug("CEDICT Size: " + str(cesize))
+
+        assert(cjksize != 0)
+        assert(cesize != 0)
 
         def tracefunc(frame, event, arg, indent=[0]):
             if event == "call":
@@ -1333,20 +1338,24 @@ class MICA(object):
 
             return tracefunc
 
-#        sys.settrace(tracefunc)
+        #sys.settrace(tracefunc)
+        cjk = None
+        d = None
         try :
             from cjklib.dictionary import CEDICT
             from cjklib.characterlookup import CharacterLookup
             from cjklib.dbconnector import getDBConnector
-            cjk = CharacterLookup('C')
-            if location : 
-                mdebug("Opening CEDICT from: " + location)
-                cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite:///' + location, 'attach': ['cjklib']})
-            else :
-                cjkdb = getDBConnector({'sqlalchemy.url': 'sqlite://', 'attach': ['cjklib']})
-            d = CEDICT(dbConnectInst = cjkdb)
+            mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
+            cjkurl = 'sqlite:///' + params['cjklib']
+            cedicturl = 'sqlite:///' + params['cedict']
+            cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
+            mdebug("MICA cjklib success!")
+            # CEDICT must use a connector, just a url which includes both dictionaries.
+            # CEDICT internally references pinyin syllables from the main dictionary or crash.
+            d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cjkurl]}))
+            mdebug("MICA cedict success!")
         except Exception, e :
-            merr("Open failed: " + str(e))
+            merr("MICA offline Open failed: " + str(e))
         
         if mobile and test :
             # We are in a thread, but because of this bug, we cannot exit by ourselves:
@@ -1355,7 +1364,7 @@ class MICA(object):
                 mdebug("CJK test infinite sleep.")
                 sleep(100000)
 
-        return (cjk, cjkdb, d)
+        return (cjk, d)
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -1374,9 +1383,9 @@ class MICA(object):
 
     def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
         if not handle :
-            (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+            (cjk, d) = self.get_cjk_handle()
         else :
-            (cjk, cjkdb, d) = handle
+            (cjk, d) = handle
 
         if temp_units :
             story["temp_units"] = []
@@ -1410,7 +1419,7 @@ class MICA(object):
         mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
 
         for idx in range(0, len(unigroups)) :
-            self.recursive_translate(req, uuid, name, story, cjk, cjkdb, d, unigroups[idx], temp_units, page, tone_keys)
+            self.recursive_translate(req, uuid, name, story, cjk, d, unigroups[idx], temp_units, page, tone_keys)
 
             if idx % 10 == 0 :
                 self.transmutex.acquire()
@@ -1465,7 +1474,7 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
-        handle = self.get_cjk_handle(self.cjklocation)
+        handle = self.get_cjk_handle()
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -3019,7 +3028,7 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, cjkdb, d) = self.get_cjk_handle(self.cjklocation)
+                    (cjk, d) = self.get_cjk_handle()
                     eng = self.get_first_translation(d, source.decode("utf-8"), False)
                     if eng :
                         for english in eng :
