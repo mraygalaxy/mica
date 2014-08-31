@@ -1,8 +1,9 @@
 {
+   "_id": "_design/mergegroups",
    "language": "javascript",
    "views": {
        "all": {
-           "map": "function(doc) { if (doc._id.match(/MICA:[^:]+:mergegroups:[^:]+$/g).length == 1) { emit([doc._id.replace(/(MICA:|:mergegroups:.*)/g, ''), doc._id.replace(/(MICA:[^:]+:mergegroups:)/g, '')], doc); } }"
+           "map": "function(doc) { if (/MICA:[^:]+:mergegroups:[^:]+$/.test(doc._id)) { emit([doc._id.replace(/(MICA:|:mergegroups:.*)/g, ''), doc._id.replace(/(MICA:[^:]+:mergegroups:)/g, '')], doc); } }"
        }
    }
 }

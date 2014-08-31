@@ -376,7 +376,7 @@ function make_child(node) {
   	  			 };
       var out = "";
       if (chars.length == 0) {
-          out += "You have not selected anything!";
+          out += "You have not selected anything for instant translation!";
       } else if (operation == "split" && chars.length > 1) {
           out += "You cannot split more than one word at a time!";
       } else if (operation == "split" && chars[0].split('').length < 2) {
@@ -673,38 +673,6 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           spy);
 }
 
-function memolist(uuid, page) {
-   go('#memolist', 
-          bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
-          '#memolistresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
-function editslist(uuid, page) {
-   go('#editslist', 
-          bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
-          '#editsresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
-
-
-function history(uuid, page) {
-   go('#history', 
-          bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
-          '#historyresult', 
-          unavailable, 
-          true, 
-          false,
-          true);
-}
-
 var view_images = false;
 var show_both = false;
 var current_view_mode = "text";
@@ -733,8 +701,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-    
-       $("#pagecontent").html("<div class='col-md-5'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7'>" + spinner + "&nbsp;Loading Text...</div>");
+       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;Loading Text...</div>");
     
         $('#pageimg' + curr_img_num).affix();
         $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -746,7 +713,7 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              false,
+	          false,
               true);
 
        url += "&image=0";
@@ -756,10 +723,10 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-              false,
+	      false,
               true);
    } else {
-       $("#pagecontent").html("<div class='col-md-12'><div id='pagesingle'></div></div>");
+       $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
 	       $("#pagesingle").html(spinner + "&nbsp;Loading Image...");
@@ -773,23 +740,18 @@ function view(mode, uuid, page) {
               '#pageresult',
               unavailable, 
               true, 
-              false,
+	      false,
               true);
    }
 
-   if (mode == "read")
-   	   memolist(uuid, page)
-   else if (mode == "edit")
-   	   editslist(uuid, page)
-   else if (mode == "home")
-	   history(uuid, page)
+   listreload(mode, uuid, page);
    	   
    current_page = page;
    current_mode = mode;
    current_uuid = uuid;
 }
 
-function install_pages(mode, pages, uuid, start, view_mode) {
+function install_pages(mode, pages, uuid, start, view_mode, reload) {
         current_pages = pages;
         current_view_mode = view_mode;
 		if (view_mode == "text") {
@@ -810,14 +772,14 @@ function install_pages(mode, pages, uuid, start, view_mode) {
           view(mode, uuid, num-1);
         });
 
-        view(mode, uuid, start);
+	if(reload) {
+            view(mode, uuid, start);
+	}
 }
 
 function memory_finish(data, opaque1, opaque2) {
     var hash = opaque1;
     var uuid = opaque2;
-//    memolist(uuid);
-//    history(uuid);
     toggle(hash, 0);
     toggle_specific('memory', hash, 0);
 }
@@ -858,7 +820,6 @@ function togglecanvas() {
       if ($('#offnav').attr('href') == '#main-nav') {
         $('#offnav').attr('href', '#');
       } else {
-        loadstories(false);
         $('#offnav').attr('href', '#main-nav');
         loadstories(false);
       }
@@ -940,6 +901,42 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
     }
 }
 
+var list_mode = true;
+
+function listreload(mode, uuid, page) {
+       if (mode == "read") {
+           if (list_mode)
+               $("#memolist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#memolist', 
+              bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+              '#memolistresult', 
+              unavailable, 
+              true, 
+              false,
+              true);
+       } else if (mode == "edit") {
+           if (list_mode)
+               $("#editslist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#editslist', 
+                  bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+                  '#editsresult', 
+                  unavailable, 
+                  true, 
+                  false,
+                  true);
+       } else if (mode == "home") {
+           if (list_mode)
+               $("#history").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+           go('#history', 
+                  bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+                  '#historyresult', 
+                  unavailable, 
+                  true, 
+                  false,
+                  true);
+       }
+}
+
 function installreading() {
     $('#goto').click(function() {
         var page = parseInt($('#gotoval').val());
@@ -948,7 +945,7 @@ function installreading() {
         }
 
         page -= 1;
-        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode);
+        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true);
     });
     $("#gotoval").keyup(function(event){
             if(event.keyCode == 13){ $("#goto").click(); }
@@ -958,7 +955,7 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
@@ -966,7 +963,7 @@ function installreading() {
 	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
-       $('#sideButton').attr('class', 'btn rtn-default');
+       $('#sideButton').attr('class', 'btn btn-default');
        current_view_mode = "images";
        view(current_mode, current_uuid, current_page);
        
@@ -1046,3 +1043,19 @@ function reviewstory(uuid, which) {
     loadstories,
     false);
 }
+
+$.fn.goDeep = function(levels, func){
+    var iterateChildren = function(current, levelsDeep){
+        func.call(current, levelsDeep);
+
+        if(levelsDeep > 0)
+            $.each(current.children(), function(index, element){
+                iterateChildren($(element), levelsDeep-1);
+            });
+    };
+
+    return this.each(function(){
+        iterateChildren($(this), levels);
+    });
+};
+
