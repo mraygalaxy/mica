@@ -2,6 +2,10 @@ body {
 	padding-top: 55px;
 }
 
+.nopadding {
+      padding-left: 0;
+      padding-right: 0;
+}
 .bwizard-steps li {
 	border: 0;
 }
@@ -133,3 +137,10 @@ td.splitbottom { border-bottom: solid blue }
 td.splitleft { border-left: solid blue  }
 td.splitright { border-right: solid blue  }
 
+.affix {
+    z-index : 9999;
+}
+
+.navbar-nav .open .dropdown-menu > li > a;
+
+}
