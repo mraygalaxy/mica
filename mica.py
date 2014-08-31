@@ -893,7 +893,7 @@ class MICA(object):
                          req.session.value['last_username'] if 'last_username' in req.session.value else '',
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
                          view_percent,
-                         "switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n",
+                         "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n"),
                       ]
     
         if not nodecode :
