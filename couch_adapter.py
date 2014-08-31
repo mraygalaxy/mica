@@ -106,7 +106,7 @@ class MicaDatabaseCouchDB(object) :
     def __delitem__(self, name) :
         doc = self.db[name]
         del self.db[name]
-        self.db.purge([doc])
+        #self.db.purge([doc])
 
     def put_attachment(self, name, filename, contents, new_doc = False) :
         if not new_doc :
