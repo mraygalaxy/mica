@@ -1362,15 +1362,16 @@ class MICA(object):
             cjkurl = 'sqlite:///' + params['cjklib']
             cedicturl = 'sqlite:///' + params['cedict']
             #cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
-            cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl}))
+            cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
             mdebug("MICA cjklib success!")
             # CEDICT must use a connector, just a url which includes both dictionaries.
             # CEDICT internally references pinyin syllables from the main dictionary or crash.
             d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
             if test :
                 for x in d.getFor(u'白鹭'.decode('utf-8')) :
-                    print str(x)
-
+                    mdebug(str(x))
+                for x in cjk.getReadingForCharacter(u'白','Pinyin') :
+                    mdebug(str(x))
                 cjk.db.connection.close()
                 d.db.connection.close()
             mdebug("MICA cedict success!")
@@ -1550,7 +1551,6 @@ class MICA(object):
                     
                 groups.append("\n")
             
-
             self.transmutex.acquire()
             try :
                 tmpstory = self.db[self.story(req, name)]
