@@ -453,8 +453,6 @@ class Params(object) :
         
         if 'connected' not in self.session.value :
             self.session.value['connected'] = False
-            if 'cloud_name' in self.session.value :
-                del self.session.value['cloud_name']
                 
         self.session.save()
         self.unparsed_uri = self.http.url
@@ -546,12 +544,14 @@ class MICA(object):
             mdebug("Invalid username or password: " + username + " " + str(e))
             return False
 
-    def verify_db(self, req, dbname, password) :
+    def verify_db(self, req, dbname, password = False, cookie = False, users = False) :
         username = req.session.value["username"]
 
         if username not in self.dbs or not self.dbs[username] : 
             mdebug("Database not set. Requesting object.")
-            cs = self.db_adapter(self.credentials(username, password))
+            cs = self.db_adapter(self.credentials(), username, password, cookie)
+            req.session.value["cookie"] = cs.cookie
+            req.session.save()
             self.dbs[username] = cs[dbname]
             self.views_ready[username] = 0
 
@@ -579,8 +579,8 @@ class MICA(object):
     def memorized(self, req, key):
         return "MICA:" + req.session.value['username'] + ":memorized:" + key 
     
-    def credentials(self, user, password) :
-        return params["couch_proto"] + "://" + urllib2.quote(user) + ":" + password + "@" + params["couch_server"] + ":" + str(params["couch_port"])
+    def credentials(self) :
+        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
 
     def __init__(self, db_adapter):
         self.mutex = Lock()
@@ -588,14 +588,14 @@ class MICA(object):
         self.heromsg = "<div class='jumbotron' style='padding: 5px'>"
         self.pid = "none"
         self.dbs = {}
-
+        self.userdb = False
         self.db_adapter = db_adapter 
         if mobile :
             self.cs = self.db_adapter(params["couch"])
         else :
-            self.cs = self.db_adapter(self.credentials(params["admin_user"], params["admin_pass"]))
-
-        self.userdb = self.cs["_users"]
+            if params["admin_user"] and params["admin_pass"] :
+                self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
+                self.userdb = self.cs["_users"]
 
         self.first_request = {}
 
@@ -649,47 +649,19 @@ class MICA(object):
                ]
 
         try :
-            mdebug("Checking user database access")
+            mdebug("Checking database access")
             if mobile :
                 self.db = self.cs["mica"][params["local_database"]]
             else :
-                self.db = self.userdb
-                self.view_check(self, "accounts")
-                mdebug("Checking for initial account existence")
-                admindb = self.cs["mica_admin"]
-                self.dbs["mica_admin"] = admindb 
-                self.views_ready["mica_admin"] = 0
+                if self.userdb :
+                    self.db = self.userdb
+                    self.view_check(self, "accounts")
 
-                account_exists = admindb.doc_exist(self.acct('mica_admin'))
-                if not account_exists:
-                    admindb[self.acct('mica_admin')] = {
-                            #'password' : '5f4dcc3b5aa765d61d8327deb882cf99',
-                            'roles' : [ 'admin', 'normal' ],
-                        } 
-
-                mdebug("Checking for regular admin user")
-                if not self.userdb.doc_exist("org.couchdb.user:mica_admin") :
-                    mica_admin = { "name" : "mica_admin",
-                                   "password" : "password",
-                                   "roles": [],
-                                   "type": "user",
-                                   "mica_database" : "mica_admin",
-                                  }
-                    mdebug("Installing mica_admin user with default password.")
-                    self.userdb["org.couchdb.user:mica_admin"] = mica_admin
-
-                admin_security = admindb.get_security()
-                if len(admin_security) == 0 :
-                    mdebug("Installing security on admin database.")
-                    admin_security = {"admins" : 
-                                        { "names" : ["mica_admin"], "roles" : [] },
-                                      "members" :
-                                        { "names" : ["mica_admin"], "roles" : [] }
-                                    }
-                    admindb.set_security(admin_security)
+                    if "mica_admin" not in self.cs :
+                        self.make_account("mica_admin", "password", [ 'admin', 'normal' ], admin = True, dbname = "mica_admin")
+                else :
+                    mwarn("Admin credentials ommitted. Skipping administration setup.")
                                    
-                # UPDATE MICA.security roles to restrict only to mica_admin user
-
         except TypeError, e :
             mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
         except couch_adapter.ResourceNotFound, e :
@@ -710,6 +682,46 @@ class MICA(object):
         vt = threading.Thread(target=self.view_runner_sched)
         vt.daemon = True
         vt.start()
+
+    def make_account(self, username, password, mica_roles, admin = False, dbname = False) :
+        if not dbname :
+            new_uuid = str(uuid4.uuid4())
+            dbname = "mica_" + new_uuid
+
+        if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+            mdebug("Creating user in _user database...")
+            user_doc = { "name" : username,
+                           "password" : password,
+                           "roles": [] if admin else [username + "_master"],
+                           "type": "user",
+                           "mica_database" : dbname,
+                          }
+            self.userdb["org.couchdb.user:" + username] = user_doc 
+        else :
+            dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
+
+        mdebug("Retrieving new database: " + dbname)
+        newdb = self.cs[dbname]
+        new_security = newdb.get_security()
+
+        if len(new_security) == 0 :
+            mdebug("Installing security on admin database.")
+            new_security = {"admins" : 
+                            { 
+                              "names" : ["mica_admin"], 
+                              "roles" : [] if admin else [username + "_master"] 
+                            },
+                        "members" :
+                            { 
+                              "names" : ["mica_admin" if admin else "nobody"], 
+                              "roles" : [] 
+                            }
+                        }
+            newdb.set_security(new_security)
+
+        if not newdb.doc_exist(self.acct(username)) :
+            mdebug("Making initial account parameters.")
+            newdb[self.acct(username)] = { 'roles' : mica_roles } 
 
     def view_runner_common(self) :
         # This only primes views for logged-in users.
@@ -768,7 +780,18 @@ class MICA(object):
                 if mobile :
                     req.db = self.db
                 else :
-                    req.db = self.dbs[req.session.value["username"]]
+                    username = req.session.value["username"]
+                    if username not in self.dbs :
+                        try :
+                            cookie = req.session.value["cookie"]
+                            mdebug("Reusing old cookie: " + cookie + " for user " + username)
+                            self.verify_db(req, req.session.value["database"], cookie = cookie)
+                        except couch_adapter.CommunicationError, e :
+                            merr("Must re-login: " + str(e))
+                            self.disconnect(req.session)
+                            resp = self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+
+                    req.db = self.dbs[username]
 
             resp = self.common(req)
         except exc.HTTPTemporaryRedirect, e :
@@ -2893,6 +2916,23 @@ class MICA(object):
             tmp_story["current_page"] = story["current_page"] = str(page)
             req.db[self.story(req, story["name"])] = tmp_story
 
+    def disconnect(self, session) :
+        session.value['connected'] = False
+        username = session.value['username']
+        if username in self.dbs :
+            del self.dbs[username]
+
+        if username in self.view_runs :
+            del self.view_runs[username]
+
+        if username in self.client :
+            del self.client[username]
+
+        if session.value['database'] in self.client :
+            del self.client[session.value['database']]
+
+        session.save()
+
     def common(self, req) :
         try :
             if req.http.params.get("connect") :
@@ -2904,8 +2944,9 @@ class MICA(object):
                 if not user :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid credentials. Please try again.</h4></div>")
                 req.session.value["username"] = username
-                
-                self.verify_db(req, user["mica_database"], password)
+                req.session.value["database"] = user["mica_database"] 
+
+                self.verify_db(req, user["mica_database"], password = password)
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -2921,44 +2962,75 @@ class MICA(object):
 
                 req.session.value["last_refresh"] = str(timest())
                 req.session.save()
-            '''
-        try :
-            if not mobile :
-                admin = req.db[self.acct('admin')]
-                if '_attachments' not in admin or 'cedict.db' not in admin['_attachments'] :
-                    minfo("Opening cedict file: " + params["cedict"])
-                    fh = open(params["cedict"], 'r')
-                    minfo("Uploading cedict to admin account...")
-                    self.db.put_attachment(self.acct('admin'), 'cedict.db', fh, new_doc = admin)
-                    fh.close()
-                    minfo("Uploaded.")
-                    admin = self.db[self.acct('admin')]
 
-                if '_attachments' not in admin or 'cjklib.db' not in admin['_attachments'] :
-                    minfo("Opening cjklib file: " + params["cjklib"])
-                    fh = open(params["cjklib"], 'r')
-                    minfo("Uploading cjklib to admin account...")
-                    self.db.put_attachment(self.acct('admin'), 'cjklib.db', fh, new_doc = admin)
-                    fh.close()
-                    minfo("Uploaded.")
-        except TypeError, e :
-            mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
-        except couch_adapter.ResourceNotFound, e :
-            mwarn("Account document @ " + self.acct('admin') + " not found: " + str(e))
-        except Exception, e :
-            mwarn("Database not available yet: " + str(e))
-            '''
+                if not mobile :
+                    try :
+                        if not req.db.doc_exist("MICA:filelisting") :
+                            req.db["MICA:filelisting"] = {"foo" : "bar"} 
+
+                        listing = req.db["MICA:filelisting"]
+
+                        if '_attachments' not in listing or 'cedict.db' not in listing['_attachments'] :
+                            minfo("Opening cedict file: " + params["cedict"])
+                            fh = open(params["cedict"], 'r')
+                            minfo("Uploading cedict to file listing...")
+                            req.db.put_attachment("MICA:filelisting", 'cedict.db', fh, new_doc = listing)
+                            fh.close()
+                            minfo("Uploaded.")
+                            listing = req.db["MICA:filelisting"]
+
+                        if '_attachments' not in listing or 'cjklib.db' not in listing['_attachments'] :
+                            minfo("Opening cjklib file: " + params["cjklib"])
+                            fh = open(params["cjklib"], 'r')
+                            minfo("Uploading cjklib to file listing...")
+                            req.db.put_attachment("MICA:filelisting", 'cjklib.db', fh, new_doc = listing)
+                            fh.close()
+                            minfo("Uploaded.")
+                    except TypeError, e :
+                        mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+                    except couch_adapter.ResourceNotFound, e :
+                        mwarn("Account document @ MICA:filelisting not found: " + str(e))
+                    except Exception, e :
+                        mwarn("Database not available yet: " + str(e))
                 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
-                msg = """
-                        <h4>You need to connect, first.</h4>
-                        <p/>
-                        <br/>This is experimental language-learning software,
-                        <br/>and thus accounts are granted on-demand.
-                        <br/>Contact: <a href="http://michael.hinespot.com">http://michael.hinespot.com</a> for assistance.
-                        </div>
-                      """
-                return self.bootstrap(req, self.heromsg + msg)
+                content = ""
+                pc = ""
+                if not mobile :
+                    content += self.template("advertise")
+                    pages = eval(self.template("pages"))
+                    first = True
+                    for page in pages :
+                        if first :
+                            first = False
+                            pc += "<div style='text-align: center' class='item active'>"
+                        else :
+                            pc += "<div style='text-align: center' class='item'>"
+                        pc += """
+                                <br>
+                                <br>
+                                <br>
+                                <br>
+                        """
+                        pc += "<h1 style='width: 75%; margin: 0 auto;' >" + page + "</h1>\n"
+                        pc += """
+                                <br>
+                                <br>
+                                <br>
+                                <br>
+                            </div>
+                        """
+                else :
+                    content += "<br/><br/><br/><br/><br/><br/>"
+                content += """
+                    <h4>You need to connect, first.</h4>
+                    <p/>
+                    <br/>This is experimental language-learning software,
+                    <br/>and thus accounts are granted on-demand.
+                    <br/>Contact: <a href="http://michael.hinespot.com">http://michael.hinespot.com</a> for assistance.
+                """
+
+                return self.bootstrap(req, content.replace("BOOTPAGES", pc))
                 
             username = req.session.value['username']
 
@@ -3407,10 +3479,7 @@ class MICA(object):
                             image_found = False
                             if "filetype" in story and story["filetype"] != "txt" :
                                 attach_raw = req.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                #mdebug("OK, received raw attachment, type: " + str(type(attach_raw)) + ", evalling...")
-                                #mdebug(str(attach_raw))
                                 original = eval(attach_raw)
-                                #mdebug("OK, evaluated with keys: " + str(original.keys()))
 
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
@@ -3428,7 +3497,7 @@ class MICA(object):
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
-                    output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on 'Account' at the top.</h4></div>"
+                    output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar<br/>or create one by clicking on Account icon at the top.</h4></div>"
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
@@ -3498,18 +3567,25 @@ class MICA(object):
 
                     out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
                 elif req.http.params.get("changepassword") :
+                    if mobile :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Please change your password on the website, first.</h4></div>")
                     oldpassword = req.http.params.get("oldpassword")
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
-                    newhash = hashlib.md5(newpassword).hexdigest()
-                    oldhash = hashlib.md5(oldpassword).hexdigest()
 
+                    if len(newpassword) < 8 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-                    if oldhash != user['password'] :
+                    user = self.authenticate(username, oldpassword)
+                    if not user :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
-                    user['password'] = newhash
-                    req.db[self.acct(username)] = user
+                    user['password'] = newpassword
+                    del self.dbs[username]
+                    self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                    req.db["org.couchdb.user:" + username] = user
+                    del self.dbs[username]
+                    self.verify_db(req, req.session.value["database"], newpassword)
                     out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
 
                 elif req.http.params.get("changecredentials") :
@@ -3534,6 +3610,9 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>" + tmsg + "</h4></div>"
 
                 elif req.http.params.get("newaccount") :
+                    if not self.userdb : 
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Server not configured correctly. Can't make accounts.</h4></div>")
+
                     newusername = req.http.params.get("username")
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
@@ -3542,47 +3621,31 @@ class MICA(object):
                     if newusername == "mica_admin" :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Invalid account name! Try again.</h4></div>")
 
+                    if len(newpassword) < 8 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-
-                    if req.db.doc_exist(self.acct(newusername)) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
                     if 'admin' not in user["roles"] and admin == 'on' :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Non-admin users can't create admin accounts. What are you doing?!</h4></div>")
 
+                    if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
                     roles = ['normal']
                     if admin == 'on' :
                         roles.append('admin')
 
-                    req.db[self.acct(newusername)] = { 'password' : hashlib.md5(newpassword).hexdigest(), 'roles' : roles }
+                    self.make_account(newusername, newpassword, roles)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
-
-                if 'admin' in user['roles'] :
-                    out += "<h4><b>Accounts</b>:</h4>"
-                    out += "<table>"
-                    for result in req.db.view('accounts/all') :
-                        tmp_user = result["value"]
-                        tmp_username = result["key"]
-                        out += "<tr><td>" + tmp_username + "</td><td>&nbsp;&nbsp;</td><td>Roles: " + ",".join(tmp_user["roles"]) + "</td></tr>"
-                    out += "</table>"
 
                 out += """
                     <p/>
                     <h4><b>Change Password</b>?</h4>
-                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
-                    <table>
-                    <tr><td><h5>&nbsp;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
-                    <tr><td><h5>&nbsp;Password: </td><td><input type="password" name="password"/></h5></td></tr>
-                    <tr><td><h5>&nbsp;Confirm:&nbsp; </td><td><input type="password" name="confirm"/></h5></td></tr>
-                    <tr><td><button name='changepassword' type="submit" class="btn btn-default btn-primary" value='1'>Change Password</button></td></tr>
-                    </table>
-                    </form>                                   
-                    <h4><b>Input Microsoft Translation API Credentials</b>?</h4>
-                    <h5>You can request free credentials <a href='http://msdn.microsoft.com/en-us/library/hh454950.aspx'>by going here</a>.</h5>
-                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
-                    <table>
                 """
+                if not mobile :
+                    out += self.template("changepass")
+                else :
+                    out += "Please change your password on the website. Will support mobile in a future version."
 
                 client_id = "Need your client ID"
                 client_secret = "Need your client secret"
@@ -3602,19 +3665,30 @@ class MICA(object):
                     <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
 
+                if not mobile and 'admin' in user['roles'] :
+                    out += "<h4><b>Accounts</b>:</h4>"
+                    if not self.userdb :
+                        out += "Server is misconfigured. Cannot list accounts."
+                    else :
+                        out += "<table>"
+                        for result in self.userdb.view('accounts/all') :
+                            tmp_doc = result["key"]
+                            out += "<tr><td>" + tmp_doc["name"] + "</td></tr>"
+                        out += "</table>"
+
+
                 return self.bootstrap(req, out)
                     
             elif req.action == "disconnect" :
-                req.session.value['connected'] = False
-                if req.session.value['username'] in self.client :
-                    del self.client[req.session.value['username']]
-                req.session.save()
+                self.disconnect(req.session)
                 return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+
             elif req.action == "help" :
                 output = ""
                 helpfh = codecs.open(cwd + "serve/info_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
+                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "BOOTDEST")
                 return self.bootstrap(req, output)
             else :
                 return self.bootstrap(req, "Read, Review, or Edit, my friend?")
@@ -3814,7 +3888,6 @@ def get_options() :
                "transcheck" : True,
                "duplicate_logger" : False,
                "serialize_couch_on_mobile" : options.serialize,
-
                "admin_user" : options.adminuser,
                "admin_pass" : options.adminpass,
                "couch_server" : options.couchserver,
@@ -3842,8 +3915,9 @@ def go(p) :
 
     if ("admin_user" not in params or "admin_pass" not in params or not params["admin_user"] or not params["admin_pass"]) :
         if not mobile :
-            merr("This is not a mobile deployment and you have not specified admin credentials to be used on the server-side for account management.  Bailing.")
-            exit(1)
+            mwarn("This is not a mobile deployment and you have not specified admin credentials to be used on the server-side for account management. You will only be able to access existing accounts but not create new ones.")
+        params["admin_user"] = False
+        params["admin_pass"] = False
     else :
         if mobile :
             merr("This is a mobile deployment and you have specified admin credentials to be used on the server-side for account management. Don't do that.")
