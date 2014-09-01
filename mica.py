@@ -161,7 +161,6 @@ def itemhelp(pairs) :
     total_unique = story["total_unique"] if "total_unique" in story else 0
     pr = int((float(total_memorized) / float(total_unique)) * 100) if total_unique else 0
     story["pr"] = str(pr)
-    reviewed = not ("reviewed" not in story or not story["reviewed"])
     return pr
 
 bins = dir(__builtin__)
@@ -866,7 +865,7 @@ class MICA(object):
 
         return r
     
-    def sidestart(self, req, name, username, story, reviewed) :
+    def sidestart(self, req, name, username, story, reviewed, finished) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
         sideout = ""
         sideout += "\n<tr>"
@@ -877,13 +876,13 @@ class MICA(object):
         sideout += rname
         sideout += "</a>"
         
-        if (reviewed or story["translated"]) and "pr" in story :
+        if (finished or reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
             sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
             sideout += pr + "%;'> (" + pr + "%)</div>"
             
         sideout += "</td>"
-        if reviewed :
+        if finished or reviewed :
             sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
             sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
@@ -2570,6 +2569,7 @@ class MICA(object):
         reading = self.template("reading")
         noreview = self.template("noreview")
         untrans = self.template("untrans")
+        finish = self.template("finished")
         
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -2581,6 +2581,7 @@ class MICA(object):
 
         for name, story in items :
             reviewed = not ("reviewed" not in story or not story["reviewed"])
+            finished = not ("finished" not in story or not story["finished"])
             if isinstance(story['uuid'], tuple) :
                 uuid = story['uuid']
                 mdebug("skipping UUID: " + uuid[0])
@@ -2588,7 +2589,7 @@ class MICA(object):
 
             if not story["translated"] : 
                 untrans_count += 1
-                untrans += self.sidestart(req, name, username, story, reviewed)
+                untrans += self.sidestart(req, name, username, story, reviewed, finished)
                 untrans += "\n<td style='font-size: x-small' colspan='3'>"
                 untrans += "<div id='transbutton" + story['uuid'] + "'>"
                 untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
@@ -2607,22 +2608,28 @@ class MICA(object):
                 untrans += "</td>"
                 untrans += "</tr>"
             else :
-                notsure = self.sidestart(req, name, username, story, reviewed)
+                notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
                 notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
                 notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
                 notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
-                if reviewed :
+                if finished :
+                   mdebug("Adding story " + story["name"] + " to finish list.")
+                   finish += notsure
+                   finish += "<td><a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
+                   finish += "</tr>"
+                elif reviewed :
                    reading += notsure
                    reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
+                   reading += "<td><a title='Finished reading' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
                    reading += "</tr>"
                 else :
                    noreview += notsure
                    noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                    noreview += "</tr>"
                    
-        return [untrans_count, reading, noreview, untrans] 
+        return [untrans_count, reading, noreview, untrans, finish] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -3158,11 +3165,21 @@ class MICA(object):
                 out += "</div>"
                 return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
 
+            if req.http.params.get("finished") :
+                finished = True if req.http.params.get("finished") == "1" else False
+                tmp_story = req.db[self.story(req, name)]
+                tmp_story["finished"] = finished 
+                req.db[self.story(req, name)] = tmp_story 
+                return self.bootstrap(req, self.heromsg + "\n<h4>Finished.</h4></div>", now = True)
+
             if req.http.params.get("reviewed") :
                 reviewed = True if req.http.params.get("reviewed") == "1" else False
                 tmp_story = req.db[self.story(req, name)]
                 tmp_story["reviewed"] = reviewed
                 if reviewed :
+                    if tmp_story["finished"] :
+                        tmp_story["finished"] = False
+
                     pages = self.nb_pages(req, tmp_story["name"])
                     if pages == 1 :
                         final = {}
@@ -3180,6 +3197,7 @@ class MICA(object):
                 tmp_story = req.db[self.story(req, name)]
                 tmp_story["translated"] = False
                 tmp_story["reviewed"] = False
+                tmp_story["finished"] = False
 
                 if "last_error" in tmp_story :
                     del tmp_story["last_error"]
@@ -3522,19 +3540,20 @@ class MICA(object):
                 if not result[0] and len(result) > 1 :
                     return self.bootstrap(req, result[1])
                 
-                untrans_count, reading, noreview, untrans = result[1:]
+                untrans_count, reading, noreview, untrans, finish = result[1:]
                 
                 reading += "</table></div></div></div>\n"
                 noreview += "</table></div></div></div>\n"
                 untrans += "</table></div></div></div>\n"
+                finish += "</table></div></div></div>\n"
 
                 if untrans_count :
-                    storylist += untrans + reading + noreview + "</div></td></tr></table>"
+                    storylist += untrans + reading + noreview + finish + "</div></td></tr></table>"
                     storylist += """
                             <script>$('#collapseUntranslated').collapse('show');</script>
                             """
                 else :
-                    storylist += reading + untrans + noreview + "</div></td></tr></table>"
+                    storylist += reading + untrans + noreview + finish + "</div></td></tr></table>"
                     storylist += """
                             <script>$('#collapseReading').collapse('show');</script>
                             """

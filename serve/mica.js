@@ -1044,6 +1044,16 @@ function reviewstory(uuid, which) {
     false);
 }
 
+function finishstory(uuid, which) {
+    go('#sidebarcontents', 
+    bootdest + '/home?finished=' + which + '&uuid=' + uuid,
+    '', 
+    unavailable, 
+    false, 
+    loadstories,
+    false);
+}
+
 $.fn.goDeep = function(levels, func){
     var iterateChildren = function(current, levelsDeep){
         func.call(current, levelsDeep);
