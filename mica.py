@@ -629,6 +629,7 @@ class MICA(object):
                                     "BOOTSWITCH",
                                     "BOOTPULL",
                                     "BOOTPUSH",
+                                    "BOOTZOOM",
                                 ]
 
         self.views_ready = {}
@@ -720,7 +721,11 @@ class MICA(object):
 
         if not newdb.doc_exist(self.acct(username)) :
             mdebug("Making initial account parameters.")
-            newdb[self.acct(username)] = { 'roles' : mica_roles } 
+            newdb[self.acct(username)] = { 'roles' : mica_roles, 
+                                           'app_chars_per_line' : 70,
+                                           'web_chars_per_line' : 70,
+                                           'default_app_zoom' : 1.2,
+                                           'default_web_zoom' : 1.0 } 
 
     def view_runner_common(self) :
         # This only primes views for logged-in users.
@@ -959,6 +964,15 @@ class MICA(object):
         else :
             view_percent = "0.0"
         #mdebug("View percent: " + view_percent)
+        zoom_level = 1.0
+
+        if mobile :
+            if "default_app_zoom" in req.session.value :
+                zoom_level = req.session.value["default_app_zoom"]
+        else :
+            if "default_web_zoom" in req.session.value :
+                zoom_level = req.session.value["default_web_zoom"]
+
         replacements = [    
                          navcontents, 
                          bootcanvastoggle,
@@ -980,11 +994,14 @@ class MICA(object):
                          "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n"),
                          req.db.pull_percent() if req.db else "",
                          req.db.push_percent() if req.db else "",
+                         zoom_level,
                       ]
     
         if not nodecode :
             for idx in range(0, len(self.replacement_keys)) :
                 x = replacements[idx]
+                if isinstance(x, float) :
+                    x = str(x)
                 y = self.replacement_keys[idx]
                 if (not isinstance(x, str) and not isinstance(x, unicode)) or (not isinstance(y, str) and not isinstance(y, unicode)) :
                     mdebug("Skipping replacment combinations: x " + str(x) + " y " + str(y))
@@ -2140,14 +2157,13 @@ class MICA(object):
             return result['value']
         return 0
 
-    def view_page(self, req, uuid, name, story, action, output, page, disk = False) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         if not page_dict :
             return "What the hell is going on?"
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
-        chars_per_line = 70
         words = len(units)
         lines = [] 
         line = [] 
@@ -2968,6 +2984,21 @@ class MICA(object):
                 self.clear_story(req)
 
                 req.session.value["last_refresh"] = str(timest())
+                user = req.db[self.acct(username)]
+                if "app_chars_per_line" not in user :
+                    user["app_chars_per_line"] = 70
+                if "web_chars_per_line" not in user :
+                    user["web_chars_per_line"] = 70
+                if "default_app_zoom" not in user :
+                    user["default_app_zoom"] = 1.2
+                if "default_web_zoom" not in user :
+                    user["default_web_zoom"] = 1.0
+
+                req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
+                req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
+                req.session.value["default_app_zoom"] = user["default_app_zoom"]
+                req.session.value["default_web_zoom"] = user["default_web_zoom"]
+                req.db[self.acct(username)] = user
                 req.session.save()
 
                 if not mobile :
@@ -3187,7 +3218,9 @@ class MICA(object):
                         
                         for page in range(0, pages) :
                             minfo("Page " + str(page) + "...")
-                            final[str(page)] = self.view_page(req, uuid, name, story, req.action, "", str(page), disk = True)
+                            final[str(page)] = self.view_page(req, uuid, name, \
+                                story, req.action, "", str(page), \
+                                req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], disk = True)
                             
                         req.db[self.story(req, name) + ":final"] = final
                 req.db[self.story(req, name)] = tmp_story 
@@ -3510,8 +3543,7 @@ class MICA(object):
                             return self.bootstrap(req, output, now = True)
                         else :
                             self.set_page(req, story, page)
-                            output = self.view_page(req, uuid, name, story, req.action, output, page)
-                                
+                            output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
@@ -3656,6 +3688,42 @@ class MICA(object):
                     self.make_account(newusername, newpassword, roles)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
+                elif req.http.params.get("setappchars") :
+                    chars_per_line = int(req.http.params.get("setappchars"))
+                    if chars_per_line > 1000 or chars_per_line < 20 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 20.</h4></div>")
+                    user["app_chars_per_line"] = chars_per_line
+                    req.db[self.acct(username)] = user
+                    req.session.value["app_chars_per_line"] = chars_per_line 
+                    req.session.save()
+                    out += self.heromsg + "\n<h4>Success! Mobile Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
+                elif req.http.params.get("setwebchars") :
+                    chars_per_line = int(req.http.params.get("setwebchars"))
+                    if chars_per_line > 1000 or chars_per_line < 20:
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 20.</h4></div>")
+                    user["web_chars_per_line"] = chars_per_line
+                    req.db[self.acct(username)] = user
+                    req.session.value["web_chars_per_line"] = chars_per_line 
+                    req.session.save()
+                    out += self.heromsg + "\n<h4>Success! Web Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
+                elif req.http.params.get("setappzoom") :
+                    zoom = float(req.http.params.get("setappzoom"))
+                    if zoom > 3.0 or zoom < 1.0 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>App Zoom level must be a decimal no greater than 3.0 and no smaller than 1.0</h4></div>")
+                    user["default_app_zoom"] = zoom 
+                    req.db[self.acct(username)] = user
+                    req.session.value["default_app_zoom"] = zoom
+                    req.session.save()
+                    out += self.heromsg + "\n<h4>Success! App zoom level set to " + str(zoom) + ".</h4></div>"
+                elif req.http.params.get("setwebzoom") :
+                    zoom = float(req.http.params.get("setwebzoom"))
+                    if zoom > 3.0 or zoom < 1.0 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Web Zoom level must be a decimal no greater than 3.0 and no smaller than 1.0</h4></div>")
+                    user["default_web_zoom"] = zoom 
+                    req.db[self.acct(username)] = user
+                    req.session.value["default_web_zoom"] = zoom
+                    req.session.save()
+                    out += self.heromsg + "\n<h4>Success! Web zoom level set to " + str(zoom) + ".</h4></div>"
 
                 out += """
                     <p/>
@@ -3684,6 +3752,26 @@ class MICA(object):
                     <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
 
+                out += "<h4><b>Change Viewing configuration</b>?</h4>"
+                out += "<table>"
+                out += "<tr><td>&nbsp;Characters per line:</td><td>"
+                out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
+                out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
+                out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                out += "</form>"
+                out += "</td></tr>"
+                out += "</table>"
+                out += "<table>"
+                out += "<tr><td><h5>&nbsp;Default zoom level: </h5></td><td>"
+                out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
+                out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
+                out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                out += "</form>"
+                out += "</td></tr>"
+                out += "</table>"
+                
                 if not mobile and 'admin' in user['roles'] :
                     out += "<h4><b>Accounts</b>:</h4>"
                     if not self.userdb :
