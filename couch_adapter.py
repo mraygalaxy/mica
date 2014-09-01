@@ -2,6 +2,7 @@
 from common import *
 import json
 import uuid as uuid4
+import urllib2
 
 try :
     import couchdb
@@ -219,9 +220,32 @@ class MicaDatabaseCouchDB(object) :
 #        instead of our not found
 
 class MicaServerCouchDB(object) :
-    def __init__(self, url) :
+    def __init__(self, url, username = False, password = False, cookie = False) :
         self.url = url
+        self.cookie = cookie
         self.server = Server(url)
+
+        if not self.cookie :
+            mdebug("No cookie for user: " + username)
+            username_unquoted = urllib2.quote(username)
+            password_unquoted = urllib2.quote(password)
+
+            full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
+
+            tmp_server = Server(full_url)
+
+            mdebug("Requesting cookie.")
+            code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+
+            if (code != 200) :
+                raise CommunicationError("MICA Unauthorized: " + username)
+
+            self.cookie = message["Set-Cookie"].split(";", 1)[0].strip()
+            mdebug("Received cookie: " + self.cookie)
+        else :
+            mdebug("Reusing cookie: " + self.cookie)
+
+        self.server.resource.headers["Cookie"] = self.cookie
 
     def __getitem__(self, dbname) :
         if dbname in self.server :
