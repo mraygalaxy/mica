@@ -202,6 +202,12 @@ class MicaDatabaseCouchDB(object) :
     def runloop(self) :
         mdebug("Server runloop - nothing to do.")
 
+    def pull_percent(self) :
+        return "100.0"
+
+    def push_percent(self) :
+        return "100.0"
+
        
 # FIXME: need try's here so we return our "NotFound"
 #        instead of our not found
@@ -372,6 +378,12 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
     def runloop(self) :
         pass
 
+    def pull_percent(self) :
+        return self.db.get_pull_percent()
+
+    def push_percent(self) :
+        return self.db.get_push_percent()
+
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
@@ -535,6 +547,12 @@ class iosMicaDatabaseCouchbaseMobile(object) :
     def runloop(self) :
         mdebug("Wanted to do runloop execution here!")
         self.db.runloop()
+
+    def pull_percent(self) :
+        return self.db.get_pull_percent()
+
+    def push_percent(self) :
+        return self.db.get_push_percent()
 
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
