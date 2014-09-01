@@ -545,14 +545,21 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Database close failed for: " + name)
 
     def runloop(self) :
-        mdebug("Wanted to do runloop execution here!")
         self.db.runloop()
 
     def pull_percent(self) :
-        return self.db.get_pull_percent()
+        return self.db.get_pull_percent().UTF8String()
 
     def push_percent(self) :
-        return self.db.get_push_percent()
+        return self.db.get_push_percent().UTF8String()
+
+    def get_attachment_to_path(self, name, filename, path) :
+        try :
+            attach = self.db.get_attachment_to_path___(self.dbname, name, filename, path).UTF8String()
+        except Exception, e :
+            raise CommunicationError("Error getting attachment to path: " + name + " " + str(e), e)
+        if attach != "" :
+            raise ResourceNotFound("Could not find attachment to path for document: " + name)
 
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :

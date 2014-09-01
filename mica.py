@@ -676,6 +676,10 @@ class MICA(object):
         self.views_ready = 0
 
         for (name, startend) in self.view_runs :
+            if not self.db.doc_exist("_design/" + name.split("/")[0]) :
+                mdebug("View " + name + " does not yet exist. Skipping priming.")
+                continue
+
             mdebug("Priming view for: " + name)
 
             if startend :
@@ -3847,16 +3851,16 @@ def go(p) :
 
             while True :
                 (co, req, rq) = params["q"].get()
-                mdebug("Request received in main thread")
+                #mdebug("Request received in main thread")
                 try :
                     # Send the input from the thread to the coroutine
                     # The coroutine's function will execute in the
                     # context of the main thread (or other thread if
                     # you wish.
                     co.send((req, rq))
-                    mdebug("Request propogated from main thread")
+                    #mdebug("Request propogated from main thread")
                 except StopIteration :
-                    mdebug("Stop exception. Continuing.")
+                    #mdebug("Stop exception. Continuing.")
                     params["q"].task_done()
                     continue
 
