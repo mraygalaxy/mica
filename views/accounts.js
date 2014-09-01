@@ -1,9 +1,12 @@
 {
    "language": "javascript",
-   "views":
-   {
-     "all": {
-       "map": "function(doc) { if (doc._id.indexOf('MICA:accounts:') != -1) { emit(doc._id.replace('MICA:accounts:', ''), doc); } }"
-     }
-   }
+   "views": {
+       "all": {
+           "map": "function(doc) { if (doc.mica_database != undefined) { emit(doc); } }"
+       },
+       "allcount": {
+           "map": "function(doc) { if (doc.mica_database != undefined) { emit(doc); } }",
+           "reduce": "function(keys, values, rereduce) { if (rereduce) { return sum(values); } else { return values.length; } }"
+       }
+   }   
 }

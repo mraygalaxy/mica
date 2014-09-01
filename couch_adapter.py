@@ -91,6 +91,12 @@ class MicaDatabaseCouchDB(object) :
     def __init__(self, db) :
         self.db = db
 
+    def get_security(self) :
+        return self.db.security
+
+    def set_security(self, doc) :
+        self.db.security = doc
+
     def __setitem__(self, name, doc) :
         try :
             self.db[name] = doc
