@@ -604,6 +604,8 @@ class MICA(object):
                                     "BOOTREMEMBER",
                                     "BOOTVIEWS",
                                     "BOOTSWITCH",
+                                    "BOOTPULL",
+                                    "BOOTPUSH",
                                 ]
 
         self.views_ready = 0
@@ -895,6 +897,8 @@ class MICA(object):
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
                          view_percent,
                          "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n"),
+                         self.db.pull_percent(),
+                         self.db.push_percent(),
                       ]
     
         if not nodecode :
@@ -1365,7 +1369,6 @@ class MICA(object):
             mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
             cjkurl = 'sqlite:///' + params['cjklib']
             cedicturl = 'sqlite:///' + params['cedict']
-            #cjk = CharacterLookup('C', databaseUrl = {'sqlalchemy.url' : cjkurl })
             cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
             mdebug("MICA cjklib success!")
             # CEDICT must use a connector, just a url which includes both dictionaries.
