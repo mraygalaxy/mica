@@ -555,11 +555,11 @@ class iosMicaDatabaseCouchbaseMobile(object) :
 
     def get_attachment_to_path(self, name, filename, path) :
         try :
-            attach = self.db.get_attachment_to_path___(self.dbname, name, filename, path).UTF8String()
+            attach = self.db.get_attachment_to_path____(self.dbname, name, filename, path).UTF8String()
         except Exception, e :
             raise CommunicationError("Error getting attachment to path: " + name + " " + str(e), e)
         if attach != "" :
-            raise ResourceNotFound("Could not find attachment to path for document: " + name)
+            raise ResourceNotFound("Could write attachment to path for document: " + name + ": " + attach)
 
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :

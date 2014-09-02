@@ -1305,6 +1305,29 @@ class MICA(object):
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units
 
+    def get_cjk_handle_common(self) :
+        try :
+            if not os.path.isfile(params["cjklib"]) :
+                self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
+                mdebug("Exported cjklib.")
+            if not os.path.isfile(params["cedict"]) :
+                self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", params["cedict"])
+                mdebug("Exported cedict.")
+        except couch_adapter.CommunicationError, e :
+            mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
+        except couch_adapter.ResourceNotFound, e :
+            mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
+
+    def get_cjk_handle_serial(self) :
+        if params["serialize_couch_on_mobile"] :
+            (unused, rq) = (yield)
+
+        self.get_cjk_handle_common()
+
+        if params["serialize_couch_on_mobile"] :
+            rq.put(None)
+            rq.task_done()
+
     def get_cjk_handle(self, test = False) :
         if test :
             for fn in ["cedict.db", "cjklib.db"] :
@@ -1321,28 +1344,22 @@ class MICA(object):
                              mwarn("This file should not be here. Blowing away...")
                              os.unlink(fnd)
             mdebug("Moving on with test.")
-        if test and mobile :
-            if not os.path.isfile(params["cjklib"]) :
-                mdebug(params["cjklib"] + " is missing. Exporting...")
-                while True :
-                    try :
-                        self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
-                        mdebug("Exported.")
-                        break
-                    except couch_adapter.CommunicationError, e :
-                        mdebug("Not fully replicated yet. Waiting...")
-                        sleep(5)
 
-            if not os.path.isfile(params["cedict"]) :
-                mdebug(params["cedict"] + " is missing. Exporting...")
-                while True :
-                    try :
-                        self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", params["cedict"])
-                        mdebug("Exported.")
-                        break
-                    except couch_adapter.CommunicationError, e :
-                        mdebug("Not fully replicated yet. Waiting...")
-                        sleep(5)
+        if test and mobile :
+            while True :
+                if not os.path.isfile(params["cedict"]) or not os.path.isfile(params["cjklib"]):
+                    mdebug("One of " + params["cedict"] + " or " + params["cjklib"] + " is missing. Exporting...")
+
+                    if params["serialize_couch_on_mobile"] :
+                        rq = Queue.Queue()
+                        co = self.get_cjk_handle_serial()
+                        co.next()
+                        params["q"].put((co, None, rq))
+                        resp = rq.get()
+                    else :
+                        self.get_cjk_handle_common()
+
+                    sleep(5)
 
         cjksize = os.path.getsize(params["cjklib"])
         cesize = os.path.getsize(params["cedict"])
