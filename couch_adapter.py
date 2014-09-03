@@ -414,7 +414,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
     def push_percent(self) :
         return self.db.get_push_percent()
 
-    def replicate(self, url, user, pw, dbname) :
+    def replicate(self, url, user, pw, dbname, localdbname = "unused") :
         username_unquoted = urllib2.quote(user)
         password_unquoted = urllib2.quote(pw)
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
@@ -602,6 +602,18 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error getting attachment to path: " + name + " " + str(e), e)
         if attach != "" :
             raise ResourceNotFound("Could write attachment to path for document: " + name + ": " + attach)
+
+    def replicate(self, url, user, pw, dbname, localdbname) :
+        username_unquoted = urllib2.quote(user)
+        password_unquoted = urllib2.quote(pw)
+        full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
+
+        if self.db.replicate__(String(localdbname), String(full_url)) == -1 :
+            mdebug("Replication failed. Boo. =(")
+            return False
+        else :
+            mdebug("Replication started. Yay.")
+            return True
 
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
