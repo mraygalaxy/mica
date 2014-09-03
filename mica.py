@@ -2996,7 +2996,7 @@ class MICA(object):
                        appuser = {"username" : username}
                        req.db["MICA:appuser"] = appuser
                            
-                    if not req.db.replicate(address, username, password, req.session.value["database"]) :
+                    if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
 
                 req.action = "home"
