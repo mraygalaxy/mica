@@ -4236,6 +4236,37 @@ def go(p) :
         for line in traceback.format_exc().splitlines() :
             merr(line)
 
+def second_splash() :
+    fh = open(cwd + "serve/splash_template.html", 'r')
+    output = fh.read()
+    fh.close()
+
+    fh = open(cwd + "serve/icon.png", 'r')
+    contents = fh.read()
+    encoded1 = base64.b64encode(contents)
+    fh.close()
+
+    output += "<img src='data:image/jpeg;base64," + str(encoded1) + "' width='100%'/>"
+    output += """
+</div>
+<div class="inner2">
+"""
+    output += "<p><p><p>"
+    fh = open(cwd + "serve/spinner.gif", 'r')
+    contents = fh.read() 
+    encoded2 = base64.b64encode(contents)
+    fh.close()
+    output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
+    output += "&nbsp;&nbsp;Please wait...</p>"
+    output += """ 
+</div>    
+<div class="inner3">
+</div>    
+</body>  
+</html> 
+"""
+    return output
+
 if __name__ == "__main__":
     mdebug("Ready to go.")
     params = get_options()
