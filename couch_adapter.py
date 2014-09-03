@@ -463,7 +463,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
     def __getitem__(self, name) :
         try :
             doc = self.db.get__(String(self.dbname), String(name)).UTF8String()
-            mdebug("Result of get is: " + str(doc) + " " + str(type(doc)))
+            #mdebug("Result of get is: " + str(doc) + " " + str(type(doc)))
             if doc == "" :
                 return False
             if doc is not None :
@@ -492,7 +492,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             raise CommunicationError("Error getting attachment: " + name + " " + str(e), e)
         if attach is None :
             raise ResourceNotFound("Could not find attachment for document: " + name)
-        print "Pyobjus returned attachment of type: " + str(type(attach))
+        #print "Pyobjus returned attachment of type: " + str(type(attach))
         return attach 
 
     def doc_exist(self, name) :

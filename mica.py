@@ -3590,9 +3590,9 @@ class MICA(object):
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top."
                     if mobile :
-                        output += "</h4><p><br/>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
+                        output += "</h4><p><br/><h5>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
                                   "You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. " + \
-                                  "Thus, they can only be replicated to the device for regular use."
+                                  "Thus, they can only be replicated to the device for regular use.</h5>"
                     else :
                         output += "<br/>or create one by clicking on Account icon at the top.</h4>"
                     output += "</div>"
