@@ -415,9 +415,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         return self.db.get_push_percent()
 
     def replicate(self, url, user, pw, dbname) :
-        username_unquoted = urllib2.quote(username)
-        password_unquoted = urllib2.quote(password)
-        full_url = address.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
+        username_unquoted = urllib2.quote(user)
+        password_unquoted = urllib2.quote(pw)
+        full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
         if self.db.replicate(String(dbname), String(full_url), False) == -1 :
             mdebug("Replication failed. Boo. =(")
