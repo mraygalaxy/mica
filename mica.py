@@ -3985,7 +3985,7 @@ def get_options() :
 
     parser.add_option("-f", "--couchserver", dest = "couchserver", default = "localhost", help = "address of couchdb database")
     parser.add_option("-g", "--couchproto", dest = "couchproto", default = "https", help = "couchdb http protocol (https|http)")
-    parser.add_option("-h", "--couchport", dest = "couchport", default = "6984", help = "couchdb port")
+    parser.add_option("-i", "--couchport", dest = "couchport", default = "6984", help = "couchdb port")
 
     parser.set_defaults()
     options, args = parser.parse_args()
