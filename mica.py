@@ -788,9 +788,19 @@ class MICA(object):
             if "connected" in req.session.value and req.session.value["connected"] :
                 username = req.session.value["username"]
                 cookie = False
-                if username not in self.dbs and not mobile :
-                    cookie = req.session.value["cookie"]
-                    mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
+                if username not in self.dbs :
+                    if mobile :
+                        # Couchbase mobile can do cookie authentication, we're just not using it yet....
+                        # FIXME to use cookies for replication instead of saving the user's
+                        # password in the session file
+                        # This is OK for now since we're running on a phone....
+                        mdebug("Trying to restart replication...")
+                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"]) :
+                            mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+                    else :
+                        # On the server, use cookies to talk to CouchDB
+                        cookie = req.session.value["cookie"]
+                        mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
 
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
@@ -2970,6 +2980,8 @@ class MICA(object):
                 address = req.http.params.get('address')
                 req.session.value["username"] = username
                 req.session.value["address"] = address
+                if mobile :
+                    req.session.value["password"] = password
                 req.session.save()
 
                 user = self.authenticate(username, password, address)
