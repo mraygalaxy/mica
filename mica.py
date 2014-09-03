@@ -3090,6 +3090,7 @@ class MICA(object):
                     content += "<br/><br/><br/><br/><br/><br/>"
                 content += """
                     <h4>You need to connect, first.</h4>
+                    <br/>(Click the little 'M' at the top.)
                     <p/>
                     <br/>This is experimental language-learning software,
                     <br/>and thus accounts are granted on-demand.
@@ -3575,7 +3576,7 @@ class MICA(object):
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
                 else :
-                    output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar."
+                    output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top."
                     if mobile :
                         output += "<p><br/>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
                                   "You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. " + \
