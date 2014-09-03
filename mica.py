@@ -1412,10 +1412,10 @@ class MICA(object):
                 # FIXME: We need to create an 'admin' account in all the user
                 # databases to hold the DB....but we don't have it yet
                 # or just upload the file to a common key instead of admin
-                self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
+                self.db.get_attachment_to_path("MICA:filelisting", "cjklib.db", params["cjklib"])
                 mdebug("Exported cjklib.")
             if not os.path.isfile(params["cedict"]) :
-                self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", params["cedict"])
+                self.db.get_attachment_to_path("MICA:filelisting", "cedict.db", params["cedict"])
                 mdebug("Exported cedict.")
         except couch_adapter.CommunicationError, e :
             mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
@@ -2983,6 +2983,19 @@ class MICA(object):
                 self.verify_db(req, user["mica_database"], password = password)
 
                 if mobile :
+                    if req.db.doc_exist("MICA:appuser") :
+                       mdebug("There is an existing user. Verifying it is the same one.")
+                       appuser = req.db["MICA:appuser"]
+                       if appuser["username"] != username :
+                            return self.bootstrap(req, self.heromsg + "\n<h4>We're sorry. The MICA Reader database on this device already belongs to the user " + \
+                                appuser["username"] + " and is configured to stay in sync replication with the server. " + \
+                                "If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with " + \
+                                "a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.</h4></div>")
+                    else :
+                       mdebug("First time user. Reserving this device: " + username)
+                       appuser = {"username" : username}
+                       req.db["MICA:appuser"] = appuser
+                           
                     if not req.db.replicate(address, username, password, req.session.value["database"]) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
 
