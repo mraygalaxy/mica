@@ -1422,10 +1422,10 @@ class MICA(object):
                 # FIXME: We need to create an 'admin' account in all the user
                 # databases to hold the DB....but we don't have it yet
                 # or just upload the file to a common key instead of admin
-                self.db.get_attachment_to_path(self.acct('admin'), "cjklib.db", params["cjklib"])
+                self.db.get_attachment_to_path("MICA:filelisting", "cjklib.db", params["cjklib"])
                 mdebug("Exported cjklib.")
             if not os.path.isfile(params["cedict"]) :
-                self.db.get_attachment_to_path(self.acct('admin'), "cedict.db", params["cedict"])
+                self.db.get_attachment_to_path("MICA:filelisting", "cedict.db", params["cedict"])
                 mdebug("Exported cedict.")
         except couch_adapter.CommunicationError, e :
             mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
@@ -3590,11 +3590,13 @@ class MICA(object):
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top."
                     if mobile :
-                        output += "<p><br/>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
+                        output += "</h4><p><br/>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
                                   "You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. " + \
-                                  "Thus, they can only be replicated to the device for regular use.</h4></div>"
+                                  "Thus, they can only be replicated to the device for regular use."
                     else :
-                        output += "<br/>or create one by clicking on Account icon at the top.</h4></div>"
+                        output += "<br/>or create one by clicking on Account icon at the top.</h4>"
+                    output += "</div>"
+
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
