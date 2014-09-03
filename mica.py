@@ -526,9 +526,8 @@ def strip_punct(word) :
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
 class MICA(object):
-    def authenticate(self, username, password) :
+    def authenticate(self, username, password, auth_url) :
         try :
-            auth_url = params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
             mdebug("Authenticating to: " + auth_url)
             username_unquoted = urllib2.quote(username)
             userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
@@ -548,10 +547,15 @@ class MICA(object):
 
         if username not in self.dbs or not self.dbs[username] : 
             mdebug("Database not set. Requesting object.")
-            cs = self.db_adapter(self.credentials(), username, password, cookie)
-            req.session.value["cookie"] = cs.cookie
-            req.session.save()
-            self.dbs[username] = cs[dbname]
+            if mobile :
+                self.dbs[username] = self.db
+            else :
+                address = req.session.value["address"] if "address" in req.session.value else self.credentials()
+                cs = self.db_adapter(address, username, password, cookie)
+                req.session.value["cookie"] = cs.cookie
+                req.session.save()
+                self.dbs[username] = cs[dbname]
+
             self.views_ready[username] = 0
 
         req.db = self.dbs[username]
@@ -630,6 +634,7 @@ class MICA(object):
                                     "BOOTPULL",
                                     "BOOTPUSH",
                                     "BOOTZOOM",
+                                    "BOOTADDRESSHOLD",
                                 ]
 
         self.views_ready = {}
@@ -651,7 +656,7 @@ class MICA(object):
         try :
             mdebug("Checking database access")
             if mobile :
-                self.db = self.cs["mica"][params["local_database"]]
+                self.db = self.cs[params["local_database"]]
             else :
                 if self.userdb :
                     self.db = self.userdb
@@ -781,23 +786,22 @@ class MICA(object):
     def run_common(self, req) :
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
-                if mobile :
-                    req.db = self.db
-                else :
-                    username = req.session.value["username"]
-                    if username not in self.dbs :
-                        try :
-                            cookie = req.session.value["cookie"]
-                            mdebug("Reusing old cookie: " + cookie + " for user " + username)
-                            self.verify_db(req, req.session.value["database"], cookie = cookie)
-                        except couch_adapter.CommunicationError, e :
-                            merr("Must re-login: " + str(e))
-                            self.disconnect(req.session)
-                            resp = self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+                username = req.session.value["username"]
+                cookie = False
+                if username not in self.dbs and not mobile :
+                    cookie = req.session.value["cookie"]
+                    mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
 
-                    req.db = self.dbs[username]
+                try :
+                    self.verify_db(req, req.session.value["database"], cookie = cookie)
+                    resp = self.common(req)
+                except couch_adapter.CommunicationError, e :
+                    merr("Must re-login: " + str(e))
+                    self.disconnect(req.session)
+                    resp = self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+            else :
+                resp = self.common(req)
 
-            resp = self.common(req)
         except exc.HTTPTemporaryRedirect, e :
             resp = e
             resp.location = req.dest + resp.location# + req.active
@@ -973,6 +977,8 @@ class MICA(object):
             if "default_web_zoom" in req.session.value :
                 zoom_level = req.session.value["default_web_zoom"]
 
+        address = req.session.value["address"] if "address" in req.session.value else self.credentials()
+
         replacements = [    
                          navcontents, 
                          bootcanvastoggle,
@@ -995,6 +1001,7 @@ class MICA(object):
                          req.db.pull_percent() if req.db else "",
                          req.db.push_percent() if req.db else "",
                          zoom_level,
+                         address,
                       ]
     
         if not nodecode :
@@ -2631,7 +2638,6 @@ class MICA(object):
                 notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
                 if finished :
-                   mdebug("Adding story " + story["name"] + " to finish list.")
                    finish += notsure
                    finish += "<td><a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
                    finish += "</tr>"
@@ -2961,15 +2967,24 @@ class MICA(object):
             if req.http.params.get("connect") :
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
+                address = req.http.params.get('address')
+                req.session.value["username"] = username
+                req.session.value["address"] = address
+                req.session.save()
 
-                user = self.authenticate(username, password)
+                user = self.authenticate(username, password, address)
 
                 if not user :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Invalid credentials. Please try again.</h4></div>")
-                req.session.value["username"] = username
+
                 req.session.value["database"] = user["mica_database"] 
+                req.session.save()
 
                 self.verify_db(req, user["mica_database"], password = password)
+
+                if mobile :
+                    if not req.db.replicate(address, username, password, req.session.value["database"]) :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -3354,7 +3369,7 @@ class MICA(object):
                 else :
                     self.set_page(req, tmp_story, start_page)
                 
-            mdebug("Start page will be: " + str(start_page))
+            #mdebug("Start page will be: " + str(start_page))
 
             if "view_mode" in req.session.value :
                 view_mode = req.session.value["view_mode"]
@@ -3628,7 +3643,7 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-                    user = self.authenticate(username, oldpassword)
+                    user = self.authenticate(username, oldpassword, req.session.value["address"])
                     if not user :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
                     user['password'] = newpassword
@@ -4011,6 +4026,10 @@ def go(p) :
     global params
     params = p
     mdebug("Verifying options.")
+
+    if mobile and "local_database" not in params :
+        merr("local_database parameter missing on mobile platform.")
+        exit(1)
 
     if "couch" not in params and mobile :
         merr("We are mobile. Please pass reference to platform-specific couch instance.")
