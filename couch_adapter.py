@@ -248,11 +248,14 @@ class MicaServerCouchDB(object) :
         self.server.resource.headers["Cookie"] = self.cookie
 
     def __getitem__(self, dbname) :
-        if dbname in self.server :
-            db = self.server[dbname]
-        else :
-            db = self.server.create(dbname)
-        return MicaDatabaseCouchDB(db)
+        try :
+            if dbname in self.server :
+                db = self.server[dbname]
+            else :
+                db = self.server.create(dbname)
+            return MicaDatabaseCouchDB(db)
+        except couchdb.http.Unauthorized, e :
+            raise CommunicationError("MICA Unauthorized: dbname: " + dbname + " " + str(e))
 
     def __delitem__(self, name) :
         del self.server[name]
