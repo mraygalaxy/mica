@@ -279,7 +279,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
 
     def __getitem__(self, name) :
         try :
-            doc = self.db.get(String(self.dbname), String(name))
+            doc = self.db.get(String(self.dbname), String(str(name)))
             if doc == "" :
                 return False
             if doc is not None :

@@ -549,6 +549,7 @@ class MICA(object):
         if username not in self.dbs or not self.dbs[username] : 
             mdebug("Database not set. Requesting object.")
             if mobile :
+                mdebug("Setting mobile db to prexisting object.")
                 self.dbs[username] = self.db
             else :
                 address = req.session.value["address"] if "address" in req.session.value else self.credentials()
@@ -557,16 +558,22 @@ class MICA(object):
                 req.session.save()
                 self.dbs[username] = cs[dbname]
 
+            mdebug("Installing view counter.")
             self.views_ready[username] = 0
 
         req.db = self.dbs[username]
 
-        user = req.db[self.acct(username)]
+        mdebug("Testing translation credentials.")
+        if req.db.doc_exist(self.acct(username)) :
+            user = req.db[self.acct(username)]
 
-        if "translator_credentials" in user :
-            if username not in self.client :
-                self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
-                mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
+            mdebug("Account found for credentials, checking.")
+            if user and "translator_credentials" in user :
+                if username not in self.client :
+                    mdebug("Recreating credentials.")
+                    self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
+                    mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
+        mdebug("DB verification complete.")
 
     def acct(self, name) :
         return "MICA:accounts:" + name
@@ -3138,7 +3145,14 @@ class MICA(object):
                 """
                 if mobile :
                     content += """
-                        <br/>To login to this application and begin syncing with your web account, you must first request a web account online first @ <b>http://mica.hinespot.com</b>
+                        <br/>To get a "feel" for how MICA works, you can use the DEMO account
+                        with the username 'demo' and password 'micademo'. This account will
+                        load pre-existing stories from the online demo account, but all changes
+                        you make will not be synchronized.
+                        <br/>
+                        <br/>To login to this application with a regular account and begin syncing all
+                        of your devices with your web account, you must first request a web account 
+                        online first @ <b>http://mica.hinespot.com</b>
                         by contacting the author.
                     """
                 else :
