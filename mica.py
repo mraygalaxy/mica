@@ -954,9 +954,12 @@ class MICA(object):
                                  </a>
                                  <ul class='dropdown-menu'>
                                 """
-                navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
-                if 'admin' in user['roles'] :
+                if not mobile :
+                    navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
+
+                if not mobile and 'admin' in user['roles'] :
                     navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
+
                 navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
                 navcontents += "<li><a onclick='switchlist()' href=\"#\"><i class='glyphicon glyphicon-tasks'></i>&nbsp;<div id='switchlisttext' style='display: inline'></div></a></li>\n"
                 navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
@@ -2624,25 +2627,32 @@ class MICA(object):
                 untrans_count += 1
                 untrans += self.sidestart(req, name, username, story, reviewed, finished)
                 untrans += "\n<td style='font-size: x-small' colspan='3'>"
-                untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
-                if req.session.value['username'] not in self.client :
-                    untrans += "Please add a translation API key in your account preferences to begin learning with this story.<br/>"
-                else :
-                    untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
-                if "last_error" in story and not isinstance(story["last_error"], str) :
-                    for err in story["last_error"] :
-                        untrans += "<br/>" + err.replace("\n", "<br/>")
-                untrans += "</div>&nbsp;"
+
+                if not mobile :
+                    untrans += "<div id='transbutton" + story['uuid'] + "'>"
+                    untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
+
+                    if req.session.value['username'] not in self.client :
+                        untrans += "Please add a translation API key in your account preferences to begin learning with this story.<br/>"
+                    else :
+                        untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
+                    if "last_error" in story and not isinstance(story["last_error"], str) :
+                        for err in story["last_error"] :
+                            untrans += "<br/>" + err.replace("\n", "<br/>")
+
+                    untrans += "</div>&nbsp;"
+
                 untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                 untrans += "</div>"
+
                 if "translating" in story and story["translating"] :
                     untrans += "\n<script>translist.push('" + story["uuid"] + "');</script>"
                 untrans += "</td>"
                 untrans += "</tr>"
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
-                notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
+                if not mobile :
+                    notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
                 notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
                 notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
                 notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
@@ -3104,10 +3114,18 @@ class MICA(object):
                     <h4>You need to connect, first.</h4>
                     <br/>(Click the little 'M' at the top.)
                     <p/>
-                    <br/>This is experimental language-learning software,
-                    <br/>and thus accounts are granted on-demand.
-                    <br/>Contact: <a href="http://michael.hinespot.com">http://michael.hinespot.com</a> for assistance.
+                    <br/>This is experimental language-learning software.
                 """
+                if mobile :
+                    content += """
+                        <br/>To login to this application and begin syncing with your web account, you must first request a web account online first @ <a href='http://mica.hinespot.com'>http://mica.hinespot.com'</a>
+                        by contacting the author.
+                    """
+                else :
+                    content += """
+                        <br/>Accounts are granted on-request only.
+                        <br/>Contact: <a href="http://michael.hinespot.com">http://michael.hinespot.com</a> for assistance.
+                    """
 
                 return self.bootstrap(req, content.replace("BOOTPAGES", pc))
                 
