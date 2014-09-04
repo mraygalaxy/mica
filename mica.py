@@ -84,7 +84,7 @@ except ImportError, e :
 
 mdebug("Imports complete.")
 
-deeper = "<br/><br/></br></br></br></br></br><br/><br/></br></br></br></br></br>"
+deeper = "<br/><br/></br></br></br></br></br><br/><br/>"
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
 for letter in (string.ascii_lowercase + string.ascii_uppercase) :
