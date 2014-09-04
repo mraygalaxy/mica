@@ -84,6 +84,7 @@ except ImportError, e :
 
 mdebug("Imports complete.")
 
+deeper = "<br/><br/></br></br></br></br></br><br/><br/></br></br></br></br></br>"
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
 for letter in (string.ascii_lowercase + string.ascii_uppercase) :
@@ -889,11 +890,14 @@ class MICA(object):
         sideout = ""
         sideout += "\n<tr>"
         sideout += "<td style='font-size: x-small; width: 100px'>" 
-        sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid="
-        sideout += story["uuid"]
-        sideout += "\">"
-        sideout += rname
-        sideout += "</a>"
+        if mobile :
+            sideout += "<b>" + rname + "</b>"
+        else :
+            sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid="
+            sideout += story["uuid"]
+            sideout += "\">"
+            sideout += rname
+            sideout += "</a>"
         
         if (finished or reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
@@ -901,9 +905,10 @@ class MICA(object):
             sideout += pr + "%;'> (" + pr + "%)</div>"
             
         sideout += "</td>"
-        if finished or reviewed :
-            sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
-            sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
+        if not mobile :
+            if finished or reviewed :
+                sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
         return sideout
 
@@ -2985,6 +2990,8 @@ class MICA(object):
     def common(self, req) :
         try :
             if req.http.params.get("connect") :
+                if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "To login for the first time and being synchronization with the website, you must activate internet access.</h4></div>")
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
                 address = req.http.params.get('address')
@@ -2997,7 +3004,7 @@ class MICA(object):
                 user = self.authenticate(username, password, address)
 
                 if not user :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Invalid credentials. Please try again.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n" + deeper + "Invalid credentials. Please try again.</h4></div>")
 
                 req.session.value["database"] = user["mica_database"] 
                 req.session.save()
@@ -3009,7 +3016,7 @@ class MICA(object):
                        mdebug("There is an existing user. Verifying it is the same one.")
                        appuser = req.db["MICA:appuser"]
                        if appuser["username"] != username :
-                            return self.bootstrap(req, self.heromsg + "\n<h4>We're sorry. The MICA Reader database on this device already belongs to the user " + \
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "We're sorry. The MICA Reader database on this device already belongs to the user " + \
                                 appuser["username"] + " and is configured to stay in sync replication with the server. " + \
                                 "If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with " + \
                                 "a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.</h4></div>")
@@ -3019,7 +3026,7 @@ class MICA(object):
                        req.db["MICA:appuser"] = appuser
                            
                     if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -3109,7 +3116,8 @@ class MICA(object):
                             </div>
                         """
                 else :
-                    content += "<br/><br/><br/><br/><br/><br/>"
+                    content += deeper
+
                 content += """
                     <h4>You need to connect, first.</h4>
                     <br/>(Click the little 'M' at the top.)
