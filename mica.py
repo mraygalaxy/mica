@@ -3118,7 +3118,7 @@ class MICA(object):
                 """
                 if mobile :
                     content += """
-                        <br/>To login to this application and begin syncing with your web account, you must first request a web account online first @ <a href='http://mica.hinespot.com'>http://mica.hinespot.com</a>
+                        <br/>To login to this application and begin syncing with your web account, you must first request a web account online first @ <b>http://mica.hinespot.com</b>
                         by contacting the author.
                     """
                 else :
