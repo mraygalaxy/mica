@@ -561,6 +561,13 @@ class MICA(object):
 
         req.db = self.dbs[username]
 
+        user = req.db[self.acct(username)]
+
+        if "translator_credentials" in user :
+            if username not in self.client :
+                self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
+                mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
+
     def acct(self, name) :
         return "MICA:accounts:" + name
 
@@ -922,6 +929,9 @@ class MICA(object):
 
         if isinstance(body, str) and not nodecode :
             body = body.decode("utf-8")
+
+        if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
+            body = self.heromsg + "\n<h4>Demo Account is readonly. You must install the mobile application for interactive use of the demo account.</h4></div>" + body
 
         navcontents = ""
         bootcanvastoggle = ""
@@ -2607,6 +2617,7 @@ class MICA(object):
     
     def makestorylist(self, req):
         untrans_count = 0
+        reading_count = 0
         reading = self.template("reading")
         noreview = self.template("noreview")
         untrans = self.template("untrans")
@@ -2667,6 +2678,7 @@ class MICA(object):
                    finish += "<td><a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
                    finish += "</tr>"
                 elif reviewed :
+                   reading_count += 1
                    reading += notsure
                    reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
                    reading += "<td><a title='Finished reading' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
@@ -2676,7 +2688,7 @@ class MICA(object):
                    noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                    noreview += "</tr>"
                    
-        return [untrans_count, reading, noreview, untrans, finish] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -3147,13 +3159,6 @@ class MICA(object):
                 self.view_check(req, "splits")
                 self.view_check(req, "memorized")
 
-                user = req.db[self.acct(username)]
-
-                if "translator_credentials" in user :
-                    if username not in self.client :
-                        self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
-                        mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
-
                 if params["transcheck"] :
                     for result in req.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
                         tmp_storyname = result["key"][1]
@@ -3275,7 +3280,7 @@ class MICA(object):
                 tmp_story = req.db[self.story(req, name)]
                 tmp_story["reviewed"] = reviewed
                 if reviewed :
-                    if tmp_story["finished"] :
+                    if "finished" not in tmp_story or tmp_story["finished"] :
                         tmp_story["finished"] = False
 
                     pages = self.nb_pages(req, tmp_story["name"])
@@ -3647,7 +3652,7 @@ class MICA(object):
                 if not result[0] and len(result) > 1 :
                     return self.bootstrap(req, result[1])
                 
-                untrans_count, reading, noreview, untrans, finish = result[1:]
+                untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
                 
                 reading += "</table></div></div></div>\n"
                 noreview += "</table></div></div></div>\n"
@@ -3659,11 +3664,17 @@ class MICA(object):
                     storylist += """
                             <script>$('#collapseUntranslated').collapse('show');</script>
                             """
-                else :
+                elif reading_count :
                     storylist += reading + untrans + noreview + finish + "</div></td></tr></table>"
                     storylist += """
                             <script>$('#collapseReading').collapse('show');</script>
                             """
+                else :
+                    storylist += noreview + reading + untrans + finish + "</div></td></tr></table>"
+                    storylist += """
+                            <script>$('#collapseReviewing').collapse('show');</script>
+                            """
+
                 storylist += """
                             
                            <script>
@@ -3678,6 +3689,9 @@ class MICA(object):
             elif req.action == "account" :
                 out = ""
 
+                if username == "demo" :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>Demo account is read-only.</h4></div>")
+                 
                 user = req.db[self.acct(username)]
                 
                 if req.http.params.get("pack") :
@@ -3706,12 +3720,16 @@ class MICA(object):
                     user = self.authenticate(username, oldpassword, req.session.value["address"])
                     if not user :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
-                    user['password'] = newpassword
-                    del self.dbs[username]
-                    self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                    req.db["org.couchdb.user:" + username] = user
-                    del self.dbs[username]
-                    self.verify_db(req, req.session.value["database"], newpassword)
+                    try :
+                        user['password'] = newpassword
+                        del self.dbs[username]
+                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                        req.db["org.couchdb.user:" + username] = user
+                        del self.dbs[username]
+                        self.verify_db(req, req.session.value["database"], newpassword)
+                    except Exception, e :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Password change failed: " + str(e) + "</h4></div>")
+                        
                     out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
 
                 elif req.http.params.get("changecredentials") :
@@ -3812,7 +3830,7 @@ class MICA(object):
                 client_id = "Need your client ID"
                 client_secret = "Need your client secret"
 
-                if 'translator_credentials' in user :
+                if username != "demo" and 'translator_credentials' in user :
                      client_id = user['translator_credentials']['id']
                      client_secret = user['translator_credentials']['secret']
                  
