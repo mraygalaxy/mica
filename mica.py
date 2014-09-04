@@ -3050,6 +3050,7 @@ class MICA(object):
 
                 req.action = "home"
                 req.session.value['connected'] = True 
+                req.session.save()
 
                 if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
                     req.session.value['last_username'] = username
@@ -3057,6 +3058,7 @@ class MICA(object):
                 elif 'last_username' in req.session.value :
                     del req.session.value['last_username']
                     req.session.value['last_remember'] = ''
+                req.session.save()
 
                 self.clear_story(req)
 
@@ -3168,6 +3170,15 @@ class MICA(object):
                 return self.bootstrap(req, content.replace("BOOTPAGES", pc))
                 
             username = req.session.value['username']
+
+            if "app_chars_per_line" not in req.session.value :
+                user = req.db[self.acct(username)]
+                if user :
+                    req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
+                    req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
+                    req.session.value["default_app_zoom"] = user["default_app_zoom"]
+                    req.session.value["default_web_zoom"] = user["default_web_zoom"]
+                    req.session.save()
 
             if username not in self.first_request :
                 self.first_request[username] = True 
