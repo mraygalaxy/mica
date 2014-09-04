@@ -965,7 +965,7 @@ class MICA(object):
         
             if req.session.value['connected'] and not pretend_disconnected :
                 user = req.db[self.acct(req.session.value['username'])]
-                if 'admin' in user['roles'] :
+                if user and 'admin' in user['roles'] :
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
                     """
@@ -979,7 +979,7 @@ class MICA(object):
                 if not mobile :
                     navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
 
-                if not mobile and 'admin' in user['roles'] :
+                if user and not mobile and 'admin' in user['roles'] :
                     navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
 
                 navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
@@ -1014,6 +1014,7 @@ class MICA(object):
 
         address = req.session.value["address"] if "address" in req.session.value else self.credentials()
 
+        
         replacements = [    
                          navcontents, 
                          bootcanvastoggle,
@@ -1032,7 +1033,7 @@ class MICA(object):
                          req.session.value['last_username'] if 'last_username' in req.session.value else '',
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
                          view_percent,
-                         "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if req.session.value['list_mode'] else "false") + ");\n"),
+                         "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in req.session.value and req.session.value['list_mode']) else "false") + ");\n"),
                          req.db.pull_percent() if req.db else "",
                          req.db.push_percent() if req.db else "",
                          zoom_level,
@@ -3061,6 +3062,9 @@ class MICA(object):
 
                 req.session.value["last_refresh"] = str(timest())
                 user = req.db[self.acct(username)]
+                if not user :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, this account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                    
                 if "app_chars_per_line" not in user :
                     user["app_chars_per_line"] = 70
                 if "web_chars_per_line" not in user :
@@ -3707,6 +3711,9 @@ class MICA(object):
                     return self.bootstrap(req, self.heromsg + "\n<h4>Demo account is read-only.</h4></div>")
                  
                 user = req.db[self.acct(username)]
+
+                if not user :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>This account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
                 
                 if req.http.params.get("pack") :
                     req.db.compact()
