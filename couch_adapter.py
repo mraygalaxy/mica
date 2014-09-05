@@ -101,12 +101,16 @@ class MicaDatabaseCouchDB(object) :
     def __setitem__(self, name, doc) :
         try :
             self.db[name] = doc
+        except couchdb.http.Unauthorized, e :
+            raise CommunicationError("MICA Unauthorized: " + str(e))
         except couchdb.http.ResourceNotFound, e :
             raise ResourceNotFound(str(e), e)
 
     def __getitem__(self, name) :
         try :
             return self.db[name]
+        except couchdb.http.Unauthorized, e :
+            raise CommunicationError("MICA Unauthorized: " + str(e))
         except couchdb.http.ResourceNotFound, e :
             return False
 
@@ -131,6 +135,8 @@ class MicaDatabaseCouchDB(object) :
                 try :
                     doc["_rev"] = self.db[name]["_rev"]
                     mdebug("Old revision found.")
+                except couchdb.http.Unauthorized, e :
+                    raise CommunicationError("MICA Unauthorized: " + str(e))
                 except couchdb.http.ResourceNotFound, e :
                     mdebug("No old revision found.")
                     pass
@@ -151,6 +157,8 @@ class MicaDatabaseCouchDB(object) :
     def doc_exist(self, name, true_if_deleted = False) :
         try :
             self.db[name]
+        except couchdb.http.Unauthorized, e :
+            raise CommunicationError("MICA Unauthorized: " + str(e))
         except couchdb.http.ResourceNotFound, e :
             mdebug(str(e.args))
             ((error, reason),) = e.args
@@ -168,6 +176,8 @@ class MicaDatabaseCouchDB(object) :
                     return False
                 except couchdb.http.ResourceNotFound, e :
                     merr( "Failed to purge old revisions.")
+                except couchdb.http.Unauthorized, e :
+                    raise CommunicationError("MICA Unauthorized: " + str(e))
 
                 mdebug("Doc was deleted, returning true")
                 return None 
