@@ -987,6 +987,7 @@ class MICA(object):
                 navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
                 navcontents += "<li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&nbsp;About</a></li>\n"
                 navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
+                navcontents += "<li><a href=\"BOOTDEST/privacy\"><i class='glyphicon glyphicon-lock'></i>&nbsp;Privacy</a></li>\n"
                 navcontents += "</ul>"
                 navcontents += "</li>"
                 bootcanvastoggle = " onclick=\"togglecanvas()\" "
@@ -1023,7 +1024,7 @@ class MICA(object):
                          cloudcontents,
                          availablecontents,
                          body,
-                         popoveractivate if (not req.session.value["connected"] and not req.skip_show) else "",
+                         popoveractivate if (not req.session.value["connected"] and not req.skip_show and not pretend_disconnected) else "",
                          spinner,
                          req.dest,
                          req.active if req.active else "",
@@ -3009,7 +3010,13 @@ class MICA(object):
 
     def common(self, req) :
         try :
-            if req.http.params.get("connect") :
+            if req.action == "privacy" :
+                output = ""
+                helpfh = codecs.open(cwd + "serve/privacy_template.html", "r", "utf-8")
+                output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
+                helpfh.close()
+                return self.bootstrap(req, output, pretend_disconnected = True)
+            elif req.http.params.get("connect") :
                 if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "To login for the first time and being synchronization with the website, you must activate internet access.</h4></div>")
                 username = req.http.params.get('username')
