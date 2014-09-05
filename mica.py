@@ -678,7 +678,7 @@ class MICA(object):
                     self.view_check(self, "accounts")
 
                     if "mica_admin" not in self.cs :
-                        self.make_account("mica_admin", "password", [ 'admin', 'normal' ], admin = True, dbname = "mica_admin")
+                        self.make_account(self, "mica_admin", "password", [ 'admin', 'normal' ], admin = True, dbname = "mica_admin")
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
                                    
@@ -703,7 +703,7 @@ class MICA(object):
         vt.daemon = True
         vt.start()
 
-    def make_account(self, username, password, mica_roles, admin = False, dbname = False) :
+    def make_account(self, req, username, password, mica_roles, admin = False, dbname = False) :
         if not dbname :
             new_uuid = str(uuid4.uuid4())
             dbname = "mica_" + new_uuid
@@ -746,6 +746,8 @@ class MICA(object):
                                            'web_chars_per_line' : 70,
                                            'default_app_zoom' : 1.2,
                                            'default_web_zoom' : 1.0 } 
+
+        self.check_all_views(req)
 
     def view_runner_common(self) :
         # This only primes views for logged-in users.
@@ -3008,6 +3010,13 @@ class MICA(object):
 
         session.save()
 
+    def check_all_views(self, req) :
+        self.view_check(req, "stories")
+        self.view_check(req, "tonechanges")
+        self.view_check(req, "mergegroups")
+        self.view_check(req, "splits")
+        self.view_check(req, "memorized")
+
     def common(self, req) :
         try :
             if req.action == "privacy" :
@@ -3028,15 +3037,15 @@ class MICA(object):
                     req.session.value["password"] = password
                 req.session.save()
 
-                user = self.authenticate(username, password, address)
+                auth_user = self.authenticate(username, password, address)
 
-                if not user :
+                if not auth_user :
                     return self.bootstrap(req, self.heromsg + "\n" + deeper + "Invalid credentials. Please try again.</h4></div>")
 
-                req.session.value["database"] = user["mica_database"] 
+                req.session.value["database"] = auth_user["mica_database"] 
                 req.session.save()
 
-                self.verify_db(req, user["mica_database"], password = password)
+                self.verify_db(req, auth_user["mica_database"], password = password)
 
                 if mobile :
                     if req.db.doc_exist("MICA:appuser") :
@@ -3189,11 +3198,7 @@ class MICA(object):
 
             if username not in self.first_request :
                 self.first_request[username] = True 
-                self.view_check(req, "stories")
-                self.view_check(req, "tonechanges")
-                self.view_check(req, "mergegroups")
-                self.view_check(req, "splits")
-                self.view_check(req, "memorized")
+                self.check_all_views(req)
 
                 if params["transcheck"] :
                     for result in req.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -3756,14 +3761,14 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
-                    user = self.authenticate(username, oldpassword, req.session.value["address"])
-                    if not user :
+                    auth_user = self.authenticate(username, oldpassword, req.session.value["address"])
+                    if not auth_user :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
                     try :
-                        user['password'] = newpassword
+                        auth_user['password'] = newpassword
                         del self.dbs[username]
                         self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                        req.db["org.couchdb.user:" + username] = user
+                        req.db["org.couchdb.user:" + username] = auth_user
                         del self.dbs[username]
                         self.verify_db(req, req.session.value["database"], newpassword)
                     except Exception, e :
@@ -3817,7 +3822,7 @@ class MICA(object):
                     if admin == 'on' :
                         roles.append('admin')
 
-                    self.make_account(newusername, newpassword, roles)
+                    self.make_account(req, newusername, newpassword, roles)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
                 elif req.http.params.get("setappchars") :
@@ -3884,25 +3889,29 @@ class MICA(object):
                     <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
 
-                out += "<h4><b>Change Viewing configuration</b>?</h4>"
-                out += "<table>"
-                out += "<tr><td>&nbsp;Characters per line:</td><td>"
-                out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
-                out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
-                out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
-                out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
-                out += "</form>"
-                out += "</td></tr>"
-                out += "</table>"
-                out += "<table>"
-                out += "<tr><td><h5>&nbsp;Default zoom level: </h5></td><td>"
-                out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
-                out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
-                out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
-                out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
-                out += "</form>"
-                out += "</td></tr>"
-                out += "</table>"
+                try :
+                    out += "<h4><b>Change Viewing configuration</b>?</h4>"
+                    out += "<table>"
+                    out += "<tr><td>&nbsp;Characters per line:</td><td>"
+                    out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                    out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
+                    out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
+                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                    out += "</form>"
+                    out += "</td></tr>"
+                    out += "</table>"
+                    out += "<table>"
+                    out += "<tr><td><h5>&nbsp;Default zoom level: </h5></td><td>"
+                    out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                    out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
+                    out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
+                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                    out += "</form>"
+                    out += "</td></tr>"
+                    out += "</table>"
+                except KeyError, e :
+                    merr("Keep having this problem: " + str(user) + " " + str(e))
+                    raise e
                 
                 if not mobile and 'admin' in user['roles'] :
                     out += "<h4><b>Accounts</b>:</h4>"
