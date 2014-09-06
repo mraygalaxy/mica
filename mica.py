@@ -974,7 +974,7 @@ class MICA(object):
                 navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='glyphicon glyphicon-user'></i>&nbsp;<b class='caret'></b>
+                                 <i class='glyphicon glyphicon-user'></i>&nbsp;Account&nbsp;<b class='caret'></b>
                                  </a>
                                  <ul class='dropdown-menu'>
                                 """
