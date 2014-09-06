@@ -321,7 +321,7 @@ function make_child(node) {
 	    var count = 1;
 	    if("getAttribute" in testObj) {
 		    while(testObj.getAttribute('id') != parentName && testObj.getAttribute('id') != stopName) {
-	//	        alert('My id  is ' + testObj.getAttribute('id') + '. Let\'s try moving up one level to see what we get.');
+//		        alert('My id  is ' + testObj.getAttribute('id') + '. Let\'s try moving up one level to see what we get.');
 			testObj = testObj.parentNode;
 			count++;
 		    }
@@ -329,7 +329,7 @@ function make_child(node) {
 		return false;
 	    }
 	    // now you have the object you are looking for - do something with it
-//	    alert('Finally found ' + testObj.getAttribute('id') + ' after going up ' + count + ' level(s) through the DOM tree');
+//	    alert('Finally found **' + testObj.getAttribute('id') + ' after going up ' + count + ' level(s) through the DOM tree');
 	    return (testObj.getAttribute('id') == stopName) ? false : true;
   }
 
