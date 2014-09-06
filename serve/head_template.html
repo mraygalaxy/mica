@@ -275,13 +275,13 @@ BOOTBODY
         }
       });
       /* Allow the popover to close when clicking somewhere else on the screen */
-    Connectdata = connectpop.data('popover');
+    //Connectdata = connectpop.data('popover');
 
-    if(Connectdata != undefined) {
+   // if(Connectdata != undefined) {
        ConnectclickedAway = true;
        ConnectisVisible = true;
-       connectpop.data('popover').tip().css('z-index', 1030);
-    }
+     //  connectpop.data('popover').tip().css('z-index', 1030);
+   // }
 
       connectpop.click(function(e) {
             $(this).popover('toggle');
@@ -291,10 +291,15 @@ BOOTBODY
         });
 
     $(document).click(function(e) {
-          if(findParentNode('ConnectContents', e.srcElement, 'cbody') == true) {
+	  if (typeof WL == 'undefined') {
+              var src = e.target;
+	  } else {
+	      var src = e.srcElement;
+          }
+          if(findParentNode('ConnectContents', src, 'cbody') == true) {
             return;
           }
-          if(findParentNode('connectpopover', e.srcElement, 'cbody') == true) {
+          if(findParentNode('connectpopover', src, 'cbody') == true) {
             return;
             }
 

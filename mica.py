@@ -1046,11 +1046,11 @@ class MICA(object):
         if not nodecode :
             for idx in range(0, len(self.replacement_keys)) :
                 x = replacements[idx]
-                if isinstance(x, float) :
+                if isinstance(x, float) or isinstance(x, int) :
                     x = str(x)
                 y = self.replacement_keys[idx]
                 if (not isinstance(x, str) and not isinstance(x, unicode)) or (not isinstance(y, str) and not isinstance(y, unicode)) :
-                    mdebug("Skipping replacment combinations: x " + str(x) + " y " + str(y))
+                    mdebug("Skipping replacment combinations: x " + str(x) + " y " + str(y) + " " + str(type(x)) + " " + str(type(y)))
                     continue
                 contents = contents.replace(y, x)
     
