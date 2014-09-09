@@ -40,6 +40,18 @@ romanization = {
         "en" : False,
         }
 
+processors = {
+        "zh-CHS" : # make a  
+        "en" : # make a class 
+
+        # Plan: Make a class for each language "processor" with a interface and implementation
+        # remove the HTTP display elements from the chinese code and move the chinese code into
+        # a processor that implements the parent class processor interface 
+
+bootlangs = ""
+for l, readable in lang.iteritems() :
+    bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
+
 from common import *
 
 import couch_adapter
@@ -660,6 +672,7 @@ class MICA(object):
                                     "BOOTPUSH",
                                     "BOOTZOOM",
                                     "BOOTADDRESSHOLD",
+                                    "BOOTLANGUAGES",
                                 ]
 
         self.views_ready = {}
@@ -1055,6 +1068,7 @@ class MICA(object):
                          req.db.push_percent() if req.db else "",
                          zoom_level,
                          address,
+                         bootlangs,
                       ]
     
         if not nodecode :
@@ -2882,7 +2896,7 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype, removespaces) :
+    def add_story_from_source(self, req, filename, source, filetype, removespaces, language) :
         if req.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
@@ -2902,6 +2916,7 @@ class MICA(object):
             'translated' : False,
             'name' : filename,
             'filetype' : filetype,
+            'language' : language,
         }
         
         if filetype == "pdf" :
@@ -3238,14 +3253,16 @@ class MICA(object):
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
+                language = req.http.params.get("language")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces, language)
 
             if req.http.params.get("uploadtext") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                return self.add_story_from_source(req, filename, source, "txt", removespaces)
+                language = req.http.params.get("language")
+                return self.add_story_from_source(req, filename, source, "txt", removespaces, language)
 
             start_page = "0"
             view_mode = "text"
