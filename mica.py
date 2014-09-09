@@ -849,6 +849,10 @@ class MICA(object):
             resp = "<h4>Exception:</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
+            resp += "<h2>You have been logged out.</h2>"
+            if "connected" in req.session.value and req.session.value["connected"] :
+                req.session.value["connected"] = False
+                req.session.save()
 
         return resp
             
@@ -3480,7 +3484,10 @@ class MICA(object):
                 if not tmp_story :
                     name = req.db[self.index(req, uuid)]["value"]
                     tmp_story = req.db[self.story(req, name)]
-
+                    if not tmp_story :
+                        self.clear_story(req)
+                        return self.bootstrap(req, self.heromsg + "\n<h4>This story (" + str(name) + ") is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                        
                 if "current_page" in tmp_story :
                     start_page = tmp_story["current_page"]
                     mdebug("Loading start page: " + str(start_page))
@@ -3976,6 +3983,11 @@ class MICA(object):
             try :
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
+
+                resp += "<br/><h2>You have been logged out.</h2>"
+                if "connected" in req.session.value and req.session.value["connected"] :
+                    req.session.value["connected"] = False
+                    req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: Something bad happened: " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :
