@@ -30,6 +30,16 @@ import socket
 import Queue
 import pdb
 
+lang = {
+         "zh-CHS" : "Chinese Simplified",
+         "en" : "English",
+       }
+
+romanization = {
+        "zh-CHS" : True,
+        "en" : False,
+        }
+
 from common import *
 
 import couch_adapter
@@ -1637,6 +1647,8 @@ class MICA(object):
 
     def parse(self, req, uuid, name, story, username, page = False) :
         mdebug("Ready to translate: " + name + ". Counting pages...")
+
+        assert("language" in story)
     
         page_inputs = 0
         if "filetype" not in story or story["filetype"] == "txt" :
@@ -3251,6 +3263,14 @@ class MICA(object):
                 if name and name_found :
                     story = req.db[self.story(req, name)]
 
+                    # Language support came later, so assume all old stories
+                    # are in Chinese
+
+                    if "language" not in story :
+                        mdebug("Language is missing. Setting default to Chinese")
+                        story["language"] = "zh-CHS"
+                        req.db[self.story(req, name)] = story
+
             if req.http.params.get("delete") :
                 story_found = False if not name else req.db.doc_exist(self.story(req, name))
                 if name and not story_found :
@@ -3631,6 +3651,7 @@ class MICA(object):
                     # Reload just in case the translation changed anything
                     name = req.db[self.index(req, uuid)]["value"]
                     story = req.db[self.story(req, name)]
+
                     if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
                         mdebug("Request for page: " + str(page))
