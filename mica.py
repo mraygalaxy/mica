@@ -3027,7 +3027,7 @@ class MICA(object):
                 return self.bootstrap(req, output, pretend_disconnected = True)
             elif req.http.params.get("connect") :
                 if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "To login for the first time and being synchronization with the website, you must activate internet access.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "To login for the first time and begin synchronization with the website, you must activate internet access.</h4></div>")
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
                 address = req.http.params.get('address')
