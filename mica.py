@@ -3110,6 +3110,8 @@ class MICA(object):
                 self.clear_story(req)
 
                 req.session.value["last_refresh"] = str(timest())
+                req.session.save()
+
                 user = req.db[self.acct(username)]
                 if not user :
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, this account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
@@ -3503,6 +3505,7 @@ class MICA(object):
                     tmp_story = req.db[self.story(req, name)]
                     if not tmp_story :
                         self.clear_story(req)
+                        mwarn("Could not lookup: " + self.story(req, name))
                         return self.bootstrap(req, self.heromsg + "\n<h4>This story (" + str(name) + ") is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
                         
                 if "current_page" in tmp_story :
