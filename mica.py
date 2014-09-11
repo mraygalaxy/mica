@@ -55,6 +55,26 @@ import twisted
 
 from webob import Request, Response, exc
 
+# This is a "test" app id and secret, but for logging in
+# I don't think you really need the secret.
+
+FACEBOOK_APP_ID = "707083416036402"
+FACEBOOK_APP_SECRET = "super_secret"
+
+# a test account for our mica application has been created - copy the credentials into the options dictionary
+
+# example of how to login with facebook:
+
+#https://www.facebook.com/dialog/oauth?client_id=707083416036402&offline_access&redirect_uri=https://www.facebook.com/connect/login_success.html
+
+# change the above html page to a MICA page.
+# The get request to us will contain an access token, which we can parse
+# to use in the "facebook.py" module.
+# use that module to lookup the user's information
+# and then we can create the local account based on that information
+
+# more instructions here:
+# https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow/v2.1
 
 try :
     from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
