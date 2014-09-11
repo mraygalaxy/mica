@@ -76,6 +76,10 @@ FACEBOOK_APP_SECRET = "super_secret"
 # more instructions here:
 # https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow/v2.1
 
+# after that, try google and some of the chinese social networks listed here:
+# https://www.drupal.org/project/csna
+# https://www.drupal.org/node/1355762
+
 try :
     from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
     from pdfminer.converter import PDFPageAggregator
