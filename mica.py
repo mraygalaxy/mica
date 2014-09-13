@@ -8,6 +8,19 @@ from threading import Thread, Lock, current_thread
 from copy import deepcopy
 from cStringIO import StringIO
 
+'''
+def tracefunc(frame, event, arg, indent=[0]):
+    if event == "call":
+        indent[0] += 2
+        mdebug("-" * indent[0] + "> call function: " + frame.f_code.co_name)
+    elif event == "return":
+        mdebug("<" + "-" * indent[0] + " exit function: " + frame.f_code.co_name)
+        indent[0] -= 2
+
+    return tracefunc
+#sys.settrace(tracefunc)
+'''
+
 import traceback
 import os
 import re
@@ -28,7 +41,6 @@ import __builtin__
 import sys
 import socket
 import Queue
-import pdb
 
 lang = {
          "zh-CHS" : "Chinese Simplified",
@@ -40,19 +52,17 @@ romanization = {
         "en" : False,
         }
 
-processors = {
-        "zh-CHS" : # make a  
-        "en" : # make a class 
-
-        # Plan: Make a class for each language "processor" with a interface and implementation
-        # remove the HTTP display elements from the chinese code and move the chinese code into
-        # a processor that implements the parent class processor interface 
+processor_map = {
+        "zh-CHS" : "ChineseSimplified", 
+        "en" : "English", 
+}
 
 bootlangs = ""
 for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
 from common import *
+from processors import get_cjk_handle
 
 import couch_adapter
 
@@ -77,7 +87,6 @@ import twisted
 
 from webob import Request, Response, exc
 
-
 try :
     from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
     from pdfminer.converter import PDFPageAggregator
@@ -85,12 +94,6 @@ try :
     from pdfminer.pdfpage import PDFPage
 except ImportError, e :
     mdebug("Could not import pdfminer. Full translation will not work.")
-    pass
-
-try :
-    import mica_ictclas
-except ImportError, e :
-    mdebug("Could not import ICTCLAS library. Full translation will not work.")
     pass
 
 mobile = True 
@@ -713,7 +716,7 @@ class MICA(object):
             mwarn("Database not available yet: " + str(e))
 
         mdebug("INIT Testing cjk thread")
-        ct = threading.Thread(target=self.get_cjk_handle, kwargs = {"test" : True})
+        ct = threading.Thread(target=self.test_cjk)
         ct.daemon = True
         ct.start()
 
@@ -1341,7 +1344,9 @@ class MICA(object):
                 break
         return all
 
-    def recursive_translate(self, req, uuid, name, story, cjk, d, uni, temp_units, page, tone_keys) :
+    def recursive_translate(self, req, story, cjk, d, uni, temp_units, page, tone_keys) :
+        uuid = story['uuid']
+        name = story['name']
         units = []
         
         mdebug("Requested: " + uni)
@@ -1364,7 +1369,7 @@ class MICA(object):
             elif len(trans) == 0 :
                 if len(uni) > 1 :
                     for char in uni :
-                        self.recursive_translate(req, uuid, name, story, cjk, d, char, temp_units, page, tone_keys)
+                        self.recursive_translate(req, story, cjk, d, char, temp_units, page, tone_keys)
             elif len(trans) > 1 :
                             
                 for x in range(0, len(trans)) :
@@ -1499,24 +1504,24 @@ class MICA(object):
             rq.put(None)
             rq.task_done()
 
-    def get_cjk_handle(self, test = False) :
-        if test :
-            for fn in ["cedict.db", "cjklib.db"] :
-                mdebug("Searching for instances of " + fn)
-                for f in os.walk(cwd) :
-                     if ("" + str(f)).count(fn) :
-                         if f[0][-1] != "/" :
-                             fnd = f[0] + "/" + fn 
-                         else :
-                             fnd = f[0] + fn 
-                         mdebug("Found: " + fnd)
-                         mdebug("Size: " + str(os.path.getsize(fnd)))
-                         if fnd != params["cedict"] and fnd != params["cjklib"] :
-                             mwarn("This file should not be here. Blowing away...")
-                             os.unlink(fnd)
-            mdebug("Moving on with test.")
+    def test_cjk(self) :
+        for fn in ["cedict.db", "cjklib.db"] :
+            mdebug("Searching for instances of " + fn)
+            for f in os.walk(cwd) :
+                 if ("" + str(f)).count(fn) :
+                     if f[0][-1] != "/" :
+                         fnd = f[0] + "/" + fn 
+                     else :
+                         fnd = f[0] + fn 
+                     mdebug("Found: " + fnd)
+                     mdebug("Size: " + str(os.path.getsize(fnd)))
+                     if fnd != params["cedict"] and fnd != params["cjklib"] :
+                         mwarn("This file should not be here. Blowing away...")
+                         os.unlink(fnd)
 
-        if test and mobile :
+        mdebug("Moving on with test.")
+
+        if mobile :
             while True :
                 if not os.path.isfile(params["cedict"]) or not os.path.isfile(params["cjklib"]):
                     mdebug("One of " + params["cedict"] + " or " + params["cjklib"] + " is missing. Exporting...")
@@ -1541,50 +1546,23 @@ class MICA(object):
         assert(cjksize != 0)
         assert(cesize != 0)
 
-        def tracefunc(frame, event, arg, indent=[0]):
-            if event == "call":
-                indent[0] += 2
-                mdebug("-" * indent[0] + "> call function: " + frame.f_code.co_name)
-            elif event == "return":
-                mdebug("<" + "-" * indent[0] + " exit function: " + frame.f_code.co_name)
-                indent[0] -= 2
+        cjk, d = get_cjk_handle(params["cjklib"], params["cedict"])
 
-            return tracefunc
+        for x in d.getFor(u'白鹭'.decode('utf-8')) :
+            mdebug(str(x))
+        for x in cjk.getReadingForCharacter(u'白','Pinyin') :
+            mdebug(str(x))
 
-        #sys.settrace(tracefunc)
-        cjk = None
-        d = None
-        try :
-            from cjklib.dictionary import CEDICT
-            from cjklib.characterlookup import CharacterLookup
-            from cjklib.dbconnector import getDBConnector
-            mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
-            cjkurl = 'sqlite:///' + params['cjklib']
-            cedicturl = 'sqlite:///' + params['cedict']
-            cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
-            mdebug("MICA cjklib success!")
-            # CEDICT must use a connector, just a url which includes both dictionaries.
-            # CEDICT internally references pinyin syllables from the main dictionary or crash.
-            d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
-            if test :
-                for x in d.getFor(u'白鹭'.decode('utf-8')) :
-                    mdebug(str(x))
-                for x in cjk.getReadingForCharacter(u'白','Pinyin') :
-                    mdebug(str(x))
-                cjk.db.connection.close()
-                d.db.connection.close()
-            mdebug("MICA cedict success!")
-        except Exception, e :
-            merr("MICA offline open failed: " + str(e))
-        
-        if mobile and test :
+        cjk.db.connection.close()
+        d.db.connection.close()
+
+        if mobile :
             # We are in a thread, but because of this bug, we cannot exit by ourselves:
             # https://github.com/kivy/pyjnius/issues/107
+            # So, we have to run forever
             while True :
                 mdebug("CJK test infinite sleep.")
                 sleep(100000)
-
-        return (cjk, d)
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -1601,72 +1579,29 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    def parse_page(self, req, uuid, name, story, groups, page, temp_units = False, handle = False) :
-        if not handle :
-            (cjk, d) = self.get_cjk_handle()
-        else :
-            (cjk, d) = handle
-
-        if temp_units :
-            story["temp_units"] = []
-        else :
-            if "pages" not in story :
-                story['pages'] = {}
-            story["pages"][page] = {}
-            story["pages"][page]["units"] = []
-
-        unigroups = []
-        unikeys = []
-
-        for idx in range(0, len(groups)) :
-            group = groups[idx]
-            assert(isinstance(group, str))
-
+    def progress(self, req, story, progress_idx, grouplen) :
+        if progress_idx % 10 == 0 :
+            self.transmutex.acquire()
             try :
-                uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
-            except UnicodeDecodeError, e :
-                pdb.set_trace()
-                self.store_error(req, name, "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
-                if not handle :
-                    mdebug("Closing CJK 6")
-                    cjk.db.connection.close()
-                    d.db.connection.close()
-                raise e
+                tmpstory = req.db[self.story(req, story['name'])]
+                tmpstory["translating_current"] = progress_idx 
+                tmpstory["translating_page"] = int(page)
+                tmpstory["translating_total"] = grouplen 
+                req.db[self.story(req, story['name'])] = tmpstory
+            except couch_adapter.ResourceConflict, e :
+                mdebug("Failure to sync translating_current. No big deal: " + str(e))
+            finally :
+                self.transmutex.release()
 
-            if not self.all_punct(uni) :
-                for unichar in uni :
-                    if unichar not in unikeys :
-                        unikeys.append(unichar)
-            unigroups.append(uni)
-
-        tone_keys = self.view_keys(req, "tonechanges", False, source_queries = unikeys) 
-        mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
-
-        for idx in range(0, len(unigroups)) :
-            self.recursive_translate(req, uuid, name, story, cjk, d, unigroups[idx], temp_units, page, tone_keys)
-
-            if idx % 10 == 0 :
-                self.transmutex.acquire()
-                try :
-                    tmpstory = req.db[self.story(req, name)]
-                    tmpstory["translating_current"] = idx 
-                    tmpstory["translating_page"] = int(page)
-                    tmpstory["translating_total"] = len(groups)
-                    req.db[self.story(req, name)] = tmpstory
-                except couch_adapter.ResourceConflict, e :
-                    mdebug("Failure to sync translating_current. No big deal: " + str(e))
-                finally :
-                    self.transmutex.release()
-
-        if not handle :
-            mdebug("Closing CJK 7")
-            cjk.db.connection.close()
-            d.db.connection.close()
-
-    def parse(self, req, uuid, name, story, username, page = False) :
+    def parse(self, req, story, page = False) :
+        name = story['name']
         mdebug("Ready to translate: " + name + ". Counting pages...")
 
         assert("language" in story)
+
+        Processor = getattr(processors, processor_map[story["language"]])
+
+        processor = Processor()
     
         page_inputs = 0
         if "filetype" not in story or story["filetype"] == "txt" :
@@ -1705,8 +1640,7 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
-        handle = self.get_cjk_handle()
-        (cjk, d) = handle
+        opaque = processor.parse_page_start() 
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -1725,16 +1659,14 @@ class MICA(object):
                 page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
             mdebug("Parsing...")
-            try :
-                parsed = mica_ictclas.trans(page_input.encode("utf-8"))
-            except mica_ictclas.error, e :
-                mdebug("Closing CJK 8")
-                cjk.db.connection.close()
-                d.db.connection.close()
-                raise e
+
+            parsed = processor.pre_parse_page(page_input)
+
             mdebug("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
+
             lines = parsed.split("\n")
             groups = []
+
             for line in lines :
                 temp_groups = []
                 save_char_group = "" 
@@ -1766,7 +1698,7 @@ class MICA(object):
                 self.transmutex.release()
 
             try :
-                self.parse_page(req, uuid, name, story, groups, str(iidx), handle = handle)
+                self.parse_page(opaque, req, story, groups, str(iidx), self.progress, self.store_error)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -1787,16 +1719,12 @@ class MICA(object):
                 tmpstory["translating"] = False 
                 req.db[self.story(req, name)] = tmpstory
                 self.store_error(req, name, msg)
-                mdebug("Closing CJK 2")
-                cjk.db.connection.close()
-                d.db.connection.close()
+                processor.parse_page_stop(opaque)
                 raise e
 
         self.transmutex.acquire()
         try :
             tmpstory = req.db[self.story(req, name)]
-            # What is this for?
-            #storydb["stories"][name] = story
             tmpstory["translating"] = False 
             tmpstory["translated"] = True 
             req.db[self.story(req, name)] = tmpstory
@@ -1817,9 +1745,7 @@ class MICA(object):
             self.transmutex.release()
 
         minfo("Translation complete.")
-        mdebug("Closing CJK 5")
-        cjk.db.connection.close()
-        d.db.connection.close()
+        processor.parse_page_stop(opaque)
 
     def get_parts(self, unit) :
         py = ""
@@ -2820,7 +2746,7 @@ class MICA(object):
             for char in curr["source"] :
                 groups.append(char.encode("utf-8"))
 
-            self.parse_page(req, story['uuid'], story['name'], story, groups, page, temp_units = True)
+            self.parse_page(False, req, story, groups, page, temp_units = True)
             page_dict["units"] = before + story["temp_units"] + after
             req.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
             offset += (len(story["temp_units"]) - len(curr))
@@ -2847,7 +2773,7 @@ class MICA(object):
                 for char in chargroup["source"] :
                     group += char.encode("utf-8")
 
-            self.parse_page(req, story["uuid"], story["name"], story, [group], page, temp_units = True)
+            self.parse_page(False, req, story, [group], page, temp_units = True)
 
             if len(story["temp_units"]) == 1 :
                 merged = story["temp_units"][0]
@@ -3455,7 +3381,8 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, d) = self.get_cjk_handle()
+                    (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"])
+
                     eng = self.get_first_translation(d, source.decode("utf-8"), False)
                     if eng :
                         for english in eng :
@@ -3475,7 +3402,7 @@ class MICA(object):
                     output += "Story already translated. To re-translate, please select 'Forget'."
                 else :
                     try :
-                        self.parse(req, uuid, name, story, username)
+                        self.parse(req, story)
                         output += self.heromsg + "Translation complete!"
                     except Exception, e :
                         output += "Failed to translate story: " + str(e)
@@ -3671,7 +3598,7 @@ class MICA(object):
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
-                self.parse(req, uuid, name, story, username, page = page)
+                self.parse(req, story, page = page)
                 
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
