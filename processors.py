@@ -8,6 +8,27 @@ from common import *
 import pdb
 import string 
 
+'''
+All stories up to and including mica version 0.4.x only supported
+Chinese and were not generalized to support other languages. These
+stories are thus assumed to have a version of '1', i.e. the first
+version we started with.
+
+
+Version 2+ restructures the basic unit structure to support other
+languages.
+
+Version 1 => Version 2
+========================
+spinyin => sromanization
+tpinyin => tromanization
+multiple_english => multiple_target
+english => target
+
+'''
+
+story_version = 2
+
 try :
     import mica_ictclas
 except ImportError, e :
@@ -113,26 +134,51 @@ class Processor(object) :
 
     # This is where we stopped: We need to change the database structure here
     # This will require a database upgrade =(
-    def add_unit(self, trans, uni_source, eng, online = False, punctuation = False) :
+    def add_unit(self, trans, uni_source, target, online = False, punctuation = False) :
         unit = {}
-        unit["spinyin"] = trans
+
+        unit["sromanization"] = trans
         unit["source"] = []
-        unit["multiple_spinyin"] = []
-        unit["multiple_english"] = []
+        unit["multiple_sromanization"] = []
+        unit["multiple_target"] = []
         unit["multiple_correct"] = -1
+
         for char in uni_source : 
             unit["source"].append(char)
         if trans == u'' :
             unit["trans"] = False
-            unit["english"] = []
+            unit["target"] = []
         else :
             unit["trans"] = True 
-            unit["english"] = eng
+            unit["target"] = target 
 
         unit["online"] = online
         unit["punctuation"] = punctuation
         return unit
 
+    def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, target, source, pinyin) :
+
+      unit = {}
+      unit["multiple_sromanization"] = []
+      unit["multiple_target"] = []
+      unit["multiple_correct"] = -1
+
+      if trans_idx > current_trans_idx :
+          unit["trans"] = groups[current_trans_idx:trans_idx]
+          unit["tromanization"] = reversep[current_trans_idx:trans_idx]
+          t = []
+          for group in unit["trans"] :
+              t.append(target[group[0]])
+          unit["target"] = t 
+      else :
+          unit["trans"] = False
+          unit["target"] = [""]
+
+      if source_idx > current_source_idx :
+          unit["source"] = source[current_source_idx:source_idx]
+          unit["sromanization"] = pinyin[current_source_idx:source_idx]
+
+      return unit
 
 def get_cjk_handle(cjklib_path, cedict_path) :
     cjk = None
@@ -242,8 +288,8 @@ class ChineseSimplified(Processor) :
                             if not eng :
                                 continue
                             for e in eng :
-                                unit["multiple_spinyin"].append([x])
-                                unit["multiple_english"].append([e])
+                                unit["multiple_sromanization"].append([x])
+                                unit["multiple_target"].append([e])
                         
                         if unit["multiple_correct"] == -1 :
                             source = "".join(unit["source"])
@@ -259,7 +305,7 @@ class ChineseSimplified(Processor) :
                             if changes :
                                 total_changes = float(changes["total"])
 
-                                for idx in range(0, len(unit["multiple_spinyin"])) :
+                                for idx in range(0, len(unit["multiple_sromanization"])) :
                                     percent = self.get_polyphome_percentage(idx, total_changes, changes, unit) 
                                     if percent :
                                         if highest_percentage == -1.0 :
@@ -276,8 +322,8 @@ class ChineseSimplified(Processor) :
                                 longest = -1
                                 longest_length = -1
                                 
-                                for idx in range(0, len(unit["multiple_spinyin"])) :
-                                    comb_eng = " ".join(unit["multiple_english"][idx])
+                                for idx in range(0, len(unit["multiple_sromanization"])) :
+                                    comb_eng = " ".join(unit["multiple_target"][idx])
                                     
                                     if not comb_eng.count("surname") and not comb_eng.count("variant of") :
                                         if longest_length == -1 :
@@ -291,16 +337,16 @@ class ChineseSimplified(Processor) :
                                 mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
 
                             if selector != -1 :
-                                unit["spinyin"] = unit["multiple_spinyin"][selector]
-                                unit["english"] = unit["multiple_english"][selector]
+                                unit["sromanization"] = unit["multiple_sromanization"][selector]
+                                unit["target"] = unit["multiple_target"][selector]
                                 unit["multiple_correct"] = selector 
 
                         units.append(unit)
                     else :
                         for unit in online_units :
                            if len(unit["match_pinyin"]) :
-                               unit["spinyin"] = unit["match_pinyin"]
-                           if len(unit["spinyin"]) == 1 and unit["spinyin"][0] == u'' :
+                               unit["sromanization"] = unit["match_pinyin"]
+                           if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
                                continue
                            units.append(unit)
                 else :
@@ -308,11 +354,11 @@ class ChineseSimplified(Processor) :
                     units.append(self.add_unit(readings[0].split(" "), uni, [eng[0]]))
         
         for unit in units :
-            if len(unit["spinyin"]) == 1 and unit["spinyin"][0] == u'' :
+            if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
                continue
 
             self.rehash_correct_polyphome(unit)
-            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["spinyin"]) + ":" + " ".join(unit["english"])).replace("\n",""))
+            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
