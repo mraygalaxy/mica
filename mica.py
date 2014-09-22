@@ -494,29 +494,6 @@ class Params(object) :
 
         minfo("Request: " + self.unparsed_uri + " action: " + self.action)
 
-def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin, match_pinyin) :
-  unit = {}
-
-  if trans_idx > current_trans_idx :
-          unit["trans"] = groups[current_trans_idx:trans_idx]
-          unit["tpinyin"] = reversep[current_trans_idx:trans_idx]
-          english = []
-          for group in unit["trans"] :
-              english.append(eng[group[0]])
-          unit["english"] = english
-  else :
-          unit["trans"] = False
-          unit["english"] = [""]
-
-  if source_idx > current_source_idx :
-          unit["source"] = source[current_source_idx:source_idx]
-          unit["spinyin"] = pinyin[current_source_idx:source_idx]
-
-  unit["match_pinyin"] = match_pinyin
-  unit["multiple_spinyin"] = []
-  unit["multiple_english"] = []
-  unit["multiple_correct"] = -1
-  return unit
 
 spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
@@ -1082,19 +1059,19 @@ class MICA(object):
 
         mdebug(msg.replace("\n",""))
 
-        minfo("translating chinese to english....")
+        minfo("translating source to target....")
         result = self.translate_and_check_array(req, name, [all_source], u"en", u"zh-CHS")
-        mdebug("english translation finished." + str(result))
+        mdebug("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
             return []
         
         msenglish = result[0]["TranslatedText"]
 
-        mdebug("english is: " + str(msenglish))
+        mdebug("target is: " + str(msenglish))
         msenglish = msenglish.split(" ")
 
-        mdebug("Translating english pieces back to chinese")
+        mdebug("Translating target pieces back to source")
         result = self.translate_and_check_array(req, name, msenglish, u"zh-CHS", u"en")
         mdebug("Translation finished. Writing in json.")
 
@@ -1140,11 +1117,17 @@ class MICA(object):
           
           if source_idx > current_source_idx :
               # only append if there's something in the source
-              units.append(make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin, [])) 
+              new_unit = self.make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin)
+              new_unit["match_pinyin"] = []
+              units.append(new_unit) 
+
           current_source_idx = source_idx
           current_trans_idx = trans_idx
 
-          units.append(make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, eng, source, pinyin, [match_pinyin]))
+          new_unit = self.make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, eng, source, pinyin) 
+          new_unit["match_pinyin"] = [match_pinyin]
+
+          units.append(new_unit)
 
           current_source_idx += 1
           current_trans_idx += 1
@@ -1161,11 +1144,11 @@ class MICA(object):
                     new_unit = copy.deepcopy(units[idx])
                     if new_unit["trans"] :
                         new_english = []
-                        for word in new_unit["english"] :
+                        for word in new_unit["target"] :
                            word = strip_punct(word)
                            if not len(new_english) or strip_punct(new_english[-1]) != word :
                                new_english.append(word)
-                        new_unit["english"] = new_english
+                        new_unit["target"] = new_english
     
                     all_punctuation = True
                     for char in new_unit["source"] :
@@ -1175,7 +1158,7 @@ class MICA(object):
     
                     if all_punctuation :
                         new_unit["trans"] = False
-                        new_unit["english"] = ""
+                        new_unit["target"] = ""
                     else :
                         append_units = []
                         for fidx in range(idx + 1, min(idx + 2, len(units))) :
@@ -1183,14 +1166,14 @@ class MICA(object):
                             if not unit["trans"] :
                                continue
                             all_equal = True
-                            for worda in new_unit["english"] :
-                                for wordb in unit["english"] :
+                            for worda in new_unit["target"] :
+                                for wordb in unit["target"] :
                                     if strip_punct(worda) != strip_punct(wordb) :
                                         all_equal = False
                                         break
     
                             if not all_equal :
-                                if strip_punct(unit["english"][0]) == strip_punct(new_unit["english"][-1]) :
+                                if strip_punct(unit["target"][0]) == strip_punct(new_unit["target"][-1]) :
                                     all_equal = True
     
                             if all_equal :
@@ -1203,23 +1186,23 @@ class MICA(object):
                         for unit in append_units :
                             for char in unit["source"] :
                                 new_unit["source"].append(char)
-                            for pinyin in unit["spinyin"] :
-                                new_unit["spinyin"].append(pinyin)
+                            for pinyin in unit["sromanization"] :
+                                new_unit["sromanization"].append(pinyin)
                             for pair in unit["trans"] :
                                 if new_unit["trans"] :
                                     new_unit["trans"].append(pair)
                                 else :
                                     new_unit["trans"] = [pair]
-                            for pinyin in unit["tpinyin"] :
-                                if "tpinyin" in new_unit :
-                                    new_unit["tpinyin"].append(pinyin)
+                            for pinyin in unit["tromanization"] :
+                                if "tromanization" in new_unit :
+                                    new_unit["tromanization"].append(pinyin)
                                 else :
-                                    new_unit["tpinyin"] = [pinyin]
+                                    new_unit["tromanization"] = [pinyin]
                             if unit["trans"] :
-                                for word in unit["english"] :
+                                for word in unit["target"] :
                                     word = strip_punct(word)
-                                    if not len(new_unit["english"]) or strip_punct(new_unit["english"][-1]) != word :
-                                        new_unit["english"].append(word)
+                                    if not len(new_unit["target"]) or strip_punct(new_unit["target"][-1]) != word :
+                                        new_unit["target"].append(word)
                     new_units.append(new_unit)
                     idx += 1
                 units = new_units
@@ -1234,7 +1217,7 @@ class MICA(object):
                         break
                 #for char in unit["source"] :
                 #    msg += " " + char
-                for pinyin in unit["spinyin"] :
+                for pinyin in unit["sromanization"] :
                     if all_punctuation :
                         msg += pinyin
                     else :
@@ -1243,9 +1226,9 @@ class MICA(object):
                     msg += "("
                     #for pair in unit["trans"] :
                     #    msg += " " + pair[1]
-                    #for pinyin in unit["tpinyin"] :
+                    #for pinyin in unit["tromanization"] :
                     #    msg += " " + pinyin 
-                    for word in unit["english"] :
+                    for word in unit["target"] :
                         msg += word  + " "
                     msg += ") "
         except Exception, e :
@@ -1559,8 +1542,8 @@ class MICA(object):
         py = ""
         english = ""
         if unit["multiple_correct"] == -1 :
-            for widx in range(0, len(unit["spinyin"])) :
-                word = unit["spinyin"][widx]
+            for widx in range(0, len(unit["sromanization"])) :
+                word = unit["sromanization"][widx]
                 if word == u'\n' or word == '\n':
                     py += word
                 elif py != "\n" and py not in punctuation_without_letters :
@@ -1570,14 +1553,14 @@ class MICA(object):
                 py = py.strip()
 
             if py == u'' :
-#                mdebug("Not useful: " + py + " and " + english + " len: " + str(len(unit["spinyin"])))
+#                mdebug("Not useful: " + py + " and " + english + " len: " + str(len(unit["sromanization"])))
                 return False
             if unit["trans"] :
-                english = " ".join(unit["english"])
+                english = " ".join(unit["target"])
         else :
             if unit["trans"] :
-                py = " ".join(unit["multiple_spinyin"][unit["multiple_correct"]])
-                english = " ".join(unit["multiple_english"][unit["multiple_correct"]])
+                py = " ".join(unit["multiple_sromanization"][unit["multiple_correct"]])
+                english = " ".join(unit["multiple_target"][unit["multiple_correct"]])
 
         return py, english
 
@@ -1605,12 +1588,12 @@ class MICA(object):
         if changes :
             total_changes = float(changes["total"])
 
-        for x in range(0, len(unit["multiple_spinyin"])) :
-             spy = " ".join(unit["multiple_spinyin"][x])
+        for x in range(0, len(unit["multiple_sromanization"])) :
+             spy = " ".join(unit["multiple_sromanization"][x])
              percent = self.get_polyphome_percentage(x, total_changes, changes, unit) 
 
              out += "<tr><td>" + spy + " (" + str(percent) + " %) </td>"
-             out += "<td>" + " ".join(unit["multiple_english"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
+             out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
              if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
                  out += "<td>Default</td>"
              else :
@@ -1698,7 +1681,7 @@ class MICA(object):
             record = changes["record"][unit["hash"]]
             if char not in found :
                 found[char] = True
-                history.append([char, str(changes["total"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid])
+                history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
                         
             tid += 1
         
@@ -1767,7 +1750,7 @@ class MICA(object):
                     if unit["hash"] not in changes["record"] :
                         continue
                     record = changes["record"][unit["hash"]]
-                    history.append([char, str(record["total_splits"]), " ".join(record["spinyin"]), " ".join(record["english"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
+                    history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
                 else: 
                     changes = False if char not in merge_keys else merge_keys[char]
                     
@@ -1787,7 +1770,7 @@ class MICA(object):
                         memberlist += "</table>\n"
                         if nb_singles == len(record["members"]) :
                             continue
-                        history.append([char, str(changes["total"]), " ".join(record["spinyin"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
+                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
                     else :
                         continue
 
@@ -2205,7 +2188,7 @@ class MICA(object):
                         add_count = ""
                         if action == "home" :
                             color = ""
-                            if py and len(unit["multiple_spinyin"]) :
+                            if py and len(unit["multiple_sromanization"]) :
                                 color = "green"
 
                             changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
@@ -2215,10 +2198,10 @@ class MICA(object):
                                     color = "black"
                                     add_count = " (" + str(int(changes["total"])) + ")"
 
-                            if color != "black" and py and len(unit["multiple_spinyin"]) :
-                                fpy = " ".join(unit["multiple_spinyin"][0])
-                                for ux in range(1, len(unit["multiple_spinyin"])) :
-                                     upy = " ".join(unit["multiple_spinyin"][ux])
+                            if color != "black" and py and len(unit["multiple_sromanization"]) :
+                                fpy = " ".join(unit["multiple_sromanization"][0])
+                                for ux in range(1, len(unit["multiple_sromanization"])) :
+                                     upy = " ".join(unit["multiple_sromanization"][ux])
                                      if upy != fpy :
                                          color = "red"
                                          break
@@ -2230,7 +2213,7 @@ class MICA(object):
 
                         line_out += " id='ttip" + trans_id + "'"
 
-                        if action in ["read","edit"] or not(len(unit["multiple_spinyin"])) :
+                        if action in ["read","edit"] or not(len(unit["multiple_sromanization"])) :
                             line_out += " onclick=\"toggle('" + tid + "', "
                             line_out += ("0" if action == "read" else "1") + ")\""
 
@@ -2248,7 +2231,7 @@ class MICA(object):
                 if not disk :
                     line_out += "<br/>"
 
-                    if action == "home" and py and len(unit["multiple_spinyin"]) :
+                    if action == "home" and py and len(unit["multiple_sromanization"]) :
                         line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
                         line_out += self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
                         line_out += "</div>"
@@ -2525,8 +2508,8 @@ class MICA(object):
             hcode_contents = changes["record"][hcode]
 
         hcode_contents["total_" + key] += 1
-        hcode_contents["spinyin"] = unit["multiple_spinyin"][mindex] if mindex != -1 else unit["spinyin"]
-        hcode_contents["english"] = unit["multiple_english"][mindex] if mindex != -1 else unit["english"]
+        hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
+        hcode_contents["target"] = unit["multiple_target"][mindex] if mindex != -1 else unit["target"]
 
         changes["record"][hcode] = hcode_contents
 
@@ -2602,14 +2585,14 @@ class MICA(object):
 
                     if hcode not in changes["record"] :
                         hcode_contents = {}
-                        hcode_contents["spinyin"] = unit["multiple_spinyin"][mindex] if mindex != -1 else unit["spinyin"]
-                        hcode_contents["english"] = unit["multiple_english"][mindex] if mindex != -1 else unit["english"]
+                        hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
+                        hcode_contents["target"] = unit["multiple_target"][mindex] if mindex != -1 else unit["target"]
                         hcode_contents["members"] = {}
                     else :
                         hcode_contents = changes["record"][hcode]
     
                     if merged_chars not in hcode_contents["members"] :
-                        merged_pinyin = merged["multiple_spinyin"][merged["multiple_correct"]] if merged["multiple_correct"] != -1 else merged["spinyin"]
+                        merged_pinyin = merged["multiple_sromanization"][merged["multiple_correct"]] if merged["multiple_correct"] != -1 else merged["sromanization"]
                         hcode_contents["members"][merged_chars] = { "total_merges" : 0, "pinyin" : " ".join(merged_pinyin)}
 
                     hcode_contents["members"][merged_chars]["total_merges"] += 1
@@ -3165,22 +3148,22 @@ class MICA(object):
                         part = result[x]
                         if "TranslatedText" not in part :
                             mdebug("Why didn't we get anything: " + json.dumps(result))
-                            english = "No english translation available."
+                            target = "No translation available."
                         else :
-                            english = part["TranslatedText"].encode("utf-8")
+                            target = part["TranslatedText"].encode("utf-8")
                         
                         if x == 0 :
-                            p += "Selected translation (" + source + "): " + english + "<br/>\n"
-                            final["whole"] = (source, english)
+                            p += "Selected translation (" + source + "): " + target + "<br/>\n"
+                            final["whole"] = (source, target)
                         else :
                             char = breakout[x-1].encode("utf-8")
                             if "parts" not in final :
                                 p += "Piecemeal translation:<br/>\n"
                                 final["parts"] = []
                             p += "(" + char + "): "
-                            p += english
+                            p += target 
                             p += "<br/>\n"
-                            final["parts"].append((char, english))
+                            final["parts"].append((char, target))
                 else :
                     p += "No internet access. Offline only."
                        
