@@ -28,7 +28,6 @@ import shutil
 import urllib
 import urllib2
 import copy
-import warnings
 import codecs
 import uuid as uuid4
 import inspect
@@ -40,6 +39,7 @@ import __builtin__
 import sys
 import socket
 import Queue
+import string 
 
 lang = {
          u"zh-CHS" : u"Chinese Simplified",
@@ -66,7 +66,8 @@ for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
 from common import *
-from processors import get_cjk_handle, story_format
+from processors import * 
+from translator import *
 
 import couch_adapter
 
@@ -77,14 +78,7 @@ sys.path = [cwd, cwd + "mica/"] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
-Reading dependency tree...
-[31m[1mError: [22mCannot find package '/home/mrhines/mica-android/mica'
-    at /usr/local/lib/node_modules/kanso/lib/packages.js:509:21
-    at /usr/local/lib/node_modules/kanso/lib/packages.js:467:9
-    at /usr/local/lib/node_modules/kanso/node_modules/async/lib/async.js:105:25
-    at /usr/local/lib/node_modules/kanso/lib/packages.js:462:17
-    at Object.cb [as oncomplete] (fs.js:168:19)[39m
-[31m[1mFailed[22m[39m
+from twisted.python.components import registerAdapter
 from twisted.web.server import Session
 from twisted.web.wsgi import WSGIResource
 from twisted.internet import reactor
@@ -200,66 +194,6 @@ def itemhelp(pairs) :
     story["pr"] = str(pr)
     return pr
 
-bins = dir(__builtin__)
-
-cd = {}
-def get_pinyin(chars=u'你好', splitter=''):
-    result = []
-    for char in chars:
-        key = "%X" % ord(char)
-        try:
-            result.append(cd[key].split(" ")[0].strip().lower())
-        except:
-            result.append(char)
-
-    return splitter.join(result)
-
-pinyinToneMarks = {
-    u'a': u'āáǎà', u'e': u'ēéěè', u'i': u'īíǐì',
-    u'o': u'ōóǒò', u'u': u'ūúǔù', u'ü': u'ǖǘǚǜ',
-    u'A': u'ĀÁǍÀ', u'E': u'ĒÉĚÈ', u'I': u'ĪÍǏÌ',
-    u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
-}
-
-def convertPinyinCallback(m):
-    tone=int(m.group(3))%5
-    r=m.group(1).replace(u'v', u'ü').replace(u'V', u'Ü')
-    # for multple vowels, use first one if it is a/e/o, otherwise use second one
-    pos=0
-    if len(r)>1 and not r[0] in 'aeoAEO':
-        pos=1
-    if tone != 0:
-        r=r[0:pos]+pinyinToneMarks[r[pos]][tone-1]+r[pos+1:]
-    return r+m.group(2)
-
-def convertPinyin(s):
-    return re.compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=re.IGNORECASE).sub(convertPinyinCallback, s)
-
-def lcs(a, b):
-    lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
-    # row 0 and column 0 are initialized to 0 already
-    for i, x in enumerate(a):
-        for j, y in enumerate(b):
-            if x == y:
-                lengths[i+1][j+1] = lengths[i][j] + 1
-            else:
-                lengths[i+1][j+1] = \
-                    max(lengths[i+1][j], lengths[i][j+1])
-    # read the substring out from the matrix
-    result = [] 
-    x, y = len(a), len(b)
-    while x != 0 and y != 0:
-        if lengths[x][y] == lengths[x-1][y]:
-            x -= 1
-        elif lengths[x][y] == lengths[x][y-1]:
-            y -= 1
-        else:
-            assert a[x-1] == b[y-1]
-            result = [[a[x-1],x-1,y-1]] + result
-            x -= 1
-            y -= 1
-    return result
-
 mdebug("Setting up prefixes.")
 
 username = getpwuid(os.getuid())[0]
@@ -273,209 +207,6 @@ def prefix(uri) :
     if path is None :
         path = ""
     return (address, path)
-
-class ArgumentOutOfRangeException(Exception):
-    def __init__(self, message):
-        self.message = message.replace('ArgumentOutOfRangeException: ', '')
-        super(ArgumentOutOfRangeException, self).__init__(self.message)
-
-
-class TranslateApiException(Exception):
-    def __init__(self, message, *args):
-        self.message = message.replace('TranslateApiException: ', '')
-        super(TranslateApiException, self).__init__(self.message, *args)
-
-
-class Translator(object):
-    """Implements AJAX API for the Microsoft Translator service
-
-    :param app_id: A string containing the Bing AppID. (Deprecated)
-    """
-
-    def __init__(self, client_id, client_secret,
-            scope="http://api.microsofttranslator.com",
-            grant_type="client_credentials", app_id=None, debug=False):
-        """
-
-
-        :param client_id: The client ID that you specified when you registered
-                          your application with Azure DataMarket.
-        :param client_secret: The client secret value that you obtained when
-                              you registered your application with Azure
-                              DataMarket.
-        :param scope: Defaults to http://api.microsofttranslator.com
-        ;param grant_type: Defaults to "client_credentials"
-        :param app_id: Deprecated
-        :param debug: If true, the logging level will be set to debug
-
-        .. versionchanged: 0.4
-            Bing AppID mechanism is deprecated and is no longer supported.
-            See: http://msdn.microsoft.com/en-us/library/hh454950
-        """
-        if app_id is not None:
-            warnings.warn("""app_id is deprected since v0.4.
-            See: http://msdn.microsoft.com/en-us/library/hh454950
-            """, DeprecationWarning, stacklevel=2)
-
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.scope = scope
-        self.grant_type = grant_type
-        self.access_token = None
-
-    def get_access_token(self):
-        """Bing AppID mechanism is deprecated and is no longer supported.
-        As mentioned above, you must obtain an access token to use the
-        Microsoft Translator API. The access token is more secure, OAuth
-        standard compliant, and more flexible. Users who are using Bing AppID
-        are strongly recommended to get an access token as soon as possible.
-
-        .. note::
-            The value of access token can be used for subsequent calls to the
-            Microsoft Translator API. The access token expires after 10
-            minutes. It is always better to check elapsed time between time at
-            which token issued and current time. If elapsed time exceeds 10
-            minute time period renew access token by following obtaining
-            access token procedure.
-
-        :return: The access token to be used with subsequent requests
-        """
-        args = urllib.urlencode({
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'scope': self.scope,
-            'grant_type': self.grant_type
-        })
-        
-        mdebug("Authenticating...")
-        response = False
-        try :
-            response = json.loads(urllib2.urlopen(
-                'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args, timeout=30
-            ).read())
-        except IOError, e :
-            if response :
-                raise TranslateApiException(
-                    response.get('error_description', 'Failed to authenticate with translation service'),
-                    response.get('error', str(e))
-                    )
-            else :
-                raise TranslateApiException("Translation Service Authentication failed", str(e))
-        
-
-        mdebug("Authenticated")
-        mdebug(str(response))
-
-        if response and "error" in response:
-            mdebug("Error in authentication response.")
-            raise TranslateApiException(
-                response.get('error_description', 'No Error Description'),
-                response.get('error', 'Unknown Error')
-            )
-        mdebug("Authentication returning")
-        return response['access_token']
-
-    def call(self, url, p):
-        """Calls the given url with the params urlencoded
-        """
-        mdebug("Translator ready for call.")
-        if not self.access_token:
-            self.access_token = self.get_access_token()
-
-        mdebug("urllib request start.")
-
-        request = urllib2.Request(
-            "%s?%s" % (url, urllib.urlencode(p)),
-            headers={'Authorization': 'Bearer %s' % self.access_token}
-        )
-
-        mdebug("urllib get response")
-        response = urllib2.urlopen(request, timeout=30).read()
-
-        mdebug("json load")
-        rv =  json.loads(response.decode("utf-8-sig"))
-
-        if isinstance(rv, basestring) and \
-                rv.startswith("ArgumentOutOfRangeException"):
-            raise ArgumentOutOfRangeException(rv)
-
-        if isinstance(rv, basestring) and \
-                rv.startswith("TranslateApiException"):
-            raise TranslateApiException(rv)
-
-        return rv
-
-    def translate(self, text, to_lang, from_lang=None,
-            content_type='text/plain', category='general'):
-        """Translates a text string from one language to another.
-
-        :param text: A string representing the text to translate.
-        :param to_lang: A string representing the language code to
-            translate the text into.
-        :param from_lang: A string representing the language code of the
-            translation text. If left None the response will include the
-            result of language auto-detection. (Default: None)
-        :param content_type: The format of the text being translated.
-            The supported formats are "text/plain" and "text/html". Any HTML
-            needs to be well-formed.
-        :param category: The category of the text to translate. The only
-            supported category is "general".
-        """
-        p = {
-            'text': text.encode('utf8'),
-            'to': to_lang,
-            'contentType': content_type,
-            'category': category,
-            }
-        if from_lang is not None:
-            p['from'] = from_lang
-        return self.call(
-            "http://api.microsofttranslator.com/V2/Ajax.svc/Translate",
-            p)
-
-    def translate_array(self, texts, to_lang, from_lang=None, **options):
-        """Translates an array of text strings from one language to another.
-
-        :param texts: A list containing texts for translation.
-        :param to_lang: A string representing the language code to 
-            translate the text into.
-        :param from_lang: A string representing the language code of the 
-            translation text. If left None the response will include the 
-            result of language auto-detection. (Default: None)
-        :param options: A TranslateOptions element containing the values below. 
-            They are all optional and default to the most common settings.
-
-                Category: A string containing the category (domain) of the 
-                    translation. Defaults to "general".
-                ContentType: The format of the text being translated. The 
-                    supported formats are "text/plain" and "text/html". Any 
-                    HTML needs to be well-formed.
-                Uri: A string containing the content location of this 
-                    translation.
-                User: A string used to track the originator of the submission.
-                State: User state to help correlate request and response. The 
-                    same contents will be returned in the response.
-        """
-        mdebug("Translator preparing options.")
-        options = {
-            'Category': u"general",
-            'Contenttype': u"text/plain",
-            'Uri': u'',
-            'User': u'default',
-            'State': u''
-            }.update(options)
-        p = {
-            'texts': json.dumps(texts),
-            'to': to_lang,
-            'options': json.dumps(options),
-            }
-        mdebug("Translator options set.")
-        if from_lang is not None:
-            p['from'] = from_lang
-
-        return self.call(
-                "http://api.microsofttranslator.com/V2/Ajax.svc/TranslateArray",
-                p)
 
 class Params(object) :
     def __init__(self, environ, session):
@@ -679,6 +410,17 @@ class MICA(object):
         vt = threading.Thread(target=self.view_runner_sched)
         vt.daemon = True
         vt.start()
+
+        self.cd = {}
+
+        mdebug("Building tone file")
+        dpfh = open(params["tonefile"])
+        for line in dpfh.readlines() :
+            k, v = line.split('\t')
+            self.cd[k] = v
+
+        dpfh.close()
+
 
     def make_account(self, req, username, password, mica_roles, admin = False, dbname = False) :
         if not dbname :
@@ -904,7 +646,7 @@ class MICA(object):
         sideout += "</td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "<td><a title='Download Romanization' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
         return sideout
@@ -1038,248 +780,15 @@ class MICA(object):
     
         return contents
 
-    
-    def online_cross_reference(self, req, uuid, name, story, all_source, cjk) :
-        mdebug("Going online...")
-        ms = []
-        eng = []
-        trans = []
-        source = []
-        pinyin = []
-        groups = []
-        reversep = []
-
-        msg = "source: \n"
-        idx = 0
-        for char in all_source :
-           source.append(char)
-           cr = cjk.getReadingForCharacter(char,'Pinyin')
-           if not cr or not len(cr) :
-               py = convertPinyin(get_pinyin(char))
-           else :
-               py = cr[0]
-           pinyin.append(py)
-           msg += " " + py + "(" + char + "," + str(idx) + ")"
-           idx += 1
-
-        mdebug(msg.replace("\n",""))
-
-        minfo("translating source to target....")
-        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
-        mdebug("target translation finished." + str(result))
-
-        if not len(result) or "TranslatedText" not in result[0] :
-            return []
-        
-        mstarget = result[0]["TranslatedText"]
-
-        mdebug("target is: " + str(mstarget))
-        mstarget = mstarget.split(" ")
-
-        mdebug("Translating target pieces back to source")
-        result = self.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
-        mdebug("Translation finished. Writing in json.")
-
-        for idx in range(0, len(result)) :
-            ms.append((mstarget[idx], result[idx]["TranslatedText"]))
-
-        count = 0
-        for idx in range(0, len(ms)) :
-           pair = ms[idx]
-           eng.append(pair[0])
-           for char in pair[1] :
-               trans.append(char)
-               groups.append((idx,char))
-               cr = cjk.getReadingForCharacter(char,'Pinyin')
-               if not cr or not len(cr) :
-                   py = convertPinyin(get_pinyin(char))
-               else :
-                   py = cr[0]
-               reversep.append(py)
-               count += 1
-
-        matches = lcs(source,trans)
-
-        current_source_idx = 0
-        current_trans_idx = 0
-        current_eng_idx = 0
-        units = []
-
-        tmatch = ""
-        match_pinyin = ""
-        for triple in matches :
-          char, source_idx, trans_idx = triple
-#          mdebug("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
-          pchar = convertPinyin(get_pinyin(char))
-          tmatch += " " + pchar + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
-          match_pinyin += pchar + " "
-
-#        mdebug("matches: \n" + tmatch.replace("\n",""))
-          
-        for triple in matches :
-          char, source_idx, trans_idx = triple
-          pchar = convertPinyin(get_pinyin(char))
-          
-          if source_idx > current_source_idx :
-              # only append if there's something in the source
-              new_unit = self.make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, eng, source, pinyin)
-              new_unit["match_pinyin"] = []
-              units.append(new_unit) 
-
-          current_source_idx = source_idx
-          current_trans_idx = trans_idx
-
-          new_unit = self.make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, eng, source, pinyin) 
-          new_unit["match_pinyin"] = [match_pinyin]
-
-          units.append(new_unit)
-
-          current_source_idx += 1
-          current_trans_idx += 1
-
-        changes = True 
-        passes = 0
-        try :
-            while changes : 
-    #            mdebug("passing: " + str(passes))
-                new_units = []
-                idx = 0
-                changes = False
-                while idx < len(units) :
-                    new_unit = copy.deepcopy(units[idx])
-                    if new_unit["trans"] :
-                        new_target = []
-                        for word in new_unit["target"] :
-                           word = strip_punct(word)
-                           if not len(new_target) or strip_punct(new_target[-1]) != word :
-                               new_target.append(word)
-                        new_unit["target"] = new_target
-    
-                    all_punctuation = True
-                    for char in new_unit["source"] :
-                        if char not in punctuation :
-                            all_punctuation = False
-                            break
-    
-                    if all_punctuation :
-                        new_unit["trans"] = False
-                        new_unit["target"] = ""
-                    else :
-                        append_units = []
-                        for fidx in range(idx + 1, min(idx + 2, len(units))) :
-                            unit = units[fidx]
-                            if not unit["trans"] :
-                               continue
-                            all_equal = True
-                            for worda in new_unit["target"] :
-                                for wordb in unit["target"] :
-                                    if strip_punct(worda) != strip_punct(wordb) :
-                                        all_equal = False
-                                        break
-    
-                            if not all_equal :
-                                if strip_punct(unit["target"][0]) == strip_punct(new_unit["target"][-1]) :
-                                    all_equal = True
-    
-                            if all_equal :
-                               idx += 1
-                               append_units.append(unit)
-    
-                        if len(append_units) :
-                            changes = True
-    
-                        for unit in append_units :
-                            for char in unit["source"] :
-                                new_unit["source"].append(char)
-                            for pinyin in unit["sromanization"] :
-                                new_unit["sromanization"].append(pinyin)
-                            for pair in unit["trans"] :
-                                if new_unit["trans"] :
-                                    new_unit["trans"].append(pair)
-                                else :
-                                    new_unit["trans"] = [pair]
-                            for pinyin in unit["tromanization"] :
-                                if "tromanization" in new_unit :
-                                    new_unit["tromanization"].append(pinyin)
-                                else :
-                                    new_unit["tromanization"] = [pinyin]
-                            if unit["trans"] :
-                                for word in unit["target"] :
-                                    word = strip_punct(word)
-                                    if not len(new_unit["target"]) or strip_punct(new_unit["target"][-1]) != word :
-                                        new_unit["target"].append(word)
-                    new_units.append(new_unit)
-                    idx += 1
-                units = new_units
-                passes += 1
-    
-            msg = ""
-            for unit in new_units :
-                all_punctuation = True
-                for char in unit["source"] :
-                    if char not in punctuation :
-                        all_punctuation = False
-                        break
-                #for char in unit["source"] :
-                #    msg += " " + char
-                for pinyin in unit["sromanization"] :
-                    if all_punctuation :
-                        msg += pinyin
-                    else :
-                        msg += " " + pinyin 
-                if unit["trans"] :
-                    msg += "("
-                    #for pair in unit["trans"] :
-                    #    msg += " " + pair[1]
-                    #for pinyin in unit["tromanization"] :
-                    #    msg += " " + pinyin 
-                    for word in unit["target"] :
-                        msg += word  + " "
-                    msg += ") "
-        except Exception, e :
-            merr("Online Cross Reference Error: " + str(e))
-            raise e
-        
-#        mdebug(msg)
-        for unit_idx in range(0, len(units)) :
-            units[unit_idx]["online"] = True
-            units[unit_idx]["punctuation"] = False 
-                          
-        return units 
-
-    def get_first_translation(self, d, char, pinyin, none_if_not_found = True, debug = False) :
-        eng = []
-        temp_r = d.getFor(char)
-        if debug :
-            mdebug("CJK result: " + str(temp_r))
-        for tr in temp_r :
-            if debug :
-                mdebug("CJK iter result: " + str(tr))
-            if not pinyin or tr[2].lower() == pinyin.lower() :
-                eng.append("" + tr[3])
-                if not pinyin :
-                    break
-            
-        if len(eng) == 0 :
-            if none_if_not_found :
-                return ["No target language translation found."]
-            return False
-        
-        return eng
-     
     def get_polyphome_hash(self, correct, source) :
         return hashlib.md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
 
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
-
     def get_cjk_handle_common(self) :
         try :
             if not os.path.isfile(params["cjklib"]) :
-                # FIXME: We need to create an 'admin' account in all the user
-                # databases to hold the DB....but we don't have it yet
-                # or just upload the file to a common key instead of admin
                 self.db.get_attachment_to_path("MICA:filelisting", "cjklib.db", params["cjklib"])
                 mdebug("Exported cjklib.")
             if not os.path.isfile(params["cedict"]) :
@@ -1342,7 +851,7 @@ class MICA(object):
         assert(cjksize != 0)
         assert(cesize != 0)
 
-        cjk, d = get_cjk_handle(params["cjklib"], params["cedict"])
+        cjk, d = get_cjk_handle(params["cjklib"], params["cedict"], params)
 
         for x in d.getFor(u'白鹭'.decode('utf-8')) :
             mdebug(str(x))
@@ -1705,11 +1214,11 @@ class MICA(object):
                   <div class="panel-heading">
                   """
 
-            char, total, spy, eng, tid = x
+            char, total, spy, targ, tid = x
             tid = str(tid)
 
-            if len(eng) and eng[0] == '/' :
-               eng = eng[1:-1]
+            if len(targ) and targ[0] == '/' :
+               targ = targ[1:-1]
 
             out += char + " (" + str(int(float(total))) + "): "
 
@@ -1720,7 +1229,7 @@ class MICA(object):
             out += "</a>"
             out += "</div>"
             out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-            out += "<div class='panel-inner'>" + eng.replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</div>"
+            out += "<div class='panel-inner'>" + targ.replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</div>"
 
             out += "</div>"
             out += "</div>"
@@ -3192,7 +2701,7 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"])
+                    (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"], params)
 
                     tar = self.get_first_translation(d, source.decode("utf-8"), False)
                     if tar :
@@ -4002,14 +3511,6 @@ def go(p) :
 
     if "tonefile" not in params or not params["tonefile"] :
         params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
-
-    mdebug("Building tone file")
-    dpfh = open(params["tonefile"])
-    for line in dpfh.readlines() :
-        k, v = line.split('\t')
-        cd[k] = v
-
-    dpfh.close()
 
     if params["tlog"] :
         if params["tlog"] != 1 :

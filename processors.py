@@ -44,20 +44,24 @@ class Processor(object) :
 
         self.punctuation = {}
         self.punctuation_without_newlines = {}
-        self.punctuation_letters = {}
-
-        for letter in (string.ascii_lowercase + string.ascii_uppercase) :
-            self.punctuation_letters[letter] = {}
-            self.punctuation_letters[letter.decode("utf-8")] = {}
-
-        for num in range(0, 10) :
-            self.punctuation_letters[(unicode(str(num))] = {}
-            self.punctuation_letters[str(num)] = {}
-            
-        self.punctuation_without_newlines = copy.deepcopy(self.punctuation_letters)
-
         self.punctuation[u'\n'] = {}
         self.punctuation['\n'] = {}
+
+        self.punctuation_characters = [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+
+        self.punctuation_characters += ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
+
+        self.punctuation_without_newlines.update(self.punctuation_characters)
+        self.punctuation.update(self.punctuation_characters)
+
+        self.punctuation_numbers = {}
+
+        for num in range(0, 10) :
+            self.punctuation_numbers[unicode(str(num))] = {}
+            self.punctuation_numbers[str(num)] = {}
+
+        self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_numbers))
+        self.punctuation.update(copy.deepcopy(self.punctuation_numbers))
 
     def parse_page(self, opaque, req, story, groups, page, temp_units = False, progress = False, error = False) :
         if temp_units :
@@ -87,14 +91,6 @@ class Processor(object) :
     def pre_parse_page(self, page_input_unicode) :
         return page_input.encode("utf-8")
 
-    def all_punct(self, uni) :
-        all = True
-        for char in uni :
-            if len(uni) and char not in self.punctuation :
-                all = False
-                break
-        return all
-
     def parse_page_groups(self, req, story, groups, opaque, progress) :
         unigroups = []
         unikeys = []
@@ -110,7 +106,6 @@ class Processor(object) :
                 if error :
                     self.mica.store_error(req, story['name'], "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 if not handle :
-                    mdebug("Closing CJK 6")
                     self.parse_page_stop(opaque)
                 raise e
 
@@ -135,8 +130,6 @@ class Processor(object) :
                 new_word += char
         return new_word
 
-    # This is where we stopped: We need to change the database structure here
-    # This will require a database upgrade =(
     def add_unit(self, trans, uni_source, target, online = False, punctuation = False) :
         unit = {}
 
@@ -183,7 +176,125 @@ class Processor(object) :
 
       return unit
 
-def get_cjk_handle(cjklib_path, cedict_path) :
+    def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+        uuid = story['uuid']
+        name = story['name']
+        units = []
+        mdebug("Requested: " + uni)
+
+        if self.all_punct(uni) :
+            units.append(self.add_unit([uni], uni, [uni], punctuation = True))
+        else :
+            trans, targ = self.offline_translate(opaque, uni)
+
+            if len(trans) == 1 :
+                unit = self.add_unit(trans[0].split(" "), uni, [targ[0]])
+                units.append(unit)
+            elif len(trans) == 0 :
+                if len(uni) > 1 :
+                    for char in uni :
+                        self.recursive_translate(req, story, opaque, char, temp_units, page, tone_keys)
+            elif len(trans) > 1 :
+                            
+                for x in range(0, len(trans)) :
+                    trans[x] = trans[x].lower() 
+                
+                readings = list(set(trans + self.update_readings(opaque, uni)))
+                
+                assert(len(readings) > 0)
+
+                if uni not in punctuation and uni :
+                    online_units = False
+                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
+                        mdebug("Going online...")
+                        online_units = self.online_cross_reference(req, uuid, name, story, uni, opaque) if len(uni) > 1 else False
+
+                    if not online_units or not len(online_units) :
+                        targ = self.get_first_translation(opaque, uni, readings[0])
+                        unit = self.add_unit([readings[0]], uni, [targ[0]])
+                        for x in readings :
+                            targ = self.get_first_translation(opaque, uni, x, False)
+                            if not targ :
+                                continue
+                            for e in targ :
+                                unit["multiple_sromanization"].append([x])
+                                unit["multiple_target"].append([e])
+                        
+                        if unit["multiple_correct"] == -1 :
+                            source = "".join(unit["source"])
+                            total_changes = 0.0
+                            changes = False
+                            highest = -1
+                            highest_percentage = -1.0
+                            selector = -1
+                            
+                            # FIXME: This totally needs to be a view. Fix it soon.
+                            changes = tone_keys[source] if source in tone_keys else False
+                            
+                            if changes :
+                                total_changes = float(changes["total"])
+
+                                for idx in range(0, len(unit["multiple_sromanization"])) :
+                                    percent = self.mica.get_polyphome_percentage(idx, total_changes, changes, unit) 
+                                    if percent :
+                                        if highest_percentage == -1.0 :
+                                            highest_percentage = percent
+                                            highest = idx
+                                        elif percent > highest_percentage :
+                                            highest_percentage = percent
+                                            highest = idx
+
+                            if highest != -1 :
+                                selector = highest
+                                mdebug("HISTORY Multiple pinyin for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
+                            else :
+                                longest = -1
+                                longest_length = -1
+                                
+                                for idx in range(0, len(unit["multiple_sromanization"])) :
+                                    comb_targ = " ".join(unit["multiple_target"][idx])
+                                    
+                                    if not comb_targ.count("surname") and not comb_targ.count("variant of") :
+                                        if longest_length == -1 :
+                                            longest_length = len(comb_targ)
+                                            longest = idx
+                                        elif len(comb_targ) > longest_length :
+                                            longest_length = len(comb_targ)
+                                            longest = idx
+
+                                selector = longest
+                                mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
+
+                            if selector != -1 :
+                                unit["sromanization"] = unit["multiple_sromanization"][selector]
+                                unit["target"] = unit["multiple_target"][selector]
+                                unit["multiple_correct"] = selector 
+
+                        units.append(unit)
+                    else :
+                        for unit in online_units :
+                           if len(unit["match_pinyin"]) :
+                               unit["sromanization"] = unit["match_pinyin"]
+                           if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
+                               continue
+                           units.append(unit)
+                else :
+                    targ = self.get_first_translation(opaque, uni, readings[0])
+                    units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
+        
+        for unit in units :
+            if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
+               continue
+
+            self.mica.rehash_correct_polyphome(unit)
+            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            
+        if temp_units :
+            story["temp_units"] = story["temp_units"] + units
+        else :
+            story["pages"][page]["units"] = story["pages"][page]["units"] + units 
+
+def get_cjk_handle(cjklib_path, cedict_path, params) :
     cjk = None
     d = None
     try :
@@ -204,19 +315,143 @@ def get_cjk_handle(cjklib_path, cedict_path) :
 
     return (cjk, d)
 
+    def all_punct(self, uni) :
+        all = True
+        for char in uni :
+            if len(uni) and char not in self.punctuation :
+                all = False
+                break
+        return all
+
+class English(Processor) :
+    def __init__(self, mica, params) :
+        super(English, self).__init__(mica, params)
+
+    # We'll implement offline support for english later, probably using stardict
+    def offline_translate(self, opaque, uni) :
+        # opaque not yet used for english
+        trans = []
+        targ = []
+        return trans, targ
+
+    def online_cross_reference(self, req, uuid, name, story, all_source, opaque) :
+        #opaque is not yet used for English
+        minfo("translating source to target....")
+        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
+        mdebug("target translation finished." + str(result))
+
+        if not len(result) or "TranslatedText" not in result[0] :
+            return []
+        
+        mstarget = result[0]["TranslatedText"]
+
+        mdebug("target is: " + str(mstarget))
+        mstarget = mstarget.split(" ")
+
+        mdebug("Translation finished.")
+
+        unit = self.add_unit([], [uni], [mstarget])
+        unit["online"] = True
+        unit["punctuation"] = False 
+        unit["match_pinyin"] = []
+        return [unit]
+
 class ChineseSimplified(Processor) :
     def __init__(self, mica, params) :
         super(ChineseSimplified, self).__init__(mica, params)
 
-        self.punctuation_characters = [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+        self.punctuation_letters = {}
 
-        self.punctuation_characters += ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
+        for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+            self.punctuation_letters[letter] = {}
+            self.punctuation_letters[letter.decode("utf-8")] = {}
 
-        self.punctuation_without_newlines.update(self.punctuation_characters)
-        self.punctuation.update(self.punctuation_characters)
+        self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_letters))
+        self.punctuation.update(copy.deepcopy(self.punctuation_letters))
 
         self.cjklib_path = params["cjklib"]
         self.cedict_path = params["cedict"]
+
+    def get_pinyin(self, chars=u'你好', splitter=''):
+        result = []
+        for char in chars:
+            key = "%X" % ord(char)
+            try:
+                result.append(self.mica.cd[key].split(" ")[0].strip().lower())
+            except:
+                result.append(char)
+
+        return splitter.join(result)
+
+    pinyinToneMarks = {
+        u'a': u'āáǎà', u'e': u'ēéěè', u'i': u'īíǐì',
+        u'o': u'ōóǒò', u'u': u'ūúǔù', u'ü': u'ǖǘǚǜ',
+        u'A': u'ĀÁǍÀ', u'E': u'ĒÉĚÈ', u'I': u'ĪÍǏÌ',
+        u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
+    }
+
+    def convertPinyinCallback(self, m):
+        tone=int(m.group(3))%5
+        r=m.group(1).replace(u'v', u'ü').replace(u'V', u'Ü')
+        # for multple vowels, use first one if it is a/e/o, otherwise use second one
+        pos=0
+        if len(r)>1 and not r[0] in 'aeoAEO':
+            pos=1
+        if tone != 0:
+            r=r[0:pos]+pinyinToneMarks[r[pos]][tone-1]+r[pos+1:]
+        return r+m.group(2)
+
+    def convertPinyin(self, char):
+        s = self.get_pinyin(char)
+        return re.compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=re.IGNORECASE).sub(self.convertPinyinCallback, s)
+
+    def lcs(self, a, b):
+        lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
+        # row 0 and column 0 are initialized to 0 already
+        for i, x in enumerate(a):
+            for j, y in enumerate(b):
+                if x == y:
+                    lengths[i+1][j+1] = lengths[i][j] + 1
+                else:
+                    lengths[i+1][j+1] = \
+                        max(lengths[i+1][j], lengths[i][j+1])
+        # read the substring out from the matrix
+        result = [] 
+        x, y = len(a), len(b)
+        while x != 0 and y != 0:
+            if lengths[x][y] == lengths[x-1][y]:
+                x -= 1
+            elif lengths[x][y] == lengths[x][y-1]:
+                y -= 1
+            else:
+                assert a[x-1] == b[y-1]
+                result = [[a[x-1],x-1,y-1]] + result
+                x -= 1
+                y -= 1
+        return result
+
+    def offline_translate(self, opaque, uni) :
+        cjk, d = opaque 
+        trans = []
+        targ = []
+        results = d.getFor(uni)
+        if results is not None :
+            for e in results :
+                trans.append(e[2])
+                targ.append(e[3])
+        return trans, targ
+
+    def update_readings(self, opaque, uni) :
+        readings = []
+        cjk, d = opaque 
+        
+        if len(uni) == 1 :
+            readg = cjk.getReadingForCharacter(uni, 'Pinyin')
+            for read in readg :
+                read = read.lower()
+                if read not in readings :
+                    readings.append(read)
+        return readings
 
     def parse_page_start(self) : 
         return get_cjk_handle(self.cjklib_path, self.cedict_path)
@@ -233,137 +468,231 @@ class ChineseSimplified(Processor) :
             self.parse_page_stop(opaque)
             raise e
 
-    def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
-        uuid = story['uuid']
-        name = story['name']
-        units = []
+    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
         cjk, d = opaque 
-        
-        mdebug("Requested: " + uni)
-
-        if self.all_punct(uni) :
-            units.append(self.add_unit([uni], uni, [uni], punctuation = True))
-        else :
-            trans = []
-            eng = []
-
-            results = d.getFor(uni)
-            if results is not None :
-                for e in results :
-                    trans.append(e[2])
-                    eng.append(e[3])
-
-            if len(trans) == 1 :
-                unit = self.add_unit(trans[0].split(" "), uni, [eng[0]])
-                units.append(unit)
-            elif len(trans) == 0 :
-                if len(uni) > 1 :
-                    for char in uni :
-                        self.recursive_translate(req, story, opaque, char, temp_units, page, tone_keys)
-            elif len(trans) > 1 :
-                            
-                for x in range(0, len(trans)) :
-                    trans[x] = trans[x].lower() 
-                
-                readings = trans
-                    
-                if len(uni) == 1 :
-                    readg = cjk.getReadingForCharacter(uni, 'Pinyin')
-                    for read in readg :
-                        read = read.lower()
-                        if read not in readings :
-                            readings.append(read)
-                
-                readings = list(set(readings))
-                
-                assert(len(readings) > 0)
-
-                if uni not in punctuation and uni :
-                    online_units = False
-                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                        online_units = self.online_cross_reference(req, uuid, name, story, uni, cjk) if len(uni) > 1 else False
-
-                    if not online_units or not len(online_units) :
-                        eng = self.get_first_translation(d, uni, readings[0])
-                        unit = self.add_unit([readings[0]], uni, [eng[0]])
-                        for x in readings :
-                            eng = self.get_first_translation(d, uni, x, False)
-                            if not eng :
-                                continue
-                            for e in eng :
-                                unit["multiple_sromanization"].append([x])
-                                unit["multiple_target"].append([e])
-                        
-                        if unit["multiple_correct"] == -1 :
-                            source = "".join(unit["source"])
-                            total_changes = 0.0
-                            changes = False
-                            highest = -1
-                            highest_percentage = -1.0
-                            selector = -1
-                            
-                            # FIXME: This totally needs to be a view. Fix it soon.
-                            changes = tone_keys[source] if source in tone_keys else False
-                            
-                            if changes :
-                                total_changes = float(changes["total"])
-
-                                for idx in range(0, len(unit["multiple_sromanization"])) :
-                                    percent = self.get_polyphome_percentage(idx, total_changes, changes, unit) 
-                                    if percent :
-                                        if highest_percentage == -1.0 :
-                                            highest_percentage = percent
-                                            highest = idx
-                                        elif percent > highest_percentage :
-                                            highest_percentage = percent
-                                            highest = idx
-
-                            if highest != -1 :
-                                selector = highest
-                                mdebug("HISTORY Multiple pinyin for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
-                            else :
-                                longest = -1
-                                longest_length = -1
-                                
-                                for idx in range(0, len(unit["multiple_sromanization"])) :
-                                    comb_eng = " ".join(unit["multiple_target"][idx])
-                                    
-                                    if not comb_eng.count("surname") and not comb_eng.count("variant of") :
-                                        if longest_length == -1 :
-                                            longest_length = len(comb_eng)
-                                            longest = idx
-                                        elif len(comb_eng) > longest_length :
-                                            longest_length = len(comb_eng)
-                                            longest = idx
-
-                                selector = longest
-                                mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
-
-                            if selector != -1 :
-                                unit["sromanization"] = unit["multiple_sromanization"][selector]
-                                unit["target"] = unit["multiple_target"][selector]
-                                unit["multiple_correct"] = selector 
-
-                        units.append(unit)
-                    else :
-                        for unit in online_units :
-                           if len(unit["match_pinyin"]) :
-                               unit["sromanization"] = unit["match_pinyin"]
-                           if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
-                               continue
-                           units.append(unit)
-                else :
-                    eng = self.get_first_translation(d, uni, readings[0])
-                    units.append(self.add_unit(readings[0].split(" "), uni, [eng[0]]))
-        
-        for unit in units :
-            if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
-               continue
-
-            self.rehash_correct_polyphome(unit)
-            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+        targ = []
+        temp_r = d.getFor(source)
+        if debug :
+            mdebug("CJK result: " + str(temp_r))
+        for tr in temp_r :
+            if debug :
+                mdebug("CJK iter result: " + str(tr))
+            if not reading or tr[2].lower() == reading.lower() :
+                targ.append("" + tr[3])
+                if not reading :
+                    break
             
-        if temp_units :
-            story["temp_units"] = story["temp_units"] + units
-        else :
-            story["pages"][page]["units"] = story["pages"][page]["units"] + units
+        if len(targ) == 0 :
+            if none_if_not_found :
+                return ["No target language translation found."]
+            return False
+        
+        return targ 
+
+    def online_cross_reference(self, req, uuid, name, story, all_source, opaque) :
+        (cjk, d) = opaque 
+        ms = []
+        targ = []
+        trans = []
+        source = []
+        groups = []
+        reversep = []
+
+        msg = "source: \n"
+        idx = 0
+        for char in all_source :
+           source.append(char)
+           cr = cjk.getReadingForCharacter(char,'Pinyin')
+           if not cr or not len(cr) :
+               py = self.convertPinyin(char)
+           else :
+               py = cr[0]
+           pinyin.append(py)
+           msg += " " + py + "(" + char + "," + str(idx) + ")"
+           idx += 1
+
+        mdebug(msg.replace("\n",""))
+
+        minfo("translating source to target....")
+        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
+        mdebug("target translation finished." + str(result))
+
+        if not len(result) or "TranslatedText" not in result[0] :
+            return []
+        
+        mstarget = result[0]["TranslatedText"]
+
+        mdebug("target is: " + str(mstarget))
+        mstarget = mstarget.split(" ")
+
+        mdebug("Translating target pieces back to source")
+        result = self.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
+        mdebug("Translation finished. Writing in json.")
+
+        for idx in range(0, len(result)) :
+            ms.append((mstarget[idx], result[idx]["TranslatedText"]))
+
+        count = 0
+        for idx in range(0, len(ms)) :
+           pair = ms[idx]
+           targ.append(pair[0])
+           for char in pair[1] :
+               trans.append(char)
+               groups.append((idx,char))
+               cr = cjk.getReadingForCharacter(char,'Pinyin')
+               if not cr or not len(cr) :
+                   py = self.convertPinyin(char)
+               else :
+                   py = cr[0]
+               reversep.append(py)
+               count += 1
+
+        matches = self.lcs(source,trans)
+
+        current_source_idx = 0
+        current_trans_idx = 0
+        current_targ_idx = 0
+        units = []
+
+        tmatch = ""
+        match_pinyin = ""
+        for triple in matches :
+          char, source_idx, trans_idx = triple
+#          mdebug("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
+          pchar = self.convertPinyin(char)
+          tmatch += " " + pchar + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
+          match_pinyin += pchar + " "
+
+#        mdebug("matches: \n" + tmatch.replace("\n",""))
+          
+        for triple in matches :
+          char, source_idx, trans_idx = triple
+          pchar = self.convertPinyin(char)
+          
+          if source_idx > current_source_idx :
+              # only append if there's something in the source
+              new_unit = self.make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, targ, source, pinyin)
+              new_unit["match_pinyin"] = []
+              units.append(new_unit) 
+
+          current_source_idx = source_idx
+          current_trans_idx = trans_idx
+
+          new_unit = self.make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, targ, source, pinyin) 
+          new_unit["match_pinyin"] = [match_pinyin]
+
+          units.append(new_unit)
+
+          current_source_idx += 1
+          current_trans_idx += 1
+
+        changes = True 
+        passes = 0
+        try :
+            while changes : 
+    #            mdebug("passing: " + str(passes))
+                new_units = []
+                idx = 0
+                changes = False
+                while idx < len(units) :
+                    new_unit = copy.deepcopy(units[idx])
+                    if new_unit["trans"] :
+                        new_target = []
+                        for word in new_unit["target"] :
+                           word = strip_punct(word)
+                           if not len(new_target) or strip_punct(new_target[-1]) != word :
+                               new_target.append(word)
+                        new_unit["target"] = new_target
+    
+                    all_punctuation = True
+                    for char in new_unit["source"] :
+                        if char not in punctuation :
+                            all_punctuation = False
+                            break
+    
+                    if all_punctuation :
+                        new_unit["trans"] = False
+                        new_unit["target"] = ""
+                    else :
+                        append_units = []
+                        for fidx in range(idx + 1, min(idx + 2, len(units))) :
+                            unit = units[fidx]
+                            if not unit["trans"] :
+                               continue
+                            all_equal = True
+                            for worda in new_unit["target"] :
+                                for wordb in unit["target"] :
+                                    if strip_punct(worda) != strip_punct(wordb) :
+                                        all_equal = False
+                                        break
+    
+                            if not all_equal :
+                                if strip_punct(unit["target"][0]) == strip_punct(new_unit["target"][-1]) :
+                                    all_equal = True
+    
+                            if all_equal :
+                               idx += 1
+                               append_units.append(unit)
+    
+                        if len(append_units) :
+                            changes = True
+    
+                        for unit in append_units :
+                            for char in unit["source"] :
+                                new_unit["source"].append(char)
+                            for pinyin in unit["sromanization"] :
+                                new_unit["sromanization"].append(pinyin)
+                            for pair in unit["trans"] :
+                                if new_unit["trans"] :
+                                    new_unit["trans"].append(pair)
+                                else :
+                                    new_unit["trans"] = [pair]
+                            for pinyin in unit["tromanization"] :
+                                if "tromanization" in new_unit :
+                                    new_unit["tromanization"].append(pinyin)
+                                else :
+                                    new_unit["tromanization"] = [pinyin]
+                            if unit["trans"] :
+                                for word in unit["target"] :
+                                    word = strip_punct(word)
+                                    if not len(new_unit["target"]) or strip_punct(new_unit["target"][-1]) != word :
+                                        new_unit["target"].append(word)
+                    new_units.append(new_unit)
+                    idx += 1
+                units = new_units
+                passes += 1
+    
+            msg = ""
+            for unit in new_units :
+                all_punctuation = True
+                for char in unit["source"] :
+                    if char not in punctuation :
+                        all_punctuation = False
+                        break
+                #for char in unit["source"] :
+                #    msg += " " + char
+                for pinyin in unit["sromanization"] :
+                    if all_punctuation :
+                        msg += pinyin
+                    else :
+                        msg += " " + pinyin 
+                if unit["trans"] :
+                    msg += "("
+                    #for pair in unit["trans"] :
+                    #    msg += " " + pair[1]
+                    #for pinyin in unit["tromanization"] :
+                    #    msg += " " + pinyin 
+                    for word in unit["target"] :
+                        msg += word  + " "
+                    msg += ") "
+        except Exception, e :
+            merr("Online Cross Reference Error: " + str(e))
+            raise e
+        
+#        mdebug(msg)
+        for unit_idx in range(0, len(units)) :
+            units[unit_idx]["online"] = True
+            units[unit_idx]["punctuation"] = False 
+                          
+        return units 
+
