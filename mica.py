@@ -42,18 +42,23 @@ import socket
 import Queue
 
 lang = {
-         "zh-CHS" : "Chinese Simplified",
-         "en" : "English",
+         u"zh-CHS" : u"Chinese Simplified",
+         u"en" : u"English",
+       }
+
+samples = {
+         u"zh-CHS" : ["开源"],
+         u"en" : ["test"],
        }
 
 romanization = {
-        "zh-CHS" : True,
-        "en" : False,
+        u"zh-CHS" : True,
+        u"en" : False,
         }
 
 processor_map = {
-        "zh-CHS" : "ChineseSimplified", 
-        "en" : "English", 
+        u"zh-CHS" : u"ChineseSimplified", 
+        u"en" : u"English", 
 }
 
 bootlangs = ""
@@ -61,7 +66,7 @@ for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
 from common import *
-from processors import get_cjk_handle
+from processors import get_cjk_handle, story_format
 
 import couch_adapter
 
@@ -1060,23 +1065,23 @@ class MICA(object):
         mdebug(msg.replace("\n",""))
 
         minfo("translating source to target....")
-        result = self.translate_and_check_array(req, name, [all_source], u"en", u"zh-CHS")
+        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
         mdebug("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
             return []
         
-        msenglish = result[0]["TranslatedText"]
+        mstarget = result[0]["TranslatedText"]
 
-        mdebug("target is: " + str(msenglish))
-        msenglish = msenglish.split(" ")
+        mdebug("target is: " + str(mstarget))
+        mstarget = mstarget.split(" ")
 
         mdebug("Translating target pieces back to source")
-        result = self.translate_and_check_array(req, name, msenglish, u"zh-CHS", u"en")
+        result = self.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
         mdebug("Translation finished. Writing in json.")
 
         for idx in range(0, len(result)) :
-            ms.append((msenglish[idx], result[idx]["TranslatedText"]))
+            ms.append((mstarget[idx], result[idx]["TranslatedText"]))
 
         count = 0
         for idx in range(0, len(ms)) :
@@ -1143,12 +1148,12 @@ class MICA(object):
                 while idx < len(units) :
                     new_unit = copy.deepcopy(units[idx])
                     if new_unit["trans"] :
-                        new_english = []
+                        new_target = []
                         for word in new_unit["target"] :
                            word = strip_punct(word)
-                           if not len(new_english) or strip_punct(new_english[-1]) != word :
-                               new_english.append(word)
-                        new_unit["target"] = new_english
+                           if not len(new_target) or strip_punct(new_target[-1]) != word :
+                               new_target.append(word)
+                        new_unit["target"] = new_target
     
                     all_punctuation = True
                     for char in new_unit["source"] :
@@ -1257,7 +1262,7 @@ class MICA(object):
             
         if len(eng) == 0 :
             if none_if_not_found :
-                return ["No english translation found."]
+                return ["No target language translation found."]
             return False
         
         return eng
@@ -1388,9 +1393,9 @@ class MICA(object):
         name = story['name']
         mdebug("Ready to translate: " + name + ". Counting pages...")
 
-        assert("language" in story)
+        assert("source_language" in story)
 
-        Processor = getattr(processors, processor_map[story["language"]])
+        Processor = getattr(processors, processor_map[story["source_language"]])
 
         processor = Processor(self, params)
     
@@ -1540,7 +1545,7 @@ class MICA(object):
 
     def get_parts(self, unit) :
         py = ""
-        english = ""
+        target = ""
         if unit["multiple_correct"] == -1 :
             for widx in range(0, len(unit["sromanization"])) :
                 word = unit["sromanization"][widx]
@@ -1553,16 +1558,16 @@ class MICA(object):
                 py = py.strip()
 
             if py == u'' :
-#                mdebug("Not useful: " + py + " and " + english + " len: " + str(len(unit["sromanization"])))
+#                mdebug("Not useful: " + py + " and " + target + " len: " + str(len(unit["sromanization"])))
                 return False
             if unit["trans"] :
-                english = " ".join(unit["target"])
+                target = " ".join(unit["target"])
         else :
             if unit["trans"] :
                 py = " ".join(unit["multiple_sromanization"][unit["multiple_correct"]])
-                english = " ".join(unit["multiple_target"][unit["multiple_correct"]])
+                target = " ".join(unit["multiple_target"][unit["multiple_correct"]])
 
-        return py, english
+        return py, target 
 
 
     def get_polyphome_percentage(self, x, total_changes, changes, unit):
@@ -1990,7 +1995,7 @@ class MICA(object):
             if ret == False :
                 continue
 
-            py, english = ret
+            py, target = ret
 
             if py not in punctuation_without_letters and chars >= chars_per_line :
                lines.append(line)
@@ -2007,7 +2012,7 @@ class MICA(object):
                     chars = 0
             else :
                 chars += len(py)
-                p = [english, py, trans_id, unit, x, source]
+                p = [target, py, trans_id, unit, x, source]
                 line.append(p)
 
             trans_id += 1
@@ -2065,7 +2070,7 @@ class MICA(object):
                 prev_merge = False
                 for word_idx in range(0, len(line)) :
                     word = line[word_idx]
-                    english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
+                    target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
                     py = word[1]
                     trans_id = str(word[2])
                     unit = word[3]
@@ -2152,11 +2157,11 @@ class MICA(object):
                     line_out += " batchid='" + (str(batch) if use_batch else "-1") + "' "
                     line_out += " operation='" + (str(use_batch) if use_batch else "none") + "' "
                     line_out += " page='" + page + "' "
-                    line_out += " pinyin=\"" + (py if py else english) + "\" "
+                    line_out += " pinyin=\"" + (py if py else target) + "\" "
                     line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
                     line_out += " style='color: black; font-weight: normal' "
                     line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
-                    line_out += source if py else english
+                    line_out += source if py else target 
                     line_out += "</a>"
                     line_out += "</span>"
                     line_out += "</td>"
@@ -2173,7 +2178,7 @@ class MICA(object):
                 line_out += "</tr>\n<tr>"
 
             for word in line :
-                english = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
+                target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
                 py = word[1]
                 unit = word[3]
                 trans_id = str(word[2])
@@ -2218,15 +2223,15 @@ class MICA(object):
                             line_out += ("0" if action == "read" else "1") + ")\""
 
                         line_out += ">"
-                        line_out += ((py if py else english).lower()) + add_count 
+                        line_out += ((py if py else target).lower()) + add_count 
                         line_out += "</a>"
                     else :
-                        disk_out += (py if py else english).lower()
+                        disk_out += (py if py else target).lower()
                 else :
                     if disk :
-                        disk_out += (py if py else english).lower()
+                        disk_out += (py if py else target).lower()
                     else :
-                        line_out += (py if py else english).lower()
+                        line_out += (py if py else target).lower()
 
                 if not disk :
                     line_out += "<br/>"
@@ -2254,9 +2259,9 @@ class MICA(object):
 
             if not disk :
                 for word in line :
-                    english = word[0]
-                    if len(english) and english[0] == '/' :
-                        english = english[1:-1]
+                    target = word[0]
+                    if len(target) and target[0] == '/' :
+                        target = target[1:-1]
                     unit = word[3]
                     nb_unit = str(word[4])
                     py = word[1]
@@ -2284,7 +2289,7 @@ class MICA(object):
                             line_out += "<a class='trans' onclick=\"memorize('" + \
                                         tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">"
 
-                        line_out += english.replace("/"," /<br/>")
+                        line_out += target.replace("/"," /<br/>")
                         if action in [ "read", "edit" ] :
                             line_out += "</a>"
 
@@ -2471,11 +2476,11 @@ class MICA(object):
             if not ret :
                 trans_id += 1
                 continue
-            py, english = ret
+            py, target = ret
             if unit["hash"] in memorized :
                 if unit["hash"] not in added :
                     added[unit["hash"]] = unit
-                    progress.append([py, english, unit, x, trans_id, page])
+                    progress.append([py, target, unit, x, trans_id, page])
                     total_memorized += 1
 
             if py and py not in punctuation :
@@ -2613,7 +2618,7 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype, removespaces, language) :
+    def add_story_from_source(self, req, filename, source, filetype, removespaces, source_lang, target_lang) :
         if req.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
         
@@ -2633,7 +2638,9 @@ class MICA(object):
             'translated' : False,
             'name' : filename,
             'filetype' : filetype,
-            'language' : language,
+            'source_language' : source_lang.decode("utf-8"), 
+            'target_language' : target_lang.decode("utf-8"), 
+            'format' : story_format,
         }
         
         if filetype == "pdf" :
@@ -2972,16 +2979,18 @@ class MICA(object):
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
-                language = req.http.params.get("language")
+                source_lang = req.http.params.get("source_language")
+                target_lang = req.http.params.get("target_language")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces, language)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces, source_lang, target_lang)
 
             if req.http.params.get("uploadtext") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                language = req.http.params.get("language")
-                return self.add_story_from_source(req, filename, source, "txt", removespaces, language)
+                source_lang = req.http.params.get("source_language")
+                target_lang = req.http.params.get("target_language")
+                return self.add_story_from_source(req, filename, source, "txt", removespaces, source_lang, target_lang) 
 
             start_page = "0"
             view_mode = "text"
@@ -3006,10 +3015,21 @@ class MICA(object):
                     # Language support came later, so assume all old stories
                     # are in Chinese
 
-                    if "language" not in story :
-                        mdebug("Language is missing. Setting default to Chinese")
-                        story["language"] = "zh-CHS"
+                    if "source_language" not in story :
+                        mdebug("Source Language is missing. Setting default to Chinese")
+                        story["source_language"] = u"zh-CHS"
                         req.db[self.story(req, name)] = story
+
+                    if "target_language" not in story :
+                        mdebug("Target Language is missing. Setting default to English")
+                        story["target_language"] = u"en"
+                        req.db[self.story(req, name)] = story
+
+                    if "format" not in story :
+                        mdebug("Format is missing. Setting default to format #1")
+                        story["format"] = 1 
+                        req.db[self.story(req, name)] = story
+                        
 
             if req.http.params.get("delete") :
                 story_found = False if not name else req.db.doc_exist(self.story(req, name))
@@ -3143,7 +3163,7 @@ class MICA(object):
                     if len(breakout) > 1 :
                         for x in range(0, len(breakout)) :
                             requests.append(breakout[x].encode("utf-8"))
-                    result = self.translate_and_check_array(req, False, requests, u"en", u"zh-CHS")
+                    result = self.translate_and_check_array(req, False, requests, story["target_language"], story["source_language"])
                     for x in range(0, len(requests)) : 
                         part = result[x]
                         if "TranslatedText" not in part :
@@ -3174,10 +3194,10 @@ class MICA(object):
 
                     (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"])
 
-                    eng = self.get_first_translation(d, source.decode("utf-8"), False)
-                    if eng :
-                        for english in eng :
-                            out += english.encode("utf-8")
+                    tar = self.get_first_translation(d, source.decode("utf-8"), False)
+                    if tar :
+                        for target in tar :
+                            out += target.encode("utf-8")
                     else :
                         out += "None found."
                     cjk.db.connection.close()
@@ -3360,9 +3380,9 @@ class MICA(object):
                                     <div class='panel panel-default'>
                                       <div class="panel-heading">
                                       """
-                            py, english, unit, nb_unit, trans_id, page_idx = p
-                            if len(english) and english[0] == '/' :
-                                english = english[1:-1]
+                            py, target, unit, nb_unit, trans_id, page_idx = p
+                            if len(target) and target[0] == '/' :
+                                target = target[1:-1]
                             tid = unit["hash"] if py else trans_id 
 
                             output += "<a class='trans btn-default btn-xs' onclick=\"forget('" + \
@@ -3376,7 +3396,7 @@ class MICA(object):
                             output += "</a>"
                             output += "</div>"
                             output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-                            output += "<div class='panel-inner'>" + english.replace("/"," /") + "</div>"
+                            output += "<div class='panel-inner'>" + target.replace("/"," /") + "</div>"
                             output += "</div>"
                             output += "</div>"
                         output += "</div>"
@@ -3548,7 +3568,7 @@ class MICA(object):
                     self.client[req.session.value['username']] = Translator(client_id, client_secret)
 
                     try :
-                        result = self.translate_and_check_array(req, False, ["开源"], u"en", u"zh-CHS")
+                        result = self.translate_and_check_array(req, False, samples[story["target_language"]], story["target_language"], story["source_language"])
 
                         if not len(result) or "TranslatedText" not in result[0] :
                             tmsg = "We tried to test your translation API credentials, but they didn't work. Please check them and try again =)"

@@ -10,15 +10,18 @@ import string
 
 '''
 All stories up to and including mica version 0.4.x only supported
-Chinese and were not generalized to support other languages. These
-stories are thus assumed to have a version of '1', i.e. the first
-version we started with.
+Chinese and were not generalized to support other languages. Thus,
+the story dictionary format had a very chinese-specific layout.
 
+To fix this, these pre v0.5.0 stories are thus assumed to have a 
+format of '1', i.e. the first version we started with.
+This is detected if the key "format" is not contained within the
+document for the respective story in question.
 
-Version 2+ restructures the basic unit structure to support other
-languages.
+Formats 2 and higher restructure the basic unit structure of a story
+to support other languages.
 
-Version 1 => Version 2
+Format 1 => Format 2
 ========================
 spinyin => sromanization
 tpinyin => tromanization
@@ -27,7 +30,7 @@ english => target
 
 '''
 
-story_version = 2
+story_format = 2
 
 try :
     import mica_ictclas
