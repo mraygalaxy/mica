@@ -6,6 +6,8 @@ import urllib2
 import json
 import warnings
 
+from common import *
+
 class ArgumentOutOfRangeException(Exception):
     def __init__(self, message):
         self.message = message.replace('ArgumentOutOfRangeException: ', '')

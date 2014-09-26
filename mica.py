@@ -68,6 +68,7 @@ for l, readable in lang.iteritems() :
 from common import *
 from processors import * 
 from translator import *
+import processors
 
 import couch_adapter
 
@@ -884,7 +885,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    def progress(self, req, story, progress_idx, grouplen) :
+    def progress(self, req, story, progress_idx, grouplen, page) :
         if progress_idx % 10 == 0 :
             self.transmutex.acquire()
             try :
@@ -976,7 +977,7 @@ class MICA(object):
                 temp_groups = []
                 save_char_group = "" 
                 for char_group in line.split(" ") :
-                    if char_group not in punctuation_without_newlines :
+                    if char_group not in processor.punctuation_without_newlines :
                         if save_char_group != "" :
                             groups.append(save_char_group)
                             save_char_group = ""
@@ -1003,7 +1004,7 @@ class MICA(object):
                 self.transmutex.release()
 
             try :
-                self.parse_page(opaque, req, story, groups, str(iidx), self.progress)
+                processor.parse_page(opaque, req, story, groups, str(iidx), progress = self.progress)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -3077,7 +3078,9 @@ class MICA(object):
                     self.client[req.session.value['username']] = Translator(client_id, client_secret)
 
                     try :
-                        result = self.translate_and_check_array(req, False, samples[story["target_language"]], story["target_language"], story["source_language"])
+                        # Doesn't matter which languages we test - we just want
+                        # to make sure the credentials are valid
+                        result = self.translate_and_check_array(req, False, samples[u"zh-CHS"], u"en", u"zh-CHS")
 
                         if not len(result) or "TranslatedText" not in result[0] :
                             tmsg = "We tried to test your translation API credentials, but they didn't work. Please check them and try again =)"
