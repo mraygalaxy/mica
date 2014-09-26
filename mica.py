@@ -839,7 +839,7 @@ class MICA(object):
             resp = "<h4>Exception:</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
-            resp += "<h2>You have been logged out.</h2>"
+            resp += "<h2>Please clear this application's data in the Android settings for MICA Reader and re-login. If you are not upgrading from v0.4.0, then disregard this message. v0.4 is a beta release. Thank you.</h2>"
             if "connected" in req.session.value and req.session.value["connected"] :
                 req.session.value["connected"] = False
                 req.session.save()
@@ -3966,7 +3966,7 @@ class MICA(object):
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
 
-                resp += "<br/><h2>You have been logged out.</h2>"
+                resp += "<br/><h2>Please clear this application's data in the Android settings for MICA Reader and re-login. If you are not upgrading from v0.4.0, then disregard this message. v0.4 is a beta release. Thank you.</h2>"
                 if "connected" in req.session.value and req.session.value["connected"] :
                     req.session.value["connected"] = False
                     req.session.save()
