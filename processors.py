@@ -27,6 +27,7 @@ spinyin => sromanization
 tpinyin => tromanization
 multiple_english => multiple_target
 english => target
+match_romanization => match_romanization
 
 '''
 
@@ -39,6 +40,7 @@ except ImportError, e :
 
 class Processor(object) :
     def __init__(self, mica, params) :
+        self.already_romanized = True
         self.params = params
         self.mica = mica
 
@@ -46,10 +48,13 @@ class Processor(object) :
         self.punctuation_without_newlines = {}
         self.punctuation[u'\n'] = {}
         self.punctuation['\n'] = {}
+        self.punctuation_characters = {}
 
-        self.punctuation_characters = [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ]
+        for c in [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ] :
+           self.punctuation_characters[c] = {} 
 
-        self.punctuation_characters += ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ]
+        for c in ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ] :
+           self.punctuation_characters[c] = {} 
 
         self.punctuation_without_newlines.update(self.punctuation_characters)
         self.punctuation.update(self.punctuation_characters)
@@ -77,7 +82,7 @@ class Processor(object) :
         else :
             handle = opaque
 
-        self.parse_page_groups(req, story, groups, handle, progress)
+        self.parse_page_groups(req, story, groups, handle, progress, temp_units, page)
 
         if not opaque :
             self.parse_page_stop(handle)
@@ -88,10 +93,10 @@ class Processor(object) :
     def parse_page_stop(self, opaque) :
         return True
 
-    def pre_parse_page(self, page_input_unicode) :
-        return page_input.encode("utf-8")
+    def pre_parse_page(self, opaque, page_input_unicode) :
+        return page_input_unicode.encode("utf-8")
 
-    def parse_page_groups(self, req, story, groups, opaque, progress) :
+    def parse_page_groups(self, req, story, groups, opaque, progress, temp_units, page) :
         unigroups = []
         unikeys = []
 
@@ -110,9 +115,13 @@ class Processor(object) :
                 raise e
 
             if not self.all_punct(uni) :
-                for unichar in uni :
-                    if unichar not in unikeys :
-                        unikeys.append(unichar)
+                if self.already_romanized :
+                    unikeys.append(uni)
+                else :
+                    for unichar in uni :
+                        if unichar not in unikeys :
+                            unikeys.append(unichar)
+
             unigroups.append(uni)
 
         tone_keys = self.mica.view_keys(req, "tonechanges", False, source_queries = unikeys) 
@@ -121,7 +130,7 @@ class Processor(object) :
         for idx in range(0, len(unigroups)) :
             self.recursive_translate(req, story, opaque, unigroups[idx], temp_units, page, tone_keys)
             if progress :
-                self.progress(req, idx, story, page, len(groups))
+                progress(req, story, idx, len(groups), page)
 
     def strip_punct(self, word) :
         new_word = ""
@@ -152,147 +161,92 @@ class Processor(object) :
         unit["punctuation"] = punctuation
         return unit
 
-    def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, target, source, pinyin) :
+    def score_and_rank_unit(self, unit, tone_keys) :
+        source = "".join(unit["source"])
+        total_changes = 0.0
+        changes = False
+        highest = -1
+        highest_percentage = -1.0
+        selector = -1
+        
+        # FIXME: This totally needs to be a view. Fix it soon.
+        changes = tone_keys[source] if source in tone_keys else False
+        
+        if changes :
+            total_changes = float(changes["total"])
 
-      unit = {}
-      unit["multiple_sromanization"] = []
-      unit["multiple_target"] = []
-      unit["multiple_correct"] = -1
+            for idx in range(0, len(unit["multiple_sromanization"])) :
+                percent = self.mica.get_polyphome_percentage(idx, total_changes, changes, unit) 
+                if percent :
+                    if highest_percentage == -1.0 :
+                        highest_percentage = percent
+                        highest = idx
+                    elif percent > highest_percentage :
+                        highest_percentage = percent
+                        highest = idx
 
-      if trans_idx > current_trans_idx :
-          unit["trans"] = groups[current_trans_idx:trans_idx]
-          unit["tromanization"] = reversep[current_trans_idx:trans_idx]
-          t = []
-          for group in unit["trans"] :
-              t.append(target[group[0]])
-          unit["target"] = t 
-      else :
-          unit["trans"] = False
-          unit["target"] = [""]
+        if highest != -1 :
+            selector = highest
+            mdebug("HISTORY Multiple pinyin for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
+        else :
+            longest = -1
+            longest_length = -1
+            
+            for idx in range(0, len(unit["multiple_sromanization"])) :
+                comb_targ = " ".join(unit["multiple_target"][idx])
+                
+                if not comb_targ.count("surname") and not comb_targ.count("variant of") :
+                    if longest_length == -1 :
+                        longest_length = len(comb_targ)
+                        longest = idx
+                    elif len(comb_targ) > longest_length :
+                        longest_length = len(comb_targ)
+                        longest = idx
 
-      if source_idx > current_source_idx :
-          unit["source"] = source[current_source_idx:source_idx]
-          unit["sromanization"] = pinyin[current_source_idx:source_idx]
+            selector = longest
+            mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
 
-      return unit
+        if selector != -1 :
+            unit["sromanization"] = unit["multiple_sromanization"][selector]
+            unit["target"] = unit["multiple_target"][selector]
+            unit["multiple_correct"] = selector 
 
     def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
-        uuid = story['uuid']
-        name = story['name']
-        units = []
         mdebug("Requested: " + uni)
 
         if self.all_punct(uni) :
+            units = []
             units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
-            trans, targ = self.offline_translate(opaque, uni)
+            units = self.recursive_translate_lang(req, story, opaque, uni, temp_units, page, tone_keys)
 
-            if len(trans) == 1 :
-                unit = self.add_unit(trans[0].split(" "), uni, [targ[0]])
-                units.append(unit)
-            elif len(trans) == 0 :
-                if len(uni) > 1 :
-                    for char in uni :
-                        self.recursive_translate(req, story, opaque, char, temp_units, page, tone_keys)
-            elif len(trans) > 1 :
-                            
-                for x in range(0, len(trans)) :
-                    trans[x] = trans[x].lower() 
-                
-                readings = list(set(trans + self.update_readings(opaque, uni)))
-                
-                assert(len(readings) > 0)
-
-                if uni not in punctuation and uni :
-                    online_units = False
-                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                        mdebug("Going online...")
-                        online_units = self.online_cross_reference(req, uuid, name, story, uni, opaque) if len(uni) > 1 else False
-
-                    if not online_units or not len(online_units) :
-                        targ = self.get_first_translation(opaque, uni, readings[0])
-                        unit = self.add_unit([readings[0]], uni, [targ[0]])
-                        for x in readings :
-                            targ = self.get_first_translation(opaque, uni, x, False)
-                            if not targ :
-                                continue
-                            for e in targ :
-                                unit["multiple_sromanization"].append([x])
-                                unit["multiple_target"].append([e])
-                        
-                        if unit["multiple_correct"] == -1 :
-                            source = "".join(unit["source"])
-                            total_changes = 0.0
-                            changes = False
-                            highest = -1
-                            highest_percentage = -1.0
-                            selector = -1
-                            
-                            # FIXME: This totally needs to be a view. Fix it soon.
-                            changes = tone_keys[source] if source in tone_keys else False
-                            
-                            if changes :
-                                total_changes = float(changes["total"])
-
-                                for idx in range(0, len(unit["multiple_sromanization"])) :
-                                    percent = self.mica.get_polyphome_percentage(idx, total_changes, changes, unit) 
-                                    if percent :
-                                        if highest_percentage == -1.0 :
-                                            highest_percentage = percent
-                                            highest = idx
-                                        elif percent > highest_percentage :
-                                            highest_percentage = percent
-                                            highest = idx
-
-                            if highest != -1 :
-                                selector = highest
-                                mdebug("HISTORY Multiple pinyin for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
-                            else :
-                                longest = -1
-                                longest_length = -1
-                                
-                                for idx in range(0, len(unit["multiple_sromanization"])) :
-                                    comb_targ = " ".join(unit["multiple_target"][idx])
-                                    
-                                    if not comb_targ.count("surname") and not comb_targ.count("variant of") :
-                                        if longest_length == -1 :
-                                            longest_length = len(comb_targ)
-                                            longest = idx
-                                        elif len(comb_targ) > longest_length :
-                                            longest_length = len(comb_targ)
-                                            longest = idx
-
-                                selector = longest
-                                mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
-
-                            if selector != -1 :
-                                unit["sromanization"] = unit["multiple_sromanization"][selector]
-                                unit["target"] = unit["multiple_target"][selector]
-                                unit["multiple_correct"] = selector 
-
-                        units.append(unit)
-                    else :
-                        for unit in online_units :
-                           if len(unit["match_pinyin"]) :
-                               unit["sromanization"] = unit["match_pinyin"]
-                           if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
-                               continue
-                           units.append(unit)
-                else :
-                    targ = self.get_first_translation(opaque, uni, readings[0])
-                    units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
-        
         for unit in units :
-            if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
+            if len(unit["multiple_target"]) == 0 or (len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'') :
                continue
 
             self.mica.rehash_correct_polyphome(unit)
-            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            
+        mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units 
+
+    def online_cross_reference(self, req, story, uni, opaque) :
+        online_units = False
+        if not self.params["mobileinternet"] or self.params["mobileinternet"].connected() != "none" :
+            mdebug("Going online...")
+            online_units = self.online_cross_reference_lang(req, story, uni, opaque) if len(uni) > 1 else False
+        return online_units
+
+    def all_punct(self, uni) :
+        all = True
+        for char in uni :
+            if len(uni) and char not in self.punctuation :
+                all = False
+                break
+        return all
 
 def get_cjk_handle(cjklib_path, cedict_path, params) :
     cjk = None
@@ -315,29 +269,17 @@ def get_cjk_handle(cjklib_path, cedict_path, params) :
 
     return (cjk, d)
 
-    def all_punct(self, uni) :
-        all = True
-        for char in uni :
-            if len(uni) and char not in self.punctuation :
-                all = False
-                break
-        return all
-
 class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
 
-    # We'll implement offline support for english later, probably using stardict
-    def offline_translate(self, opaque, uni) :
-        # opaque not yet used for english
-        trans = []
-        targ = []
-        return trans, targ
-
-    def online_cross_reference(self, req, uuid, name, story, all_source, opaque) :
+    def online_cross_reference_lang(self, req, story, all_source, opaque) :
         #opaque is not yet used for English
+        uuid = story['uuid']
+        name = story['name']
+
         minfo("translating source to target....")
-        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
+        result = self.mica.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
         mdebug("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
@@ -350,15 +292,42 @@ class English(Processor) :
 
         mdebug("Translation finished.")
 
-        unit = self.add_unit([], [uni], [mstarget])
+        unit = self.add_unit([], [all_source], mstarget)
         unit["online"] = True
         unit["punctuation"] = False 
-        unit["match_pinyin"] = []
+        unit["match_romanization"] = []
         return [unit]
+
+    def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+        units = []
+
+        online_units = self.online_cross_reference(req, story, uni, opaque)
+
+        if not online_units or not len(online_units) :
+            mwarn("Uh oh. No translation =(. ")
+            raise Exception("Can't translate this word. API has no result: " + str(uni))
+
+        # Just get it working with the first translation returned online
+        # We'll do offline translation later.
+
+        '''
+        units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
+
+        unit["multiple_sromanization"].append([x])
+        unit["multiple_target"].append([e])
+        
+        if unit["multiple_correct"] == -1 :
+            self.score_and_rank_unit(unit, tone_keys)
+        '''
+        for unit in online_units :
+            units.append(unit)
+
+        return units
 
 class ChineseSimplified(Processor) :
     def __init__(self, mica, params) :
         super(ChineseSimplified, self).__init__(mica, params)
+        self.already_romanized = False 
 
         self.punctuation_letters = {}
 
@@ -430,28 +399,6 @@ class ChineseSimplified(Processor) :
                 y -= 1
         return result
 
-    def offline_translate(self, opaque, uni) :
-        cjk, d = opaque 
-        trans = []
-        targ = []
-        results = d.getFor(uni)
-        if results is not None :
-            for e in results :
-                trans.append(e[2])
-                targ.append(e[3])
-        return trans, targ
-
-    def update_readings(self, opaque, uni) :
-        readings = []
-        cjk, d = opaque 
-        
-        if len(uni) == 1 :
-            readg = cjk.getReadingForCharacter(uni, 'Pinyin')
-            for read in readg :
-                read = read.lower()
-                if read not in readings :
-                    readings.append(read)
-        return readings
 
     def parse_page_start(self) : 
         return get_cjk_handle(self.cjklib_path, self.cedict_path)
@@ -489,8 +436,10 @@ class ChineseSimplified(Processor) :
         
         return targ 
 
-    def online_cross_reference(self, req, uuid, name, story, all_source, opaque) :
+    def online_cross_reference_lang(self, req, story, all_source, opaque) :
         (cjk, d) = opaque 
+        uuid = story['uuid']
+        name = story['name']
         ms = []
         targ = []
         trans = []
@@ -514,7 +463,7 @@ class ChineseSimplified(Processor) :
         mdebug(msg.replace("\n",""))
 
         minfo("translating source to target....")
-        result = self.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
+        result = self.mica.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
         mdebug("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
@@ -526,7 +475,7 @@ class ChineseSimplified(Processor) :
         mstarget = mstarget.split(" ")
 
         mdebug("Translating target pieces back to source")
-        result = self.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
+        result = self.mica.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
         mdebug("Translation finished. Writing in json.")
 
         for idx in range(0, len(result)) :
@@ -555,13 +504,13 @@ class ChineseSimplified(Processor) :
         units = []
 
         tmatch = ""
-        match_pinyin = ""
+        match_romanization = ""
         for triple in matches :
           char, source_idx, trans_idx = triple
 #          mdebug("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
           pchar = self.convertPinyin(char)
           tmatch += " " + pchar + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
-          match_pinyin += pchar + " "
+          match_romanization += pchar + " "
 
 #        mdebug("matches: \n" + tmatch.replace("\n",""))
           
@@ -572,14 +521,14 @@ class ChineseSimplified(Processor) :
           if source_idx > current_source_idx :
               # only append if there's something in the source
               new_unit = self.make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, targ, source, pinyin)
-              new_unit["match_pinyin"] = []
+              new_unit["match_romanization"] = []
               units.append(new_unit) 
 
           current_source_idx = source_idx
           current_trans_idx = trans_idx
 
           new_unit = self.make_unit(source_idx + 1, current_source_idx, trans_idx + 1, current_trans_idx, groups, reversep, targ, source, pinyin) 
-          new_unit["match_pinyin"] = [match_pinyin]
+          new_unit["match_romanization"] = [match_romanization]
 
           units.append(new_unit)
 
@@ -696,3 +645,95 @@ class ChineseSimplified(Processor) :
                           
         return units 
 
+    def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, target, source, pinyin) :
+
+      unit = {}
+      unit["multiple_sromanization"] = []
+      unit["multiple_target"] = []
+      unit["multiple_correct"] = -1
+
+      if trans_idx > current_trans_idx :
+          unit["trans"] = groups[current_trans_idx:trans_idx]
+          unit["tromanization"] = reversep[current_trans_idx:trans_idx]
+          t = []
+          for group in unit["trans"] :
+              t.append(target[group[0]])
+          unit["target"] = t 
+      else :
+          unit["trans"] = False
+          unit["target"] = [""]
+
+      if source_idx > current_source_idx :
+          unit["source"] = source[current_source_idx:source_idx]
+          unit["sromanization"] = pinyin[current_source_idx:source_idx]
+
+      return unit
+
+    def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+        units = []
+
+        cjk, d = opaque 
+        trans = []
+        targ = []
+        results = d.getFor(uni)
+        if results is not None :
+            for e in results :
+                trans.append(e[2])
+                targ.append(e[3])
+
+        if len(trans) == 1 :
+            unit = self.add_unit(trans[0].split(" "), uni, [targ[0]])
+            units.append(unit)
+        elif len(trans) == 0 :
+            if len(uni) > 1 :
+                for char in uni :
+                    self.recursive_translate(req, story, opaque, char, temp_units, page, tone_keys)
+
+        elif len(trans) > 1 :
+                        
+            for x in range(0, len(trans)) :
+                trans[x] = trans[x].lower() 
+            
+            pre_readings = []
+            
+            if len(uni) == 1 :
+                readg = cjk.getReadingForCharacter(uni, 'Pinyin')
+                for read in readg :
+                    read = read.lower()
+                    if read not in pre_readings :
+                        pre_readings.append(read)
+
+            readings = list(set(trans + pre_readings))
+            
+            assert(len(readings) > 0)
+
+            if uni not in punctuation and uni :
+                online_units = self.online_cross_reference(req, story, uni, opaque)
+
+                if not online_units or not len(online_units) :
+                    targ = self.get_first_translation(opaque, uni, readings[0])
+                    unit = self.add_unit([readings[0]], uni, [targ[0]])
+                    for x in readings :
+                        targ = self.get_first_translation(opaque, uni, x, False)
+                        if not targ :
+                            continue
+                        for e in targ :
+                            unit["multiple_sromanization"].append([x])
+                            unit["multiple_target"].append([e])
+                    
+                    if unit["multiple_correct"] == -1 :
+                        self.score_and_rank_unit(unit, tone_keys)
+
+                    units.append(unit)
+                else :
+                    for unit in online_units :
+                       if len(unit["match_romanization"]) :
+                           unit["sromanization"] = unit["match_romanization"]
+                       if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
+                           continue
+                       units.append(unit)
+            else :
+                targ = self.get_first_translation(opaque, uni, readings[0])
+                units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
+
+        return units
