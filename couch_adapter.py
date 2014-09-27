@@ -115,7 +115,8 @@ class MicaDatabaseCouchDB(object) :
             if false_if_not_found :
                 return False
             else :
-                raise ResourceNotFound("Cannot lookup key: " + name)
+                mwarn(str(e))
+                raise ResourceNotFound("Cannot lookup key: " + name, e)
 
     def __delitem__(self, name) :
         doc = self.db[name]
@@ -300,6 +301,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
             if false_if_not_found :
                 return False
             else :
+                mwarn("Cannot lookup key: " + name)
                 raise ResourceNotFound("Cannot lookup key: " + name)
 
         if doc is not None :
@@ -489,6 +491,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             if false_if_not_found :
                 return False
             else :
+                mwarn("Cannot lookup key: " + name)
                 raise ResourceNotFound("Cannot lookup key: " + name)
         if doc is not None :
             return json.loads(doc)
