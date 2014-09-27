@@ -599,6 +599,9 @@ function make_child(node) {
   }
 
   function change(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque1, opaque2) {
+      var cb = callback;
+      var o1 = opaque1;
+      var o2 = opaque2;
       jQuery.support.cors = true;
       jQuery.ajax({
         url: url,
@@ -614,7 +617,7 @@ function make_child(node) {
         },
         success: function (response) {
             var data = "none";
-            if(response.indexOf("This account is not fully synchronized") || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+            if(response.indexOf("This account is not fully synchronized") != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
@@ -638,8 +641,8 @@ function make_child(node) {
                             }
                         });
                 }
-	            if(callback != false)
-	               callback(data, opaque1, opaque2);
+	            if(cb != false && cb != undefined)
+	               cb(data, o1, o2);
             }
         }
       });
