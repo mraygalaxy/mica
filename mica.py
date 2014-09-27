@@ -835,7 +835,7 @@ class MICA(object):
         except exc.HTTPException, e:
             resp = e
         except couch_adapter.ResourceNotFound, e :
-            resp = self.warn_not_replicated(req, bootstrap = False)
+            resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
 #            exc_type, exc_value, exc_traceback = sys.exc_info()
             resp = "<h4>Exception:</h4>"
@@ -2794,6 +2794,7 @@ class MICA(object):
                 groups.append(char.encode("utf-8"))
 
             self.parse_page(req, story['uuid'], story['name'], story, groups, page, temp_units = True)
+
             page_dict["units"] = before + story["temp_units"] + after
             req.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
             offset += (len(story["temp_units"]) - len(curr))
@@ -2997,7 +2998,7 @@ class MICA(object):
             req.db[self.story(req, story["name"])] = tmp_story
 
 
-    def warn_not_replicated(self, req, bootstrap = True) :
+    def warn_not_replicated(self, req, bootstrap = True, now = False) :
         if mobile :
             msg = "This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100."
         else :
@@ -3007,11 +3008,12 @@ class MICA(object):
 
             msg = "Missing key on server. Please report this to the author. Thank you."
 
-        mwarn(msg)
         if bootstrap :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
+            mwarn("bootstrapping: " + msg)
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>", now = now)
         else :
-            return "<h4>" + msg + "</h4>"
+            mwarn("raw: " + msg)
+            return msg
 
     def disconnect(self, session) :
         session.value['connected'] = False
@@ -3434,18 +3436,23 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, d) = self.get_cjk_handle()
-                    eng = self.get_first_translation(d, source.decode("utf-8"), False)
-                    if eng :
-                        for english in eng :
-                            out += english.encode("utf-8")
-                    else :
-                        out += "None found."
-                    cjk.db.connection.close()
-                    d.db.connection.close()
+                    try :
+                        (cjk, d) = self.get_cjk_handle()
+                        eng = self.get_first_translation(d, source.decode("utf-8"), False)
+                        if eng :
+                            for english in eng :
+                                out += english.encode("utf-8")
+                        else :
+                            out += "None found."
+                        cjk.db.connection.close()
+                        d.db.connection.close()
+                    except OSError, e :
+                        out += "Please wait until this account is fully synchronized for an offline translation."
+                    mdebug("Finishing instant translation offline...")
                 else :
                     out += json.dumps(final)
                 out += "</div>"
+                mdebug("Returning instant result")
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
             if req.http.params.get("translate") :
@@ -3456,6 +3463,8 @@ class MICA(object):
                     try :
                         self.parse(req, uuid, name, story, username)
                         output += self.heromsg + "Translation complete!"
+                    except OSError, e :
+                        output += self.warn_not_replicated(req, bootstrap = False)
                     except Exception, e :
                         output += "Failed to translate story: " + str(e)
                 output += "</div></div>"
@@ -3582,7 +3591,11 @@ class MICA(object):
                     if edit["failed"] :
                         mdebug("This edit failed. Skipping.")
                         continue
-                    result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
+
+                    try :
+                        result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
+                    except OSError, e :
+                        return self.warn_not_replicated(req)
                     
                     if not result[0] and len(result) > 1 :
                         return self.bootstrap(req, result[1])
@@ -3647,7 +3660,10 @@ class MICA(object):
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
-                self.parse(req, uuid, name, story, username, page = page)
+                try :
+                    self.parse(req, uuid, name, story, username, page = page)
+                except OSError, e :
+                    return self.warn_not_replicated(req)
                 
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
