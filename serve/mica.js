@@ -62,7 +62,7 @@ if ("liststate" in params)
         },
         success: function (response) {
             var data = "none";
-            if(response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1) {
+            if(response.indexOf("This account is not fully synchronized") != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
@@ -614,7 +614,7 @@ function make_child(node) {
         },
         success: function (response) {
             var data = "none";
-            if(response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1) {
+            if(response.indexOf("This account is not fully synchronized") || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {

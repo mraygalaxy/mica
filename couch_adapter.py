@@ -106,13 +106,16 @@ class MicaDatabaseCouchDB(object) :
         except couchdb.http.ResourceNotFound, e :
             raise ResourceNotFound(str(e), e)
 
-    def __getitem__(self, name) :
+    def __getitem__(self, name, false_if_not_found = False) :
         try :
             return self.db[name]
         except couchdb.http.Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couchdb.http.ResourceNotFound, e :
-            return False
+            if false_if_not_found :
+                return False
+            else :
+                raise ResourceNotFound("Cannot lookup key: " + name)
 
     def __delitem__(self, name) :
         doc = self.db[name]
@@ -287,15 +290,20 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         except Exception, e :
             raise CommunicationError("Error occured putting document: " + str(e), e)
 
-    def __getitem__(self, name) :
+    def __getitem__(self, name, false_if_not_found = False) :
         try :
             doc = self.db.get(String(self.dbname), String(name))
-            if doc == "" :
-                return False
-            if doc is not None :
-                return json.loads(doc)
         except Exception, e :
             raise CommunicationError("Error occured getting document: " + name + " " + str(e), e)
+
+        if doc == "" :
+            if false_if_not_found :
+                return False
+            else :
+                raise ResourceNotFound("Cannot lookup key: " + name)
+
+        if doc is not None :
+            return json.loads(doc)
 
         # return was None (null)
         raise CommunicationError("Bad exception occured getting document: " + name)
@@ -470,16 +478,20 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         except Exception, e :
             raise CommunicationError("Error occured putting document: " + str(e), e)
 
-    def __getitem__(self, name) :
+    def __getitem__(self, name, false_if_not_found = False) :
         try :
             doc = self.db.get__(String(self.dbname), String(name)).UTF8String()
-            #mdebug("Result of get is: " + str(doc) + " " + str(type(doc)))
-            if doc == "" :
-                return False
-            if doc is not None :
-                return json.loads(doc)
         except Exception, e :
             raise CommunicationError("Error occured getting document: " + name + " " + str(e), e)
+
+        #mdebug("Result of get is: " + str(doc) + " " + str(type(doc)))
+        if doc == "" :
+            if false_if_not_found :
+                return False
+            else :
+                raise ResourceNotFound("Cannot lookup key: " + name)
+        if doc is not None :
+            return json.loads(doc)
 
         # return was None (null)
         raise CommunicationError("Bad exception occured getting document: " + name)
