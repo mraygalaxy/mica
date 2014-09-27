@@ -834,12 +834,14 @@ class MICA(object):
             resp.location = req.dest + resp.location# + req.active
         except exc.HTTPException, e:
             resp = e
+        except couch_adapter.ResourceNotFound, e :
+            resp = self.warn_not_replicated(req, bootstrap = False)
         except Exception, e :
 #            exc_type, exc_value, exc_traceback = sys.exc_info()
             resp = "<h4>Exception:</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
-            resp += "<h2>Please clear this application's data in the Android settings for MICA Reader and re-login. If you are not upgrading from v0.4.0, then disregard this message. v0.4 is a beta release. Thank you.</h2>"
+            resp += "<h2>Please report the exception above to the author. Thank you.</h2>"
             if "connected" in req.session.value and req.session.value["connected"] :
                 req.session.value["connected"] = False
                 req.session.save()
@@ -970,7 +972,8 @@ class MICA(object):
                 navcontents += "><a href=\"BOOTDEST" + value[0] + "\">" + value[1] + "</a></li>\n"
         
             if req.session.value['connected'] and not pretend_disconnected :
-                user = req.db[self.acct(req.session.value['username'])]
+                user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
+
                 if user and 'admin' in user['roles'] :
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
@@ -2210,8 +2213,6 @@ class MICA(object):
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
-        if not page_dict :
-            return "What the hell is going on?"
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
         words = len(units)
@@ -2713,8 +2714,6 @@ class MICA(object):
         total_unique = 0
         trans_id = 0
         page_dict = req.db[self.story(req, story["name"]) + ":pages:" + str(page)]
-        if not page_dict :
-            return False 
         units = page_dict["units"]
         
         memorized = self.view_keys(req, "memorized", units) 
@@ -2997,6 +2996,22 @@ class MICA(object):
             tmp_story["current_page"] = story["current_page"] = str(page)
             req.db[self.story(req, story["name"])] = tmp_story
 
+
+    def warn_not_replicated(self, req, bootstrap = True) :
+        if mobile :
+            msg = "This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100."
+        else :
+            if "connected" in req.session.value and req.session.value["connected"] :
+                req.session.value["connected"] = False
+                req.session.save()
+
+            msg = "Missing key on server. Please report this to the author. Thank you."
+
+        if bootstrap :
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
+        else :
+            return "<h4>" + msg + "</h4>"
+
     def disconnect(self, session) :
         session.value['connected'] = False
         username = session.value['username']
@@ -3085,9 +3100,9 @@ class MICA(object):
                 req.session.value["last_refresh"] = str(timest())
                 req.session.save()
 
-                user = req.db[self.acct(username)]
+                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
                 if not user :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, this account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                    return self.warn_not_replicated(req)
                     
                 if "app_chars_per_line" not in user :
                     user["app_chars_per_line"] = 70
@@ -3465,11 +3480,11 @@ class MICA(object):
                 tmp_story = story
                 if not tmp_story :
                     name = req.db[self.index(req, uuid)]["value"]
-                    tmp_story = req.db[self.story(req, name)]
+                    tmp_story = req.db.__getitem__(self.story(req, name), false_if_not_found = True)
                     if not tmp_story :
                         self.clear_story(req)
                         mwarn("Could not lookup: " + self.story(req, name))
-                        return self.bootstrap(req, self.heromsg + "\n<h4>This story (" + str(name) + ") is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                        return self.warn_not_replicated(req)
                         
                 if "current_page" in tmp_story :
                     start_page = tmp_story["current_page"]
@@ -3583,9 +3598,6 @@ class MICA(object):
                 output = ""
                         
                 result = self.memocount(req, story, page)
-                
-                if not result :
-                    return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>What the hell is going on?</div></div>", now = True)
                 
                 total_memorized, total_unique, unique, progress = result
 
@@ -3743,10 +3755,10 @@ class MICA(object):
                 if username == "demo" :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Demo account is read-only.</h4></div>")
                  
-                user = req.db[self.acct(username)]
+                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
                 if not user :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>This account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                    return self.warn_not_replicated(req)
                 
                 if req.http.params.get("pack") :
                     req.db.compact()
@@ -3953,6 +3965,8 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
+        except couch_adapter.ResourceNotFound, e :
+            return self.warn_not_replicated(req)
         except Exception, msg:
             mdebug("Exception: " + str(msg))
             out = "Exception:\n" 
@@ -3960,13 +3974,13 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
-            mdebug(out )
+            mdebug(out)
 
             try :
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
 
-                resp += "<br/><h2>Please clear this application's data in the Android settings for MICA Reader and re-login. If you are not upgrading from v0.4.0, then disregard this message. v0.4 is a beta release. Thank you.</h2>"
+                resp += "<br/><h2>Please report the above exception to the author. Thank you.</h2>"
                 if "connected" in req.session.value and req.session.value["connected"] :
                     req.session.value["connected"] = False
                     req.session.save()
