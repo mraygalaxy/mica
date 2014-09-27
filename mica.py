@@ -1843,7 +1843,7 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = req.db[self.tones(req, source)]
+        changes = req.db.__getitem__(self.tones(req, source), false_if_not_found = True)
         
         if changes :
             total_changes = float(changes["total"])
@@ -2751,7 +2751,7 @@ class MICA(object):
         char = "".join(unit["source"])
         hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-        changes = req.db[which(req, char)]
+        changes = req.db.__getitem__(which(req, char), false_if_not_found = True)
         if not changes :
             changes = {} 
             changes["record"] = {}
@@ -2833,7 +2833,7 @@ class MICA(object):
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    changes = req.db[self.merge(req, char)]
+                    changes = req.db.__getitem__(self.merge(req, char), false_if_not_found = True)
                     if not changes :
                         changes = {} 
                         changes["record"] = {}
@@ -3007,6 +3007,7 @@ class MICA(object):
 
             msg = "Missing key on server. Please report this to the author. Thank you."
 
+        mwarn(msg)
         if bootstrap :
             return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
         else :
@@ -3218,7 +3219,6 @@ class MICA(object):
                     req.session.save()
 
             if username not in self.first_request :
-                self.first_request[username] = True 
                 self.check_all_views(req)
 
                 if params["transcheck"] :
@@ -3238,6 +3238,7 @@ class MICA(object):
 
                         if params["transreset"] :
                             self.flush_pages(req, tmp_storyname)
+                self.first_request[username] = True 
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
