@@ -554,12 +554,14 @@ class MICA(object):
             resp.location = req.dest + resp.location# + req.active
         except exc.HTTPException, e:
             resp = e
+        except couch_adapter.ResourceNotFound, e :
+            resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
 #            exc_type, exc_value, exc_traceback = sys.exc_info()
             resp = "<h4>Exception:</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
-            resp += "<h2>You have been logged out.</h2>"
+            resp += "<h2>Please report the exception above to the author. Thank you.</h2>"
             if "connected" in req.session.value and req.session.value["connected"] :
                 req.session.value["connected"] = False
                 req.session.save()
@@ -690,7 +692,8 @@ class MICA(object):
                 navcontents += "><a href=\"BOOTDEST" + value[0] + "\">" + value[1] + "</a></li>\n"
         
             if req.session.value['connected'] and not pretend_disconnected :
-                user = req.db[self.acct(req.session.value['username'])]
+                user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
+
                 if user and 'admin' in user['roles'] :
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
@@ -1098,7 +1101,7 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = req.db[self.tones(req, source)]
+        changes = req.db.__getitem__(self.tones(req, source), false_if_not_found = True)
         
         if changes :
             total_changes = float(changes["total"])
@@ -1468,8 +1471,6 @@ class MICA(object):
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, disk = False) :
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
-        if not page_dict :
-            return "What the hell is going on?"
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
         words = len(units)
@@ -1971,8 +1972,6 @@ class MICA(object):
         total_unique = 0
         trans_id = 0
         page_dict = req.db[self.story(req, story["name"]) + ":pages:" + str(page)]
-        if not page_dict :
-            return False 
         units = page_dict["units"]
         
         memorized = self.view_keys(req, "memorized", units) 
@@ -2010,7 +2009,7 @@ class MICA(object):
         char = "".join(unit["source"])
         hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-        changes = req.db[which(req, char)]
+        changes = req.db.__getitem__(which(req, char), false_if_not_found = True)
         if not changes :
             changes = {} 
             changes["record"] = {}
@@ -2053,6 +2052,7 @@ class MICA(object):
                 groups.append(char.encode("utf-8"))
 
             self.parse_page(False, req, story, groups, page, temp_units = True)
+
             page_dict["units"] = before + story["temp_units"] + after
             req.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
             offset += (len(story["temp_units"]) - len(curr))
@@ -2092,7 +2092,7 @@ class MICA(object):
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    changes = req.db[self.merge(req, char)]
+                    changes = req.db.__getitem__(self.merge(req, char), false_if_not_found = True)
                     if not changes :
                         changes = {} 
                         changes["record"] = {}
@@ -2258,6 +2258,24 @@ class MICA(object):
             tmp_story["current_page"] = story["current_page"] = str(page)
             req.db[self.story(req, story["name"])] = tmp_story
 
+
+    def warn_not_replicated(self, req, bootstrap = True, now = False) :
+        if mobile :
+            msg = "This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100."
+        else :
+            if "connected" in req.session.value and req.session.value["connected"] :
+                req.session.value["connected"] = False
+                req.session.save()
+
+            msg = "Missing key on server. Please report this to the author. Thank you."
+
+        if bootstrap :
+            mwarn("bootstrapping: " + msg)
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>", now = now)
+        else :
+            mwarn("raw: " + msg)
+            return msg
+
     def disconnect(self, session) :
         session.value['connected'] = False
         username = session.value['username']
@@ -2346,9 +2364,9 @@ class MICA(object):
                 req.session.value["last_refresh"] = str(timest())
                 req.session.save()
 
-                user = req.db[self.acct(username)]
+                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
                 if not user :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, this account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                    return self.warn_not_replicated(req)
                     
                 if "app_chars_per_line" not in user :
                     user["app_chars_per_line"] = 70
@@ -2464,7 +2482,6 @@ class MICA(object):
                     req.session.save()
 
             if username not in self.first_request :
-                self.first_request[username] = True 
                 self.check_all_views(req)
 
                 if params["transcheck"] :
@@ -2484,6 +2501,7 @@ class MICA(object):
 
                         if params["transreset"] :
                             self.flush_pages(req, tmp_storyname)
+                self.first_request[username] = True 
                     
             if req.http.params.get("uploadfile") :
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
@@ -2702,16 +2720,18 @@ class MICA(object):
                     out += p 
                     out += "<h4>Offline translation:</h4>"
 
-                    (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"], params)
-
-                    tar = self.get_first_translation(d, source.decode("utf-8"), False)
-                    if tar :
-                        for target in tar :
-                            out += target.encode("utf-8")
-                    else :
-                        out += "None found."
-                    cjk.db.connection.close()
-                    d.db.connection.close()
+                    try :
+                        (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"], params)
+                        tar = self.get_first_translation(d, source.decode("utf-8"), False)
+                        if tar :
+                            for target in tar :
+                                out += target.encode("utf-8")
+                        else :
+                            out += "None found."
+                        cjk.db.connection.close()
+                        d.db.connection.close()
+                    except OSError, e :
+                        out += "Please wait until this account is fully synchronized for an offline translation."
                 else :
                     out += json.dumps(final)
                 out += "</div>"
@@ -2725,6 +2745,8 @@ class MICA(object):
                     try :
                         self.parse(req, story)
                         output += self.heromsg + "Translation complete!"
+                    except OSError, e :
+                        output += self.warn_not_replicated(req, bootstrap = False)
                     except Exception, e :
                         output += "Failed to translate story: " + str(e)
                 output += "</div></div>"
@@ -2750,11 +2772,11 @@ class MICA(object):
                 tmp_story = story
                 if not tmp_story :
                     name = req.db[self.index(req, uuid)]["value"]
-                    tmp_story = req.db[self.story(req, name)]
+                    tmp_story = req.db.__getitem__(self.story(req, name), false_if_not_found = True)
                     if not tmp_story :
                         self.clear_story(req)
                         mwarn("Could not lookup: " + self.story(req, name))
-                        return self.bootstrap(req, self.heromsg + "\n<h4>This story (" + str(name) + ") is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                        return self.warn_not_replicated(req)
                         
                 if "current_page" in tmp_story :
                     start_page = tmp_story["current_page"]
@@ -2851,7 +2873,11 @@ class MICA(object):
                     if edit["failed"] :
                         mdebug("This edit failed. Skipping.")
                         continue
-                    result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
+
+                    try :
+                        result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
+                    except OSError, e :
+                        return self.warn_not_replicated(req)
                     
                     if not result[0] and len(result) > 1 :
                         return self.bootstrap(req, result[1])
@@ -2868,9 +2894,6 @@ class MICA(object):
                 output = ""
                         
                 result = self.memocount(req, story, page)
-                
-                if not result :
-                    return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>What the hell is going on?</div></div>", now = True)
                 
                 total_memorized, total_unique, unique, progress = result
 
@@ -2919,7 +2942,10 @@ class MICA(object):
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
-                self.parse(req, story, page = page)
+                try :
+                    self.parse(req, story, page = page)
+                except OSError, e :
+                    return self.warn_not_replicated(req)
                 
             if req.action in ["home", "read", "edit" ] :
                 if uuid :
@@ -3029,10 +3055,10 @@ class MICA(object):
                 if username == "demo" :
                     return self.bootstrap(req, self.heromsg + "\n<h4>Demo account is read-only.</h4></div>")
                  
-                user = req.db[self.acct(username)]
+                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
                 if not user :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>This account is not fully synchronized. You can follow the progress at the top of the screen.</h4></div>")
+                    return self.warn_not_replicated(req)
                 
                 if req.http.params.get("pack") :
                     req.db.compact()
@@ -3241,6 +3267,8 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
+        except couch_adapter.ResourceNotFound, e :
+            return self.warn_not_replicated(req)
         except Exception, msg:
             mdebug("Exception: " + str(msg))
             out = "Exception:\n" 
@@ -3248,13 +3276,13 @@ class MICA(object):
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
-            mdebug(out )
+            mdebug(out)
 
             try :
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
 
-                resp += "<br/><h2>You have been logged out.</h2>"
+                resp += "<br/><h2>Please report the above exception to the author. Thank you.</h2>"
                 if "connected" in req.session.value and req.session.value["connected"] :
                     req.session.value["connected"] = False
                     req.session.save()
