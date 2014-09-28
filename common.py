@@ -11,6 +11,8 @@ import socket
 import inspect
 import sys
 import threading
+import gettext
+import locale
 from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
@@ -25,6 +27,33 @@ if sys.getdefaultencoding() != "utf-8" :
     print sys.getdefaultencoding()
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
+
+gnutextkwargs = {}
+gettext.install("mica", **gnutextkwargs)
+
+if sys.version_info[0] < 3:
+    # In Python 2, ensure that the _() that gets installed into built-ins
+    # always returns unicodes.  This matches the default behavior under Python
+    # 3, although that keyword argument is not present in the Python 3 API.
+    gnutextkwargs['unicode'] = True
+    
+def init_localization(language = False):
+    if language :
+        filename = "res/messages_%s.mo" % language
+    else :
+        locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
+        # take first two characters of country code
+        loc = locale.getlocale()
+        filename = "res/messages_%s.mo" % locale.getlocale()[0][0:2]
+    
+    try:
+        mdebug( "Opening message file " + filename)
+        trans = gettext.GNUTranslations(open( filename, "rb" ))
+    except IOError:
+        mdebug("Locale not found. Using default messages")
+        trans = gettext.NullTranslations()
+ 
+    trans.install("mica")
 
 try :
     from jnius import autoclass

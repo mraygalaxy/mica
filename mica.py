@@ -47,7 +47,7 @@ lang = {
        }
 
 samples = {
-         u"zh-CHS" : ["开源"],
+         u"zh-CHS" : [u"开源"],
          u"en" : ["test"],
        }
 
@@ -330,9 +330,9 @@ class MICA(object):
         self.client = {}
 
         self.menu = [ 
-             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;Review")), 
-             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;Edit")), 
-             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;Read")), 
+             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;" + _("Review"))), 
+             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;" + _("Edit"))), 
+             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;" + _("Read"))), 
         ]
         
         # Replacements must be in this order
@@ -703,7 +703,9 @@ class MICA(object):
                 navcontents += """
                                  <li class='dropdown'>
                                  <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                                 <i class='glyphicon glyphicon-user'></i>&nbsp;Account&nbsp;<b class='caret'></b>
+                               """
+                navcontents += "<i class='glyphicon glyphicon-user'></i>&nbsp;" + _("Account") + "&nbsp;<b class='caret'></b>"
+                navcontents += """
                                  </a>
                                  <ul class='dropdown-menu'>
                                 """
@@ -3531,6 +3533,7 @@ slaves = {}
 params = None
 
 def go(p) :
+    init_localization("zh")
     global params
     params = p
     mdebug("Verifying options.")
