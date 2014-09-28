@@ -13,9 +13,13 @@ import sys
 import threading
 import gettext
 import locale
+import os
+import re
 from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
+
+cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
@@ -37,24 +41,6 @@ if sys.version_info[0] < 3:
     # 3, although that keyword argument is not present in the Python 3 API.
     gnutextkwargs['unicode'] = True
     
-def init_localization(language = False):
-    if language :
-        filename = "res/messages_%s.mo" % language
-    else :
-        locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
-        # take first two characters of country code
-        loc = locale.getlocale()
-        filename = "res/messages_%s.mo" % locale.getlocale()[0][0:2]
-    
-    try:
-        mdebug( "Opening message file " + filename)
-        trans = gettext.GNUTranslations(open( filename, "rb" ))
-    except IOError:
-        mdebug("Locale not found. Using default messages")
-        trans = gettext.NullTranslations()
- 
-    trans.install("mica")
-
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
@@ -241,3 +227,12 @@ class MICASlaveClient(Server):
         self.username = None
         self.print_message = print_message
         self.last_refresh = datetime.now()
+
+def init_localization():
+    try :
+        locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
+        # take first two characters of country code
+        return locale.getlocale()[0][0:2]
+    except Exception, e :
+        mdebug("Could not find locale. Defaulting to english.")
+        return "en"
