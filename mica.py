@@ -62,6 +62,7 @@ processor_map = {
 }
 
 global_processors = {}
+texts = {}
 
 bootlangs = ""
 for l, readable in lang.iteritems() :
@@ -310,6 +311,16 @@ class MICA(object):
     def credentials(self) :
         return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
 
+    def install_language(self, language) :
+        mdebug("Setting language to: " + language)
+        texts[language].install()
+        mdebug("Language set.")
+        self.menu = [ 
+             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;" + _("Review"))), 
+             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;" + _("Edit"))), 
+             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;" + _("Read"))), 
+        ]
+        
     def __init__(self, db_adapter):
         self.mutex = Lock()
         self.transmutex = Lock()
@@ -329,12 +340,6 @@ class MICA(object):
 
         self.client = {}
 
-        self.menu = [ 
-             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;" + _("Review"))), 
-             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;" + _("Edit"))), 
-             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;" + _("Read"))), 
-        ]
-        
         # Replacements must be in this order
         
         self.replacement_keys = [ 
@@ -540,6 +545,9 @@ class MICA(object):
                         # On the server, use cookies to talk to CouchDB
                         cookie = req.session.value["cookie"]
                         mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
+
+                    if "language" in req.session.value :
+                        self.install_language(req.session.value["language"])
 
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
@@ -2409,6 +2417,11 @@ class MICA(object):
                 if not user :
                     return self.warn_not_replicated(req)
                     
+                if "language" not in user :
+                    user["language"] = params["language"]
+
+                self.install_language(user["language"])
+
                 if "app_chars_per_line" not in user :
                     user["app_chars_per_line"] = 70
                 if "web_chars_per_line" not in user :
@@ -2422,6 +2435,7 @@ class MICA(object):
                 req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
                 req.session.value["default_app_zoom"] = user["default_app_zoom"]
                 req.session.value["default_web_zoom"] = user["default_web_zoom"]
+                req.session.value["language"] = user["language"]
                 req.db[self.acct(username)] = user
                 req.session.save()
 
@@ -3202,6 +3216,14 @@ class MICA(object):
                     self.make_account(req, newusername, newpassword, roles)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
+                elif req.http.params.get("changelanguage") :
+                    language = req.http.params.get("language")
+                    user["language"] = language
+                    req.db[self.acct(username)] = user
+                    req.session.value["language"] = language
+                    req.session.save()
+                    self.install_language(language)
+                    out += self.heromsg + "\n<h4>Success! Language changed.</h4></div>"
                 elif req.http.params.get("setappchars") :
                     chars_per_line = int(req.http.params.get("setappchars"))
                     if chars_per_line > 1000 or chars_per_line < 5 :
@@ -3301,6 +3323,29 @@ class MICA(object):
                             out += "<tr><td>" + tmp_doc["name"] + "</td></tr>"
                         out += "</table>"
 
+                out += """
+                    <h4><b>Language</b>?</h4>
+                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                    <select name="language">
+                """
+                softlangs = []
+                for l, readable in lang.iteritems() :
+                    locale = l.split("-")[0]
+                    if locale not in softlangs :
+                        softlangs.append((locale, readable))
+
+                for l, readable in softlangs :
+                    out += "<option value='" + l + "'"
+                    if l == user["language"] :
+                        out += "selected"
+                    out += ">" + readable + "</option>\n"
+                out += """
+                    </select>
+                    <br/>
+                    <br/>
+                    <button name='changelanguage' type="submit" class="btn btn-default btn-primary" value='1'>Change Language</button>
+                    </form>                                   
+                """
 
                 return self.bootstrap(req, out)
                     
@@ -3533,9 +3578,21 @@ slaves = {}
 params = None
 
 def go(p) :
-    init_localization("zh")
     global params
     params = p
+
+    for l in lang :
+       locale = l.split("-")[0]
+       try:
+           texts[locale] = gettext.GNUTranslations(open(cwd + "res/messages_" + locale + ".mo", 'rb'))
+       except IOError:
+           if l == u"en" :
+               texts[locale] = gettext.NullTranslations()
+           else :
+               mdebug("Language translation " + l + " failed. Bailing...")
+               exit(1)
+
+    params["language"] = init_localization()
     mdebug("Verifying options.")
 
     if mobile and "local_database" not in params :
@@ -3626,6 +3683,8 @@ def go(p) :
 
         for l, processor_name in lang.iteritems() :
             global_processors[l] = getattr(processors, processor_map[l])(mica, params)
+
+        mica.install_language(params["language"])
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
