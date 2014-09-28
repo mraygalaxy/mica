@@ -855,7 +855,7 @@ class MICA(object):
         assert(cjksize != 0)
         assert(cesize != 0)
 
-        cjk, d = get_cjk_handle(params["cjklib"], params["cedict"], params)
+        cjk, d = get_cjk_handle(params)
 
         for x in d.getFor(u'白鹭'.decode('utf-8')) :
             mdebug(str(x))
@@ -949,7 +949,7 @@ class MICA(object):
         finally :
             self.transmutex.release()
 
-        opaque = processor.parse_page_start(story) 
+        opaque = processor.parse_page_start() 
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -2721,7 +2721,7 @@ class MICA(object):
                     out += "<h4>Offline translation:</h4>"
 
                     try :
-                        (cjk, d) = get_cjk_handle(params["cjklib"], params["cedict"], params)
+                        (cjk, d) = get_cjk_handle(params)
                         tar = self.get_first_translation(d, source.decode("utf-8"), False)
                         if tar :
                             for target in tar :
@@ -3511,7 +3511,7 @@ def go(p) :
 
     mdebug("Session dir: " + params["session_dir"])
 
-    if params["sslport"] != -1 and (not params["cert"] or not params["privkey"]) :
+    if int(params["sslport"]) != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 
@@ -3575,7 +3575,7 @@ def go(p) :
         nonsslsite = Site(NONSSLDispatcher())
         nonsslsite.sessionFactory = MicaSession
 
-        if params["sslport"] != -1 :
+        if int(params["sslport"]) != -1 :
             from twisted.internet import ssl
             from OpenSSL import SSL
 

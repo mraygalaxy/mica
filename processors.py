@@ -87,7 +87,7 @@ class Processor(object) :
         if not opaque :
             self.parse_page_stop(handle)
 
-    def parse_page_start(self, story, temp_units = False) : 
+    def parse_page_start(self) : 
         return True
 
     def parse_page_stop(self, opaque) :
@@ -226,7 +226,7 @@ class Processor(object) :
 
             self.mica.rehash_correct_polyphome(unit)
             
-        mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
@@ -236,8 +236,7 @@ class Processor(object) :
     def online_cross_reference(self, req, story, uni, opaque) :
         online_units = False
         if not self.params["mobileinternet"] or self.params["mobileinternet"].connected() != "none" :
-            mdebug("Going online...")
-            online_units = self.online_cross_reference_lang(req, story, uni, opaque) if len(uni) > 1 else False
+            online_units = self.online_cross_reference_lang(req, story, uni, opaque)
         return online_units
 
     def all_punct(self, uni) :
@@ -248,7 +247,7 @@ class Processor(object) :
                 break
         return all
 
-def get_cjk_handle(cjklib_path, cedict_path, params) :
+def get_cjk_handle(params) :
     cjk = None
     d = None
     try :
@@ -274,6 +273,7 @@ class English(Processor) :
         super(English, self).__init__(mica, params)
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
+        mdebug("Going online...")
         #opaque is not yet used for English
         uuid = story['uuid']
         name = story['name']
@@ -338,9 +338,6 @@ class ChineseSimplified(Processor) :
         self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_letters))
         self.punctuation.update(copy.deepcopy(self.punctuation_letters))
 
-        self.cjklib_path = params["cjklib"]
-        self.cedict_path = params["cedict"]
-
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []
         for char in chars:
@@ -401,7 +398,7 @@ class ChineseSimplified(Processor) :
 
 
     def parse_page_start(self) : 
-        return get_cjk_handle(self.cjklib_path, self.cedict_path)
+        return get_cjk_handle(self.params)
 
     def parse_page_stop(self, opaque) :
         (cjk, d) = opaque 
@@ -437,6 +434,10 @@ class ChineseSimplified(Processor) :
         return targ 
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
+        if len(all_source) <= 1 : 
+            return False
+
+        mdebug("Going online...")
         (cjk, d) = opaque 
         uuid = story['uuid']
         name = story['name']
@@ -446,6 +447,7 @@ class ChineseSimplified(Processor) :
         source = []
         groups = []
         reversep = []
+        pinyin = []
 
         msg = "source: \n"
         idx = 0
@@ -555,7 +557,7 @@ class ChineseSimplified(Processor) :
     
                     all_punctuation = True
                     for char in new_unit["source"] :
-                        if char not in punctuation :
+                        if char not in self.punctuation :
                             all_punctuation = False
                             break
     
@@ -615,7 +617,7 @@ class ChineseSimplified(Processor) :
             for unit in new_units :
                 all_punctuation = True
                 for char in unit["source"] :
-                    if char not in punctuation :
+                    if char not in self.punctuation :
                         all_punctuation = False
                         break
                 #for char in unit["source"] :
@@ -707,7 +709,7 @@ class ChineseSimplified(Processor) :
             
             assert(len(readings) > 0)
 
-            if uni not in punctuation and uni :
+            if uni not in self.punctuation and uni :
                 online_units = self.online_cross_reference(req, story, uni, opaque)
 
                 if not online_units or not len(online_units) :
