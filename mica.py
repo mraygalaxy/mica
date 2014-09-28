@@ -430,7 +430,7 @@ class MICA(object):
         dpfh.close()
 
 
-    def make_account(self, req, username, password, mica_roles, admin = False, dbname = False) :
+    def make_account(self, req, username, password, mica_roles, admin = False, dbname = False, language = "en") :
         if not dbname :
             new_uuid = str(uuid4.uuid4())
             dbname = "mica_" + new_uuid
@@ -442,6 +442,7 @@ class MICA(object):
                            "roles": [] if admin else [username + "_master"],
                            "type": "user",
                            "mica_database" : dbname,
+                           "language" : language
                           }
             self.userdb["org.couchdb.user:" + username] = user_doc 
         else :
@@ -3196,6 +3197,7 @@ class MICA(object):
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
                     admin = req.http.params.get("isadmin", 'off')
+                    language = "en" # make this dynamic later with a real signup process
 
                     if newusername == "mica_admin" :
                         return self.bootstrap(req, self.heromsg + "\n<h4>Invalid account name! Try again.</h4></div>")
@@ -3213,7 +3215,7 @@ class MICA(object):
                     if admin == 'on' :
                         roles.append('admin')
 
-                    self.make_account(req, newusername, newpassword, roles)
+                    self.make_account(req, newusername, newpassword, roles, language = language)
 
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
                 elif req.http.params.get("changelanguage") :
