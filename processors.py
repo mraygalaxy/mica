@@ -48,16 +48,16 @@ class Processor(object) :
         self.punctuation_without_newlines = {}
         self.punctuation[u'\n'] = {}
         self.punctuation['\n'] = {}
-        self.punctuation_characters = {}
+        self.punctuation_without_letters = {}
 
         for c in [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ] :
-           self.punctuation_characters[c] = {} 
+           self.punctuation_without_letters[c] = {} 
 
         for c in ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ] :
-           self.punctuation_characters[c] = {} 
+           self.punctuation_without_letters[c] = {} 
 
-        self.punctuation_without_newlines.update(self.punctuation_characters)
-        self.punctuation.update(self.punctuation_characters)
+        self.punctuation_without_newlines.update(self.punctuation_without_letters)
+        self.punctuation.update(self.punctuation_without_letters)
 
         self.punctuation_numbers = {}
 
@@ -221,7 +221,7 @@ class Processor(object) :
             units = self.recursive_translate_lang(req, story, opaque, uni, temp_units, page, tone_keys)
 
         for unit in units :
-            if len(unit["multiple_target"]) == 0 or (len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'') :
+            if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
                continue
 
             self.mica.rehash_correct_polyphome(unit)
@@ -323,6 +323,12 @@ class English(Processor) :
             units.append(unit)
 
         return units
+    
+    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
+        #opaque is not yet used for English
+        if none_if_not_found :
+            return ["No target language translation found."]
+        return False 
 
 class ChineseSimplified(Processor) :
     def __init__(self, mica, params) :

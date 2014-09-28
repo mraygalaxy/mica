@@ -556,18 +556,27 @@ function make_child(node) {
       $('#regroupModal').modal('show');
   }
 
-  function process_instant() {
+  function process_instant(with_spaces) {
       var chars = [];
       var allchars = "";
       $("span.label > a").each(function(index) {
-        var split = $(this).text().split('');
-        for(var x = 0; x < split.length; x++) {
-            chars.push(split[x]);
-        }
+	      if (with_spaces) {
+		chars.push($(this).text());
+	      } else {
+		var split = $(this).text().split('');
+
+		for(var x = 0; x < split.length; x++) {
+		    chars.push(split[x]);
+		}
+	      }
       });
 
       for(var x = 0; x < chars.length; x++) {
           allchars += chars[x];
+	  if (with_spaces) {
+	      if (x != (chars.length - 1))
+                  allchars += " ";
+	  }
       }
         
       if (allchars == "") {

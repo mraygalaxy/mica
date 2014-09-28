@@ -50,6 +50,27 @@ div.trans {
     font-size: x-small;
 }
 
+div.transroman {
+    font-size: medium;
+}
+
+div.romanlightgrey {
+    background: lightgrey;
+}
+
+div.romanblue {
+    background: blue;
+}
+div.romangreen {
+    background: green;
+}
+div.romanred {
+    background: red;
+}
+div.romanblack {
+    background: black;
+}
+
 .page-wrap {
   float: right;
   width: 100%;
