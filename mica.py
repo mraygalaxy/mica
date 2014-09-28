@@ -61,6 +61,8 @@ processor_map = {
         u"en" : u"English", 
 }
 
+global_processors = {}
+
 bootlangs = ""
 for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
@@ -1056,7 +1058,7 @@ class MICA(object):
         minfo("Translation complete.")
         processor.parse_page_stop(opaque)
 
-    def get_parts(self, unit) :
+    def get_parts(self, unit, source_language) :
         py = ""
         target = ""
         if unit["multiple_correct"] == -1 :
@@ -1064,7 +1066,7 @@ class MICA(object):
                 word = unit["sromanization"][widx]
                 if word == u'\n' or word == '\n':
                     py += word
-                elif py != "\n" and py not in punctuation_without_letters :
+                elif py != "\n" and py not in global_processors[source_language].punctuation_without_letters :
                     py += word + " "
 
             if py != u'\n' and py != "\n" :
@@ -1072,7 +1074,11 @@ class MICA(object):
 
             if py == u'' :
 #                mdebug("Not useful: " + py + " and " + target + " len: " + str(len(unit["sromanization"])))
-                return False
+                if not global_processors[source_language].already_romanized :
+                    return False
+                else :
+                    if len(unit["source"]) > 0 :
+                        py = u' ' 
             if unit["trans"] :
                 target = " ".join(unit["target"])
         else :
@@ -1257,7 +1263,7 @@ class MICA(object):
                 
             for unit in units :
                 char = "".join(unit["source"])
-                if char in punctuation_without_letters or len(char.strip()) == 0:
+                if char in global_processors[story["source_language"]].punctuation_without_letters or len(char.strip()) == 0:
                     continue
                 if char in found :
                     continue
@@ -1360,10 +1366,9 @@ class MICA(object):
             return "Untranslated story! Ahhhh!"
 
         output = ""
-
-        output += "<div class='row-fluid'>\n"
-        output += "<div class='col-lg-12 nopadding'>\n"
         output += """
+                <div class='row-fluid'>
+                <div class='col-lg-12 nopadding'>
                         <div class='row-fluid'>
                             <div class='col-lg-10 nopadding'>
                                 <div class='row-fluid'>
@@ -1406,7 +1411,7 @@ class MICA(object):
 
         output += "btn btn-default'><i class='glyphicon glyphicon-picture'></i></button>"
 
-        output += "<button type='button' class='btn btn-default' onclick='process_instant()' href='#'><i class='glyphicon glyphicon-share'></i></button>"
+        output += "<button type='button' class='btn btn-default' onclick='process_instant(" + ("true" if global_processors[story["source_language"]].already_romanized else "false") + ")' href='#'><i class='glyphicon glyphicon-share'></i></button>"
 
         if req.action == "edit" :
             uuid = 'bad_uuid';
@@ -1433,12 +1438,10 @@ class MICA(object):
                                 <div id='pagecontent'></div>
                             </div><!-- outer md-10 all section --> 
 
-        """
-
-        output += """
                             <div class='col-lg-2 nopadding'>
                             <div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
         """
+
         output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
         output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
 
@@ -1455,10 +1458,12 @@ class MICA(object):
             """
             output += "<div id='history'></div>"
 
-        output += "</div><!-- statsheader -->"
-        output += "</div><!-- col-lg-2 stats section -->\n"
-        output += "</div><!-- col-lg-12 for everything section -->\n"
-        output += "</div><!-- row for everything -->\n"
+        output += """
+                </div><!-- statsheader -->
+                </div><!-- col-lg-2 stats section -->
+                </div><!-- col-lg-12 for everything section -->
+                </div><!-- row for everything -->
+        """
         output += "<script>install_pages('" + action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true);</script>"
         
         return output
@@ -1467,8 +1472,18 @@ class MICA(object):
         for result in req.db.view('stories/pages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
             return result['value']
         return 0
-
+    
+    def roman_holder(self, source, color) :
+        holder = "<div class='roman" + color + "'>"
+        
+        for x in range(0, len(source)) :
+            holder += "&nbsp;"
+            
+        holder += "</div>"
+        return holder
+    
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, disk = False) :
+        gp = global_processors[story["source_language"]]
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
@@ -1501,19 +1516,19 @@ class MICA(object):
 
             source = "".join(unit["source"])
 
-            ret = self.get_parts(unit)
+            ret = self.get_parts(unit, story["source_language"])
 
             if ret == False :
                 continue
 
             py, target = ret
 
-            if py not in punctuation_without_letters and chars >= chars_per_line :
+            if py not in gp.punctuation_without_letters and chars >= chars_per_line :
                lines.append(line)
                line = []
                chars = 0
 
-            if py in (punctuation_without_letters + ['\n', u'\n']) :
+            if py in gp.punctuation_without_letters and py not in ['\n', u'\n'] :
                 if py != u'\n' and py != "\n":
                     line.append([py, False, trans_id, [], x, source])
                     chars += 1
@@ -1569,6 +1584,7 @@ class MICA(object):
         spacer = "<td style='margin-right: 20px'></td>"
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
         merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
+
 
         for line in lines :
             disk_out = ""
@@ -1661,7 +1677,10 @@ class MICA(object):
                     line_out += "<span id='spanselect_" + trans_id + "' class='"
                     line_out += "batch" if use_batch else "none"
                     line_out += "'>"
-                    line_out += "<a class='trans'"
+                    if gp.already_romanized :
+                        line_out += "<a class='transroman'"
+                    else :
+                        line_out += "<a class='trans'"
                     line_out += " uniqueid='" + tid + "' "
                     line_out += " nbunit='" + nb_unit + "' "
                     line_out += " transid='" + trans_id + "' "
@@ -1697,13 +1716,16 @@ class MICA(object):
                 nb_unit = str(word[4])
                 source = word[5]
                 line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
-                if py and (py not in punctuation) :
+                if py and (py not in gp.punctuation) :
                     if not disk :
-                        line_out += "<a class='trans' "
+                        if gp.already_romanized :
+                            line_out += "<a class='transroman' "
+                        else :
+                            line_out += "<a class='trans' "
 
                         add_count = ""
                         if action == "home" :
-                            color = ""
+                            color = "lightgrey"
                             if py and len(unit["multiple_sromanization"]) :
                                 color = "green"
 
@@ -1726,6 +1748,7 @@ class MICA(object):
                                 line_out += " style='color: " + color + "' "
                         elif py :
                             line_out += " style='color: black' "
+                            color = "lightgrey"
 
                         line_out += " id='ttip" + trans_id + "'"
 
@@ -1734,15 +1757,17 @@ class MICA(object):
                             line_out += ("0" if action == "read" else "1") + ")\""
 
                         line_out += ">"
-                        line_out += ((py if py else target).lower()) + add_count 
+                        
+                        
+                        line_out += (((self.roman_holder(source, color) if py == u' ' else py) if py else target).lower()) + add_count 
                         line_out += "</a>"
                     else :
-                        disk_out += (py if py else target).lower()
+                        disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                 else :
                     if disk :
-                        disk_out += (py if py else target).lower()
+                        disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                     else :
-                        line_out += (py if py else target).lower()
+                        line_out += (("hold" if py == u' ' else py) if py else target).lower()
 
                 if not disk :
                     line_out += "<br/>"
@@ -1784,7 +1809,7 @@ class MICA(object):
                             memorized = True
                             
                     tid = unit["hash"] if py else str(word[2])
-                    line_out += "<td style='vertical-align: top; text-align: center'>"
+                    line_out += "\n<td style='vertical-align: top; text-align: center'>"
                     line_out += "<table><tr>"
                     line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
                     line_out += "</tr><tr><td>"
@@ -1792,12 +1817,21 @@ class MICA(object):
                     if action == "home" :
                         line_out += ("".join(unit["source"]) if py else "")
                     '''
-                    line_out += "<div class='trans trans" + tid + "' style='display: "
+                    if gp.already_romanized :
+                        line_out += "<div class='transroman "
+                    else :
+                        line_out += "<div class='trans "
+                        
+                    line_out += " trans" + tid + "' style='display: "
                     line_out += "block" if (action == "read" and not memorized) else "none"
                     line_out += "' id='trans" + tid + "'>"
                     if py :
                         if action in ["read", "edit"] :
-                            line_out += "<a class='trans' onclick=\"memorize('" + \
+                            if gp.already_romanized :
+                                line_out += "<a class='transroman' "
+                            else :
+                                line_out += "<a class='trans' "
+                            line_out += "onclick=\"memorize('" + \
                                         tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">"
 
                         line_out += target.replace("/"," /<br/>")
@@ -1808,7 +1842,12 @@ class MICA(object):
                     line_out += "</div>"
                     line_out += "<div style='display: "
                     line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
-                    line_out += "' class='trans blank" + tid + "'>"
+                    if gp.already_romanized :
+                        line_out += "' class='transroman"
+                    else :
+                        line_out += "' class='trans"
+                    
+                    line_out += " blank" + tid + "'>"
                     line_out += "&nbsp;</div>"
                     line_out += "</td>"
                     line_out += "</tr></table>"
@@ -1981,7 +2020,7 @@ class MICA(object):
             if "hash" not in unit :
                 trans_id += 1
                 continue
-            ret = self.get_parts(unit)
+            ret = self.get_parts(unit, story["source_language"])
             if not ret :
                 trans_id += 1
                 continue
@@ -1992,7 +2031,7 @@ class MICA(object):
                     progress.append([py, target, unit, x, trans_id, page])
                     total_memorized += 1
 
-            if py and py not in punctuation :
+            if py and py not in global_processors[story["source_language"]].punctuation :
                 unique[unit["hash"]] = True
 
             trans_id += 1
@@ -2687,7 +2726,15 @@ class MICA(object):
                 elif not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
                     final = { }
                     requests = [source]
+                    
+                    if not story :
+                        name = req.db[self.index(req, req.session.value["current_story"])]["value"]
+                        story = req.db[self.story(req, name)]
+                    gp = global_processors[story["source_language"]]
                     breakout = source.decode("utf-8") if isinstance(source, str) else source
+                    if gp.already_romanized :
+                        breakout = breakout.split(" ")
+                    
                     if len(breakout) > 1 :
                         for x in range(0, len(breakout)) :
                             requests.append(breakout[x].encode("utf-8"))
@@ -2721,15 +2768,14 @@ class MICA(object):
                     out += "<h4>Offline translation:</h4>"
 
                     try :
-                        (cjk, d) = get_cjk_handle(params)
-                        tar = self.get_first_translation(d, source.decode("utf-8"), False)
+                        opaque = gp.parse_page_start()
+                        tar = gp.get_first_translation(opaque, source.decode("utf-8"), False)
                         if tar :
                             for target in tar :
                                 out += target.encode("utf-8")
                         else :
                             out += "None found."
-                        cjk.db.connection.close()
-                        d.db.connection.close()
+                        gp.parse_page_stop(opaque)
                     except OSError, e :
                         out += "Please wait until this account is fully synchronized for an offline translation."
                 else :
@@ -2948,11 +2994,16 @@ class MICA(object):
                     return self.warn_not_replicated(req)
                 
             if req.action in ["home", "read", "edit" ] :
+                
                 if uuid :
                     # Reload just in case the translation changed anything
                     name = req.db[self.index(req, uuid)]["value"]
                     story = req.db[self.story(req, name)]
-
+                    gp = global_processors[story["source_language"]]
+                    
+                    if req.action == "edit" and gp.already_romanized :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Edit mode is only supported for learning character-based languages.</h4></div>\n")
+                    
                     if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
                         mdebug("Request for page: " + str(page))
@@ -3151,8 +3202,8 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
                 elif req.http.params.get("setappchars") :
                     chars_per_line = int(req.http.params.get("setappchars"))
-                    if chars_per_line > 1000 or chars_per_line < 20 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 20.</h4></div>")
+                    if chars_per_line > 1000 or chars_per_line < 5 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 5.</h4></div>")
                     user["app_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["app_chars_per_line"] = chars_per_line 
@@ -3160,8 +3211,8 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>Success! Mobile Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setwebchars") :
                     chars_per_line = int(req.http.params.get("setwebchars"))
-                    if chars_per_line > 1000 or chars_per_line < 20:
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 20.</h4></div>")
+                    if chars_per_line > 1000 or chars_per_line < 5:
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 5.</h4></div>")
                     user["web_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["web_chars_per_line"] = chars_per_line 
@@ -3169,8 +3220,8 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>Success! Web Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setappzoom") :
                     zoom = float(req.http.params.get("setappzoom"))
-                    if zoom > 3.0 or zoom < 1.0 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>App Zoom level must be a decimal no greater than 3.0 and no smaller than 1.0</h4></div>")
+                    if zoom > 3.0 or zoom < 0.5 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5</h4></div>")
                     user["default_app_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_app_zoom"] = zoom
@@ -3178,8 +3229,8 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>Success! App zoom level set to " + str(zoom) + ".</h4></div>"
                 elif req.http.params.get("setwebzoom") :
                     zoom = float(req.http.params.get("setwebzoom"))
-                    if zoom > 3.0 or zoom < 1.0 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Web Zoom level must be a decimal no greater than 3.0 and no smaller than 1.0</h4></div>")
+                    if zoom > 3.0 or zoom < 0.5 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5</h4></div>")
                     user["default_web_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_web_zoom"] = zoom
@@ -3449,7 +3500,7 @@ def get_options() :
 
     params = {
                "port" : options.port,
-               "sslport" : options.sslport,
+               "sslport" : int(options.sslport),
                "host" : options.host,
                "keepsession" : options.keepsession,
                "debug_host" : options.debug_host,
@@ -3511,7 +3562,8 @@ def go(p) :
 
     mdebug("Session dir: " + params["session_dir"])
 
-    if int(params["sslport"]) != -1 and (not params["cert"] or not params["privkey"]) :
+    sslport = int(params["sslport"])
+    if sslport != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 
@@ -3569,13 +3621,16 @@ def go(p) :
 
         mica = MICA(db_adapter)
 
+        for l, processor_name in lang.iteritems() :
+            global_processors[l] = getattr(processors, processor_map[l])(mica, params)
+
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
         site.sessionFactory = MicaSession
         nonsslsite = Site(NONSSLDispatcher())
         nonsslsite.sessionFactory = MicaSession
 
-        if int(params["sslport"]) != -1 :
+        if sslport != -1 :
             from twisted.internet import ssl
             from OpenSSL import SSL
 
@@ -3598,9 +3653,8 @@ def go(p) :
                     self._context = ctx
 
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-#            reactor.listenSSL(int(params["sslport"]), site, ssl.DefaultOpenSSLContextFactory(params["privkey"], params["cert"]), interface = params["host"])
-            reactor.listenSSL(int(params["sslport"]), site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
-            minfo("Point your browser at port: " + str(params["sslport"]) + ". (Bound to interface: " + params["host"] + ")")
+            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
+            minfo("Point your browser at port: " + str(sslport) + ". (Bound to interface: " + params["host"] + ")")
         else :
             mwarn("Disabling SSL access. Be careful =)")
             minfo("Point your browser at port: " + str(params["port"]) + ". (Bound to interface: " + params["host"] + ")")
