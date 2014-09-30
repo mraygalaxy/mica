@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8"/>
   <title>MICA</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=BOOTZOOM">
-  <meta name="description" content="MICA">
-  <meta name="author" content="Michael R. Hines">
+  <meta name="viewport" content="width=device-width, initial-scale=BOOTZOOM"/>
+  <meta name="description" content="MICA"/>
+  <meta name="author" content="Michael R. Hines"/>
 
    <!--[if lt IE 9]>
    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -14,8 +14,8 @@
    <![endif]-->
   <script src="BOOTSTRAP/js/jquery.js"></script>
   <script src="BOOTSTRAP/js/bootstrap.min.js"></script>
-  <link href="BOOTSTRAP/css/bootstrap.min.css" rel="stylesheet">
-  <link href="MSTRAP/mica.css" rel="stylesheet">
+  <link href="BOOTSTRAP/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="MSTRAP/mica.css" rel="stylesheet"/>
 
   <script src="MSTRAP/mica.js" charset="utf-8"></script>
   <script src="BOOTSTRAP/js/jquery.bootpag.min.js"></script>
@@ -32,11 +32,11 @@
         Username: <br/><input type="text" id="username" name="username" value='BOOTUSERHOLD' placeholder="Username" />
         <br/>Password: <br/><input type="password" id="password" name="password" placeholder="Password" />
         <br/>Address: <br/><input type="text" id="address" name="address" placeholder="Address" value='BOOTADDRESSHOLD'/>
-        <div style='display: none'>
+        <!--
         <label class="checkbox">
             <input type="checkbox" name="remember" BOOTREMEMBER/> Remember Me
         </label>
-        </div>
+        -->
         <button type="submit" name="connect" class="btn-primary btn-block" value='1'>Sign in</button>
         </form>
     </div>
@@ -45,8 +45,6 @@
               <div class='navbar-header'>
                <button type='button' class='navbar-toggle' data-toggle="collapse" data-target=".navbar-collapse">
                   <span class="sr-only">Toggle navigation</span>
-                  <!--
-                  -->
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
@@ -55,14 +53,14 @@
 			   <div class='navbar-brand'>
 				   <table><tr>
 				   <td>
-                   <a id='offnav' BOOTCANVASTOGGLE href='#'>BOOTCLOUDNAME</a>
+                   <!--<a id='offnav' BOOTCANVASTOGGLE href='#'>BOOTCLOUDNAME</a>-->
 				   </td><td>
-				   &nbsp;
+				   &#160;
 				   </td><td>
 				   </td><td>
 				   <i class='glyphicon glyphicon-download'></i>
 				   </td><td>
-				   <span id='pullstat' class="badge pull-right">BOOTPULL</span>
+				   <span id='pullstat' class="badge pull-right"><div t:render="pull" /></span>
 				   </td><td>
 				   <i class='glyphicon glyphicon-upload'></i>
 				   </td><td>
@@ -89,14 +87,14 @@
                 <div class='modal-dialog'>
                     <div class='modal-content'>
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myLoginLabel">About this software:</h3>
                         </div>
                         
                         <div class="modal-body">
                             <div>
                             <h5>Authors:</h5>
-                            <p/><br>Michael R. Hines, Ph.D.: <a href='http://michael.hinespot.com'>http://michael.hinespot.com</a>
+                            <p/><br/>Michael R. Hines, Ph.D.: <a href='http://michael.hinespot.com'>http://michael.hinespot.com</a>
                             I am not a linguist (not by a longshot) - I have a dayjob as a researcher in operating systems, virtualization and cloud computing. 
 
                             <p/><br/>
@@ -118,10 +116,10 @@
                             <p/><br/>
                             <h5>Credits:</h5>
 
-                            <br>Lexical word parsing and character grouping: http://www.ictclas.org
-                            <br>Offline chinese translation: https://pypi.python.org/pypi/cjklib
-                            <br>Offline polyphome listings: https://github.com/lxyu/pinyin
-                            <br>Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
+                            <br/>Lexical word parsing and character grouping: http://www.ictclas.org
+                            <br/>Offline chinese translation: https://pypi.python.org/pypi/cjklib
+                            <br/>Offline polyphome listings: https://github.com/lxyu/pinyin
+                            <br/>Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
 
                             </div>
                         </div>
@@ -132,19 +130,19 @@
                 <div class='modal-dialog'>
                     <div class='modal-content'>
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myLoginLabel">Create New Account:</h3>
                         </div>
                         
                         <div class="modal-body">
                             <div id='newaccountdestination'>
                                 <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
-                                <h5>&nbsp;Username: <input type="text" name="username"/></h5>
-                                <h5>&nbsp;Password: <input type="password" name="password"/></h5>
-                                <h5>&nbsp;Confirm:&nbsp; <input type="password" name="confirm"/></h5>
+                                <h5>&#160;Username: <input type="text" name="username"/></h5>
+                                <h5>&#160;Password: <input type="password" name="password"/></h5>
+                                <h5>&#160;Confirm:&#160; <input type="password" name="confirm"/></h5>
                                 BOOTNEWACCOUNTADMIN
                                 <button name='newaccount' type="submit" class="btn-primary" value='password'>
-                                <i class="icon-plus-sign icon-white"></i>&nbsp;Create</button>
+                                <i class="icon-plus-sign icon-white"></i>&#160;Create</button>
                                 </form>                                   
                             </div>
                         </div>
@@ -155,7 +153,7 @@
                 <div class='modal-dialog'>
                     <div class='modal-content'>
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myLoginLabel">Split/Merge Words:</h3>
                         </div>
                         
@@ -169,7 +167,7 @@
                 <div class='modal-dialog'>
                     <div class='modal-content'>
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myLoginLabel">Instant Translation:</h3>
                         </div>
                         
@@ -183,7 +181,7 @@
                 <div class='modal-dialog'>
                     <div class='modal-content'>
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myUploadLabel">Upload Story:</h3>
                         </div>
                         
@@ -191,9 +189,9 @@
                                 <h4><b>Copy/Paste a Story:</b></h4>
                                 <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
-                                   &nbsp;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
-                                  <i class="icon-upload icon-white"></i>&nbsp;Upload Text</button>
-                                   &nbsp;Unique Name: <input type='text' name='storyname' value=''></input>
+                                   &#160;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
+                                  <i class="icon-upload icon-white"></i>&#160;Upload Text</button>
+                                   &#160;Unique Name: <input type='text' name='storyname' value=''></input>
                                 </h5>
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
                                 <br/>
@@ -203,21 +201,21 @@
                                   Your Language? <select name="target_language">
                                     BOOTLANGUAGES
                                   </select>
-                                <h5>&nbsp;<input type="checkbox" name="removespaces" checked/>&nbsp;Remove Spaces?</h5>
+                                <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
                                 </form>                                   
                                 <p/>
                                 <h4><b>Or Upload a File Instead:</b></h4>
                                 <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
-                                    &nbsp;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
-                                    <i class="icon-upload icon-white"></i>&nbsp;Upload File</button>
-                                    &nbsp;Story File: <input type="file" name="storyfile" id="file"/> 
+                                    &#160;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
+                                    <i class="icon-upload icon-white"></i>&#160;Upload File</button>
+                                    &#160;Story File: <input type="file" name="storyfile" id="file"/> 
                                     <br/>
                                       What kind of file is this? <select name="filetype">
                                       <option value='pdf'>PDF (utf-8, multi-page)</option>
                                       <option value='txt'>TXT (utf-8, single-page)</option>
-                                      <option disabled value='epub'>EPUB (not implemented, utf-8, multi-page)</option>
-                                      <option disabled value='json'>JSON (not implemented, utf-8, multi-page</option>
+                                      <option disabled="disabled" value='epub'>EPUB (not implemented, utf-8, multi-page)</option>
+                                      <option disabled="disabled" value='json'>JSON (not implemented, utf-8, multi-page</option>
                                       </select>
                                     <br/>
                                       Original Language? <select name="source_language">
@@ -226,7 +224,7 @@
                                       Your Language? <select name="target_language">
                                         BOOTLANGUAGES
                                       </select>
-                                      <h5>&nbsp;<input type="checkbox" name="removespaces" checked/>&nbsp;Remove Spaces?</h5>
+                                      <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
                                 </h5>
                                 </form>                                   
                                 <h5>NOTE: Story *must* be UTF-8 encoded.</h5>
@@ -280,7 +278,6 @@ BOOTBODY
     var connectpop = $('#connectpop').popover({ 
         html : true,
         title: "Connect:",
-//        placement : $.browser.device ? 'bottom-right' : 'bottom',
         placement : 'bottom',
         trigger: 'manual',
         template: getTemplate(),
@@ -288,14 +285,9 @@ BOOTBODY
           return $('#ConnectContents').html();
         }
       });
-      /* Allow the popover to close when clicking somewhere else on the screen */
-    //Connectdata = connectpop.data('popover');
 
-   // if(Connectdata != undefined) {
        ConnectclickedAway = true;
        ConnectisVisible = true;
-     //  connectpop.data('popover').tip().css('z-index', 1030);
-   // }
 
       connectpop.click(function(e) {
             $(this).popover('toggle');
@@ -305,27 +297,25 @@ BOOTBODY
         });
 
     $(document).click(function(e) {
-	  if (typeof WL == 'undefined') {
+         if (typeof WL == 'undefined') {
               var src = e.target;
-	  } else {
-	      var src = e.srcElement;
-          }
-          if(findParentNode('ConnectContents', src, 'cbody') == true) {
-            return;
-          }
-          if(findParentNode('connectpopover', src, 'cbody') == true) {
-            return;
-            }
+         } else {
+              var src = e.srcElement;
+         }
+         if(findParentNode('ConnectContents', src, 'cbody') == true) {
+             return;
+         }
+         if(findParentNode('connectpopover', src, 'cbody') == true) {
+             return;
+         }
 
-              if(ConnectisVisible & ConnectclickedAway)
-              {
-                $('#connectpop').popover('hide');
-                ConnectisVisible = ConnectclickedAway = false;
-              }
-              else
-              {
-                ConnectclickedAway = true;
-              }
+         if(ConnectisVisible & ConnectclickedAway)
+         {
+            $('#connectpop').popover('hide');
+            ConnectisVisible = ConnectclickedAway = false;
+         } else {
+            ConnectclickedAway = true;
+         }
     });
 BOOTSHOWPOPOVER
 BOOTSWITCH
