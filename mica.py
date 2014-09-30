@@ -71,6 +71,7 @@ for l, readable in lang.iteritems() :
 from common import *
 from processors import * 
 from translator import *
+from templates import *
 import processors
 
 import couch_adapter
