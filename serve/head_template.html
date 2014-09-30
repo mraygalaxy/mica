@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1">
-<head>
+<html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
+<head t:render="head">
   <meta charset="utf-8"/>
   <title>MICA</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=BOOTZOOM"/>
   <meta name="description" content="MICA"/>
   <meta name="author" content="Michael R. Hines"/>
 
@@ -12,13 +11,12 @@
    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
    <![endif]-->
-  <script src="BOOTSTRAP/js/jquery.js"></script>
-  <script src="BOOTSTRAP/js/bootstrap.min.js"></script>
-  <link href="BOOTSTRAP/css/bootstrap.min.css" rel="stylesheet"/>
-  <link href="MSTRAP/mica.css" rel="stylesheet"/>
-
-  <script src="MSTRAP/mica.js" charset="utf-8"></script>
-  <script src="BOOTSTRAP/js/jquery.bootpag.min.js"></script>
+  <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
+  <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
+  <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
+  <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
+  <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
+  <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
   </head>
   <body id='cbody'>
   <nav class="main-nav" id="main-nav">
@@ -28,15 +26,13 @@
   <div class='page-wrap'>
   <div class='content'>
     <div style="display:none" id="ConnectContents">
-        <form method="POST" action="BOOTDEST/connect" accept-charset="UTF-8">
-        Username: <br/><input type="text" id="username" name="username" value='BOOTUSERHOLD' placeholder="Username" />
+        <form method="POST" action="/connect" accept-charset="UTF-8">
+        Username: <br/><div style='display:inline' t:render="username"/>
         <br/>Password: <br/><input type="password" id="password" name="password" placeholder="Password" />
-        <br/>Address: <br/><input type="text" id="address" name="address" placeholder="Address" value='BOOTADDRESSHOLD'/>
-        <!--
-        <label class="checkbox">
-            <input type="checkbox" name="remember" BOOTREMEMBER/> Remember Me
+        <br/>Address: <br/><div style="display:inline" t:render="address"/>
+        <label class="checkbox" t:render="remember">
+            Remember Me
         </label>
-        -->
         <button type="submit" name="connect" class="btn-primary btn-block" value='1'>Sign in</button>
         </form>
     </div>
@@ -50,33 +46,34 @@
                   <span class="icon-bar"></span>
 				  
                </button>
-			   <div class='navbar-brand'>
-				   <table><tr>
-				   <td>
-                   <!--<a id='offnav' BOOTCANVASTOGGLE href='#'>BOOTCLOUDNAME</a>-->
-				   </td><td>
-				   &#160;
-				   </td><td>
-				   </td><td>
-				   <i class='glyphicon glyphicon-download'></i>
-				   </td><td>
-				   <span id='pullstat' class="badge pull-right"><div t:render="pull" /></span>
-				   </td><td>
-				   <i class='glyphicon glyphicon-upload'></i>
-				   </td><td>
-				   <span id='pushstat' class="badge pull-right">BOOTPUSH</span>
-				   </td><td>
-				   <i class='glyphicon glyphicon-eye-open'></i>
-				   </td><td>
-				   <a href='BOOTDEST'><span id='viewstat' class="badge pull-right">BOOTVIEWS</span></a>
-				   </td>
-				   </tr></table>
-			   </div>
+                   <div class='navbar-brand'>
+                       <table><tr>
+                       <td>
+                       <a t:render="cloudname" id='offnav' href='#'>
+                            <t:attr name="onclick"><t:slot name="toggle"/></t:attr>
+                       </a>
+                       </td>
+                       <td>
+                       &#160;
+                       </td><td>
+                       </td><td>
+                       <i class='glyphicon glyphicon-download'></i>
+                       </td><td>
+                       <span id='pullstat' class="badge pull-right" t:render="pull"></span>
+                       </td><td>
+                       <i class='glyphicon glyphicon-upload'></i>
+                       </td><td>
+                       <span id='pushstat' class="badge pull-right" t:render="push"></span>
+                       </td><td>
+                       <i class='glyphicon glyphicon-eye-open'></i>
+                       </td><td>
+                       <a href=''><span id='viewstat' class="badge pull-right" t:render="views"></span></a>
+                       </td>
+                       </tr></table>
+                   </div>
               </div><!--.navbar-header-->
               <div class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                    BOOTNAV
-                    </ul>
+                   <ul class="nav navbar-nav" t:render="headnavparent"/>
                    <div class='navbar-right' style='display: inline'>
                    </div>
               </div><!--/.navbar-collapse -->
@@ -136,7 +133,7 @@
                         
                         <div class="modal-body">
                             <div id='newaccountdestination'>
-                                <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                                <form action='/account' method='post' enctype='multipart/form-data'>
                                 <h5>&#160;Username: <input type="text" name="username"/></h5>
                                 <h5>&#160;Password: <input type="password" name="password"/></h5>
                                 <h5>&#160;Confirm:&#160; <input type="password" name="confirm"/></h5>
@@ -187,7 +184,7 @@
                         
                         <div class="modal-body">
                                 <h4><b>Copy/Paste a Story:</b></h4>
-                                <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
+                                <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                    &#160;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
                                   <i class="icon-upload icon-white"></i>&#160;Upload Text</button>
@@ -205,7 +202,7 @@
                                 </form>                                   
                                 <p/>
                                 <h4><b>Or Upload a File Instead:</b></h4>
-                                <form action='BOOTDEST/home#main-nav' method='post' enctype='multipart/form-data'>
+                                <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                     &#160;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
                                     <i class="icon-upload icon-white"></i>&#160;Upload File</button>
@@ -238,87 +235,9 @@ BOOTBODY
    </div>  <!--content -->
   </div>  <!--page-wrap -->
     <script>
-
-    /* 
-     * Only functions defined in the main HTML page
-     * seem to be visible from Android. No idea why.
-     */
-    function pushstat(info) {
-        $("#pushstat").html(info);
-    }
-    function pullstat(info) {
-        $("#pullstat").html(info);
-    }
-    function viewstat(info) {
-        $("#viewstat").html(info);
-    }
-	function switchinstall(initlist) {
-	    list_mode = initlist;
-	    if (list_mode) {
-		   $("#switchlisttext").html('Stats Shown');
-	    } else {
-		   $("#switchlisttext").html('Stats Hidden');
-	    }
-	}
-
-	function switchlist() {
-	       go('#switchlisttext', bootdest + '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
-	       switchinstall(list_mode ? false : true);
-	       listreload(current_mode, current_uuid, current_page);
-	}
-
-    var ConnectisVisible = false;
-    var ConnectclickedAway = false;
-    function getTemplate() {
-            if ($.browser.device == true)
-                    return "<div style='margin-right: 150px' id='connectpopover' class='popover'><div class='arrow'></div><div class='popover-inner'><h3 class='popover-title'></h3><div class='popover-content'><p></p></div></div></div>";
-            else
-                    return "<div id='connectpopover' class='popover'><div class='arrow'></div><div class='popover-inner'><h3 class='popover-title'></h3><div class='popover-content'><p></p></div></div></div>";
-    }
-    var connectpop = $('#connectpop').popover({ 
-        html : true,
-        title: "Connect:",
-        placement : 'bottom',
-        trigger: 'manual',
-        template: getTemplate(),
-        content: function() {
-          return $('#ConnectContents').html();
-        }
-      });
-
-       ConnectclickedAway = true;
-       ConnectisVisible = true;
-
-      connectpop.click(function(e) {
-            $(this).popover('toggle');
-            ConnectclickedAway = false;
-            ConnectisVisible = true;
-            e.preventDefault();
-        });
-
-    $(document).click(function(e) {
-         if (typeof WL == 'undefined') {
-              var src = e.target;
-         } else {
-              var src = e.srcElement;
-         }
-         if(findParentNode('ConnectContents', src, 'cbody') == true) {
-             return;
-         }
-         if(findParentNode('connectpopover', src, 'cbody') == true) {
-             return;
-         }
-
-         if(ConnectisVisible & ConnectclickedAway)
-         {
-            $('#connectpop').popover('hide');
-            ConnectisVisible = ConnectclickedAway = false;
-         } else {
-            ConnectclickedAway = true;
-         }
-    });
-BOOTSHOWPOPOVER
-BOOTSWITCH
+    BOOTSCRIPTHEAD 
     </script>
+    <script t:render="scriptpopover"/>
+    <script t:render="scriptswitch"/>
 </body>
 </html>

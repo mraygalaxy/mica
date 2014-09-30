@@ -230,7 +230,6 @@ class Params(object) :
         self.unparsed_uri = self.http.url
         self.uri = self.http.path
         self.active = None 
-        self.active_obj = None 
         self.skip_show = False
 
         minfo("Request: " + self.unparsed_uri + " action: " + self.action)
@@ -316,11 +315,6 @@ class MICA(object):
         mdebug("Setting language to: " + language)
         texts[language].install()
         mdebug("Language set.")
-        self.menu = [ 
-             ("home" , ("/home", "<i class='glyphicon glyphicon-home'></i>&nbsp;" + _("Review"))), 
-             ("edit" , ("/edit", "<i class='glyphicon glyphicon-pencil'></i>&nbsp;" + _("Edit"))), 
-             ("read" , ("/read", "<i class='glyphicon glyphicon-book'></i>&nbsp;" + _("Read"))), 
-        ]
         
     def __init__(self, db_adapter):
         self.mutex = Lock()
@@ -344,28 +338,10 @@ class MICA(object):
         # Replacements must be in this order
         
         self.replacement_keys = [ 
-                                    "BOOTNAV", 
-                                    "BOOTCANVASTOGGLE",
                                     "BOOTNEWACCOUNTADMIN",
-                                    "BOOTCLOUDNAME", 
-                                    "BOOTCLOUDS", 
-                                    "BOOTAVAILABLECLOUDS", 
                                     "BOOTBODY", 
-                                    "BOOTSHOWPOPOVER",
-                                    "BOOTSPINNER", 
-                                    "BOOTDEST", 
-                                    "BOOTACTIVE", 
-                                    "BOOTOBJECTNAME", 
-                                    "BOOTSTRAP", 
-                                    "MSTRAP",
-                                    "BOOTUSERHOLD",
-                                    "BOOTREMEMBER",
-                                    "BOOTVIEWS",
-                                    "BOOTSWITCH",
-                                    "BOOTPUSH",
-                                    "BOOTZOOM",
-                                    "BOOTADDRESSHOLD",
                                     "BOOTLANGUAGES",
+                                    "BOOTSCRIPTHEAD",
                                 ]
 
         self.views_ready = {}
@@ -562,7 +538,7 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             resp = e
-            resp.location = req.dest + resp.location# + req.active
+            resp.location = req.dest + resp.location
         except exc.HTTPException, e:
             resp = e
         except couch_adapter.ResourceNotFound, e :
@@ -646,7 +622,7 @@ class MICA(object):
         if mobile :
             sideout += "<b>" + rname + "</b>"
         else :
-            sideout += "<a title='Download Original' href=\"BOOTDEST/stories?type=original&uuid="
+            sideout += "<a title='Download Original' href=\"/stories?type=original&uuid="
             sideout += story["uuid"]
             sideout += "\">"
             sideout += rname
@@ -660,7 +636,7 @@ class MICA(object):
         sideout += "</td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "<td><a title='Download Romanization' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "<td><a title='Download Romanization' class='btn-default btn-xs' href=\"/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
         return sideout
@@ -679,110 +655,47 @@ class MICA(object):
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
             body = self.heromsg + "\n<h4>Demo Account is readonly. You must install the mobile application for interactive use of the demo account.</h4></div>" + body
 
-        navcontents = ""
-        bootcanvastoggle = ""
         newaccountadmin = ""
-        cloudcontents = "None Available"
-        availablecontents = "None Available"
-        popoveractivate = "$('#connectpop').popover('show');"
+    
+        if req.action == "index" :
+            req.mpath = req.uri + relative_prefix_suffix
+            req.bootstrappath = req.uri + relative_prefix_suffix + "/bootstrap"
+        else :
+            req.mpath = req.uri + "/.." + relative_prefix
+            req.bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
+
         if now :
             contents = body
         else :
-            #contents = self.template("head")
-            run_template(req, HeadElement)
-            contents = req.flat
-            
-            navactive = req.action
-            if navactive == 'home' or navactive == 'index' :
-                navactive = 'home'
-            for (key, value) in self.menu :
-                if key in ["home", "read", "edit"] and not req.session.value['connected'] :
-                    continue
+            if req.session.value["connected"] :
+                req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
+            else :
+                req.view_percent = "0.0"
+            req.pretend_disconnected = pretend_disconnected
+            req.mobile = mobile
+            req.address = req.session.value["address"] if "address" in req.session.value else self.credentials()
 
-                navcontents += "<li"
-                if navactive == key :
-                    navcontents += " class='active'"
-                navcontents += "><a href=\"BOOTDEST" + value[0] + "\">" + value[1] + "</a></li>\n"
-        
             if req.session.value['connected'] and not pretend_disconnected :
-                user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
+                req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
 
-                if user and 'admin' in user['roles'] :
+                if req.user and 'admin' in req.user['roles'] :
                     newaccountadmin += """
                             <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
                     """
-                navcontents += """
-                                 <li class='dropdown'>
-                                 <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                               """
-                navcontents += "<i class='glyphicon glyphicon-user'></i>&nbsp;" + _("Account") + "&nbsp;<b class='caret'></b>"
-                navcontents += """
-                                 </a>
-                                 <ul class='dropdown-menu'>
-                                """
-                if not mobile :
-                    navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
 
-                if user and not mobile and 'admin' in user['roles'] :
-                    navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
+            run_template(req, HeadElement)
+            contents = req.flat
 
-                navcontents += "<li><a href=\"BOOTDEST/account\"><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>\n"
-                navcontents += "<li><a onclick='switchlist()' href=\"#\"><i class='glyphicon glyphicon-tasks'></i>&nbsp;<div id='switchlisttext' style='display: inline'></div></a></li>\n"
-                navcontents += "<li><a href=\"BOOTDEST/disconnect\"><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>\n"
-                navcontents += "<li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&nbsp;About</a></li>\n"
-                navcontents += "<li><a href=\"BOOTDEST/help\"><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>\n"
-                navcontents += "<li><a href=\"BOOTDEST/privacy\"><i class='glyphicon glyphicon-lock'></i>&nbsp;Privacy</a></li>\n"
-                navcontents += "</ul>"
-                navcontents += "</li>"
-                bootcanvastoggle = " onclick=\"togglecanvas()\" "
-    
-        if req.action == "index" :
-            mpath = req.uri + relative_prefix_suffix
-            bootstrappath = req.uri + relative_prefix_suffix + "/bootstrap"
-        else :
-            mpath = req.uri + "/.." + relative_prefix
-            bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
 
-        if req.session.value["connected"] :
-            view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-        else :
-            view_percent = "0.0"
-        #mdebug("View percent: " + view_percent)
-        zoom_level = 1.0
+        fh = open(cwd + 'serve/head.js')
+        bootscripthead = fh.read()
+        fh.close()
 
-        if mobile :
-            if "default_app_zoom" in req.session.value :
-                zoom_level = req.session.value["default_app_zoom"]
-        else :
-            if "default_web_zoom" in req.session.value :
-                zoom_level = req.session.value["default_web_zoom"]
-
-        address = req.session.value["address"] if "address" in req.session.value else self.credentials()
-
-        
         replacements = [    
-                         navcontents, 
-                         bootcanvastoggle,
                          newaccountadmin,
-                         "<img " + ("id='connectpop'" if not req.session.value['connected'] else "") + " src='MSTRAP/favicon.ico' width='20px'/>",
-                         cloudcontents,
-                         availablecontents,
                          body,
-                         popoveractivate if (not req.session.value["connected"] and not req.skip_show and not pretend_disconnected) else "",
-                         spinner,
-                         req.dest,
-                         req.active if req.active else "",
-                         req.active_obj[:-1] if req.active_obj else "",
-                         bootstrappath,
-                         mpath,
-                         req.session.value['last_username'] if 'last_username' in req.session.value else '',
-                         req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
-                         view_percent,
-                         "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in req.session.value and req.session.value['list_mode']) else "false") + ");\n"),
-                         req.db.push_percent() if req.db else "",
-                         zoom_level,
-                         address,
                          bootlangs,
+                         bootscripthead,
                       ]
     
         if not nodecode :
@@ -1331,7 +1244,7 @@ class MICA(object):
             <p/>
             """
         out += "<a href='#' class='btn btn-info' onclick=\"process_edits('" + uuid + "', 'all', true)\">Try Recommendations</a>\n<p/>\n"
-        out += "<a href='BOOTDEST/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page) + "' class='btn btn-info'>Re-translate page</a>\n<p/>\n"
+        out += "<a href='/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page) + "' class='btn btn-info'>Re-translate page</a>\n<p/>\n"
 
         if list_mode :
             if len(history) != 0 :
@@ -1994,9 +1907,9 @@ class MICA(object):
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 if not mobile :
                     notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
-                notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
-                notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
-                notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
+                notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
+                notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
+                notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
                 if finished :
                    finish += notsure
@@ -3288,14 +3201,14 @@ class MICA(object):
                     </form>
                     <p>
                     <br/>
-                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
+                    <a class='btn btn-default btn-primary' href='/account?pack=1'>Compact databases</a>
                     """
 
                 try :
                     out += "<h4><b>Change Viewing configuration</b>?</h4>"
                     out += "<table>"
                     out += "<tr><td>&nbsp;Characters per line:</td><td>"
-                    out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
                     out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
                     out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
@@ -3304,7 +3217,7 @@ class MICA(object):
                     out += "</table>"
                     out += "<table>"
                     out += "<tr><td><h5>&nbsp;Default zoom level: </h5></td><td>"
-                    out += "<form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>"
+                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
                     out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
                     out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
@@ -3328,7 +3241,7 @@ class MICA(object):
 
                 out += """
                     <h4><b>Language</b>?</h4>
-                    <form action='BOOTDEST/account' method='post' enctype='multipart/form-data'>
+                    <form action='/account' method='post' enctype='multipart/form-data'>
                     <select name="language">
                 """
                 softlangs = []
@@ -3361,7 +3274,7 @@ class MICA(object):
                 helpfh = codecs.open(cwd + "serve/info_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
-                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "BOOTDEST")
+                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
                 return self.bootstrap(req, output)
             else :
                 return self.bootstrap(req, "Read, Review, or Edit, my friend?")
