@@ -362,7 +362,6 @@ class MICA(object):
                                     "BOOTREMEMBER",
                                     "BOOTVIEWS",
                                     "BOOTSWITCH",
-                                    "BOOTPULL",
                                     "BOOTPUSH",
                                     "BOOTZOOM",
                                     "BOOTADDRESSHOLD",
@@ -689,7 +688,9 @@ class MICA(object):
         if now :
             contents = body
         else :
-            contents = self.template("head")
+            #contents = self.template("head")
+            run_template(req, HeadElement)
+            contents = req.flat
             
             navactive = req.action
             if navactive == 'home' or navactive == 'index' :
@@ -778,7 +779,6 @@ class MICA(object):
                          req.session.value['last_remember'] if 'last_remember' in req.session.value else '',
                          view_percent,
                          "" if not req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in req.session.value and req.session.value['list_mode']) else "false") + ");\n"),
-                         req.db.pull_percent() if req.db else "",
                          req.db.push_percent() if req.db else "",
                          zoom_level,
                          address,
