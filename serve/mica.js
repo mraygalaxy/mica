@@ -1,6 +1,4 @@
   debugger;
-var bootdest = "";
-//var bootdest = window.location.href.match(/[^/]*\/([^/]*)/g)[2];
 var last_data = '';
 var first_time = true;
 var debug = false;
@@ -154,7 +152,7 @@ function trans_poll_finish(data, uuid, unused) {
 
 function trans_poll(uuid) {
    change('',
-       bootdest + '/home?tstatus=1&uuid=' + uuid, 
+       '/home?tstatus=1&uuid=' + uuid, 
        '#tstatusresult',
        unavailable, 
        false, 
@@ -184,7 +182,7 @@ function trans_start(uuid) {
 function trans(uuid) {
    trans_start(uuid);
    change('#translationstatus', 
-       bootdest + '/home?translate=1&uuid=' + uuid, 
+       '/home?translate=1&uuid=' + uuid, 
        '#translationstatusresult', 
        unavailable, 
        true, 
@@ -240,7 +238,7 @@ function poll(s, finisher, monid) {
 }
 
 function check_nodraw() {
-   go('#pendingtest', bootdest + '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+   go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
 }
 function pending_callback(data) {
         if (!debug && last_data == '')
@@ -249,7 +247,7 @@ function pending_callback(data) {
             if(debug)
                 $('#pendingcount2').html('result: unchanged ' + last_data);
             if(last_data == 'No Pending Objects') {
-				go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+				go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
                 poll(30, check_nodraw, 'pendingcount');
             } else {
                 poll(3, check_nodraw, 'pendingcount');
@@ -265,7 +263,7 @@ function pending_callback(data) {
                 first_time = true;
                 poll(1, check_pending, 'pendingcount');
             } else if (data == 'No Pending Objects') {
-		        go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+		        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
                 last_data = data;
                 poll(30, check_pending, 'pendingcount');
 		    } else {
@@ -285,16 +283,16 @@ function pending_callback(data) {
 function check_pending() {
     if(first_time) {
         first_time = false;
-        go('#pendingtest', bootdest + '/provision?force=1&pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+        go('#pendingtest', '/provision?force=1&pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
     } else {
-        go('#pendingtest', bootdest + '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
-        go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+        go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
     }
 }
 function checkMonitor() {
 	var error = "CloudBench is unreachable, will try again later...";
 	$('#count').html("Polling...");
-	go('#monitordata', bootdest + '/monitordata', '', error, false, resetMonitor, false);
+	go('#monitordata', '/monitordata', '', error, false, resetMonitor, false);
 }    
 
 function make_child(node) {
@@ -495,7 +493,7 @@ function make_child(node) {
       }
       
       out += "<h4>Are you sure you want to perform these edits?</h4>\n";
-      out += "<form method='post' action='" + bootdest + "/edit'>"
+      out += "<form method='post' action='/edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -585,7 +583,7 @@ function make_child(node) {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
        go('#instantdestination', 
-          bootdest + '/read?human=1&instant=' + allchars, 
+          '/read?human=1&instant=' + allchars, 
           '#instantresult', 
           unavailable, 
           true, 
@@ -674,7 +672,7 @@ function multipoprefresh(data, trans_id, spy) {
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           change('#pop' + trans_id, 
-          bootdest + '/home?view=1&uuid=' + uuid + '&multiple_select=1'
+          '/home?view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
@@ -707,7 +705,7 @@ function restore_pageimg_width() {
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
-   var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
+   var url = '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
    if (show_both) {
@@ -799,7 +797,7 @@ function memory_finish(data, opaque1, opaque2) {
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
    change('#memory' + id, 
-          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+          '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -871,7 +869,7 @@ function install_highlight() {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
            go('#instantdestination', 
-              bootdest + '/read?human=1&instant=' + st, 
+              '/read?human=1&instant=' + st, 
               '#instantresult', 
               unavailable, 
               true, 
@@ -920,7 +918,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#memolist', 
-              bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+              '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
               unavailable, 
               true, 
@@ -930,7 +928,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#editslist', 
-                  bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+                  '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
                   unavailable, 
                   true, 
@@ -940,7 +938,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#history', 
-                  bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+                  '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
                   unavailable, 
                   true, 
@@ -967,12 +965,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -985,12 +983,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=both', '', unavailable, false, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -999,7 +997,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+      go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1018,7 +1016,7 @@ function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
     go('#sidebarcontents', 
-    bootdest + '/storylist',
+    '/storylist',
     '#storylistresult', 
     unavailable, 
     true, 
@@ -1028,7 +1026,7 @@ function loadstories(unused) {
 
 function dropstory(uuid) {
     go('#sidebarcontents', 
-    bootdest + '/home?forget=1&uuid=' + uuid,
+    '/home?forget=1&uuid=' + uuid,
     '', 
     unavailable, 
     false, 
@@ -1038,7 +1036,7 @@ function dropstory(uuid) {
 
 function trashstory(uuid, name) {
     go('#sidebarcontents', 
-    bootdest + '/home?delete=1&uuid=' + uuid + "&name=" + name,
+    '/home?delete=1&uuid=' + uuid + "&name=" + name,
     '', 
     unavailable, 
     false, 
@@ -1048,7 +1046,7 @@ function trashstory(uuid, name) {
 
 function reviewstory(uuid, which) {
     go('#sidebarcontents', 
-    bootdest + '/home?reviewed=' + which + '&uuid=' + uuid,
+    '/home?reviewed=' + which + '&uuid=' + uuid,
     '', 
     unavailable, 
     false, 
@@ -1058,7 +1056,7 @@ function reviewstory(uuid, which) {
 
 function finishstory(uuid, which) {
     go('#sidebarcontents', 
-    bootdest + '/home?finished=' + which + '&uuid=' + uuid,
+    '/home?finished=' + which + '&uuid=' + uuid,
     '', 
     unavailable, 
     false, 
