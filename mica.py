@@ -328,6 +328,7 @@ class MICA(object):
                 ('stories/allpages', True),
                 ('stories/all', True),
                 ('stories/translating', True),
+                ('stories/upgrading', True),
                 ('stories/alloriginal', True),
                 ('memorized/all', False), 
                 ('tonechanges/all', False),
@@ -1152,7 +1153,29 @@ class MICA(object):
 
     def view(self, req, uuid, name, story, start_page, view_mode) :
         if not story["translated"] :
-            return "Untranslated story! Ahhhh!"
+            return _("Untranslated story! Ahhhh!")
+
+        upgrade_needed = 0
+
+        if "format" not in story or story["format"] == 1 :
+            out = self.heromsg + "\n<h4>" + _("The database for this story") + " (<b>" + name + "</b>) " + _("needs to be upgraded to version 2") + "."
+            upgrade_needed = 2
+
+        # Future upgrade numbers go here...
+
+        if upgrade_needed > 0 :
+            if mobile :
+                out += _("Unfortunately, this can only be performed with the online version. Please login to your account online to perform the upgrade. The changes will then be replicated to all your devices. Thank you.")
+            else :
+                out += "<br/><a class='btn btn-default btn-primary' href='/" + req.action + "?storyupgrade=1&uuid=" + uuid + "&version=" + str(upgrade_needed) + "'>" + _("Start Upgrade") + "</a>" 
+
+            if "last_error" in story and not isinstance(story["last_error"], str) :
+                out + "Last upgrade Exception:<br/>"
+                for err in story["last_error"] :
+                    out += "<br/>" + err.replace("\n", "<br/>")
+
+            out += "</h4></div>"
+            return out
 
         req.gp = global_processors[story["source_language"]]
         req.story_name = story["name"]
@@ -1972,13 +1995,19 @@ class MICA(object):
             mdebug("Deleting final version from story " + name)
             del req.db[self.story(req, name) + ":final"]
 
-    def view_check(self, req, name) :
+    def view_check(self, req, name, recreate = False) :
        fh = open(cwd + "views/" + name + ".js", 'r')
        vc = fh.read()
        fh.close()
-       # You can refresh the views from new updates on disk by
-       # upcommenting this line
-       #del req.db["_design/" + name]
+
+       try :
+           if recreate :
+               mdebug("Recreate design document requested for view: " + name)
+               del req.db["_design/" + name]
+       except Exception, e :
+           mwarn("Deleting design document: " + str(e))
+           pass
+
        if not req.db.doc_exist("_design/" + name) :
            mdebug("View " + name + " does not exist. Uploading.")
            req.db["_design/" + name] = json.loads(vc)
@@ -2039,6 +2068,67 @@ class MICA(object):
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
 
+    '''
+    All stories up to and including mica version 0.4.x only supported
+    Chinese and were not generalized to support other languages. Thus,
+    the story dictionary format had a very chinese-specific layout.
+
+    To fix this, these pre v0.5.0 stories are thus assumed to have a 
+    format of '1', i.e. the first version we started with.
+    This is detected if the key "format" is not contained within the
+    document for the respective story in question.
+
+    Formats 2 and higher restructure the basic unit structure of a story
+    to support other languages.
+
+    Format 1 => Format 2
+    ========================
+    spinyin => sromanization
+    tpinyin => tromanization
+    multiple_english => multiple_target
+    multiple_spinyin => multiple_sromanization
+    english => target
+    match_pinyin => match_romanization
+
+    '''
+
+    def upgrade2(self, req, story) :
+        mdebug("Going to upgrade story to version 2.")
+        name = story["name"]
+        story["upgrading"] = True
+        req.db[self.story(req, name)] = story
+        story = req.db[self.story(req, name)]
+
+        try :
+            for result in req.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
+                page = result["key"][2]
+                page_dict = result["value"]
+                mdebug("Want to upgrade: " + str(page_dict))
+                new_units = []
+                for unit in page_dict["units"] :
+                    unit["sromanization"] = unit["spinyin"]
+                    del unit["spinyin"]
+                    unit["tromanization"] = unit["tpinyin"]
+                    del unit["tpinyin"]
+                    unit["multiple_target"] = unit["multiple_english"]
+                    del unit["multiple_english"]
+                    unit["multiple_sromanization"] = unit["multiple_spinyin"]
+                    del unit["multiple_spinyin"]
+                    unit["target"] = unit["english"]
+                    del unit["english"]
+                    unit["match_romanization"] = unit["match_pinyin"]
+                    del unit["match_pinyin"]
+                #story["units"] = new_units
+                story["upgrade_page"] = page + 1
+                req.db[self.story(req, name)] = story
+                story = req.db[self.story(req, name)]
+        except Exception, e :
+            self.store_error(req, name, "Failure to upgrade story: " + str(e))
+
+        #del story["upgrading"]
+        #req.db[self.story(req, name)] = story
+
+        
     def common(self, req) :
         try :
             if req.action == "privacy" :
@@ -2109,6 +2199,11 @@ class MICA(object):
                     
                 if "language" not in user :
                     user["language"] = params["language"]
+
+                if "story_format" not in user :
+                    mwarn("Story format is missing. Upgrading design document for story upgrades.")
+                    self.view_check(req, "stories", recreate = True)
+                    user["story_format"] = story_format
 
                 self.install_language(user["language"])
 
@@ -2195,6 +2290,21 @@ class MICA(object):
 
                         if params["transreset"] :
                             self.flush_pages(req, tmp_storyname)
+
+                    for result in req.db.view("stories/upgrading", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                        tmp_storyname = result["key"][1]
+                        tmp_story = req.db[self.story(req, tmp_storyname)]
+                        mdebug("Killing stale upgrade session: " + tmp_storyname)
+                        tmp_story["upgrading"] = False
+
+                        if "last_error" in tmp_story :
+                            del tmp_story["last_error"]
+
+                        try :
+                            req.db[self.story(req, tmp_storyname)] = tmp_story
+                        except couch_adapter.ResourceConflict, e :
+                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+
                 self.first_request[username] = True 
                     
             if req.http.params.get("uploadfile") :
@@ -2369,6 +2479,7 @@ class MICA(object):
                 req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
+
             if req.http.params.get("instant") :
                 source = req.http.params.get("instant")
                 human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
@@ -2560,6 +2671,58 @@ class MICA(object):
                     
                 return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
                                            unit["hash"] + "</div></div>", now = True)
+
+            if req.http.params.get("storyupgrade") :
+                if mobile :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
+
+                version = int(req.http.params.get("version"))
+
+                original = 0
+                if "format" not in story or story["format"] == 1 :
+                    if version != 2 :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
+                    original = 1
+                    mdebug("Will upgrade from version 1 to 2")
+
+                # Add new story upgrades to this list here, like this:
+                #elif "format" in story and story["format"] == 2 :
+                #    if version != 3 :
+                #        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 2") + " =>" + str(version) + ".</h4></div>")
+                #    original = 2
+                #    mdebug("Will upgrade from version 2 to 3")
+
+                elif "format" in story and story["format"] == story_format and not "upgrading" in story and not story["upgrading"] :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
+                else :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
+
+                if version > story_format :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
+
+                if "upgrading" in story :
+                    curr_page = story["upgrade_page"]
+                    nbpages = self.nb_pages(req, story["name"])
+                    assert(nbpages > 0)
+                    percent = float(curr_page) / float(nbpages) * 100
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>")
+
+                if "last_error" in tmp_story :
+                    mdebug("Clearing out last error message.")
+                    del story["last_error"]
+                    req.db[self.story(req, story["name"])] = story
+                    story = req.db[self.story(req, story["name"])]
+
+                mdebug("Starting upgrade thread...")
+                if original == 1 : 
+                    ut = Thread(target = self.upgrade2, args=[req, story])
+                #elif original == 2 :
+                #    ut = Thread(target = self.upgrade3, args=[req, story])
+                ut.daemon = True
+                ut.start()
+                mdebug("Upgrade thread started.")
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
+
 
             if req.http.params.get("oprequest") :
                 oprequest = req.http.params.get("oprequest");

@@ -14,6 +14,9 @@
        "translating": {
            "map": "function(doc) { if (/MICA:[^:]+:stories:[^:]+$/.test(doc._id) && (doc.translating != undefined) && (doc.translating == true)) { emit([doc._id.replace(/(MICA:|:stories:.*)/g, ''), doc.name], doc); } }"
        },
+       "upgrading": {
+           "map": "function(doc) { if (/MICA:[^:]+:stories:[^:]+$/.test(doc._id) && (doc.upgrading != undefined) && (doc.upgrading == true)) { emit([doc._id.replace(/(MICA:|:stories:.*)/g, ''), doc.name], doc); } }"
+       },
        "alloriginal": {
            "map": "function(doc) { if (/MICA:[^:]+:stories:[^:]+:original:[^:]+$/.test(doc._id)) { emit([doc._id.replace(/(MICA:|:stories:.*)/g, ''), doc._id.replace(/(MICA:[^:]+:stories:|:original:.*)/g, ''), doc._id.replace(/MICA:[^:]+:stories:[^:]+:original:/g, '')], doc); } }"
        },

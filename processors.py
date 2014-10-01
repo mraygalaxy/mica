@@ -8,29 +8,6 @@ from common import *
 import pdb
 import string 
 
-'''
-All stories up to and including mica version 0.4.x only supported
-Chinese and were not generalized to support other languages. Thus,
-the story dictionary format had a very chinese-specific layout.
-
-To fix this, these pre v0.5.0 stories are thus assumed to have a 
-format of '1', i.e. the first version we started with.
-This is detected if the key "format" is not contained within the
-document for the respective story in question.
-
-Formats 2 and higher restructure the basic unit structure of a story
-to support other languages.
-
-Format 1 => Format 2
-========================
-spinyin => sromanization
-tpinyin => tromanization
-multiple_english => multiple_target
-english => target
-match_romanization => match_romanization
-
-'''
-
 story_format = 2
 
 try :
