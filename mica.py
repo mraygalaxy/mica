@@ -319,12 +319,6 @@ class MICA(object):
 
         # Replacements must be in this order
         
-        self.replacement_keys = [ 
-                                    "BOOTNEWACCOUNTADMIN",
-                                    "BOOTBODY", 
-                                    "BOOTSCRIPTHEAD",
-                                ]
-
         self.views_ready = {}
         self.view_runs = [ #name , #startend key or regular keys
                 ('accounts/all', True),
@@ -513,7 +507,7 @@ class MICA(object):
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
                     self.disconnect(req.session)
-                    resp = self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+                    resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
                 resp = self.common(req)
 
@@ -526,10 +520,10 @@ class MICA(object):
             resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
 #            exc_type, exc_value, exc_traceback = sys.exc_info()
-            resp = "<h4>Exception:</h4>"
+            resp = "<h4>" + _("Exception") + ":</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
-            resp += "<h2>Please report the exception above to the author. Thank you.</h2>"
+            resp += "<h2>" + _("Please report the exception above to the author. Thank you.") + "</h2>"
             if "connected" in req.session.value and req.session.value["connected"] :
                 req.session.value["connected"] = False
                 req.session.save()
@@ -603,7 +597,7 @@ class MICA(object):
         if mobile :
             sideout += "<b>" + rname + "</b>"
         else :
-            sideout += "<a title='Download Original' href=\"/stories?type=original&uuid="
+            sideout += "<a title='" + _("Download Original") + "' href=\"/stories?type=original&uuid="
             sideout += story["uuid"]
             sideout += "\">"
             sideout += rname
@@ -617,7 +611,7 @@ class MICA(object):
         sideout += "</td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "<td><a title='Download Romanization' class='btn-default btn-xs' href=\"/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "<td><a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
         return sideout
@@ -634,10 +628,8 @@ class MICA(object):
             body = body.decode("utf-8")
 
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
-            body = self.heromsg + "\n<h4>Demo Account is readonly. You must install the mobile application for interactive use of the demo account.</h4></div>" + body
+            body = self.heromsg + "\n<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>" + body
 
-        newaccountadmin = ""
-    
         if now :
             contents = body
         else :
@@ -652,33 +644,13 @@ class MICA(object):
             if req.session.value['connected'] and not pretend_disconnected :
                 req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
 
-                if req.user and 'admin' in req.user['roles'] :
-                    newaccountadmin += """
-                            <h5>&#160;<input type="checkbox" name="isadmin"/>&#160;Admin?</h5>
-                    """
-
             contents = load_template(req, HeadElement)
 
-        fh = open(cwd + 'serve/head.js')
-        bootscripthead = fh.read()
-        fh.close()
-
-        replacements = [    
-                         newaccountadmin,
-                         body,
-                         bootscripthead,
-                      ]
-    
         if not nodecode :
-            for idx in range(0, len(self.replacement_keys)) :
-                x = replacements[idx]
-                if isinstance(x, float) or isinstance(x, int) :
-                    x = str(x)
-                y = self.replacement_keys[idx]
-                if (not isinstance(x, str) and not isinstance(x, unicode)) or (not isinstance(y, str) and not isinstance(y, unicode)) :
-                    mdebug("Skipping replacment combinations: x " + str(x) + " y " + str(y) + " " + str(type(x)) + " " + str(type(y)))
-                    continue
-                contents = contents.replace(y, x)
+            contents = contents.replace("BOOTBODY", body)
+            fh = open(cwd + 'serve/head.js')
+            contents = contents.replace("BOOTSCRIPTHEAD", fh.read())
+            fh.close()
     
         return contents
 
@@ -997,9 +969,9 @@ class MICA(object):
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
         out = ""
-        out += "\nThis character (" + " ".join(unit["source"]) + ") is polyphonic: (has more than one pronunciation):<br>"
+        out += "\n" + _("This character") + " (" + " ".join(unit["source"]) + ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
-        out += "<tr><td>Pinyin</td><td>Definition</td><td>Default?</td></tr>"
+        out += "<tr><td>" + _("Pinyin") + "</td><td>" + _("Definition") + "</td><td>" + _("Default?") + "</td></tr>"
         source = "".join(unit["source"])
 
         total_changes = 0.0
@@ -1015,11 +987,11 @@ class MICA(object):
              out += "<tr><td>" + spy + " (" + str(percent) + " %) </td>"
              out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
              if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
-                 out += "<td>Default</td>"
+                 out += "<td>" + _("Default") + "</td>"
              else :
                  out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
                         "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
-                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">Select</a></td>"
+                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
 
              out += "</tr>"
 
@@ -1072,7 +1044,6 @@ class MICA(object):
         return keys
         
     def history(self, req, story, uuid, page) :
-        out = ""
         history = []
         found = {}
         tid = 0
@@ -1110,43 +1081,10 @@ class MICA(object):
             return int(float(a[1]))
 
         history.sort( key=by_total, reverse = True )
-
-        out += _("Breakdown: Online: ") + str(online) + ", " + _("Offline") + ": " + str(offline) + "<p/>\n"
-        out += "<div class='panel-group' id='panelHistory'>\n"
-        
-        for x in history :
-            out += """
-                <div class='panel panel-default'>
-                  <div class="panel-heading">
-                  """
-
-            char, total, spy, targ, tid = x
-            tid = str(tid)
-
-            if len(targ) and targ[0] == '/' :
-               targ = targ[1:-1]
-
-            out += char + " (" + str(int(float(total))) + "): "
-
-            out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory'" + tid + " href='#collapse" + tid + "'>"
-
-            out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + spy
-
-            out += "</a>"
-            out += "</div>"
-            out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-            out += "<div class='panel-inner'>" + targ.replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</div>"
-
-            out += "</div>"
-            out += "</div>"
-
-        out += "</div>"
-
-        return out
+        req.history = history
+        return load_template(req, HistoryElement)
 
     def edits(self, req, story, uuid, page, list_mode) :
-        out = ""
-
         if list_mode :
             history = []
             found = {}
@@ -1715,12 +1653,12 @@ class MICA(object):
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                    untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
+                    untrans += "<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
 
                     if req.session.value['username'] not in self.client :
-                        untrans += "Please add a translation API key in your account preferences to begin learning with this story.<br/>"
+                        untrans += _("Please add a translation API key in your account preferences to begin learning with this story") + ".<br/>"
                     else :
-                        untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">Translate</a>"
+                        untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans += "<br/>" + err.replace("\n", "<br/>")
@@ -1737,24 +1675,24 @@ class MICA(object):
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 if not mobile :
-                    notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
-                notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
-                notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
-                notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
+                    notsure += "<td><a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
+                notsure += "<td><a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
+                notsure += "<td><a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
+                notsure += "<td><a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
                 if finished :
                    finish += notsure
-                   finish += "<td><a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
+                   finish += "<td><a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
                    finish += "</tr>"
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
-                   reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
-                   reading += "<td><a title='Finished reading' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
+                   reading += "<td><a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
+                   reading += "<td><a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
                    reading += "</tr>"
                 else :
                    noreview += notsure
-                   noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
+                   noreview += "<td><a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                    noreview += "</tr>"
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
@@ -1930,7 +1868,7 @@ class MICA(object):
 
     def add_story_from_source(self, req, filename, source, filetype, removespaces, source_lang, target_lang) :
         if req.db.doc_exist(self.story(req, filename)) :
-            return self.bootstrap(req, self.heromsg + "\nUpload Failed! Story already exists: " + filename + "</div>")
+            return self.bootstrap(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
         if removespaces :
@@ -2012,7 +1950,7 @@ class MICA(object):
 
         self.clear_story(req)
 
-        uc = self.heromsg + "\nUpload Complete! Story ready for translation: " + filename + "</div>"
+        uc = self.heromsg + "\n" + _("Upload Complete! Story ready for translation") + ": " + filename + "</div>"
         return self.bootstrap(req, uc)
         
         
@@ -2061,13 +1999,13 @@ class MICA(object):
 
     def warn_not_replicated(self, req, bootstrap = True, now = False) :
         if mobile :
-            msg = "This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100."
+            msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if "connected" in req.session.value and req.session.value["connected"] :
                 req.session.value["connected"] = False
                 req.session.save()
 
-            msg = "Missing key on server. Please report this to the author. Thank you."
+            msg = _("Missing key on server. Please report this to the author. Thank you.")
 
         if bootstrap :
             mwarn("bootstrapping: " + msg)
@@ -2110,7 +2048,7 @@ class MICA(object):
                 return self.bootstrap(req, output, pretend_disconnected = True)
             elif req.http.params.get("connect") :
                 if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "To login for the first time and begin synchronization with the website, you must activate internet access.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
                 address = req.http.params.get('address')
@@ -2123,7 +2061,7 @@ class MICA(object):
                 auth_user = self.authenticate(username, password, address)
 
                 if not auth_user :
-                    return self.bootstrap(req, self.heromsg + "\n" + deeper + "Invalid credentials. Please try again.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
 
                 req.session.value["database"] = auth_user["mica_database"] 
                 req.session.save()
@@ -2135,17 +2073,17 @@ class MICA(object):
                        mdebug("There is an existing user. Verifying it is the same one.")
                        appuser = req.db["MICA:appuser"]
                        if appuser["username"] != username :
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "We're sorry. The MICA Reader database on this device already belongs to the user " + \
-                                appuser["username"] + " and is configured to stay in sync replication with the server. " + \
-                                "If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with " + \
-                                "a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.</h4></div>")
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                                appuser["username"] + " " + _("and is configured to stay in sync replication with the server") + ". " + \
+                                _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
+                                _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.") + "</h4></div>")
                     else :
                        mdebug("First time user. Reserving this device: " + username)
                        appuser = {"username" : username}
                        req.db["MICA:appuser"] = appuser
                            
                     if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + "Although you have authenticated successfully, we could not start replication successfully. Please try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("Although you have authenticated successfully, we could not start replication successfully. Please try again.") + "</h4></div>")
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -2221,60 +2159,9 @@ class MICA(object):
                         mwarn("Database not available yet: " + str(e))
                 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
-                content = ""
-                pc = ""
-                if not mobile :
-                    content += self.template("advertise")
-                    pages = eval(self.template("pages"))
-                    first = True
-                    for page in pages :
-                        if first :
-                            first = False
-                            pc += "<div style='text-align: center' class='item active'>"
-                        else :
-                            pc += "<div style='text-align: center' class='item'>"
-                        pc += """
-                                <br>
-                                <br>
-                                <br>
-                                <br>
-                        """
-                        pc += "<h1 style='width: 75%; margin: 0 auto;' >" + page + "</h1>\n"
-                        pc += """
-                                <br>
-                                <br>
-                                <br>
-                                <br>
-                            </div>
-                        """
-                else :
-                    content += deeper
-
-                content += """
-                    <h4>You need to connect, first.</h4>
-                    <br/>(Click the little 'M' at the top.)
-                    <p/>
-                    <br/>This is experimental language-learning software.
-                """
-                if mobile :
-                    content += """
-                        <br/>To get a "feel" for how MICA works, you can use the DEMO account
-                        with the username 'demo' and password 'micademo'. This account will
-                        load pre-existing stories from the online demo account, but all changes
-                        you make will not be synchronized.
-                        <br/>
-                        <br/>To login to this application with a regular account and begin syncing all
-                        of your devices with your web account, you must first request a web account 
-                        online first @ <b>http://mica.hinespot.com</b>
-                        by contacting the author.
-                    """
-                else :
-                    content += """
-                        <br/>Accounts are granted on-request only.
-                        <br/>Contact: <a href="http://michael.hinespot.com">http://michael.hinespot.com</a> for assistance.
-                    """
-
-                return self.bootstrap(req, content.replace("BOOTPAGES", pc))
+                req.deeper = deeper
+                req.mobile = mobile
+                return self.bootstrap(req, load_template(req, FrontPageElement))
                 
             username = req.session.value['username']
 
@@ -2398,12 +2285,12 @@ class MICA(object):
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
                     self.clear_story(req)
                     uuid = False
-                return self.bootstrap(req, self.heromsg + "\n<h4>Deleted.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Deleted") + ".</h4></div>", now = True)
 
             if uuid :
                 if not req.db.doc_exist(self.index(req, uuid)) :
                     self.clear_story(req)
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Invalid story uuid: " + uuid + "</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
             if req.http.params.get("tstatus") :
                 out = "<div id='tstatusresult'>"
@@ -2428,7 +2315,7 @@ class MICA(object):
                 tmp_story = req.db[self.story(req, name)]
                 tmp_story["finished"] = finished 
                 req.db[self.story(req, name)] = tmp_story 
-                return self.bootstrap(req, self.heromsg + "\n<h4>Finished.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
 
             if req.http.params.get("reviewed") :
                 reviewed = True if req.http.params.get("reviewed") == "1" else False
@@ -2451,7 +2338,7 @@ class MICA(object):
                             
                         req.db[self.story(req, name) + ":final"] = final
                 req.db[self.story(req, name)] = tmp_story 
-                return self.bootstrap(req, self.heromsg + "\n<h4>Reviewed.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
 
             if req.http.params.get("forget") :
                 tmp_story = req.db[self.story(req, name)]
@@ -2470,17 +2357,17 @@ class MICA(object):
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
                     self.clear_story(req)
                     uuid = False
-                return self.bootstrap(req, self.heromsg + "\n<h4>Forgotten.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Forgotten") + ".</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
                 req.session.value["view_mode"] = req.http.params.get("switchmode")
                 req.session.save()
-                return self.bootstrap(req, self.heromsg + "\n<h4>View mode changed.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
 
             if req.http.params.get("switchlist") :
                 req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
                 req.session.save()
-                return self.bootstrap(req, self.heromsg + "\n<h4>List statistics changed.</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
             if req.http.params.get("instant") :
                 source = req.http.params.get("instant")
                 human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
@@ -2489,7 +2376,7 @@ class MICA(object):
 
                 p = ""
                 if req.session.value['username'] not in self.client :
-                    p += "Offline only. Missing a translation API key in your account preferences."
+                    p += _("Offline only. Missing a translation API key in your account preferences.")
                 elif not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
                     final = { }
                     requests = [source]
@@ -2510,29 +2397,29 @@ class MICA(object):
                         part = result[x]
                         if "TranslatedText" not in part :
                             mdebug("Why didn't we get anything: " + json.dumps(result))
-                            target = "No translation available."
+                            target = _("No translation available.")
                         else :
                             target = part["TranslatedText"].encode("utf-8")
                         
                         if x == 0 :
-                            p += "Selected translation (" + source + "): " + target + "<br/>\n"
+                            p += _("Selected translation") + " (" + source + "): " + target + "<br/>\n"
                             final["whole"] = (source, target)
                         else :
                             char = breakout[x-1].encode("utf-8")
                             if "parts" not in final :
-                                p += "Piecemeal translation:<br/>\n"
+                                p += _("Piecemeal translation") + ":<br/>\n"
                                 final["parts"] = []
                             p += "(" + char + "): "
                             p += target 
                             p += "<br/>\n"
                             final["parts"].append((char, target))
                 else :
-                    p += "No internet access. Offline only."
+                    p += _("No internet access. Offline only.")
                        
                 if human :
-                    out += "<h4>Online translation:</h4>"
+                    out += "<h4>" + _("Online translation") + ":</h4>"
                     out += p 
-                    out += "<h4>Offline translation:</h4>"
+                    out += "<h4>" + _("Offline translation") + ":</h4>"
 
                     try :
                         opaque = gp.parse_page_start()
@@ -2541,10 +2428,10 @@ class MICA(object):
                             for target in tar :
                                 out += target.encode("utf-8")
                         else :
-                            out += "None found."
+                            out += _("None found.")
                         gp.parse_page_stop(opaque)
                     except OSError, e :
-                        out += "Please wait until this account is fully synchronized for an offline translation."
+                        out += _("Please wait until this account is fully synchronized for an offline translation.")
                 else :
                     out += json.dumps(final)
                 out += "</div>"
@@ -2553,15 +2440,15 @@ class MICA(object):
             if req.http.params.get("translate") :
                 output = "<div id='translationstatusresult'>" + self.heromsg
                 if story["translated"] :
-                    output += "Story already translated. To re-translate, please select 'Forget'."
+                    output += _("Story already translated. To re-translate, please select 'Forget'.")
                 else :
                     try :
                         self.parse(req, story)
-                        output += self.heromsg + "Translation complete!"
+                        output += self.heromsg + _("Translation complete!")
                     except OSError, e :
                         output += self.warn_not_replicated(req, bootstrap = False)
                     except Exception, e :
-                        output += "Failed to translate story: " + str(e)
+                        output += _("Failed to translate story") + ": " + str(e)
                 output += "</div></div>"
                 return self.bootstrap(req, output, now = True)
 
@@ -2641,7 +2528,7 @@ class MICA(object):
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
-                                           (self.history(req, story, uuid, page) if list_mode else "<h4>Review History List Disabled.</h4>") + \
+                                           (self.history(req, story, uuid, page) if list_mode else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
                                            "</div></div>", now = True)
 
             if req.http.params.get("editslist") :
@@ -2670,7 +2557,7 @@ class MICA(object):
                 else :
                     del req.db[self.memorized(req, unit["hash"])]
                     
-                return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>Memorized! " + \
+                return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
                                            unit["hash"] + "</div></div>", now = True)
 
             if req.http.params.get("oprequest") :
@@ -2700,7 +2587,7 @@ class MICA(object):
                     offset = ret[1]
                     
                     if not success :
-                        return self.bootstrap(req, self.heromsg + "\nInvalid Operation: " + str(edit) + "</div>")
+                        return self.bootstrap(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
                     
             if req.http.params.get("memolist") :
                 page = req.http.params.get("page")
@@ -2712,9 +2599,9 @@ class MICA(object):
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
                 for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                    output += "Memorized all stories: " + str(result['value']) + "<br/>"
-                output += "Unique memorized page: " + str(total_memorized) + "<br/>"
-                output += "Unique words page: " + str(len(unique)) + "<br/>"
+                    output += _("Memorized all stories") + ": " + str(result['value']) + "<br/>"
+                output += _("Unique memorized page") + ": " + str(total_memorized) + "<br/>"
+                output += _("Unique words this page") + ": " + str(len(unique)) + "<br/>"
                 if list_mode :
                     output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
                     output += str(pr) + "%;'> (" + str(pr) + "%)</div></div>"
@@ -2747,9 +2634,9 @@ class MICA(object):
                             output += "</div>"
                         output += "</div>"
                     else :
-                        output += "<h4>No words memorized. Get to work!</h4>"
+                        output += "<h4>" + _("No words memorized. Get to work!") + "</h4>"
                 else :
-                    output += "<h4>Memorization History List Disabled.</h4>"
+                    output += "<h4>" + _("Memorization History List Disabled") + ".</h4>"
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + output + "</div></div>", now = True)
                
@@ -2769,7 +2656,7 @@ class MICA(object):
                     gp = global_processors[story["source_language"]]
                     
                     if req.action == "edit" and gp.already_romanized :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Edit mode is only supported for learning character-based languages.</h4></div>\n")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
                     
                     if req.http.params.get("page") and not req.http.params.get("retranslate") :
                         page = req.http.params.get("page")
@@ -2791,7 +2678,7 @@ class MICA(object):
                                     output += "<img src='data:image/jpeg;base64," + base64.b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
                                     image_found = True
                             if not image_found :
-                               output += "Image #" + str(nb_image) + " not available on this page"
+                               output += _("Image") + " #" + str(nb_image) + " " + _("not available on this page")
                             output += "</div></div>"
                             return self.bootstrap(req, output, now = True)
                         else :
@@ -2800,20 +2687,18 @@ class MICA(object):
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, start_page, view_mode)
                 else :
-                    output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top."
+                    output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
                     if mobile :
-                        output += "</h4><p><br/><h5>Brand new stories cannot (yet) be created/uploaded yet on the device. " + \
-                                  "You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. " + \
-                                  "Thus, they can only be replicated to the device for regular use.</h5>"
+                        output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. Thus, they can only be replicated to the device for regular use.") + "</h5>"
                     else :
-                        output += "<br/>or create one by clicking on Account icon at the top.</h4>"
+                        output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
                     output += "</div>"
 
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
                 if ftype != "txt" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Story is a " + ftype + ". Viewing original not yet implemented.</h4></div>\n")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
                 
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
@@ -2871,7 +2756,7 @@ class MICA(object):
                 out = ""
 
                 if username == "demo" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>Demo account is read-only.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Demo account is read-only") + ".</h4></div>")
                  
                 user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
@@ -2889,21 +2774,21 @@ class MICA(object):
                             mdebug("Compacting view " + name)
                             req.db.compact(name)
 
-                    out += self.heromsg + "\n<h4>Database compaction complete for your account.</h4></div>\n"
+                    out += self.heromsg + "\n<h4>" + _("Database compaction complete for your account") + ".</h4></div>\n"
                 elif req.http.params.get("changepassword") :
                     if mobile :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Please change your password on the website, first.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
                     oldpassword = req.http.params.get("oldpassword")
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
 
                     if len(newpassword) < 8 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
                     if newpassword != newpasswordconfirm :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
                     auth_user = self.authenticate(username, oldpassword, req.session.value["address"])
                     if not auth_user :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Old passwords don't match! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ".</h4></div>")
                     try :
                         auth_user['password'] = newpassword
                         del self.dbs[username]
@@ -2912,9 +2797,9 @@ class MICA(object):
                         del self.dbs[username]
                         self.verify_db(req, req.session.value["database"], newpassword)
                     except Exception, e :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Password change failed: " + str(e) + "</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                         
-                    out += self.heromsg + "\n<h4>Success! User " + username + "'s password changed.</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
 
                 elif req.http.params.get("changecredentials") :
                     client_id = req.http.params.get("id")
@@ -2927,21 +2812,21 @@ class MICA(object):
                         result = self.translate_and_check_array(req, False, samples[u"zh-CHS"], u"en", u"zh-CHS")
 
                         if not len(result) or "TranslatedText" not in result[0] :
-                            tmsg = "We tried to test your translation API credentials, but they didn't work. Please check them and try again =)"
+                            tmsg = _("We tried to test your translation API credentials, but they didn't work. Please check them and try again =)")
                             del self.client[req.session.value['username']]
                         else :
                             user['translator_credentials'] = { 'id' : client_id, 'secret' : client_secret }
                             req.db[self.acct(username)] = user
-                            tmsg = "Your MS translation credentials have been changed to: " + client_id + " => " + client_secret
+                            tmsg = _("Your MS translation credentials have been changed to") + ": " + client_id + " => " + client_secret
                     except Exception, e :
                         del self.client[req.session.value['username']]
-                        tmsg = "We tried to test your translation API credentials, but they didn't work because: " + str(e)
+                        tmsg = _("We tried to test your translation API credentials, but they didn't work because") + ": " + str(e)
 
                     out += self.heromsg + "\n<h4>" + tmsg + "</h4></div>"
 
                 elif req.http.params.get("newaccount") :
                     if not self.userdb : 
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Server not configured correctly. Can't make accounts.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
                     newusername = req.http.params.get("username")
                     newpassword = req.http.params.get("password")
@@ -2950,24 +2835,24 @@ class MICA(object):
                     language = "en" # make this dynamic later with a real signup process
 
                     if newusername == "mica_admin" :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Invalid account name! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
 
                     if len(newpassword) < 8 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Password must be at least 8 characters! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
                     if newpassword != newpasswordconfirm :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Passwords don't match! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
                     if 'admin' not in user["roles"] and admin == 'on' :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Non-admin users can't create admin accounts. What are you doing?!</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
 
                     if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Account already exists! Try again.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
                     roles = ['normal']
                     if admin == 'on' :
                         roles.append('admin')
 
                     self.make_account(req, newusername, newpassword, roles, language = language)
 
-                    out += self.heromsg + "\n<h4>Success! New user " + newusername + " created.</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
                 elif req.http.params.get("changelanguage") :
                     language = req.http.params.get("language")
                     user["language"] = language
@@ -2975,88 +2860,89 @@ class MICA(object):
                     req.session.value["language"] = language
                     req.session.save()
                     self.install_language(language)
-                    out += self.heromsg + "\n<h4>Success! Language changed.</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
                 elif req.http.params.get("setappchars") :
                     chars_per_line = int(req.http.params.get("setappchars"))
                     if chars_per_line > 1000 or chars_per_line < 5 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 5.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
                     user["app_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["app_chars_per_line"] = chars_per_line 
                     req.session.save()
-                    out += self.heromsg + "\n<h4>Success! Mobile Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setwebchars") :
                     chars_per_line = int(req.http.params.get("setwebchars"))
                     if chars_per_line > 1000 or chars_per_line < 5:
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Number of characters can't be greater than 1000 or less than 5.</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
                     user["web_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["web_chars_per_line"] = chars_per_line 
                     req.session.save()
-                    out += self.heromsg + "\n<h4>Success! Web Characters per line in a story set to " + str(chars_per_line) + ".</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setappzoom") :
                     zoom = float(req.http.params.get("setappzoom"))
                     if zoom > 3.0 or zoom < 0.5 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
                     user["default_app_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_app_zoom"] = zoom
                     req.session.save()
-                    out += self.heromsg + "\n<h4>Success! App zoom level set to " + str(zoom) + ".</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! App zoom level set to:") + " " + str(zoom) + ".</h4></div>"
                 elif req.http.params.get("setwebzoom") :
                     zoom = float(req.http.params.get("setwebzoom"))
                     if zoom > 3.0 or zoom < 0.5 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
                     user["default_web_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_web_zoom"] = zoom
                     req.session.save()
-                    out += self.heromsg + "\n<h4>Success! Web zoom level set to " + str(zoom) + ".</h4></div>"
+                    out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
 
-                out += """
-                    <p/>
-                    <h4><b>Change Password</b>?</h4>
-                """
+                out += "<p/><h4><b>" + _("Change Password?") + "</b></h4>"
                 if not mobile :
-                    out += self.template("changepass")
+                    out += load_template(req, PasswordElement)
+                    out += """
+                        <table>
+                        <form action='/account' method='post' enctype='multipart/form-data'>
+                        """
                 else :
-                    out += "Please change your password on the website. Will support mobile in a future version."
+                    out += _("Please change your password on the website. Will support mobile in a future version.")
 
-                client_id = "Need your client ID"
-                client_secret = "Need your client secret"
+                client_id = _("Need your client ID")
+                client_secret = _("Need your client secret")
 
                 if username != "demo" and 'translator_credentials' in user :
                      client_id = user['translator_credentials']['id']
                      client_secret = user['translator_credentials']['secret']
                  
-                out += "<tr><td><h5>&#160;Client ID: </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
-                out += "<tr><td><h5>&#160;Client Secret: </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&#160;" + _("Client ID") + ": </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&#160;" + _("Client Secret") + ": </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
+                out += "<tr><td><button name='changecredentials' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Credentials") + "</button></td></tr>"
                 out += """
-                    <tr><td><button name='changecredentials' type="submit" class="btn btn-default btn-primary" value='1'>Change Credentials</button></td></tr>
                     </table>
                     </form>
                     <p>
                     <br/>
-                    <a class='btn btn-default btn-primary' href='/account?pack=1'>Compact databases</a>
                     """
+                out += "<a class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
 
                 try :
-                    out += "<h4><b>Change Viewing configuration</b>?</h4>"
+                    out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"
                     out += "<table>"
-                    out += "<tr><td>&#160;Characters per line:</td><td>"
+                    out += "<tr><td>&#160;" + _("Characters per line") + ":</td><td>"
                     out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
                     out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
-                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
                     out += "</form>"
                     out += "</td></tr>"
                     out += "</table>"
                     out += "<table>"
-                    out += "<tr><td><h5>&#160;Default zoom level: </h5></td><td>"
+                    out += "<tr><td><h5>&#160;" + _("Default zoom level") + ": </h5></td><td>"
                     out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
                     out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
-                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>Change</button></td></tr>"
+                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
                     out += "</form>"
                     out += "</td></tr>"
                     out += "</table>"
@@ -3065,9 +2951,9 @@ class MICA(object):
                     raise e
                 
                 if not mobile and 'admin' in user['roles'] :
-                    out += "<h4><b>Accounts</b>:</h4>"
+                    out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
                     if not self.userdb :
-                        out += "Server is misconfigured. Cannot list accounts."
+                        out += _("Server is misconfigured. Cannot list accounts.")
                     else :
                         out += "<table>"
                         for result in self.userdb.view('accounts/all') :
@@ -3075,8 +2961,8 @@ class MICA(object):
                             out += "<tr><td>" + tmp_doc["name"] + "</td></tr>"
                         out += "</table>"
 
+                out += "<h4><b>" + _("Language") + "</b>?</h4>"
                 out += """
-                    <h4><b>Language</b>?</h4>
                     <form action='/account' method='post' enctype='multipart/form-data'>
                     <select name="language">
                 """
@@ -3090,20 +2976,19 @@ class MICA(object):
                     out += "<option value='" + l + "'"
                     if l == user["language"] :
                         out += "selected"
-                    out += ">" + readable + "</option>\n"
+                    out += ">" + _(readable) + "</option>\n"
                 out += """
                     </select>
                     <br/>
                     <br/>
-                    <button name='changelanguage' type="submit" class="btn btn-default btn-primary" value='1'>Change Language</button>
-                    </form>                                   
                 """
+                out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
 
                 return self.bootstrap(req, out)
                     
             elif req.action == "disconnect" :
                 self.disconnect(req.session)
-                return self.bootstrap(req, self.heromsg + "\n<h4>Disconnected from MICA</h4></div>")
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
 
             elif req.action == "help" :
                 output = ""
@@ -3113,16 +2998,16 @@ class MICA(object):
                 output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
                 return self.bootstrap(req, output)
             else :
-                return self.bootstrap(req, "Read, Review, or Edit, my friend?")
+                return self.bootstrap(req, _("Read, Review, or Edit, my friend?"))
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
         except couch_adapter.ResourceNotFound, e :
             return self.warn_not_replicated(req)
         except Exception, msg:
-            mdebug("Exception: " + str(msg))
-            out = "Exception:\n" 
-            resp = "<h4>Exception:</h4>"
+            mdebug(_("Exception") + ": " + str(msg))
+            out = _("Exception") + ":\n" 
+            resp = "<h4>" + _("Exception") + ":</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
@@ -3132,11 +3017,11 @@ class MICA(object):
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
 
-                resp += "<br/><h2>Please report the above exception to the author. Thank you.</h2>"
+                resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
                 if "connected" in req.session.value and req.session.value["connected"] :
                     req.session.value["connected"] = False
                     req.session.save()
-                return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>Error: Something bad happened: " + str(msg) + "</h4>" \
+                return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :
                 merr("OTHER MICA ********Exception:")
@@ -3540,7 +3425,7 @@ def second_splash() :
     encoded2 = base64.b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    output += "&#160;&#160;Please wait...</p>"
+    output += "&#160;&#160;" + _("Please wait...") + "</p>"
     output += """ 
 </div>    
 <div class="inner3">
