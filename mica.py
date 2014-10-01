@@ -2105,30 +2105,46 @@ class MICA(object):
                 page_dict = result["value"]
                 mdebug("Want to upgrade: " + str(page_dict))
                 new_units = []
-                for unit in page_dict["units"] :
+                units = page_dict["units"]
+                for idx in range(0, len(units)) :
+                    mdebug("Converting unit: " + str(idx))
+                    unit = units[idx]
                     unit["sromanization"] = unit["spinyin"]
                     del unit["spinyin"]
-                    unit["tromanization"] = unit["tpinyin"]
-                    del unit["tpinyin"]
+
+                    if u"tpinyin" in unit :
+                        unit["tromanization"] = unit["tpinyin"]
+                        del unit["tpinyin"]
+
                     unit["multiple_target"] = unit["multiple_english"]
                     del unit["multiple_english"]
+
                     unit["multiple_sromanization"] = unit["multiple_spinyin"]
                     del unit["multiple_spinyin"]
+
                     unit["target"] = unit["english"]
                     del unit["english"]
-                    unit["match_romanization"] = unit["match_pinyin"]
-                    del unit["match_pinyin"]
+
+                    if u"match_pinyin" in unit :
+                        unit["match_romanization"] = unit["match_pinyin"]
+                        del unit["match_pinyin"]
+
+                    mdebug("Done unit: " + str(idx))
+
+                mdebug("Units done for page: " + str(page))
+                # DO MORE CHECKING AND THEN RELEASE THE HOUND
                 #story["units"] = new_units
-                story["upgrade_page"] = page + 1
+                story["upgrade_page"] = str(int(page) + 1)
                 req.db[self.story(req, name)] = story
                 story = req.db[self.story(req, name)]
+                mdebug("next page...")
+            mdebug("Story upgrade complete.")
+            del story["upgrading"]
+            req.db[self.story(req, name)] = story
+            mdebug("Exiting")
         except Exception, e :
             self.store_error(req, name, "Failure to upgrade story: " + str(e))
 
-        #del story["upgrading"]
-        #req.db[self.story(req, name)] = story
-
-        
     def common(self, req) :
         try :
             if req.action == "privacy" :
@@ -2683,7 +2699,6 @@ class MICA(object):
                     if version != 2 :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
                     original = 1
-                    mdebug("Will upgrade from version 1 to 2")
 
                 # Add new story upgrades to this list here, like this:
                 #elif "format" in story and story["format"] == 2 :
@@ -2700,14 +2715,23 @@ class MICA(object):
                 if version > story_format :
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
 
-                if "upgrading" in story :
-                    curr_page = story["upgrade_page"]
+                if "upgrading" in story and story["upgrading"] :
+                    curr_page = story["upgrade_page"] if "upgrade_page" in story else 0
                     nbpages = self.nb_pages(req, story["name"])
                     assert(nbpages > 0)
                     percent = float(curr_page) / float(nbpages) * 100
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>")
+                    out = self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>"
+                    if "last_error" in story and not isinstance(story["last_error"], str) :
+                        out += "<br/>" + _("Last upgrade Exception") + ":<br/>"
+                        for err in story["last_error"] :
+                            out += "<br/>" + err.replace("\n", "<br/>")
+                        del story["upgrading"]
+                        del story["last_error"]
+                        req.db[self.story(req, story["name"])] = story
+                        story = req.db[self.story(req, story["name"])]
+                    return self.bootstrap(req, out)
 
-                if "last_error" in tmp_story :
+                if "last_error" in story :
                     mdebug("Clearing out last error message.")
                     del story["last_error"]
                     req.db[self.story(req, story["name"])] = story
