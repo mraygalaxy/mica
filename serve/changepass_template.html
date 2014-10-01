@@ -1,14 +1,13 @@
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="password">
+<form action='/account' method='post' enctype='multipart/form-data'>
+<table>
+<tr><td><h5>&#160;<t:slot name="oldpassword"/>:</h5> </td><td><input type="password" name="oldpassword"/></td></tr>
+<tr><td><h5>&#160;<t:slot name="password"/>:</h5> </td><td><input type="password" name="password"/></td></tr>
+<tr><td><h5>&#160;<t:slot name="confirm"/>:</h5> </td><td><input type="password" name="confirm"/></td></tr>
+<tr><td><button name='changepassword' type="submit" class="btn btn-default btn-primary" value='1'><t:slot name="change"/></button></td></tr>
+</table>
+</form>                                   
 
-                    <form action='/account' method='post' enctype='multipart/form-data'>
-                    <table>
-                    <tr><td><h5>&#160;Old Password: </td><td><input type="password" name="oldpassword"/></h5></td></tr>
-                    <tr><td><h5>&#160;Password: </td><td><input type="password" name="password"/></h5></td></tr>
-                    <tr><td><h5>&#160;Confirm:&#160; </td><td><input type="password" name="confirm"/></h5></td></tr>
-                    <tr><td><button name='changepassword' type="submit" class="btn btn-default btn-primary" value='1'>Change Password</button></td></tr>
-                    </table>
-                    </form>                                   
-
-                    <h4><b>Input Microsoft Translation API Credentials</b>?</h4>
-                    <h5>You can request free credentials <a href='http://msdn.microsoft.com/en-us/library/hh454950.aspx'>by going here</a>.</h5>
-                    <form action='/account' method='post' enctype='multipart/form-data'>
-                    <table>
+<h4><b><t:slot name="microsoft"/></b></h4>
+<h5><t:slot name="request"/> <a href='http://msdn.microsoft.com/en-us/library/hh454950.aspx'><t:slot name="going"/></a>.</h5>
+</html>

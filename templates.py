@@ -13,7 +13,69 @@ bootlangs = ""
 for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
+class PasswordElement(Element) :
+    def __init__(self, req) :
+        super(PasswordElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html'))
+
+    @renderer
+    def password(self, request, tag) :
+        tag.fillSlots(oldpassword =_("Old Password"),
+                      password = _("New Password"),
+                      confirm = _("Confirm Password"),
+                      change = _("Change Password"),
+                      microsoft = _("Input Microsoft Translation API Credentials?"),
+                      request = _("You can request free credentials"),
+                      going = _("by going here")
+                      )
+        return tag
+
+class HistoryElement(Element) :
+    def __init__(self, req) :
+        super(HistoryElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/history_template.html'))
+
+    @renderer
+    def history(self, request, tag) :
+        tag.fillSlots(onlineoffine =_("Breakdown") + ": " + _("Online") + ": " + str(online) + ", " + _("Offline") + ": " + str(offline))
+
+    @renderer
+    def panel(self, request, tag) :
+        for x in self.req.history :
+            div = tags.div(**{"class" : "panel panel-default"})
+            idiv = tags.div(**{"class" : "panel-heading"})
+
+            char, total, spy, targ, tid = x
+            tid = str(tid)
+
+            if len(targ) and targ[0] == '/' :
+               targ = targ[1:-1]
+
+            a = tags.a(**{"class" : "panel-toggle", "style" : "display: inline", "data-toggle" : "collapse", "data-parent" : "#panelHistory" + tid, "href" : "#collapse" + tid})
+
+            i = tags.i(**{"class" : "glyphicon glyphicon-arrow-down", "style" : "size: 50%"})
+            i(" " + spy)
+            a(i)
+            idiv(char + " (" + str(int(float(total))) + "): ", a)
+            cdiv = tags.div(**{"class" : "panel-body collapse", "id" : "collapse" + tid})
+            icdiv = tags.div(**{"class" : "panel-inner"})
+            icdiv(targ.replace("\"", "\\\"").replace("\'", "\\\""))#.replace("/", " /<br/>"))
+            cdiv(idiv)
+            div(idiv, cdiv)
+
+        tag(div)
+
+        return tag
+
 class StaticNavElement(Element) :
+    def __init__(self, req) :
+        super(StaticNavElement, self).__init__() 
+        self.req = req
+
     loader = XMLFile(FilePath(cwd + 'serve/nav_template.html'))
 
     @renderer
@@ -93,6 +155,114 @@ class EditHeaderElement(Element) :
                       previoussplit = _("This word was previously split into characters"),
                       tryrecco = _("Try Recommendations"),
                       repage = _("Re-translate page"))
+        return tag
+
+class MobileAdvertElement(Element) :
+    def __init__(self, req) :
+        super(MobileAdvertElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html'))
+
+    @renderer
+    def mobile(self, request, tag) :
+        tag.fillSlots(granted = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."))
+        return tag
+
+class ServerAdvertElement(Element) :
+    def __init__(self, req) :
+        super(ServerAdvertElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html'))
+
+    @renderer
+    def server(self, request, tag) :
+        tag.fillSlots(granted = _("Accounts are granted on-request only."))
+        return tag
+
+class LinkAdvertElement(Element) :
+    def __init__(self, req) :
+        super(LinkAdvertElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html'))
+
+    @renderer
+    def link(self, request, tag) :
+        tag.fillSlots(bitcoin = _("Please Donate To Bitcoin Address"))
+        return tag
+
+class FrontPageElement(Element) :
+    def __init__(self, req) :
+        super(FrontPageElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html'))
+
+    @renderer
+    def pages(self, request, tag) :
+        if self.req.mobile :
+            tag(XMLString("<div>" + self.req.deeper + "</div>").load())
+        else :
+            pages = [
+                _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
+                _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
+                _("Why can't we use the <b>existing content</b> that's already out there?"),
+                _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
+                _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
+                _("When you read a new story, it <b>hides the words</b> you already know."),
+                _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
+                _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
+                _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
+            ]
+
+            first = True
+
+            for page in pages :
+                if first :
+                    first = False
+                    div = tags.div(**{"class" : "item active", "style" : "text-align: center"})
+                else :
+                    div = tags.div(**{"class" : "item", "style" : "text-align: center"})
+
+                div(tags.br(), tags.br(), tags.br(), tags.br())
+                p = XMLString("<div>" + page + "</div>")
+                div(tags.h1(style="width: 75%; margin: 0 auto;")(p.load()))
+                div(tags.br(), tags.br(), tags.br(), tags.br())
+
+                tag(div)
+
+        return tag
+
+    @renderer
+    def mobilelinks(self, request, tag) :
+        if not self.req.mobile :
+            tag(LinkAdvertElement(self.req))
+        else :
+            tag("")
+        return tag
+
+    @renderer
+    def frontend(self, request, tag) :
+        if self.req.mobile :
+            tag(MobileAdvertElement(self.req))
+        else :
+            tag(ServerAdvertElement(self.req))
+            
+        return tag
+
+    @renderer
+    def advertise(self, request, tag) :
+        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
+                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
+                      howitworks = _("Read about how it works on github.com"),
+                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
+                      mailinglist = _("Join the mailing list"),
+                      help = _("for additional help"),
+                      connect =_("You need to connect, first"),
+                      click =_("Click the little 'M' at the top"),
+                      experimental = _("This is experimental language-learning software"))
         return tag
 
 class EditElement(Element) :
@@ -273,9 +443,10 @@ class HeadElement(Element):
                     ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
                     utag(tags.li(ttag))
 
-            utag(StaticNavElement())
+            utag(StaticNavElement(self.req))
             tag(itemtag(atag, utag))
         return tag
+
     @renderer
     def pull(self, request, tag):
         return tag(self.req.db.pull_percent() if self.req.db else "")
@@ -353,6 +524,12 @@ class HeadElement(Element):
                      )
        return tag
 
+    @renderer
+    def newaccountadmin(self, request, tag) :
+        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
+            if self.req.user and 'admin' in self.req.user['roles'] :
+                tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
+        return tag
 
 @defer.inlineCallbacks
 def run_template(req, which) :

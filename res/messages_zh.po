@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-10-01 15:10+0800\n"
+"POT-Creation-Date: 2014-10-01 16:24+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,6 +22,7 @@ msgstr ""
 #: /home/mrhines/mica-android/mica/util/../templates.py:64
 #: /home/mrhines/mica-android/mica/util/../templates.py:163
 #: /home/mrhines/mica-android/mica/util/../templates.py:171
+#: /home/mrhines/mica-android/mica/util/../templates.py:244
 msgid "Review"
 msgstr "复习"
 
@@ -30,6 +31,7 @@ msgstr "复习"
 #: /home/mrhines/mica-android/mica/util/../templates.py:65
 #: /home/mrhines/mica-android/mica/util/../templates.py:164
 #: /home/mrhines/mica-android/mica/util/../templates.py:172
+#: /home/mrhines/mica-android/mica/util/../templates.py:245
 msgid "Edit"
 msgstr "编辑"
 
@@ -38,6 +40,7 @@ msgstr "编辑"
 #: /home/mrhines/mica-android/mica/util/../templates.py:66
 #: /home/mrhines/mica-android/mica/util/../templates.py:165
 #: /home/mrhines/mica-android/mica/util/../templates.py:173
+#: /home/mrhines/mica-android/mica/util/../templates.py:246
 msgid "Read"
 msgstr "阅读"
 
@@ -46,11 +49,13 @@ msgstr "阅读"
 #: /home/mrhines/mica-android/mica/util/../templates.py:83
 #: /home/mrhines/mica-android/mica/util/../templates.py:182
 #: /home/mrhines/mica-android/mica/util/../templates.py:190
+#: /home/mrhines/mica-android/mica/util/../templates.py:263
 msgid "Account"
 msgstr "帐户"
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:27
 #: /home/mrhines/mica-android/mica/util/../templates.py:31
+#: /home/mrhines/mica-android/mica/util/../templates.py:21
 msgid "Preferences"
 msgstr "设置"
 
@@ -58,6 +63,7 @@ msgstr "设置"
 #: /home/mrhines/mica-android/mica/util/../templates.py:88
 #: /home/mrhines/mica-android/mica/util/../templates.py:187
 #: /home/mrhines/mica-android/mica/util/../templates.py:195
+#: /home/mrhines/mica-android/mica/util/../templates.py:268
 msgid "Upload New Story"
 msgstr ""
 
@@ -65,22 +71,27 @@ msgstr ""
 #: /home/mrhines/mica-android/mica/util/../templates.py:93
 #: /home/mrhines/mica-android/mica/util/../templates.py:192
 #: /home/mrhines/mica-android/mica/util/../templates.py:200
+#: /home/mrhines/mica-android/mica/util/../templates.py:273
 msgid "New Account"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:32
+#: /home/mrhines/mica-android/mica/util/../templates.py:22
 msgid "Disconnect"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:33
+#: /home/mrhines/mica-android/mica/util/../templates.py:23
 msgid "About"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:34
+#: /home/mrhines/mica-android/mica/util/../templates.py:24
 msgid "Help"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:35
+#: /home/mrhines/mica-android/mica/util/../templates.py:25
 msgid "Privacy"
 msgstr ""
 
@@ -93,47 +104,102 @@ msgid "English"
 msgstr "英语"
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:47
+#: /home/mrhines/mica-android/mica/util/../templates.py:120
 msgid "Polyphome Legend"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:125
 #: /home/mrhines/mica-android/mica/util/../templates.py:133
+#: /home/mrhines/mica-android/mica/util/../templates.py:206
 msgid "Doing online translation..."
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:126
 #: /home/mrhines/mica-android/mica/util/../templates.py:134
+#: /home/mrhines/mica-android/mica/util/../templates.py:207
 msgid "Go"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:48
+#: /home/mrhines/mica-android/mica/util/../templates.py:121
 msgid "Correct for tone and meaning"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:49
+#: /home/mrhines/mica-android/mica/util/../templates.py:122
 msgid "(No review necessary)"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:50
+#: /home/mrhines/mica-android/mica/util/../templates.py:123
 msgid "Possibly wrong meaning"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:51
+#: /home/mrhines/mica-android/mica/util/../templates.py:124
 msgid "(but tone is correct)"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:52
+#: /home/mrhines/mica-android/mica/util/../templates.py:125
 msgid "Possibly wrong tone"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:53
+#: /home/mrhines/mica-android/mica/util/../templates.py:126
 msgid "(as well as meaning)"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:54
+#: /home/mrhines/mica-android/mica/util/../templates.py:127
 msgid "Definitely wrong previously"
 msgstr ""
 
 #: /home/mrhines/mica-android/mica/util/../templates.py:55
+#: /home/mrhines/mica-android/mica/util/../templates.py:128
 msgid "Polyphome Change History"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1114
+msgid "Breakdown: Online: "
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1114
+msgid "Offline"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:62
+msgid "SPLIT"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:64
+msgid "MERGE"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:74
+msgid "No edit history available."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:76
+msgid "Edit list Disabled."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:89
+msgid "Edit Legend"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:92
+msgid "These characters were previously merged into a word"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:93
+msgid "This word was previously split into characters"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:94
+msgid "Try Recommendations"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:95
+msgid "Re-translate page"
 msgstr ""
