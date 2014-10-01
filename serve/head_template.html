@@ -192,12 +192,8 @@
                                 </h5>
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
                                 <br/>
-                                  Original Language? <select name="source_language">
-                                    BOOTLANGUAGES
-                                  </select>
-                                  Your Language? <select name="target_language">
-                                    BOOTLANGUAGES
-                                  </select>
+                                  Original Language? <select name="source_language" t:render="languages"/>
+                                  Your Language? <select name="target_language" t:render="languages"/>
                                 <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
                                 </form>                                   
                                 <p/>
@@ -215,12 +211,8 @@
                                       <option disabled="disabled" value='json'>JSON (not implemented, utf-8, multi-page</option>
                                       </select>
                                     <br/>
-                                      Original Language? <select name="source_language">
-                                        BOOTLANGUAGES
-                                      </select>
-                                      Your Language? <select name="target_language">
-                                        BOOTLANGUAGES
-                                      </select>
+                                      Original Language? <select name="source_language" t:render="languages"/>
+                                      Your Language? <select name="target_language" t:render="languages"/>
                                       <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
                                 </h5>
                                 </form>                                   

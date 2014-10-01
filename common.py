@@ -53,6 +53,26 @@ micalogger = False
 txnlogger = False
 duplicate_logger = False
 
+lang = {
+         u"zh-CHS" : _(u"Chinese Simplified"),
+         u"en" : _(u"English"),
+       }
+
+samples = {
+         u"zh-CHS" : [u"开源"],
+         u"en" : ["test"],
+       }
+
+romanization = {
+        u"zh-CHS" : True,
+        u"en" : False,
+        }
+
+processor_map = {
+        u"zh-CHS" : u"ChineseSimplified", 
+        u"en" : u"English", 
+}
+
 def minfo(msg) :
    if micalogger :
        micalogger.info(msg)

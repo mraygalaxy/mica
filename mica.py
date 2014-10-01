@@ -41,32 +41,9 @@ import socket
 import Queue
 import string 
 
-lang = {
-         u"zh-CHS" : u"Chinese Simplified",
-         u"en" : u"English",
-       }
-
-samples = {
-         u"zh-CHS" : [u"开源"],
-         u"en" : ["test"],
-       }
-
-romanization = {
-        u"zh-CHS" : True,
-        u"en" : False,
-        }
-
-processor_map = {
-        u"zh-CHS" : u"ChineseSimplified", 
-        u"en" : u"English", 
-}
 
 global_processors = {}
 texts = {}
-
-bootlangs = ""
-for l, readable in lang.iteritems() :
-    bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
 from common import *
 from processors import * 
@@ -232,10 +209,15 @@ class Params(object) :
         self.active = None 
         self.skip_show = False
 
+        if self.action == "index" :
+            self.mpath = self.uri + relative_prefix_suffix
+            self.bootstrappath = self.uri + relative_prefix_suffix + "/bootstrap"
+        else :
+            self.mpath = self.uri + "/.." + relative_prefix
+            self.bootstrappath = self.uri + "/.." + relative_prefix + "/bootstrap"
+
         minfo("Request: " + self.unparsed_uri + " action: " + self.action)
 
-
-spinner = "<img src='MSTRAP/spinner.gif' width='15px'/>&nbsp;"
 
 class MICA(object):
     def authenticate(self, username, password, auth_url) :
@@ -340,7 +322,6 @@ class MICA(object):
         self.replacement_keys = [ 
                                     "BOOTNEWACCOUNTADMIN",
                                     "BOOTBODY", 
-                                    "BOOTLANGUAGES",
                                     "BOOTSCRIPTHEAD",
                                 ]
 
@@ -657,13 +638,6 @@ class MICA(object):
 
         newaccountadmin = ""
     
-        if req.action == "index" :
-            req.mpath = req.uri + relative_prefix_suffix
-            req.bootstrappath = req.uri + relative_prefix_suffix + "/bootstrap"
-        else :
-            req.mpath = req.uri + "/.." + relative_prefix
-            req.bootstrappath = req.uri + "/.." + relative_prefix + "/bootstrap"
-
         if now :
             contents = body
         else :
@@ -680,12 +654,10 @@ class MICA(object):
 
                 if req.user and 'admin' in req.user['roles'] :
                     newaccountadmin += """
-                            <h5>&nbsp;<input type="checkbox" name="isadmin"/>&nbsp;Admin?</h5>
+                            <h5>&#160;<input type="checkbox" name="isadmin"/>&#160;Admin?</h5>
                     """
 
-            run_template(req, HeadElement)
-            contents = req.flat
-
+            contents = load_template(req, HeadElement)
 
         fh = open(cwd + 'serve/head.js')
         bootscripthead = fh.read()
@@ -694,7 +666,6 @@ class MICA(object):
         replacements = [    
                          newaccountadmin,
                          body,
-                         bootlangs,
                          bootscripthead,
                       ]
     
@@ -1140,7 +1111,7 @@ class MICA(object):
 
         history.sort( key=by_total, reverse = True )
 
-        out += "Breakdown: Online: " + str(online) + ", Offline: " + str(offline) + "<p/>\n"
+        out += _("Breakdown: Online: ") + str(online) + ", " + _("Offline") + ": " + str(offline) + "<p/>\n"
         out += "<div class='panel-group' id='panelHistory'>\n"
         
         for x in history :
@@ -1159,7 +1130,7 @@ class MICA(object):
 
             out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory'" + tid + " href='#collapse" + tid + "'>"
 
-            out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
+            out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + spy
 
             out += "</a>"
             out += "</div>"
@@ -1199,7 +1170,7 @@ class MICA(object):
                     if unit["hash"] not in changes["record"] :
                         continue
                     record = changes["record"][unit["hash"]]
-                    history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "<div style='color: blue; display: inline'>SPLIT&nbsp;&nbsp;&nbsp;</div>"])
+                    history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "SPLIT"])
                 else: 
                     changes = False if char not in merge_keys else merge_keys[char]
                     
@@ -1209,17 +1180,16 @@ class MICA(object):
                         if unit["hash"] not in changes["record"] :
                             continue
                         record = changes["record"][unit["hash"]]
-                        memberlist = "<table class='table'>"
+                        memberlist = []
                         nb_singles = 0
                         for key, member in record["members"].iteritems() :
                             if len(key) == 1 :
                                 nb_singles += 1
                                 continue
-                            memberlist += "<tr><td>" + member["pinyin"] + ":</td><td>" + key + "</td></tr>"
-                        memberlist += "</table>\n"
+                            memberlist.append((member["pinyin"], key))
                         if nb_singles == len(record["members"]) :
                             continue
-                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "<div style='color: red; display: inline'>MERGE</div>"])
+                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "MERGE"])
                     else :
                         continue
 
@@ -1233,164 +1203,23 @@ class MICA(object):
 
             history.sort( key=by_total, reverse = True )
 
-        out += """
-            <h5>Edit Legend:</h5>
-            <p/>
-            <table>
-            <tr><td class='mergetop mergebottom mergeleft mergeright' style='vertical-align: top'>These characters were previously merged into a word</td></tr>
-            <tr><td><p/></td></tr>
-            <tr><td class='splittop splitbottom splitleft splitright' style='vertical-align: top'>This word was previously split into characters</td></tr>
-            </table>
-            <p/>
-            """
-        out += "<a href='#' class='btn btn-info' onclick=\"process_edits('" + uuid + "', 'all', true)\">Try Recommendations</a>\n<p/>\n"
-        out += "<a href='/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page) + "' class='btn btn-info'>Re-translate page</a>\n<p/>\n"
-
+        req.process_edits = "process_edits('" + uuid + "', 'all', true)"
+        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page)
+        req.list_mode = list_mode
         if list_mode :
-            if len(history) != 0 :
-                out += """
-                    <div class='panel-group' id='panelEdit'>
-                    """
-                
-                for x in history :
-                    out += """
-                        <div class='panel panel-default'>
-                          <div class="panel-heading">
-                          """
+            req.history = history
 
-                    char, total, spy, result, tid, op = x
-                    tid = str(tid)
+        return load_template(req, EditElement)
 
-                    if len(result) and result[0] == '/' :
-                       result = result[1:-1]
-
-                    out +=  op + " (" + str(total) + "): " + char + ": "
-
-                    out += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse" + tid + "'>"
-
-                    out += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + spy
-
-                    out += "</a>"
-                    out += "</div>"
-                    out += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-                    out += "<div class='panel-inner'>" + result + "</div>"
-
-                    out += "</div>"
-                    out += "</div>"
-
-                out += "</div>"
-            else :
-                out += "<h4>No edit history available.</h4>"
-        else :
-            out += "<h4>Edit List Disabled.</h4>"
-
-        return out
-
-    def view(self, req, uuid, name, story, action, start_page, view_mode) :
+    def view(self, req, uuid, name, story, start_page, view_mode) :
         if not story["translated"] :
             return "Untranslated story! Ahhhh!"
 
-        output = ""
-        output += """
-                <div class='row-fluid'>
-                <div class='col-lg-12 nopadding'>
-                        <div class='row-fluid'>
-                            <div class='col-lg-10 nopadding'>
-                                <div class='row-fluid'>
-                                    <!-- this '12' is not intuitive, but it
-                                    indicates the start of a new fluid
-                                    nesting level that also is subdivided by
-                                    units of 12 -->
-                                    <div class='col-lg-12 nopadding'>
-                                        <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
-                                            <div id='translationstatus'></div>
-                                            <table>
-                                                <tr>
-                                                    <td><button type='button' id='goto' class='btn btn-default'>Go:</button>
-                                                    <input id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
-                                                    <td>&nbsp;&nbsp;&nbsp;</td>
-                                                    <td><div class='btn-group'>
-        """
+        req.gp = global_processors[story["source_language"]]
+        req.story_name = story["name"]
+        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true);"
+        output = load_template(req, ViewElement)
 
-        output += "<button type='button' id='textButton' "
-        if "view_mode" in req.session.value :
-             output += " class='"
-             if req.session.value["view_mode"] == "text" :
-                 output += "active "
-
-        output += "btn btn-default'><i class='glyphicon glyphicon-font'></i></button>"
-        output += "<button type='button' id='sideButton' "
-
-        if "view_mode" in req.session.value :
-             output += " class='"
-             if req.session.value["view_mode"] == "both" :
-                 output += "active "
-
-        output += "btn btn-default'><i class='glyphicon glyphicon-th-list'></i></button>"
-        output += "<button type='button' id='imageButton' "
-
-        if "view_mode" in req.session.value :
-             output += " class='"
-             if req.session.value["view_mode"] == "images" :
-                 output += "active "
-
-        output += "btn btn-default'><i class='glyphicon glyphicon-picture'></i></button>"
-
-        output += "<button type='button' class='btn btn-default' onclick='process_instant(" + ("true" if global_processors[story["source_language"]].already_romanized else "false") + ")' href='#'><i class='glyphicon glyphicon-share'></i></button>"
-
-        if req.action == "edit" :
-            uuid = 'bad_uuid';
-            output += "<button type='button' class='btn btn-default' href='#' onclick=\"process_edits('"
-            if "current_story" in req.session.value :
-                uuid = req.session.value["current_story"]
-            output += uuid
-            output += "', 'split', false)\"><i class='glyphicon glyphicon-resize-full'></i></button>"
-            output += "<button type='button' class='btn btn-default' href='#' onclick=\"process_edits('"
-            output += uuid
-            output += "','merge', false)\"><i class='glyphicon glyphicon-resize-small'></i></button>"
-
-        output += """
-                                                        </div>
-                                                    </td>
-                                                    <td>&nbsp;&nbsp;&nbsp;</td>
-                                                    <td><div id='pagenav'></div></td>
-                                                </tr>
-                                            </table>
-                                            <script>installreading();</script>
-                                        </div><!-- affix reading header -->
-                                    </div><!-- col-lg-12 header section -->
-                                </div><!-- row for header section -->
-                                <div id='pagecontent'></div>
-                            </div><!-- outer md-10 all section --> 
-
-                            <div class='col-lg-2 nopadding'>
-                            <div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
-        """
-
-        output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
-        output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
-
-        if action in ["read"] :
-            output += "<div id='memolist'></div>"
-        elif action == "edit" :
-            output += "<div id='editslist'></div>"
-        elif action == "home" :
-            output += "<br/>Polyphome Legend:<br/>"
-            output += self.template("legend")
-            output += """
-                <br/>
-                Polyphome Change History:<br/>
-            """
-            output += "<div id='history'></div>"
-
-        output += """
-                </div><!-- statsheader -->
-                </div><!-- col-lg-2 stats section -->
-                </div><!-- col-lg-12 for everything section -->
-                </div><!-- row for everything -->
-        """
-        output += "<script>install_pages('" + action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true);</script>"
-        
         return output
 
     def nb_pages(self, req, name):
@@ -1402,7 +1231,7 @@ class MICA(object):
         holder = "<div class='roman" + color + "'>"
         
         for x in range(0, len(source)) :
-            holder += "&nbsp;"
+            holder += "&#160;"
             
         holder += "</div>"
         return holder
@@ -1736,7 +1565,9 @@ class MICA(object):
                     tid = unit["hash"] if py else str(word[2])
                     line_out += "\n<td style='vertical-align: top; text-align: center'>"
                     line_out += "<table><tr>"
-                    line_out += "<td><div style='display: none' class='memory" + tid + "'>" + spinner + "</div></td>"
+                    line_out += "<td><div style='display: none' class='memory" + tid + "'>"
+                    line_out += "<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;"
+                    line_out += "</div></td>"
                     line_out += "</tr><tr><td>"
                     '''
                     if action == "home" :
@@ -1773,12 +1604,12 @@ class MICA(object):
                         line_out += "' class='trans"
                     
                     line_out += " blank" + tid + "'>"
-                    line_out += "&nbsp;</div>"
+                    line_out += "&#160;</div>"
                     line_out += "</td>"
                     line_out += "</tr></table>"
                     line_out += "</td>"
                     if py :
-                        line_out += "<td>&nbsp;</td>"
+                        line_out += "<td>&#160;</td>"
                 line_out += "</tr>"
                 line_out += "</table>"
 
@@ -1884,7 +1715,7 @@ class MICA(object):
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                    untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&nbsp;"
+                    untrans += "<a title='Delete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
 
                     if req.session.value['username'] not in self.client :
                         untrans += "Please add a translation API key in your account preferences to begin learning with this story.<br/>"
@@ -1894,7 +1725,7 @@ class MICA(object):
                         for err in story["last_error"] :
                             untrans += "<br/>" + err.replace("\n", "<br/>")
 
-                    untrans += "</div>&nbsp;"
+                    untrans += "</div>&#160;"
 
                 untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
                 untrans += "</div>"
@@ -2000,6 +1831,10 @@ class MICA(object):
                 
     def operation(self, req, story, edit, offset):
         operation = edit["operation"]
+
+        Processor = getattr(processors, processor_map[story["source_language"]])
+        processor = Processor(self, params)
+
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
             mindex = int(edit["index"])
@@ -2015,9 +1850,10 @@ class MICA(object):
             for char in curr["source"] :
                 groups.append(char.encode("utf-8"))
 
-            self.parse_page(False, req, story, groups, page, temp_units = True)
+            processor.parse_page(False, req, story, groups, page, temp_units = True)
 
             page_dict["units"] = before + story["temp_units"] + after
+
             req.db[self.story(req, story['name']) + ":pages:" + str(page)] = page_dict
             offset += (len(story["temp_units"]) - len(curr))
             del story["temp_units"]
@@ -2043,7 +1879,7 @@ class MICA(object):
                 for char in chargroup["source"] :
                     group += char.encode("utf-8")
 
-            self.parse_page(False, req, story, [group], page, temp_units = True)
+            processor.parse_page(False, req, story, [group], page, temp_units = True)
 
             if len(story["temp_units"]) == 1 :
                 merged = story["temp_units"][0]
@@ -2899,10 +2735,10 @@ class MICA(object):
                                     str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
                                     "<i class='glyphicon glyphicon-remove'></i></a>"
 
-                            output += "&nbsp; " + "".join(unit["source"]) + ": "
+                            output += "&#160; " + "".join(unit["source"]) + ": "
                             output += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>"
 
-                            output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&nbsp;" + py
+                            output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py
                             output += "</a>"
                             output += "</div>"
                             output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
@@ -2962,7 +2798,7 @@ class MICA(object):
                             self.set_page(req, story, page)
                             output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
-                    output = self.view(req, uuid, name, story, req.action, start_page, view_mode)
+                    output = self.view(req, uuid, name, story, start_page, view_mode)
                 else :
                     output += self.heromsg + "<h4>No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top."
                     if mobile :
@@ -3193,8 +3029,8 @@ class MICA(object):
                      client_id = user['translator_credentials']['id']
                      client_secret = user['translator_credentials']['secret']
                  
-                out += "<tr><td><h5>&nbsp;Client ID: </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
-                out += "<tr><td><h5>&nbsp;Client Secret: </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&#160;Client ID: </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&#160;Client Secret: </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
                 out += """
                     <tr><td><button name='changecredentials' type="submit" class="btn btn-default btn-primary" value='1'>Change Credentials</button></td></tr>
                     </table>
@@ -3207,7 +3043,7 @@ class MICA(object):
                 try :
                     out += "<h4><b>Change Viewing configuration</b>?</h4>"
                     out += "<table>"
-                    out += "<tr><td>&nbsp;Characters per line:</td><td>"
+                    out += "<tr><td>&#160;Characters per line:</td><td>"
                     out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
                     out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
@@ -3216,7 +3052,7 @@ class MICA(object):
                     out += "</td></tr>"
                     out += "</table>"
                     out += "<table>"
-                    out += "<tr><td><h5>&nbsp;Default zoom level: </h5></td><td>"
+                    out += "<tr><td><h5>&#160;Default zoom level: </h5></td><td>"
                     out += "<form action='/account' method='post' enctype='multipart/form-data'>"
                     out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
                     out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
@@ -3704,7 +3540,7 @@ def second_splash() :
     encoded2 = base64.b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    output += "&nbsp;&nbsp;Please wait...</p>"
+    output += "&#160;&#160;Please wait...</p>"
     output += """ 
 </div>    
 <div class="inner3">

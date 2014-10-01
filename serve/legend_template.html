@@ -1,6 +1,12 @@
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="legend">
+<br/><t:slot name='title'/>:<br/>
 <table>
-<tr><td style='vertical-align: top'><div class='bluesquare'></div></td><td>&nbsp;</td><td>Correct for tone and english<br>(No review necessary)</td></tr>
-<tr><td style='vertical-align: top'><div class='greensquare'></div></td><td>&nbsp;</td><td>Possibly wrong english<br/>(but tone is correct)</td></tr>
-<tr><td style='vertical-align: top'><div class='redsquare'></div></td><td>&nbsp;</td><td>Possibly wrong tone<br/>(as well as english)</td></tr>
-<tr><td style='vertical-align: top'><div class='blacksquare'></div></td><td>&nbsp;</td><td>Definitely wrong previously</td></tr>
+<tr><td style='vertical-align: top'><div class='bluesquare'></div></td><td>&#160;</td><td><t:slot name='legend1'/><br/><t:slot name='legend1post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='greensquare'></div></td><td>&#160;</td><td><t:slot name='legend3'/><br/><t:slot name='legend3post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='redsquare'></div></td><td>&#160;</td><td><t:slot name='legend3'/><br/><t:slot name='legend3post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='blacksquare'></div></td><td>&#160;</td><td><t:slot name='legend4'/></td></tr>
 </table>
+<br/>
+<t:slot name='history'/>:<br/>
+<div id='history'></div>
+</html>
