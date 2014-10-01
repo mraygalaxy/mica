@@ -597,7 +597,7 @@ class MICA(object):
         if mobile :
             sideout += "<b>" + rname + "</b>"
         else :
-            sideout += "<a title='" + _("Download Original") + "' href=\"/stories?type=original&uuid="
+            sideout += "\n<a title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid="
             sideout += story["uuid"]
             sideout += "\">"
             sideout += rname
@@ -605,13 +605,13 @@ class MICA(object):
         
         if (finished or reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
-            sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
-            sideout += pr + "%;'> (" + pr + "%)</div>"
+            sideout += "<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
+            sideout += pr + "%;'> (" + pr + "%)</div></div>"
             
         sideout += "</td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "<td><a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "\n<td><a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
     
         return sideout
@@ -1653,12 +1653,12 @@ class MICA(object):
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
-                    untrans += "<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
+                    untrans += "\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
 
                     if req.session.value['username'] not in self.client :
                         untrans += _("Please add a translation API key in your account preferences to begin learning with this story") + ".<br/>"
                     else :
-                        untrans += "<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
+                        untrans += "\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans += "<br/>" + err.replace("\n", "<br/>")
@@ -1675,24 +1675,24 @@ class MICA(object):
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 if not mobile :
-                    notsure += "<td><a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
-                notsure += "<td><a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
-                notsure += "<td><a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
-                notsure += "<td><a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
+                    notsure += "\n<td><a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
+                notsure += "\n<td><a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
+                notsure += "\n<td><a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
+                notsure += "\n<td><a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
 
                 if finished :
                    finish += notsure
-                   finish += "<td><a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
+                   finish += "\n<td><a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
                    finish += "</tr>"
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
-                   reading += "<td><a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
+                   reading += "\n<td><a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
                    reading += "<td><a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
                    reading += "</tr>"
                 else :
                    noreview += notsure
-                   noreview += "<td><a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
+                   noreview += "\n<td><a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                    noreview += "</tr>"
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
@@ -2725,23 +2725,25 @@ class MICA(object):
                 untrans += "</table></div></div></div>\n"
                 finish += "</table></div></div></div>\n"
 
+                scripts = ""
+
                 if untrans_count :
                     storylist += untrans + reading + noreview + finish + "</div></td></tr></table>"
-                    storylist += """
+                    scripts += """
                             <script>$('#collapseUntranslated').collapse('show');</script>
                             """
                 elif reading_count :
                     storylist += reading + untrans + noreview + finish + "</div></td></tr></table>"
-                    storylist += """
+                    scripts += """
                             <script>$('#collapseReading').collapse('show');</script>
                             """
                 else :
                     storylist += noreview + reading + untrans + finish + "</div></td></tr></table>"
-                    storylist += """
+                    scripts += """
                             <script>$('#collapseReviewing').collapse('show');</script>
                             """
 
-                storylist += """
+                scripts += """
                             
                            <script>
                            for(var tidx = 0; tidx < translist.length; tidx++) {
@@ -2750,7 +2752,13 @@ class MICA(object):
                            translist = [];
                            </script>
                           """
-                return self.bootstrap(req, "<div><div id='storylistresult'>" + storylist + "</div></div>", now = True)
+
+                try :
+                    finallist = load_template(req, StoryElement, storylist) + scripts
+                except Exception, e:
+                    merr("Storylist fill failed: " + str(e))
+
+                return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
             
             elif req.action == "account" :
                 out = ""
