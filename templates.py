@@ -55,7 +55,8 @@ class HistoryElement(Element) :
 
     @renderer
     def history(self, request, tag) :
-        tag.fillSlots(onlineoffine =_("Breakdown") + ": " + _("Online") + ": " + str(online) + ", " + _("Offline") + ": " + str(offline))
+        tag.fillSlots(onlineoffline = self.req.onlineoffline)
+        return tag
 
     @renderer
     def panel(self, request, tag) :
@@ -81,7 +82,7 @@ class HistoryElement(Element) :
             cdiv(idiv)
             div(idiv, cdiv)
 
-        tag(div)
+            tag(div)
 
         return tag
 
