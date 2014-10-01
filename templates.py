@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from twisted.web.template import Element, renderer, XMLFile, flattenString, tags
+from twisted.web.template import Element, renderer, XMLFile, flattenString, tags, XMLString
 from twisted.python.filepath import FilePath
 from twisted.internet import defer
 from common import *
@@ -19,10 +19,17 @@ class InfoElement(Element):
         for widget in self.widgetData:
             yield tag.clone().fillSlots(widgetName=widget)
 
-'''
-class NavElement(Element) :
+class StaticNavElement(Element) :
     loader = XMLFile(FilePath(cwd + 'serve/nav_template.html'))
-'''
+
+    @renderer
+    def accountslots(self, request, tag) :
+        tag.fillSlots(preferences = _("Preferences"),
+                      disconnect = _("Disconnect"),
+                      about = _("About"),
+                      help = _("Help"),
+                      privacy = _("Privacy"))
+        return tag
 
 class HeadElement(Element):
     def __init__(self, req) :
@@ -30,12 +37,6 @@ class HeadElement(Element):
         self.req = req
 
     loader = XMLFile(FilePath(cwd + 'serve/head_template.html'))
-
-    menu = [ 
-             ("home" , ("/home", "home", _("Review"))), 
-             ("edit" , ("/edit", "pencil", _("Edit"))), 
-             ("read" , ("/read", "book", _("Read"))), 
-        ]
 
     @renderer
     def headnavparent(self, request, tag) :
@@ -48,7 +49,13 @@ class HeadElement(Element):
         if navactive == 'home' or navactive == 'index' :
             navactive = 'home'
 
-        for (key, value) in self.menu :
+        menu = [ 
+                 ("home" , ("/home", "home", _("Review"))), 
+                 ("edit" , ("/edit", "pencil", _("Edit"))), 
+                 ("read" , ("/read", "book", _("Read"))), 
+            ]
+
+        for (key, value) in menu :
             (url, icon, display) = value 
             itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
             if navactive == key :
@@ -59,38 +66,25 @@ class HeadElement(Element):
                 atag = tags.a(href=url)(itag, " ", display)
                 tag(tags.li(atag))
 
-        return tag
-        '''
-        if self.req.pretend_disconnected :
-            return tag
+        if not self.req.pretend_disconnected :
+            itemtag = tags.li(**{"class" : "dropdown"})
+            atag = tags.a(**{"class" : "dropdown-toggle", "data-toggle" : "dropdown", "href" : "#"})
+            atag(tags.i(**{"class" : "glyphicon glyphicon-user"}), " " + _("Account") + " ", tags.b(**{"class" : "caret"}))
+            utag = tags.ul(**{"class" : "dropdown-menu"})
 
-            navcontents += """
-                             <li class='dropdown'>
-                             <a class='dropdown-toggle' data-toggle='dropdown' href='#'>
-                           """
-            navcontents += "<i class='glyphicon glyphicon-user'></i>&nbsp;" + _("Account") + "&nbsp;<b class='caret'></b>"
-            navcontents += """
-                             </a>
-                             <ul class='dropdown-menu'>
-                            """
             if not self.req.mobile :
-                navcontents += "<li><a href='#uploadModal' data-toggle='modal'><i class='glyphicon glyphicon-upload'></i>&nbsp;Upload New Story</a></li>"
+                ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal"})
+                ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
+                utag(tags.li(ttag))
 
                 if self.req.user and 'admin' in self.req.user['roles'] :
-                    navcontents += "<li><a href='#newAccountModal' data-toggle='modal'><i class='glyphicon glyphicon-plus-sign'></i>&nbsp;New Account</a></li>"
+                    ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal"})
+                    ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
+                    utag(tags.li(ttag))
 
-            navcontents += """
-                <li><a href='/account'><i class='glyphicon glyphicon-user'></i>&nbsp;Preferences</a></li>
-                <li><a onclick='switchlist()' href='#'><i class='glyphicon glyphicon-tasks'></i>&nbsp;<div id='switchlisttext' style='display: inline'></div></a></li>
-                <li><a href='/disconnect'><i class='glyphicon glyphicon-off'></i>&nbsp;Disconnect</a></li>
-                <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&nbsp;About</a></li>
-                <li><a href='/help'><i class='glyphicon glyphicon-question-sign'></i>&nbsp;Help</a></li>
-                <li><a href='/privacy'><i class='glyphicon glyphicon-lock'></i>&nbsp;Privacy</a></li>
-                </ul>
-                </li>
-            """
-        return tag(navcontents)
-        '''
+            utag(StaticNavElement())
+            tag(itemtag(atag, utag))
+        return tag
     @renderer
     def pull(self, request, tag):
         return tag(self.req.db.pull_percent() if self.req.db else "")
