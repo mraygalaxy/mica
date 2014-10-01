@@ -13,6 +13,20 @@ bootlangs = ""
 for l, readable in lang.iteritems() :
     bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
+class StoryElement(Element) :
+    def __init__(self, req, content) :
+        super(StoryElement, self).__init__(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='story'>" + content + "</html>")) 
+        self.req = req
+
+    @renderer
+    def story(self, request, tag) :
+        tag.fillSlots(notreviewed = _("Not Reviewed"),
+                      reading = _("Reading"),
+                      untranslated = _("Untranslated"),
+                      finished = _("Finished"),
+                      stories = _("Stories"))
+        return tag
+
 class PasswordElement(Element) :
     def __init__(self, req) :
         super(PasswordElement, self).__init__() 
@@ -532,11 +546,20 @@ class HeadElement(Element):
         return tag
 
 @defer.inlineCallbacks
-def run_template(req, which) :
-    d = flattenString(None, which(req))
+def run_template(req, which, content = False) :
+    try :
+        if content :
+            obj = which(req, content)
+        else :
+            obj = which(req)
+    except Exception, e :
+        merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
+
+    d = flattenString(None, obj)
+
     d.addErrback(mdebug)
     req.flat = yield d 
 
-def load_template(req, which) :
-    run_template(req, which)
+def load_template(req, which, content = False) :
+    run_template(req, which, content)
     return req.flat
