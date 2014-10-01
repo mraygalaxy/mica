@@ -2132,8 +2132,9 @@ class MICA(object):
                     mdebug("Done unit: " + str(idx))
 
                 mdebug("Units done for page: " + str(page))
+                page_dict["units"] = new_units
                 # DO MORE CHECKING AND THEN RELEASE THE HOUND
-                #story["units"] = new_units
+                # req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
                 story["upgrade_page"] = str(int(page) + 1)
                 req.db[self.story(req, name)] = story
                 story = req.db[self.story(req, name)]
