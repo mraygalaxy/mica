@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-28 20:59+0800\n"
+"POT-Creation-Date: 2014-10-01 10:48+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,17 +18,33 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: mica.py:333 /home/mrhines/mica-android/mica/util/../mica.py:333
+#: /home/mrhines/mica-android/mica/util/../templates.py:38
 msgid "Review"
 msgstr "复习"
 
 #: /home/mrhines/mica-android/mica/util/../mica.py:334
+#: /home/mrhines/mica-android/mica/util/../templates.py:39
 msgid "Edit"
 msgstr "编辑"
 
 #: /home/mrhines/mica-android/mica/util/../mica.py:335
+#: /home/mrhines/mica-android/mica/util/../templates.py:40
 msgid "Read"
 msgstr "阅读"
 
 #: /home/mrhines/mica-android/mica/util/../mica.py:707
+#: /home/mrhines/mica-android/mica/util/../templates.py:68
 msgid "Account"
 msgstr "帐户"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:27
+msgid "Preferences"
+msgstr "设置"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:73
+msgid "Upload New Story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:78
+msgid "New Account"
+msgstr ""
