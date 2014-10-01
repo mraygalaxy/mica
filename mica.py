@@ -1082,6 +1082,7 @@ class MICA(object):
 
         history.sort( key=by_total, reverse = True )
         req.history = history
+        req.onlineoffline = _("Breakdown") + ": " + _("Online") + ": " + str(online) + ", " + _("Offline") + ": " + str(offline)
         return load_template(req, HistoryElement)
 
     def edits(self, req, story, uuid, page, list_mode) :
