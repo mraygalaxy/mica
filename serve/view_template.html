@@ -13,7 +13,7 @@
                                 <div id='translationstatus'></div>
                                 <table>
                                     <tr>
-                                        <td><button type='button' id='goto' class='btn btn-default'><t:slot name='go'/>:</button>
+                                        <td><button type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
                                         <input id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
                                         <td>&#160;&#160;&#160;</td>
                                         <td><div class='btn-group' t:render="view"></div></td>

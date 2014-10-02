@@ -340,7 +340,7 @@ class DynamicViewElement(Element) :
         splits += "', 'split', false)"
         merges += "', 'merge', false)"
 
-        tag.fillSlots(processsplits = splits, processmerges = merges)
+        tag.fillSlots(processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"))
         return tag
 
 class StaticViewElement(Element) :
@@ -367,6 +367,10 @@ class StaticViewElement(Element) :
                       imageclass = tclasses["images"],
                       bothclass = tclasses["both"],
                       processinstant = onclick,
+                      textclasstitle = _("show text only"),
+                      bothclasstitle = _("side-by-side text and image"),
+                      imageclasstitle = _("show image only"),
+                      processinstanttitle = _("instant translation of one or more words"),
                       )
 
         return tag
@@ -394,7 +398,8 @@ class ViewElement(Element) :
                       stats = stats,
                       installpages = self.req.install_pages,
                       performingtranslation=_("Doing online translation..."),
-                      go = _("Go"))
+                      go = _("Go"),
+                      gotitle = _("Skip to page"))
         
         return tag
 

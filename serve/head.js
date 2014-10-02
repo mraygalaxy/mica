@@ -21,7 +21,7 @@ function viewstat(info) {
     }
 
     function switchlist() {
-           go('#switchlisttext', bootdest + '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
+           go('#switchlisttext', '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
            switchinstall(list_mode ? false : true);
            listreload(current_mode, current_uuid, current_page);
     }
