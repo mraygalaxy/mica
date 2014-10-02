@@ -140,13 +140,17 @@ class EditHistoryElement(Element) :
                         opstr = tags.div(style="color: blue; display: inline")(_("SPLIT") + "   ")
                     else :
                         opstr = tags.div(style="color: red; display: inline")(_("MERGE") + "   ")
-                    iidiv(opstr, " (" + str(total) + "): " + char + ": ", a)
+
+                    iidiv(a, " (" + str(total) + "): " + char + ": ", opstr)
+
                     idiv(iidiv)
+
                     cdiv = tags.div(**{"class" : "panel-body collapse", "id" : "collapse" + tid})
                     icdiv = tags.div(**{"class" : "panel-inner"})
                     icdiv(result)
                     cdiv(icdiv)
-                    div(idiv, cdiv)
+                    idiv(cdiv)
+                    div(idiv)
                 tag(div)
             else :
                 tag(tags.h4(_("No edit history available.")))

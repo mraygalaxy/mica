@@ -1126,7 +1126,7 @@ class MICA(object):
                             if len(key) == 1 :
                                 nb_singles += 1
                                 continue
-                            memberlist.append((member["pinyin"], key))
+                            memberlist.append((member["romanization"], key))
                         if nb_singles == len(record["members"]) :
                             continue
                         history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "MERGE"])
@@ -1870,7 +1870,7 @@ class MICA(object):
     
                     if merged_chars not in hcode_contents["members"] :
                         merged_pinyin = merged["multiple_sromanization"][merged["multiple_correct"]] if merged["multiple_correct"] != -1 else merged["sromanization"]
-                        hcode_contents["members"][merged_chars] = { "total_merges" : 0, "pinyin" : " ".join(merged_pinyin)}
+                        hcode_contents["members"][merged_chars] = { "total_merges" : 0, "romanization" : " ".join(merged_pinyin)}
 
                     hcode_contents["members"][merged_chars]["total_merges"] += 1
 
@@ -2093,56 +2093,113 @@ class MICA(object):
     '''
 
     def upgrade2(self, req, story) :
+        conversions = dict(spinyin = u"sromanization", tpinyin = u"tromanization", multiple_english = u"multiple_target", multiple_spinyin = u"multiple_sromanization", english = u"target", match_pinyin = u"match_romanization", pinyin = u"romanization")
+
         mdebug("Going to upgrade story to version 2.")
         name = story["name"]
         story["upgrading"] = True
+        story["upgrade_page"] = "0"
         req.db[self.story(req, name)] = story
         story = req.db[self.story(req, name)]
 
         try :
+            mdebug("First checking analytics...")
+            # upgrade the analytics
+            design_docs = [ "memorized", "mergegroups", "tonechanges", "splits" ]
+
+            for ddoc in design_docs :
+                if req.db.doc_exist("_design/" + ddoc) :
+                    mdebug("Design doc " + ddoc + " converting...")
+                    for result in req.db.view(ddoc + "/all") :
+                        try :
+                            doc = result["value"]
+                        except Exception, e :
+                            merr("Failed to get value out of result: " + str(result))
+                            raise e
+
+                        if doc["_id"].count(':mergegroups:\n') :
+                            mdebug("Deleting: " + doc["_id"])
+                            del req.db[doc["_id"]]
+                            continue
+
+                        changed = False
+                        for old, new in conversions.iteritems() :
+                            if old in doc :
+                                try :
+                                    doc[new] = doc[old]
+                                    del doc[old]
+                                    changed = True
+                                except Exception, e :
+                                    merr("Failed to upgrade: new " + new + " old " + old + " doc " + str(doc))
+                                    raise e
+
+                            if "record" in doc :
+                                for hcode in doc["record"] :
+                                    if old in doc["record"][hcode] :
+                                        try :
+                                            doc["record"][hcode][new] = doc["record"][hcode][old]
+                                            del doc["record"][hcode][old]
+                                            changed = True
+                                        except Exception, e :
+                                            merr("Failed to upgrade record: new " + new + " old " + old + " doc " + str(doc))
+                                            raise e
+
+                                    if "members" in doc["record"][hcode] :
+                                        for member in doc["record"][hcode]["members"] :
+                                            if old in doc["record"][hcode]["members"][member] :
+                                                try :
+                                                    doc["record"][hcode]["members"][member][new] = doc["record"][hcode]["members"][member][old]
+                                                    del doc["record"][hcode]["members"][member][old]
+                                                    changed = True
+                                                except Exception, e :
+                                                    merr("Failed to upgrade record member: new " + new + " old " + old + " doc " + str(doc))
+                                                    raise e
+
+                        if changed :
+                            try :
+                                req.db[doc["_id"]] = doc
+                            except Exception, e :
+                                merr("Failed to save doc: " + str(doc) + str(e))
+                                raise e
+                else :
+                    mdebug("Design doc " + ddoc + " not found.")
+
             for result in req.db.view('stories/allpages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
                 page = result["key"][2]
                 page_dict = result["value"]
-                mdebug("Want to upgrade: " + str(page_dict))
                 new_units = []
                 units = page_dict["units"]
+                mdebug("Want to upgrade: " + str(page_dict["_id"]) + " units " + str(len(units)))
                 for idx in range(0, len(units)) :
                     mdebug("Converting unit: " + str(idx))
                     unit = units[idx]
-                    unit["sromanization"] = unit["spinyin"]
-                    del unit["spinyin"]
 
-                    if u"tpinyin" in unit :
-                        unit["tromanization"] = unit["tpinyin"]
-                        del unit["tpinyin"]
-
-                    unit["multiple_target"] = unit["multiple_english"]
-                    del unit["multiple_english"]
-
-                    unit["multiple_sromanization"] = unit["multiple_spinyin"]
-                    del unit["multiple_spinyin"]
-
-                    unit["target"] = unit["english"]
-                    del unit["english"]
-
-                    if u"match_pinyin" in unit :
-                        unit["match_romanization"] = unit["match_pinyin"]
-                        del unit["match_pinyin"]
+                    for old, new in conversions.iteritems() :
+                        if old in unit :
+                            unit[new] = unit[old]
+                            del unit[old]
 
                     mdebug("Done unit: " + str(idx))
+                    new_units.append(unit)
 
                 mdebug("Units done for page: " + str(page))
                 page_dict["units"] = new_units
                 # DO MORE CHECKING AND THEN RELEASE THE HOUND
-                # check more existence above in case the story
-                # upgrade partially failed
-                # req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
+
+                req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
                 story["upgrade_page"] = str(int(page) + 1)
                 req.db[self.story(req, name)] = story
                 story = req.db[self.story(req, name)]
                 mdebug("next page...")
+
             mdebug("Story upgrade complete.")
+
             del story["upgrading"]
+            story["format"] = 2
+            if "source_language" not in story :
+                story["source_language"] = u"zh-CHS"
+            if "target_language" not in story :
+                story["target_language"] = u"en"
             req.db[self.story(req, name)] = story
             mdebug("Exiting")
         except Exception, e :
@@ -2710,7 +2767,7 @@ class MICA(object):
                 #    original = 2
                 #    mdebug("Will upgrade from version 2 to 3")
 
-                elif "format" in story and story["format"] == story_format and not "upgrading" in story and not story["upgrading"] :
+                elif "format" in story and story["format"] == story_format and (not "upgrading" in story or not story["upgrading"]) :
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
                 else :
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
@@ -2965,7 +3022,7 @@ class MICA(object):
                 if req.http.params.get("pack") :
                     req.db.compact()
                     req.db.cleanup()
-                    design_docs = ["groupings", "stories", "mergegroups",
+                    design_docs = ["memorized", "stories", "mergegroups",
                                    "tonechanges", "accounts", "splits" ]
 
                     for name in design_docs :
