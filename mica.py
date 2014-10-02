@@ -394,7 +394,8 @@ class MICA(object):
                            "roles": [] if admin else [username + "_master"],
                            "type": "user",
                            "mica_database" : dbname,
-                           "language" : language
+                           "language" : language,
+                           "date" : timest()
                           }
             self.userdb["org.couchdb.user:" + username] = user_doc 
         else :
@@ -1781,6 +1782,7 @@ class MICA(object):
         hcode_contents["total_" + key] += 1
         hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
         hcode_contents["target"] = unit["multiple_target"][mindex] if mindex != -1 else unit["target"]
+        hcode_contents["date"] = timest()
 
         changes["record"][hcode] = hcode_contents
 
@@ -1864,13 +1866,14 @@ class MICA(object):
                         hcode_contents = {}
                         hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
                         hcode_contents["target"] = unit["multiple_target"][mindex] if mindex != -1 else unit["target"]
+                        hcode_contents["date"] = timest()
                         hcode_contents["members"] = {}
                     else :
                         hcode_contents = changes["record"][hcode]
     
                     if merged_chars not in hcode_contents["members"] :
                         merged_pinyin = merged["multiple_sromanization"][merged["multiple_correct"]] if merged["multiple_correct"] != -1 else merged["sromanization"]
-                        hcode_contents["members"][merged_chars] = { "total_merges" : 0, "romanization" : " ".join(merged_pinyin)}
+                        hcode_contents["members"][merged_chars] = { "date" : timest(), "total_merges" : 0, "romanization" : " ".join(merged_pinyin)}
 
                     hcode_contents["members"][merged_chars]["total_merges"] += 1
 
@@ -1913,6 +1916,7 @@ class MICA(object):
             'source_language' : source_lang.decode("utf-8"), 
             'target_language' : target_lang.decode("utf-8"), 
             'format' : story_format,
+            'date' : timest(),
         }
         
         if filetype == "pdf" :
@@ -2099,6 +2103,14 @@ class MICA(object):
         name = story["name"]
         story["upgrading"] = True
         story["upgrade_page"] = "0"
+
+        if "date" not in story :
+           story["date"] = timest()
+
+        if "source_language" not in story :
+            story["source_language"] = u"zh-CHS"
+        if "target_language" not in story :
+            story["target_language"] = u"en"
         req.db[self.story(req, name)] = story
         story = req.db[self.story(req, name)]
 
@@ -2123,6 +2135,11 @@ class MICA(object):
                             continue
 
                         changed = False
+
+                        if "date" not in doc :
+                           doc["date"] = timest()
+                           changed = True
+
                         for old, new in conversions.iteritems() :
                             if old in doc :
                                 try :
@@ -2135,6 +2152,11 @@ class MICA(object):
 
                             if "record" in doc :
                                 for hcode in doc["record"] :
+
+                                    if "date" not in doc["record"][hcode] :
+                                       doc["record"][hcode]["date"] = timest()
+                                       changed = True
+
                                     if old in doc["record"][hcode] :
                                         try :
                                             doc["record"][hcode][new] = doc["record"][hcode][old]
@@ -2146,6 +2168,11 @@ class MICA(object):
 
                                     if "members" in doc["record"][hcode] :
                                         for member in doc["record"][hcode]["members"] :
+
+                                            if "date" not in doc["record"][hcode]["members"][member] :
+                                               doc["record"][hcode]["members"][member]["date"] = timest()
+                                               changed = True
+
                                             if old in doc["record"][hcode]["members"][member] :
                                                 try :
                                                     doc["record"][hcode]["members"][member][new] = doc["record"][hcode]["members"][member][old]
@@ -2171,7 +2198,6 @@ class MICA(object):
                 units = page_dict["units"]
                 mdebug("Want to upgrade: " + str(page_dict["_id"]) + " units " + str(len(units)))
                 for idx in range(0, len(units)) :
-                    mdebug("Converting unit: " + str(idx))
                     unit = units[idx]
 
                     for old, new in conversions.iteritems() :
@@ -2179,7 +2205,6 @@ class MICA(object):
                             unit[new] = unit[old]
                             del unit[old]
 
-                    mdebug("Done unit: " + str(idx))
                     new_units.append(unit)
 
                 mdebug("Units done for page: " + str(page))
@@ -2187,7 +2212,7 @@ class MICA(object):
                 # DO MORE CHECKING AND THEN RELEASE THE HOUND
 
                 req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
-                story["upgrade_page"] = str(int(page) + 1)
+                story["upgrade_page"] = str(int(story["upgrade_page"]) + 1)
                 req.db[self.story(req, name)] = story
                 story = req.db[self.story(req, name)]
                 mdebug("next page...")
@@ -2196,10 +2221,6 @@ class MICA(object):
 
             del story["upgrading"]
             story["format"] = 2
-            if "source_language" not in story :
-                story["source_language"] = u"zh-CHS"
-            if "target_language" not in story :
-                story["target_language"] = u"en"
             req.db[self.story(req, name)] = story
             mdebug("Exiting")
         except Exception, e :
@@ -2275,6 +2296,9 @@ class MICA(object):
                     
                 if "language" not in user :
                     user["language"] = params["language"]
+
+                if "date" not in user :
+                    user["date"] = timest()
 
                 if "story_format" not in user :
                     mwarn("Story format is missing. Upgrading design document for story upgrades.")
@@ -2427,17 +2451,26 @@ class MICA(object):
                         mdebug("Source Language is missing. Setting default to Chinese")
                         story["source_language"] = u"zh-CHS"
                         req.db[self.story(req, name)] = story
+                        story = req.db[self.story(req, name)]
 
                     if "target_language" not in story :
                         mdebug("Target Language is missing. Setting default to English")
                         story["target_language"] = u"en"
                         req.db[self.story(req, name)] = story
+                        story = req.db[self.story(req, name)]
 
                     if "format" not in story :
                         mdebug("Format is missing. Setting default to format #1")
                         story["format"] = 1 
                         req.db[self.story(req, name)] = story
+                        story = req.db[self.story(req, name)]
                         
+                    if "date" not in story :
+                        mdebug("Date is missing. Setting.")
+                        story["date"] = timest()
+                        req.db[self.story(req, name)] = story
+                        story = req.db[self.story(req, name)]
+
 
             if req.http.params.get("delete") :
                 story_found = False if not name else req.db.doc_exist(self.story(req, name))
@@ -2741,6 +2774,7 @@ class MICA(object):
                 unit = page_dict["units"][nb_unit]
                 
                 if memorized :
+                    unit["date"] = timest()
                     req.db[self.memorized(req, unit["hash"])] = unit
                 else :
                     del req.db[self.memorized(req, unit["hash"])]
