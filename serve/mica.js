@@ -374,7 +374,7 @@ function make_child(node) {
   	  			 };
       var out = "";
       if (chars.length == 0) {
-          out += "You have not selected anything for instant translation!";
+          out += "You have not selected any words for instant translation!";
       } else if (operation == "split" && chars.length > 1) {
           out += "You cannot split more than one word at a time!";
       } else if (operation == "split" && chars[0].split('').length < 2) {
@@ -578,7 +578,7 @@ function make_child(node) {
       }
         
       if (allchars == "") {
-          alert("You have not selected anything!");
+          alert("You have not selected any words for instant translation!");
       } else {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");

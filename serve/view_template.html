@@ -10,6 +10,7 @@
                         units of 12 -->
                         <div class='col-lg-12 nopadding'>
                             <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
+                                <div class='jumbotron' id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: large'>&#160;<t:slot name='performingtranslation'/></b></div>
                                 <div id='translationstatus'></div>
                                 <table>
                                     <tr>
@@ -30,7 +31,6 @@
 
                 <div class='col-lg-2 nopadding'>
                     <div data-offset-top='55' data-offset-bottom='0' id='statsheader'>
-                        <div id='instantspin' style='display: none'><t:slot name='performingtranslation'/><t:slot name="spinner"/>&#160;</div>
                         <h4><b><t:slot name='storyname'/></b></h4>
                         <t:slot name="stats"/> 
                     </div><!-- statsheader -->

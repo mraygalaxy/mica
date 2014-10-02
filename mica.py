@@ -2391,6 +2391,9 @@ class MICA(object):
                         if params["transreset"] :
                             self.flush_pages(req, tmp_storyname)
 
+                    if "upgrading" not in req.db["_design/stories"]["views"] :
+                        self.view_check(req, "stories", recreate = True)
+                        
                     for result in req.db.view("stories/upgrading", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
                         tmp_storyname = result["key"][1]
                         tmp_story = req.db[self.story(req, tmp_storyname)]
