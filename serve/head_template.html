@@ -27,13 +27,11 @@
   <div class='content'>
     <div style="display:none" id="ConnectContents">
         <form method="POST" action="/connect" accept-charset="UTF-8">
-        Username: <br/><div style='display:inline' t:render="username"/>
-        <br/>Password: <br/><input type="password" id="password" name="password" placeholder="Password" />
-        <br/>Address: <br/><div style="display:inline" t:render="address"/>
-        <label class="checkbox" t:render="remember">
-            Remember Me
-        </label>
-        <button type="submit" name="connect" class="btn-primary btn-block" value='1'>Sign in</button>
+        <t:slot name='username'/>: <br/><div style='display:inline' t:render="username"/>
+        <br/><t:slot name='password'/>: <br/><input type="password" id="password" name="password" placeholder="Password" />
+        <br/><t:slot name='address'/>: <br/><div style="display:inline" t:render="address"/>
+        <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
+        <button type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
         </form>
     </div>
     <div class="navbar navbar-default navbar-fixed-top" role='navigation'>
@@ -85,7 +83,7 @@
                     <div class='modal-content'>
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myLoginLabel">About this software:</h3>
+                            <h3 id="myLoginLabel"><t:slot name='aboutsoftware'/>:</h3>
                         </div>
                         
                         <div class="modal-body">
@@ -128,18 +126,18 @@
                     <div class='modal-content'>
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myLoginLabel">Create New Account:</h3>
+                            <h3 id="myLoginLabel"><t:slot name='newaccount'/>:</h3>
                         </div>
                         
                         <div class="modal-body">
                             <div id='newaccountdestination'>
                                 <form action='/account' method='post' enctype='multipart/form-data'>
-                                <h5>&#160;Username: <input type="text" name="username"/></h5>
-                                <h5>&#160;Password: <input type="password" name="password"/></h5>
-                                <h5>&#160;Confirm:&#160; <input type="password" name="confirm"/></h5>
+                                <h5>&#160;<t:slot name='username'/>: <input type="text" name="username"/></h5>
+                                <h5>&#160;<t:slot name='password'/>: <input type="password" name="password"/></h5>
+                                <h5>&#160;<t:slot name='confirmpass'/>:&#160; <input type="password" name="confirm"/></h5>
                                 <div style='display: inline' t:render="newaccountadmin"/>
                                 <button name='newaccount' type="submit" class="btn-primary" value='password'>
-                                <i class="icon-plus-sign icon-white"></i>&#160;Create</button>
+                                <i class="icon-plus-sign icon-white"></i>&#160;<t:slot name="create"/></button>
                                 </form>                                   
                             </div>
                         </div>
@@ -151,7 +149,7 @@
                     <div class='modal-content'>
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myLoginLabel">Split/Merge Words:</h3>
+                            <h3 id="myLoginLabel"><t:slot name='splitmerge'/>:</h3>
                         </div>
                         
                         <div class="modal-body">
@@ -165,7 +163,7 @@
                     <div class='modal-content'>
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myLoginLabel">Instant Translation:</h3>
+                            <h3 id="myLoginLabel"><t:slot name='instant'/>:</h3>
                         </div>
                         
                         <div class="modal-body">
@@ -179,44 +177,44 @@
                     <div class='modal-content'>
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myUploadLabel">Upload Story:</h3>
+                            <h3 id="myUploadLabel"><t:slot name='uploadstory'/>:</h3>
                         </div>
                         
                         <div class="modal-body">
-                                <h4><b>Copy/Paste a Story:</b></h4>
+                                <h4><b><t:slot name='copypaste'/>:</b></h4>
                                 <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                    &#160;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
-                                  <i class="icon-upload icon-white"></i>&#160;Upload Text</button>
-                                   &#160;Unique Name: <input type='text' name='storyname' value=''></input>
+                                  <i class="icon-upload icon-white"></i>&#160;<t:slot name='uploadtext'/></button>
+                                   &#160;<t:slot name="uniquename"/>: <input type='text' name='storyname' value=''></input>
                                 </h5>
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
                                 <br/>
-                                  Original Language? <select name="source_language" t:render="languages"/>
-                                  Your Language? <select name="target_language" t:render="languages"/>
-                                <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
+                                  <t:slot name="originallang"/>? <select name="source_language" t:render="languages"/>
+                                  <t:slot name="yourlang"/>? <select name="target_language" t:render="languages"/>
+                                <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
                                 </form>                                   
                                 <p/>
-                                <h4><b>Or Upload a File Instead:</b></h4>
+                                <h4><b><t:slot name='uploadinstead'/>:</b></h4>
                                 <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
                                 <h5>
                                     &#160;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
-                                    <i class="icon-upload icon-white"></i>&#160;Upload File</button>
-                                    &#160;Story File: <input type="file" name="storyfile" id="file"/> 
+                                    <i class="icon-upload icon-white"></i>&#160;<t:slot name='uploadfile'/></button>
+                                    &#160;<t:slot name='selectfile'/>: <input type="file" name="storyfile" id="file"/> 
                                     <br/>
-                                      What kind of file is this? <select name="filetype">
-                                      <option value='pdf'>PDF (utf-8, multi-page)</option>
-                                      <option value='txt'>TXT (utf-8, single-page)</option>
-                                      <option disabled="disabled" value='epub'>EPUB (not implemented, utf-8, multi-page)</option>
-                                      <option disabled="disabled" value='json'>JSON (not implemented, utf-8, multi-page</option>
+                                      <t:slot name="whatkindfile"/> <select name="filetype">
+                                      <option value='pdf'>PDF (utf-8, <t:slot name="multipage"/>)</option>
+                                      <option value='txt'>TXT (utf-8, <t:slot name="singlepage"/>)</option>
+                                      <option disabled="disabled" value='epub'>EPUB (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
+                                      <option disabled="disabled" value='json'>JSON (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
                                       </select>
                                     <br/>
-                                      Original Language? <select name="source_language" t:render="languages"/>
-                                      Your Language? <select name="target_language" t:render="languages"/>
-                                      <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;Remove Spaces?</h5>
+                                      <t:slot name="originallang"/>? <select name="source_language" t:render="languages"/>
+                                      <t:slot name="yourlang"/>? <select name="target_language" t:render="languages"/>
+                                      <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
                                 </h5>
                                 </form>                                   
-                                <h5>NOTE: Story *must* be UTF-8 encoded.</h5>
+                                <h5><t:slot name="mustbeencoded"/>.</h5>
                         </div>
                     </div>
                 </div>

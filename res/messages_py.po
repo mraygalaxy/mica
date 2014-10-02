@@ -1,0 +1,988 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-10-02 11:11+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/mrhines/mica-android/mica/util/../common.py:57
+msgid "Chinese Simplified"
+msgstr "Zhōngwén"
+
+#: /home/mrhines/mica-android/mica/util/../common.py:58
+msgid "English"
+msgstr "Yīngyǔ"
+
+#: /home/mrhines/mica-android/mica/util/../common.py:59
+#: /home/mrhines/mica-android/mica/util/../mica.py:975
+msgid "Pinyin"
+msgstr "Pīnyīn"
+
+#: /home/mrhines/mica-android/mica/util/../common.py:65
+msgid "pīnyīn"
+msgstr "pīnyīn"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:511
+#: /home/mrhines/mica-android/mica/util/../mica.py:3190
+msgid "Disconnected from MICA"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:524
+#: /home/mrhines/mica-android/mica/util/../mica.py:3207
+#: /home/mrhines/mica-android/mica/util/../mica.py:3208
+#: /home/mrhines/mica-android/mica/util/../mica.py:3209
+msgid "Exception"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:527
+msgid "Please report the exception above to the author. Thank you."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:601
+msgid "Download Original"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:615
+msgid "Download Romanization"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:632
+msgid ""
+"Demo Account is readonly. You must install the mobile application for "
+"interactive use of the demo account."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:973
+msgid "This character"
+msgstr "Zhègè hànzì"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:973
+msgid "is polyphonic: (has more than one pronunciation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:975
+msgid "Definition"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:975
+msgid "Default?"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:991
+msgid "Default"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:995
+msgid "Xuǎn"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1086
+msgid "Breakdown"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1086
+msgid "Online"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1086
+msgid "Offline"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1156
+msgid "Untranslated story! Ahhhh!"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1161
+msgid "The database for this story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1161
+msgid "needs to be upgraded to version 2"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1168
+msgid ""
+"Unfortunately, this can only be performed with the online version. Please "
+"login to your account online to perform the upgrade. The changes will then "
+"be replicated to all your devices. Thank you."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1170
+msgid "Start Upgrade"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1680
+msgid "Delete"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1683
+msgid ""
+"Please add a translation API key in your account preferences to begin "
+"learning with this story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1685
+msgid "Translate"
+msgstr "Fānyì kāishǐ"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1702
+msgid "Forget"
+msgstr "Yào wàng le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1703
+#: /home/mrhines/mica-android/mica/util/../templates.py:430
+msgid "Review"
+msgstr "Fùxí"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1704
+#: /home/mrhines/mica-android/mica/util/../templates.py:431
+msgid "Edit"
+msgstr "Biānjí"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1705
+#: /home/mrhines/mica-android/mica/util/../templates.py:432
+msgid "Read"
+msgstr "Yuèdú"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1709
+msgid "Not finished"
+msgstr "Méi wánchéng"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1714
+msgid "Review not complete"
+msgstr "Méi wánchéng fùxí"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1715
+msgid "Finished reading"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1719
+msgid "Review Complete"
+msgstr "Fùxí hǎo le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1895
+msgid "Upload Failed! Story already exists"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:1977
+msgid "Upload Complete! Story ready for translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2032
+msgid ""
+"This account is not fully synchronized. You can follow the progress at the "
+"top of the screen until the 'download' arrow reaches 100."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2038
+msgid "Missing key on server. Please report this to the author. Thank you."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2161
+msgid ""
+"To login for the first time and begin synchronization with the website, you "
+"must activate internet access."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2174
+msgid "Invalid credentials. Please try again"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2186
+msgid ""
+"We're sorry. The MICA Reader database on this device already belongs to the "
+"user"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2187
+msgid "and is configured to stay in sync replication with the server"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2188
+msgid ""
+"If you want to change users, you will need to clear this application's data "
+"or reinstall it and re-synchronize the app with"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2189
+msgid ""
+"a new account. This requirement is because MICA databases can become large "
+"over time, so we want you to be aware of that. Thanks."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2196
+msgid ""
+"Although you have authenticated successfully, we could not start replication "
+"successfully. Please try again."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2418
+msgid "Deleted"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2423
+msgid "Invalid story uuid"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2448
+#: /home/mrhines/mica-android/mica/util/../templates.py:27
+msgid "Finished"
+msgstr "Hǎo le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2471
+msgid "Reviewed"
+msgstr "Fùxí le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2490
+msgid "Forgotten"
+msgstr "Wàng le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2495
+msgid "Mode changed"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2500
+msgid "List statistics mode changed"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2510
+msgid ""
+"Offline only. Missing a translation API key in your account preferences."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2531
+msgid "No translation available."
+msgstr "Méiyǒu fānyì"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2536
+msgid "Selected translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2541
+msgid "Piecemeal translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2548
+msgid "No internet access. Offline only."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2551
+msgid "Online translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2553
+msgid "Offline translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2562
+msgid "None found."
+msgstr "Méiyǒu zhǎodào."
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2565
+msgid ""
+"Please wait until this account is fully synchronized for an offline "
+"translation."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2574
+msgid "Story already translated. To re-translate, please select 'Forget'."
+msgstr "Gùshì yǐjīng fānyì le. rúguǒ nǐ yào yòu fānyì, qǐng àn 'Yào wàng le'."
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2578
+msgid "Translation complete!"
+msgstr "Fānyì hǎo le!"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2582
+msgid "Failed to translate story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2662
+msgid "Review History List Disabled"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2691
+msgid "Memorized!"
+msgstr "Jì de le!"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2696
+msgid "Story upgrades not allowed on mobile devices."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2703
+msgid "Invalid upgrade parameters 1"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2714
+msgid "Upgrade complete"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2716
+msgid "Invalid request."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2719
+msgid "No such story format"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2726
+msgid "Story upgrade status"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2726
+msgid "Page"
+msgstr "Wǎngyè"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2728
+msgid "Last upgrade Exception"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2751
+msgid "Story upgrade started. You may refresh to follow its status."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2781
+msgid "Invalid Operation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2793
+msgid "Memorized all stories"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2794
+msgid "Unique memorized page"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2795
+msgid "Unique words this page"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2828
+msgid "No words memorized. Get to work!"
+msgstr "Méiyǒu dāncí jì de le. Gōngzuò!"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2830
+msgid "Memorization History List Disabled"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2850
+msgid "Edit mode is only supported for learning character-based languages"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2872
+msgid "Image"
+msgstr "Túpiàn"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2872
+msgid "not available on this page"
+msgstr "zài zhègè yè lǐ méiyǒu"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2881
+msgid ""
+"No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
+"at the top."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2883
+msgid ""
+"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
+"must first create them on the website first. (New stories require a "
+"significant amount of computer resources to prepare. Thus, they can only be "
+"replicated to the device for regular use."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2885
+msgid "or create one by clicking on Account icon at the top"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2892
+msgid "Story is a"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2892
+msgid "Viewing original not yet implemented"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2958
+msgid "Demo account is read-only"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2976
+msgid "Database compaction complete for your account"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2979
+msgid "Please change your password on the website, first"
+msgstr "Qǐng gēnggǎi nín de mìmǎ zài wǎngzhàn shàng."
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2985
+#: /home/mrhines/mica-android/mica/util/../mica.py:3040
+msgid "Password must be at least 8 characters! Try again"
+msgstr "nǐ de mìmǎ yīnggāi yǒu bā gè hànzì! Qǐng yòu xuǎn"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2987
+#: /home/mrhines/mica-android/mica/util/../mica.py:3042
+msgid "Passwords don't match! Try again"
+msgstr "nàxiē mìmǎ bù yíyàng! Qǐng yòu xuǎn"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2990
+msgid "Old passwords don't match! Try again"
+msgstr "Lǎo de mìmǎ bù yíyàng! Qǐng yòu xuǎn"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:2999
+msgid "Password change failed"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3001
+msgid "Success!"
+msgstr "Hǎo le!"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3001
+msgid "User"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3001
+msgid "password changed"
+msgstr "mìmǎ gēnggǎi le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3014
+msgid ""
+"We tried to test your translation API credentials, but they didn't work. "
+"Please check them and try again =)"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3019
+msgid "Your MS translation credentials have been changed to"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3022
+msgid ""
+"We tried to test your translation API credentials, but they didn't work "
+"because"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3028
+msgid "Server not configured correctly. Can't make accounts"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3037
+msgid "Invalid account name! Try again"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3044
+msgid "Non-admin users can't create admin accounts. What are you doing?!"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3047
+msgid "Account already exists! Try again"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3054
+msgid "Success! New user was created"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3062
+msgid "Success! Language changed"
+msgstr "Hǎo le! yǔyán gēnggǎi le"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3066
+#: /home/mrhines/mica-android/mica/util/../mica.py:3075
+msgid "Number of characters can't be greater than 1000 or less than 5"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3071
+msgid "Success! Mobile Characters-per-line in a story set to:"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3080
+msgid "Success! Web Characters-per-line in a story set to:"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3084
+msgid ""
+"App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3089
+msgid "Success! App zoom level set to:"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3093
+msgid ""
+"Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3098
+msgid "Success! Web zoom level set to:"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3100
+msgid "Change Password?"
+msgstr "Gēnggǎi mìmǎ?"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3108
+msgid ""
+"Please change your password on the website. Will support mobile in a future "
+"version."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3110
+msgid "Need your client ID"
+msgstr "Xūyào nǐ de MS client ID"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3111
+msgid "Need your client secret"
+msgstr "Xūyào nǐ de MS client secret"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3117
+msgid "Client ID"
+msgstr "MS Client ID"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3118
+msgid "Client Secret"
+msgstr "MS Client Secret"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3119
+msgid "Change Credentials"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3126
+msgid "Compact databases"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3129
+msgid "Change Viewing configuration"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3131
+msgid "Characters per line"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3135
+#: /home/mrhines/mica-android/mica/util/../mica.py:3144
+msgid "Change"
+msgstr "Gēnggǎi"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3140
+msgid "Default zoom level"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3153
+msgid "Accounts"
+msgstr "Zhànghù"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3155
+msgid "Server is misconfigured. Cannot list accounts."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3163
+msgid "Language"
+msgstr "Yǔyán"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3184
+msgid "Change Language"
+msgstr "gǎibiàn yǔyán"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3200
+msgid "Read, Review, or Edit, my friend?"
+msgstr "Wǒ de péngyǒu: Yuèdú, fùxí, háishì biānjí?"
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3219
+msgid "Please report the above exception to the author. Thank you"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3223
+msgid "Error: Something bad happened"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:3627
+#: /home/mrhines/mica-android/mica/util/../mica.py:3628
+msgid "Please wait..."
+msgstr "qǐng děng xī xià"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:24
+msgid "Not Reviewed"
+msgstr "Méi fùxí"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:25
+msgid "Reading"
+msgstr "Yuèdú xiànzài"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:26
+msgid "Méi fānyì"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:28
+msgid "Stories"
+msgstr "Gùshì"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:40
+msgid "Old Password"
+msgstr "Lǎo de mì mǎ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:41
+msgid "New Password"
+msgstr "Xīn de mì mǎ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:42
+msgid "Confirm Password"
+msgstr "Què rèn mì mǎ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:43
+msgid "Gēng gǎi mì mǎ"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:44
+msgid "Input Microsoft Translation API Credentials?"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:45
+msgid "You can request free credentials"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:46
+msgid "by going here"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:99
+msgid "Preferences"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:100
+msgid "Disconnect"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:101
+msgid "About"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:102
+msgid "Help"
+msgstr "Bāngmāng"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:103
+msgid "Privacy"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:140
+msgid "SPLIT"
+msgstr "Fēnkāi"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:142
+msgid "MERGE"
+msgstr "Hébìng"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:152
+msgid "No edit history available."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:154
+msgid "Edit list Disabled."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:167
+msgid "Edit Legend"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:170
+msgid "These characters were previously merged into a word"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:171
+msgid "This word was previously split into characters"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:172
+msgid "Try Recommendations"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:173
+msgid "Re-translate page"
+msgstr "Yòu fānyì wǎngyè"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:185
+msgid ""
+"To get a \"feel\" for how MICA works, you can use the DEMO account with the "
+"username 'demo' and password 'micademo'. This account will load pre-existing "
+"stories from the online demo account, but all changes you make will not be "
+"synchronized."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:197
+msgid "Accounts are granted on-request only."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:209
+msgid "Please Donate To Bitcoin Address"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:225
+msgid "<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:226
+msgid "Instead of hiring folks to <b>slave over</b> databases of translations,"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:227
+msgid "Why can't we use the <b>existing content</b> that's already out there?"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:228
+msgid ""
+"Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:229
+msgid ""
+"MICA works by <b>analytics</b>: You read <b>existing</b> books or stories "
+"and it <b>tracks your brain</b>."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:230
+msgid "When you read a new story, it <b>hides the words</b> you already know."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:231
+msgid ""
+"It knows how to track <b>polymphones and tones</b> in a Character-based "
+"language."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:232
+msgid ""
+"MICA is not a translator. It makes you <b>learn by reading</b> in context."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:233
+msgid "Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:273
+msgid "Learning a language should be just like reading a book"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:274
+msgid ""
+"MICA also works offline on mobile devices and automatically stays in sync "
+"with both iOS and Android"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:275
+msgid "Read about how it works on github.com"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:276
+msgid ""
+"Running the website on a cloud server is not free, so account signups are "
+"not open. If you'd like an account, please consider donating to make the "
+"server bigger."
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:277
+msgid "Join the mailing list"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:278
+msgid "for additional help"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:279
+msgid "You need to connect, first"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:280
+msgid "Click the little 'M' at the top"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:281
+msgid "This is experimental language-learning software"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:306
+msgid "Polyphome Legend"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:307
+msgid "Correct for tone and meaning"
+msgstr "Yìsi hé shēngdiào dōu hěnhǎo"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:308
+msgid "(No review necessary)"
+msgstr "Bù xūyào fùxí"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:309
+msgid "Possibly wrong meaning"
+msgstr "Kěnéng cuò de yìsi"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:310
+msgid "(but tone is correct)"
+msgstr "(dànshì shēngdiào shì hěnhǎo)"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:311
+msgid "Possibly wrong tone"
+msgstr "Kěnēng cuò de shēngdiào"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:312
+msgid "(as well as meaning)"
+msgstr "(yě yì si)"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:313
+msgid "Definitely wrong previously"
+msgstr "Yǐqián yídìng cuò de"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:314
+msgid "Polyphome Change History"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:392
+msgid "Doing online translation..."
+msgstr "Qù wǎngzhàn shàng fānyì..."
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:393
+msgid "Go"
+msgstr "Qù"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:449
+msgid "Account"
+msgstr "Zhànghù"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:454
+msgid "Upload New Story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:459
+msgid "New Account"
+msgstr "Xīn de zhànghù"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:547
+#: /home/mrhines/mica-android/mica/util/../templates.py:573
+msgid "Admin"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../mica.py:995
+msgid "Select"
+msgstr "Xuǎn"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:26
+msgid "Untranslated"
+msgstr "Méi fānyì"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:43
+msgid "Change Password"
+msgstr "Gēnggǎi mìmǎ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:540
+msgid "Original Language"
+msgstr "Tā de yǔyán"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:541
+msgid "Your Language"
+msgstr "Nǐ de yǔyán"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:542
+msgid "Remove Spaces?"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:543
+msgid "NOTE: Story *must* be UTF-8 encoded"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:544
+msgid "not implemented"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:545
+msgid "multi-page"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:546
+msgid "single-page"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:547
+msgid "What kind of file is this?"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:548
+msgid "Select File"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:549
+msgid "Upload File"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:550
+msgid "Or Upload a File Instead"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:551
+msgid "Unique Name"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:552
+msgid "Upload Text"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:553
+msgid "Copy/Paste a Story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:554
+msgid "Upload Story"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:555
+msgid "Instant Translation"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:556
+msgid "Split/Merge Words"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:557
+msgid "Create"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:558
+msgid "Confirm"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:559
+msgid "Password"
+msgstr "Mìmǎ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:560
+msgid "Username"
+msgstr "Yònghù míng"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:561
+msgid "Create New Account"
+msgstr "zuò xīn zhànghù"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:562
+msgid "About this software"
+msgstr ""
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:563
+msgid "Login"
+msgstr "dēnglù"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:564
+msgid "Remember Me"
+msgstr "Jìde wǒ"
+
+#: /home/mrhines/mica-android/mica/util/../templates.py:565
+msgid "Address"
+msgstr "Dìzhǐ"
