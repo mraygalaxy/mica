@@ -11,7 +11,8 @@ cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
 bootlangs = ""
 for l, readable in lang.iteritems() :
-    bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
+    if processor_map[l] :
+        bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
 
 class StoryElement(Element) :
     def __init__(self, req, content) :
@@ -536,6 +537,32 @@ class HeadElement(Element):
                      micacss = self.req.mpath + "/mica.css",
                      micajs = self.req.mpath + "/mica.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
+                     originallang = _("Original Language"),
+                     yourlang = _("Your Language"),
+                     removespaces = _("Remove Spaces?"),
+                     mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
+                     notimplemented = _("not implemented"),
+                     multipage = _("multi-page"),
+                     singlepage = _("single-page"),
+                     whatkindfile = _("What kind of file is this?"),
+                     selectfile = _("Select File"),
+                     uploadfile = _("Upload File"),
+                     uploadinstead = _("Or Upload a File Instead"),
+                     uniquename = _("Unique Name"),
+                     uploadtext = _("Upload Text"),
+                     copypaste = _("Copy/Paste a Story"),
+                     uploadstory = _("Upload Story"),
+                     instant = _("Instant Translation"),
+                     splitmerge = _("Split/Merge Words"),
+                     create = _("Create"),
+                     confirmpass = _("Confirm"),
+                     password = _("Password"),
+                     username = _("Username"),
+                     newaccount = _("Create New Account"),
+                     aboutsoftware = _("About this software"),
+                     signin = _("Login"),
+                     rememberme = _("Remember Me"),
+                     address = _("Address")
                      )
        return tag
 

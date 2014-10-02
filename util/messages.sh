@@ -13,8 +13,14 @@ fi
 
 pushd $dir/../res
 
-for lang in "zh" ; do
+for lang in zh py ; do
     echo "want to regenerate messages for language: $lang file $file"
+
+    if [ ! -e messages_${lang}.po ] ; then
+        echo "First time generation of language: $lang"
+	xgettext $dir/../*.py
+        mv messages.po messages_${lang}.po
+    fi
 
     if [ -e messages_${lang}.po ] ; then
 	cp -f messages_${lang}.po messages_${lang}.po.bak

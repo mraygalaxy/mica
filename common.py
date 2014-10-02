@@ -56,21 +56,25 @@ duplicate_logger = False
 lang = {
          u"zh-CHS" : _(u"Chinese Simplified"),
          u"en" : _(u"English"),
+         u"py" : _(U"Pinyin"),
        }
 
 samples = {
          u"zh-CHS" : [u"开源"],
          u"en" : ["test"],
+         u"py" : _(U"pīnyīn"),
        }
 
 romanization = {
         u"zh-CHS" : True,
         u"en" : False,
+        u"py" : True,
         }
 
 processor_map = {
         u"zh-CHS" : u"ChineseSimplified", 
         u"en" : u"English", 
+        u"py": False,
 }
 
 def minfo(msg) :

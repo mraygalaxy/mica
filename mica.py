@@ -2134,6 +2134,8 @@ class MICA(object):
                 mdebug("Units done for page: " + str(page))
                 page_dict["units"] = new_units
                 # DO MORE CHECKING AND THEN RELEASE THE HOUND
+                # check more existence above in case the story
+                # upgrade partially failed
                 # req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
                 story["upgrade_page"] = str(int(page) + 1)
                 req.db[self.story(req, name)] = story
@@ -3516,7 +3518,8 @@ def go(p) :
         mica = MICA(db_adapter)
 
         for l, processor_name in lang.iteritems() :
-            global_processors[l] = getattr(processors, processor_map[l])(mica, params)
+            if processor_map[l] :
+                global_processors[l] = getattr(processors, processor_map[l])(mica, params)
 
         mica.install_language(params["language"])
 
