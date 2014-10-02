@@ -2115,6 +2115,9 @@ class MICA(object):
                                     units of 12 -->
                                     <div class='col-lg-12 nopadding'>
                                         <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
+        """
+        output += "                         <div class='jumbotron' id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
+        output += """
                                             <div id='translationstatus'></div>
                                             <table>
                                                 <tr>
@@ -2181,7 +2184,6 @@ class MICA(object):
                             <div class='col-lg-2 nopadding'>
                             <div  data-offset-top='55' data-offset-bottom='0' id='statsheader'>
         """
-        output += "         <div id='instantspin' style='display: none'>Doing online translation..." + spinner + "</div>"
         output += "<h4><b>" + name.replace("_", " ") + "</b></h4>"
 
         if action in ["read"] :
