@@ -610,11 +610,11 @@ class MICA(object):
             sideout += "<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
             sideout += pr + "%;'> (" + pr + "%)</div></div>"
             
-        sideout += "</td>"
+        sideout += "</td><td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "\n<td><a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
-                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
+                sideout += "\n<a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
+                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a>"
     
         return sideout
 
@@ -1674,7 +1674,7 @@ class MICA(object):
             if not story["translated"] : 
                 untrans_count += 1
                 untrans += self.sidestart(req, name, username, story, reviewed, finished)
-                untrans += "\n<td style='font-size: x-small' colspan='3'>"
+                untrans += "\n"
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
@@ -1691,7 +1691,6 @@ class MICA(object):
                     untrans += "</div>&#160;"
 
                 untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
-                untrans += "</div>"
 
                 if "translating" in story and story["translating"] :
                     untrans += "\n<script>translist.push('" + story["uuid"] + "');</script>"
@@ -1700,25 +1699,25 @@ class MICA(object):
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 if not mobile :
-                    notsure += "\n<td><a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
-                notsure += "\n<td><a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
-                notsure += "\n<td><a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
-                notsure += "\n<td><a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
+                    notsure += "\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>"
+                notsure += "\n<a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
+                notsure += "\n<a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
+                notsure += "\n<a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>"
 
                 if finished :
                    finish += notsure
-                   finish += "\n<td><a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
-                   finish += "</tr>"
+                   finish += "\n<a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>"
+                   finish += "</td></tr>"
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
-                   reading += "\n<td><a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
-                   reading += "<td><a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
-                   reading += "</tr>"
+                   reading += "\n<a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>"
+                   reading += "<a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>"
+                   reading += "</td></tr>"
                 else :
                    noreview += notsure
-                   noreview += "\n<td><a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
-                   noreview += "</tr>"
+                   noreview += "\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>"
+                   noreview += "</td></tr>"
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
     
