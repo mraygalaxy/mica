@@ -10,6 +10,13 @@ import string
 
 story_format = 2
 
+pinyinToneMarks = {
+    u'a': u'āáǎà', u'e': u'ēéěè', u'i': u'īíǐì',
+    u'o': u'ōóǒò', u'u': u'ūúǔù', u'ü': u'ǖǘǚǜ',
+    u'A': u'ĀÁǍÀ', u'E': u'ĒÉĚÈ', u'I': u'ĪÍǏÌ',
+    u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
+}
+
 try :
     import mica_ictclas
 except ImportError, e :
@@ -332,13 +339,6 @@ class ChineseSimplified(Processor) :
 
         return splitter.join(result)
 
-    pinyinToneMarks = {
-        u'a': u'āáǎà', u'e': u'ēéěè', u'i': u'īíǐì',
-        u'o': u'ōóǒò', u'u': u'ūúǔù', u'ü': u'ǖǘǚǜ',
-        u'A': u'ĀÁǍÀ', u'E': u'ĒÉĚÈ', u'I': u'ĪÍǏÌ',
-        u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
-    }
-
     def convertPinyinCallback(self, m):
         tone=int(m.group(3))%5
         r=m.group(1).replace(u'v', u'ü').replace(u'V', u'Ü')
@@ -533,8 +533,8 @@ class ChineseSimplified(Processor) :
                     if new_unit["trans"] :
                         new_target = []
                         for word in new_unit["target"] :
-                           word = strip_punct(word)
-                           if not len(new_target) or strip_punct(new_target[-1]) != word :
+                           word = self.strip_punct(word)
+                           if not len(new_target) or self.strip_punct(new_target[-1]) != word :
                                new_target.append(word)
                         new_unit["target"] = new_target
     
@@ -556,12 +556,12 @@ class ChineseSimplified(Processor) :
                             all_equal = True
                             for worda in new_unit["target"] :
                                 for wordb in unit["target"] :
-                                    if strip_punct(worda) != strip_punct(wordb) :
+                                    if self.strip_punct(worda) != self.strip_punct(wordb) :
                                         all_equal = False
                                         break
     
                             if not all_equal :
-                                if strip_punct(unit["target"][0]) == strip_punct(new_unit["target"][-1]) :
+                                if self.strip_punct(unit["target"][0]) == self.strip_punct(new_unit["target"][-1]) :
                                     all_equal = True
     
                             if all_equal :
@@ -588,8 +588,8 @@ class ChineseSimplified(Processor) :
                                     new_unit["tromanization"] = [pinyin]
                             if unit["trans"] :
                                 for word in unit["target"] :
-                                    word = strip_punct(word)
-                                    if not len(new_unit["target"]) or strip_punct(new_unit["target"][-1]) != word :
+                                    word = self.strip_punct(word)
+                                    if not len(new_unit["target"]) or self.strip_punct(new_unit["target"][-1]) != word :
                                         new_unit["target"].append(word)
                     new_units.append(new_unit)
                     idx += 1
@@ -630,7 +630,7 @@ class ChineseSimplified(Processor) :
                           
         return units 
 
-    def make_unit(source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, target, source, pinyin) :
+    def make_unit(self, source_idx, current_source_idx, trans_idx, current_trans_idx, groups, reversep, target, source, pinyin) :
 
       unit = {}
       unit["multiple_sromanization"] = []
