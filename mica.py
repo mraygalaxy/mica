@@ -926,11 +926,11 @@ class MICA(object):
             sideout += "<br/><div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
             sideout += pr + "%;'> (" + pr + "%)</div>"
             
-        sideout += "</td>"
+        sideout += "</td><td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "<td><a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
-                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a></td>"
+                sideout += "<a title='Download Pinyin' class='btn-default btn-xs' href=\"BOOTDEST/stories?type=pinyin&uuid=" + story["uuid"]+ "\">"
+                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a>"
     
         return sideout
 
@@ -2660,7 +2660,7 @@ class MICA(object):
             if not story["translated"] : 
                 untrans_count += 1
                 untrans += self.sidestart(req, name, username, story, reviewed, finished)
-                untrans += "\n<td style='font-size: x-small' colspan='3'>"
+                untrans += "\n"
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
@@ -2685,25 +2685,26 @@ class MICA(object):
                 untrans += "</tr>"
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
+                notsure += ""
                 if not mobile :
-                    notsure += "<td><a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a></td>"
-                notsure += "<td><a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a></td>"
-                notsure += "<td><a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a></td>"
-                notsure += "<td><a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a></td>"
+                    notsure += "<a title='Forget' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>"
+                notsure += "<a title='Review' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/home?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
+                notsure += "<a title='Edit' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/edit?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
+                notsure += "<a title='Read' style='font-size: x-small' class='btn-default btn-xs' href=\"BOOTDEST/read?view=1&uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>"
 
                 if finished :
                    finish += notsure
-                   finish += "<td><a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
+                   finish += "<a title='Not finished' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a></td>"
                    finish += "</tr>"
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
-                   reading += "<td><a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a></td>"
-                   reading += "<td><a title='Finished reading' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
+                   reading += "<a title='Review not complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>"
+                   reading += "<a title='Finished reading' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a></td>"
                    reading += "</tr>"
                 else :
                    noreview += notsure
-                   noreview += "<td><a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
+                   noreview += "<a title='Review Complete' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a></td>"
                    noreview += "</tr>"
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
