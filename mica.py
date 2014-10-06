@@ -1152,7 +1152,7 @@ class MICA(object):
 
         return load_template(req, EditElement)
 
-    def view(self, req, uuid, name, story, start_page, view_mode) :
+    def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
             return _("Untranslated story! Ahhhh!")
 
@@ -1180,7 +1180,7 @@ class MICA(object):
 
         req.gp = global_processors[story["source_language"]]
         req.story_name = story["name"]
-        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true);"
+        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         output = load_template(req, ViewElement)
 
         return output
@@ -1532,10 +1532,6 @@ class MICA(object):
                     line_out += "<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;"
                     line_out += "</div></td>"
                     line_out += "</tr><tr><td>"
-                    '''
-                    if action == "home" :
-                        line_out += ("".join(unit["source"]) if py else "")
-                    '''
                     if gp.already_romanized :
                         line_out += "<div class='transroman "
                     else :
@@ -1544,7 +1540,12 @@ class MICA(object):
                     line_out += " trans" + tid + "' style='display: "
                     line_out += "block" if (action == "read" and not memorized) else "none"
                     line_out += "' id='trans" + tid + "'>"
-                    if py :
+                    if py and not unit["punctuation"] :
+                        if not memorized :
+                            line_out += "<div revealid='" + tid + "' "
+                            line_out += "class='reveal reveal" + tid + "'"
+                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-eye-open'></i>&#160;open</a></div>"
+                            line_out += "<div class='definition definition" + tid + "' style='display: none'>"
                         if action in ["read", "edit"] :
                             if gp.already_romanized :
                                 line_out += "<a class='transroman' "
@@ -1554,8 +1555,12 @@ class MICA(object):
                                         tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">"
 
                         line_out += target.replace("/"," /<br/>")
+
                         if action in [ "read", "edit" ] :
                             line_out += "</a>"
+
+                        if not memorized :
+                            line_out += "</div>"
 
                     line_out += "<br/>"
                     line_out += "</div>"
@@ -2428,6 +2433,7 @@ class MICA(object):
 
             start_page = "0"
             view_mode = "text"
+            meaning_mode = "false";
             list_mode = True
             uuid = False
             name = False
@@ -2586,6 +2592,11 @@ class MICA(object):
                 req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
 
+            if req.http.params.get("meaningmode") :
+                req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
+                req.session.save()
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
+
             if req.http.params.get("switchlist") :
                 req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
                 req.session.save()
@@ -2714,6 +2725,14 @@ class MICA(object):
             else :
                 req.session.value["view_mode"] = view_mode 
                 req.session.save()
+
+            if "meaning_mode" in req.session.value :
+                meaning_mode = req.session.value["meaning_mode"]
+            else :
+                req.session.value["meaning_mode"] = meaning_mode 
+                req.session.save()
+
+            mdebug("Meaning mode is: " + meaning_mode)
 
             if "list_mode" in req.session.value :
                 list_mode = req.session.value["list_mode"]
@@ -2969,7 +2988,7 @@ class MICA(object):
                             self.set_page(req, story, page)
                             output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
-                    output = self.view(req, uuid, name, story, start_page, view_mode)
+                    output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
                 else :
                     output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
                     if mobile :

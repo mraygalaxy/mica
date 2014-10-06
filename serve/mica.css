@@ -85,7 +85,7 @@ div.romanblack {
   background: white;
   overflow-y: auto;
   transition: width 0.3s ease;
-  }
+}
 }
 
 .content {
@@ -131,8 +131,8 @@ div.romanblack {
   height: 10px;
   margin: 5px auto;
 }
-.bluesquare {
-  background: blue;
+.lightgraysquare {
+  background: lightgray;
   width: 10px;
   height: 10px;
   margin: 5px auto;
@@ -165,3 +165,11 @@ td.splitright { border-right: solid blue  }
 .navbar-nav .open .dropdown-menu > li > a;
 
 }
+
+div.reveal {
+   background: lightgrey;
+}
+a.reveal {
+   cursor: pointer;
+}
+

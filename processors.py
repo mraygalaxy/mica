@@ -4,6 +4,7 @@
 # Make this an abstract base class the python way - forgot how
 
 from common import *
+from stardict import load_dictionary
 
 import pdb
 import string 
@@ -310,6 +311,8 @@ class English(Processor) :
     
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
         #opaque is not yet used for English
+        stardict = opaque
+
         if none_if_not_found :
             return ["No target language translation found."]
         return False 

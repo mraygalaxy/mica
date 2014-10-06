@@ -343,6 +343,18 @@ class DynamicViewElement(Element) :
         tag.fillSlots(processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"))
         return tag
 
+class ReadingViewElement(Element) :
+    def __init__(self, req) :
+        super(ReadingViewElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html'))
+
+    @renderer
+    def reading_view(self, request, tag) :
+        tag.fillSlots(meaningclasstitle = _("show/hide translations"))
+        return tag
+
 class StaticViewElement(Element) :
     def __init__(self, req) :
         super(StaticViewElement, self).__init__() 
@@ -361,12 +373,20 @@ class StaticViewElement(Element) :
 
             tclasses[which] += "btn btn-default"
 
+        tclasses["meaning"] = ""
+
+        if "meaning_mode" in self.req.session.value :
+            if self.req.session.value["meaning_mode"] == "true" :
+                tclasses["meaning"] += "active "
+            tclasses["meaning"] += "btn btn-default"
+                
         onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ")"
 
         tag.fillSlots(textclass = tclasses["text"],
                       imageclass = tclasses["images"],
                       bothclass = tclasses["both"],
                       processinstant = onclick,
+                      meaningclass = tclasses["meaning"],
                       textclasstitle = _("show text only"),
                       bothclasstitle = _("side-by-side text and image"),
                       imageclasstitle = _("show image only"),
@@ -406,6 +426,8 @@ class ViewElement(Element) :
     @renderer
     def view(self, request, tag) :
         tag(StaticViewElement(self.req))
+        if self.req.action == "read" :
+            tag(ReadingViewElement(self.req))
         if self.req.action == "edit" :
             tag(DynamicViewElement(self.req))
         return tag

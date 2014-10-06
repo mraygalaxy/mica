@@ -356,23 +356,15 @@ def read_ifo_file(filename):
     for key in ifo_file._ifo:
         print key, " :", ifo_file._ifo[key]
 
-def read_dict_info(key):
-    ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo"
-    idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx"
-    dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz"
+def load_dictionary(files):
 
-    dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz"
-    idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx"  
-    ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo"
+    ifo_reader = IfoFileReader(files["ifo_file"])
+    idx_reader = IdxFileReader(files["idx_file"])
+    return DictFileReader(files["dict_file"], ifo_reader, idx_reader, True)
 
-    dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz"
-    idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx"
-    ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo"
+def lookup(uni) :
+    result = d.get_dict_by_word(uni)
 
-    ifo_reader = IfoFileReader(ifo_file)
-    idx_reader = IdxFileReader(idx_file)
-    dict_reader = DictFileReader(dict_file, ifo_reader, idx_reader, True)
-    result = dict_reader.get_dict_by_word(key)
     if result and len(result) > 0 :
         for trans in result :
             if 'm' in trans :
@@ -380,13 +372,22 @@ def read_dict_info(key):
             else :
                 print "No 'm' index in translation: " + str(trans)
     else :
-        print "No translation available."
+        print ["No translation available."]
 
+if __name__ == "__main__":
+    #files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
+    #files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
 
-if len(sys.argv) < 2 :
-    print "Need english."
-    exit(1)
+    files = dict(dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz", idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx", ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo")
 
-# read_ifo_file("stardict-cedict-gb-2.4.2/cedict-gb.ifo")
-# read_idx_file("stardict-cedict-gb-2.4.2/cedict-gb.idx")
-read_dict_info(sys.argv[1].decode("utf-8"))
+    if len(sys.argv) < 2 :
+        print "Need english."
+        exit(1)
+
+    d = load_dictionary(files)
+
+    words = sys.argv[1].split(" ")
+    for word in words :
+        print "Translating: " + word + "\n=============\n"
+        uni = word.decode("utf-8")
+        lookup(d, uni)
