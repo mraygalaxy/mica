@@ -1546,7 +1546,7 @@ class MICA(object):
                             line_out += "class='reveal reveal" + tid + "'"
                             if meaning_mode == "true":
                                 line_out += "style='display: none'"
-                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i>&#160;open</a></div>"
+                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i>&#160;" + _("open") + "</a></div>"
                             line_out += "<div class='definition definition" + tid + "' "
                             if meaning_mode == "false":
                                 line_out += "style='display: none'"

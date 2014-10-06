@@ -836,12 +836,18 @@ function reveal_all(hide) {
     //$("html").scrollTop(curr);
 }
 function reveal(id, hide) {
+   var rele = document.getElementsByClassName("reveal" + id);
+
    if (!hide) {
-       toggle_specific('reveal', id, 1);
-       toggle_specific('definition', id, 0);
+       if(rele[0].style.display != 'none') {
+           toggle_specific('reveal', id, 0);
+           toggle_specific('definition', id, 0);
+       }
    } else {
-       toggle_specific('reveal', id, 0);
-       toggle_specific('definition', id, 1);
+       if(rele[0].style.display == 'none') {
+           toggle_specific('reveal', id, 0);
+           toggle_specific('definition', id, 0);
+       }
    }
 }
 
