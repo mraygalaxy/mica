@@ -358,8 +358,8 @@ function make_child(node) {
         }
   }
   function toggle(name, check) {
-           toggle_specific('trans', name, check);
-           toggle_specific('blank', name, 0);
+       toggle_specific('trans', name, check);
+       toggle_specific('blank', name, 0);
   }
 
       
@@ -555,6 +555,7 @@ function make_child(node) {
   }
 
   function process_instant(with_spaces) {
+
       var chars = [];
       var allchars = "";
       $("span.label > a").each(function(index) {
@@ -582,13 +583,15 @@ function make_child(node) {
       } else {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
-       go('#instantdestination', 
+       change('#instantdestination', 
           '/read?human=1&instant=' + allchars, 
           '#instantresult', 
           unavailable, 
           true, 
           offinstantspin,
-          true);
+          true,
+          $("html").scrollTop(),
+          false);
        }
   }
 
@@ -685,6 +688,7 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
 
 var view_images = false;
 var show_both = false;
+var current_meaning_mode = false;
 var current_view_mode = "text";
 var current_page = -1;
 var current_mode = "read";
@@ -761,19 +765,21 @@ function view(mode, uuid, page) {
    current_uuid = uuid;
 }
 
-function install_pages(mode, pages, uuid, start, view_mode, reload) {
+function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
         current_pages = pages;
         current_view_mode = view_mode;
-		if (view_mode == "text") {
-           view_images = false;
-	       show_both = false;
-		} else if(view_mode == "images") {
-           view_images = true;
-	       show_both = false;
-		} else if(view_mode == "both") {
-           view_images = false;
-	       show_both = true;
-		}
+        current_meaning_mode = meaning_mode;
+        if (view_mode == "text") {
+             view_images = false;
+	     show_both = false;
+        } else if(view_mode == "images") {
+             view_images = true;
+	     show_both = false;
+        } else if(view_mode == "both") {
+             view_images = false;
+	     show_both = true;
+        }
+
         $('#pagenav').bootpag({
             total: pages,
                    page: start + 1,
@@ -815,6 +821,29 @@ function forget(id, uuid, nb_unit, page) {
     memory(id, uuid, nb_unit, 0, page);
 }
 
+function reveal_all(hide) {
+    //var curr = $("html").scrollTop(),
+    var changed = {};
+    $("div.reveal").each(
+        function() { 
+             var id = $(this).attr('revealid');
+             if (changed[id] == undefined) {
+                 changed[id] = true;
+                 reveal(id, hide);
+             }
+        }
+    );
+    //$("html").scrollTop(curr);
+}
+function reveal(id, hide) {
+   if (!hide) {
+       toggle_specific('reveal', id, 1);
+       toggle_specific('definition', id, 0);
+   } else {
+       toggle_specific('reveal', id, 0);
+       toggle_specific('definition', id, 1);
+   }
+}
 
 $.browser.device = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
 
@@ -835,13 +864,14 @@ function togglecanvas() {
       }
 }
 
-function offinstantspin(data) {
+function offinstantspin(data, curr, unused) {
     $('#instantspin').attr('style', 'display: none');
     $('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
 //    $(document).unbind("mouseleave");
 //    $(document).unbind("copy");
 //    install_highlight();
+    $("html").scrollTop(curr);
 }
 
 function install_highlight() {
@@ -868,13 +898,15 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
-           go('#instantdestination', 
+           change('#instantdestination', 
               '/read?human=1&instant=' + st, 
               '#instantresult', 
               unavailable, 
               true, 
               offinstantspin,
-              true);
+              true,
+              $("html").scrollTop(),
+              false);
       }
     }
 
@@ -955,7 +987,7 @@ function installreading() {
         }
 
         page -= 1;
-        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true);
+        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true, current_meaning_mode);
     });
     $("#gotoval").keyup(function(event){
             if(event.keyCode == 13){ $("#goto").click(); }
@@ -1009,6 +1041,20 @@ function installreading() {
        show_both = false;
        view_images = false;
        view(current_mode, current_uuid, current_page);
+    });
+
+    $('#meaningButton').click(function () {
+       if($('#meaningButton').attr('class') == 'active btn btn-default') {
+           $('#meaningButton').attr('class', 'btn btn-default');
+           current_meaning_mode = false;
+           go('#pagetext', '/read?meaningmode=false', '', unavailable, false, false, false);
+           reveal_all(true);
+       } else {
+           $('#meaningButton').attr('class', 'active btn btn-default');
+           current_meaning_mode = true;
+           go('#pagetext', '/read?meaningmode=true', '', unavailable, false, false, false);
+           reveal_all(false);
+       }
     });
 }
 
