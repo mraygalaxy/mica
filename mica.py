@@ -1199,7 +1199,7 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, disk = False) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
         gp = global_processors[story["source_language"]]
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
@@ -1544,8 +1544,13 @@ class MICA(object):
                         if not memorized :
                             line_out += "<div revealid='" + tid + "' "
                             line_out += "class='reveal reveal" + tid + "'"
-                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-eye-open'></i>&#160;open</a></div>"
-                            line_out += "<div class='definition definition" + tid + "' style='display: none'>"
+                            if meaning_mode == "true":
+                                line_out += "style='display: none'"
+                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i>&#160;open</a></div>"
+                            line_out += "<div class='definition definition" + tid + "' "
+                            if meaning_mode == "false":
+                                line_out += "style='display: none'"
+                            line_out += ">"
                         if action in ["read", "edit"] :
                             if gp.already_romanized :
                                 line_out += "<a class='transroman' "
@@ -2562,7 +2567,7 @@ class MICA(object):
                             minfo("Page " + str(page) + "...")
                             final[str(page)] = self.view_page(req, uuid, name, \
                                 story, req.action, "", str(page), \
-                                req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], disk = True)
+                                req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, disk = True)
                             
                         req.db[self.story(req, name) + ":final"] = final
                 req.db[self.story(req, name)] = tmp_story 
@@ -2986,7 +2991,7 @@ class MICA(object):
                             return self.bootstrap(req, output, now = True)
                         else :
                             self.set_page(req, story, page)
-                            output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
+                            output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode)
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
                 else :
