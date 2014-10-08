@@ -160,7 +160,7 @@ class Processor(object) :
         if changes :
             total_changes = float(changes["total"])
 
-            for idx in range(0, len(unit["multiple_sromanization"])) :
+            for idx in range(0, len(unit["multiple_target"])) :
                 percent = self.mica.get_polyphome_percentage(idx, total_changes, changes, unit) 
                 if percent :
                     if highest_percentage == -1.0 :
@@ -172,12 +172,12 @@ class Processor(object) :
 
         if highest != -1 :
             selector = highest
-            mdebug("HISTORY Multiple pinyin for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
+            mdebug("HISTORY Multiple for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
         else :
             longest = -1
             longest_length = -1
             
-            for idx in range(0, len(unit["multiple_sromanization"])) :
+            for idx in range(0, len(unit["multiple_target"])) :
                 comb_targ = " ".join(unit["multiple_target"][idx])
                 
                 if not comb_targ.count("surname") and not comb_targ.count("variant of") :
@@ -189,10 +189,11 @@ class Processor(object) :
                         longest = idx
 
             selector = longest
-            mdebug("LONGEST Multiple pinyin for source: " + source + " defaulting to idx " + str(selector))
+            mdebug("LONGEST Multiple for source: " + source + " defaulting to idx " + str(selector))
 
         if selector != -1 :
-            unit["sromanization"] = unit["multiple_sromanization"][selector]
+            if len(unit["multiple_sromanization"]) :
+                unit["sromanization"] = unit["multiple_sromanization"][selector]
             unit["target"] = unit["multiple_target"][selector]
             unit["multiple_correct"] = selector 
 
@@ -256,6 +257,25 @@ def get_cjk_handle(params) :
 class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
+        self.files = dict(dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz", idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx", ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo")
+        self.dictionary = load_dictionary(self.files)
+        self.structs = {
+                        "abbr." : True,
+                        "adj." : True,
+                        "adv." : True,
+                        "art." : True,
+                        "aux." : True,
+                        "conj." : True,
+                        "int." : True,
+                        "n." : True,
+                        "num." : True,
+                        "prep." : True,
+                        "pron." : True,
+                        "v." : True,
+                        "vbl." : True,
+                        "vi." : True,
+                        "vt." : True,
+                }
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
@@ -286,36 +306,90 @@ class English(Processor) :
     def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         units = []
 
-        online_units = self.online_cross_reference(req, story, uni, opaque)
+        targ = self.get_first_translation(opaque, uni, False, none_if_not_found = False)
 
-        if not online_units or not len(online_units) :
-            mwarn("Uh oh. No translation =(. ")
-            raise Exception("Can't translate this word. API has no result: " + str(uni))
-
-        # Just get it working with the first translation returned online
-        # We'll do offline translation later.
+        # Things to do:
 
         '''
-        units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
-
-        unit["multiple_sromanization"].append([x])
-        unit["multiple_target"].append([e])
+        1. use a while loop around get_first_translation and retry with different variations:
+            - capitlize the first letter
+            - lowercase everything
+            - remove the word endings or conjugations
+        2. Remove preceding or trailing punctuation, such as "Quote" or "end of sentences."
+        '''
         
-        if unit["multiple_correct"] == -1 :
-            self.score_and_rank_unit(unit, tone_keys)
-        '''
-        for unit in online_units :
+        if targ :
+            unit = self.add_unit(uni.split(" "), uni, [targ[0]])
+
+            if len(targ) > 1 :
+                for target in targ :
+                    #unit["multiple_sromanization"].append([x])
+                    unit["multiple_target"].append([target])
+                    
+                if unit["multiple_correct"] == -1 :
+                    self.score_and_rank_unit(unit, tone_keys)
+
             units.append(unit)
+        else :
+            online_units = self.online_cross_reference(req, story, uni, opaque)
+
+            if not online_units or not len(online_units) :
+                mwarn("Uh oh. No translation =(. ")
+                raise Exception("Can't translate this word. API has no result: " + str(uni))
+
+            for unit in online_units :
+                units.append(unit)
 
         return units
     
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
-        #opaque is not yet used for English
-        stardict = opaque
+        d = opaque
+        result = d.get_dict_by_word(source)
 
-        if none_if_not_found :
-            return ["No target language translation found."]
+        targ = [] 
+        if result and len(result) > 0 :
+
+            if len(result) > 1 :
+                raise Exception("Why does result have more than 1 array entry? " + str(result))
+
+            for trans in result :
+                if 'm' in trans :
+                    parts = trans['m'].split('\n')[1:]
+                    if len(parts) == 0 :
+                        raise Exception("Translation result needs at least the pronunciation and one definition: " + str(trans))
+
+                    if len(parts) == 1 :
+                        targ.append(parts[0])
+                    else :
+                        kind = False
+                        for part in parts :
+                            if part in self.structs :
+                                kind = part
+                            else :
+                                if kind :
+                                    targ.append(kind + ": " + part)
+                                else :
+                                    targ.append(part)
+                else :
+                    raise Exception("No 'm' index in translation: " + str(trans))
+
+            mdebug("Parsing definition complete.")
+            return targ 
+        else :
+            if none_if_not_found :
+                return ["No target language translation found."]
+            return False 
+
         return False 
+
+    def parse_page_start(self) : 
+
+        # This should probably be a mmap(),
+        # we'll have to modify the "FileReaders" over time
+        return self.dictionary
+
+    def parse_page_stop(self, opaque) :
+        d = opaque
 
 class ChineseSimplified(Processor) :
     def __init__(self, mica, params) :

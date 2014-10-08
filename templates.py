@@ -9,11 +9,6 @@ import re
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
-bootlangs = ""
-for l, readable in lang.iteritems() :
-    if processor_map[l] :
-        bootlangs += "<option value='" + l + "'>" + readable + "</option>\n"
-
 class StoryElement(Element) :
     def __init__(self, req, content) :
         super(StoryElement, self).__init__(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='story'>" + content + "</html>")) 
@@ -426,7 +421,7 @@ class ViewElement(Element) :
     @renderer
     def view(self, request, tag) :
         tag(StaticViewElement(self.req))
-        if self.req.action == "read" :
+        if self.req.action == "read" or self.req.action == "home" :
             tag(ReadingViewElement(self.req))
         if self.req.action == "edit" :
             tag(DynamicViewElement(self.req))
@@ -442,8 +437,9 @@ class HeadElement(Element):
     @renderer
     def languages(self, request, tag) :
         for l, readable in lang.iteritems() :
-            option = tags.option(value=l)
-            tag(option(_(readable)))
+            if processor_map[l] :
+                option = tags.option(value=l)
+                tag(option(_(readable)))
         return tag
 
     @renderer

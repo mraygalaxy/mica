@@ -362,15 +362,18 @@ def load_dictionary(files):
     idx_reader = IdxFileReader(files["idx_file"])
     return DictFileReader(files["dict_file"], ifo_reader, idx_reader, True)
 
-def lookup(uni) :
+def lookup(d, uni) :
     result = d.get_dict_by_word(uni)
 
     if result and len(result) > 0 :
+        #print str(result)
         for trans in result :
             if 'm' in trans :
                 print str(trans['m'])
             else :
                 print "No 'm' index in translation: " + str(trans)
+        '''
+        '''
     else :
         print ["No translation available."]
 
