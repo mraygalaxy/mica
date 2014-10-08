@@ -932,17 +932,19 @@ class MICA(object):
         py = ""
         target = ""
         if unit["multiple_correct"] == -1 :
-            for widx in range(0, len(unit["sromanization"])) :
-                word = unit["sromanization"][widx]
-                if word == u'\n' or word == '\n':
-                    py += word
-                elif py != "\n" and py not in global_processors[source_language].punctuation_without_letters :
-                    py += word + " "
+            gp = global_processors[source_language]
+            if not gp.already_romanized :
+                for widx in range(0, len(unit["sromanization"])) :
+                    word = unit["sromanization"][widx]
+                    if word == u'\n' or word == '\n':
+                        py += word
+                    elif py != "\n" and py not in gp.punctuation_without_letters :
+                        py += word + " "
 
-            if py != u'\n' and py != "\n" :
-                py = py.strip()
+                if py != u'\n' and py != "\n" :
+                    py = py.strip()
 
-            if py == u'' :
+            if py == u'' or py == "":
 #                mdebug("Not useful: " + py + " and " + target + " len: " + str(len(unit["sromanization"])))
                 if not global_processors[source_language].already_romanized :
                     return False
@@ -953,8 +955,18 @@ class MICA(object):
                 target = " ".join(unit["target"])
         else :
             if unit["trans"] :
-                py = " ".join(unit["multiple_sromanization"][unit["multiple_correct"]])
+                if len(unit["multiple_sromanization"]) :
+                    py = u" ".join(unit["multiple_sromanization"][unit["multiple_correct"]])
+
+                if py == "" :
+                    if not global_processors[source_language].already_romanized :
+                        return False
+                    else :
+                        if len(unit["source"]) > 0 :
+                            py = u' ' 
                 target = " ".join(unit["multiple_target"][unit["multiple_correct"]])
+
+            mdebug("Result of " + "".join(unit["source"]) + " is py " + py + " target " + target)
 
         return py, target 
 
@@ -973,7 +985,11 @@ class MICA(object):
         out = ""
         out += "\n" + _("This character") + " (" + " ".join(unit["source"]) + ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
-        out += "<tr><td>" + _("Pinyin") + "</td><td>" + _("Definition") + "</td><td>" + _("Default?") + "</td></tr>"
+        out += "<tr>"
+        if len(unit["multiple_sromanization"]) :
+            out += "<td>" + _("Pinyin") + "</td>"
+        out += "<td>" + _("Definition") + "</td>"
+        out += "<td>" + _("Default?") + "</td></tr>"
         source = "".join(unit["source"])
 
         total_changes = 0.0
@@ -982,20 +998,25 @@ class MICA(object):
         if changes :
             total_changes = float(changes["total"])
 
-        for x in range(0, len(unit["multiple_sromanization"])) :
-             spy = " ".join(unit["multiple_sromanization"][x])
-             percent = self.get_polyphome_percentage(x, total_changes, changes, unit) 
+        for x in range(0, len(unit["multiple_target"])) :
+            percent = self.get_polyphome_percentage(x, total_changes, changes, unit) 
+            out += "<tr>"
 
-             out += "<tr><td>" + spy + " (" + str(percent) + " %) </td>"
-             out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
-             if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
-                 out += "<td>" + _("Default") + "</td>"
-             else :
-                 out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
-                        "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
-                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
+            if len(unit["multiple_sromanization"]) :
+                spy = " ".join(unit["multiple_sromanization"][x])
+                out += "<td>" + spy + " (" + str(percent) + " %) </td>"
+            else :
+                spy = " "
 
-             out += "</tr>"
+            out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
+            if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
+                out += "<td>" + _("Default") + "</td>"
+            else :
+                out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
+                       "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
+                       str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
+
+            out += "</tr>"
 
         out += "</table>"
 
@@ -1443,7 +1464,7 @@ class MICA(object):
                         add_count = ""
                         if action == "home" :
                             color = "lightgrey"
-                            if py and len(unit["multiple_sromanization"]) :
+                            if py and len(unit["multiple_target"]) :
                                 color = "green"
 
                             changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
@@ -1469,7 +1490,7 @@ class MICA(object):
 
                         line_out += " id='ttip" + trans_id + "'"
 
-                        if action in ["read","edit"] or not(len(unit["multiple_sromanization"])) :
+                        if action in ["read","edit"] or not(len(unit["multiple_target"])) :
                             line_out += " onclick=\"toggle('" + tid + "', "
                             line_out += ("0" if action == "read" else "1") + ")\""
 
@@ -1489,7 +1510,7 @@ class MICA(object):
                 if not disk :
                     line_out += "<br/>"
 
-                    if action == "home" and py and len(unit["multiple_sromanization"]) :
+                    if action == "home" and py and len(unit["multiple_target"]) :
                         line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
                         line_out += self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
                         line_out += "</div>"
@@ -1789,7 +1810,11 @@ class MICA(object):
             hcode_contents = changes["record"][hcode]
 
         hcode_contents["total_" + key] += 1
-        hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
+        if len(unit["multiple_sromanization"]) :
+            hcode_contents["sromanization"] = unit["multiple_sromanization"][mindex] if mindex != -1 else unit["sromanization"]
+        else :
+            hcode_contents["sromanization"] = ""
+
         hcode_contents["target"] = unit["multiple_target"][mindex] if mindex != -1 else unit["target"]
         hcode_contents["date"] = timest()
 
@@ -2665,7 +2690,7 @@ class MICA(object):
                         tar = gp.get_first_translation(opaque, source.decode("utf-8"), False)
                         if tar :
                             for target in tar :
-                                out += target.encode("utf-8")
+                                out += "<br/>" + target.encode("utf-8")
                         else :
                             out += _("None found.")
                         gp.parse_page_stop(opaque)
