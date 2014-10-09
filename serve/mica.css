@@ -48,10 +48,12 @@ a.trans {
 
 div.trans {
     font-size: x-small;
+    cursor: pointer;
 }
 
 div.transroman {
     font-size: medium;
+    cursor: pointer;
 }
 
 div.romanlightgrey {
