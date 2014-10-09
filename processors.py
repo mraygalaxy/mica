@@ -35,10 +35,10 @@ class Processor(object) :
         self.punctuation['\n'] = {}
         self.punctuation_without_letters = {}
 
-        for c in [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')' ] :
+        for c in [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')', u'$' ] :
            self.punctuation_without_letters[c] = {} 
 
-        for c in ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')' ] :
+        for c in ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')', '$' ] :
            self.punctuation_without_letters[c] = {} 
 
         self.punctuation_without_newlines.update(self.punctuation_without_letters)
@@ -225,10 +225,10 @@ class Processor(object) :
             online_units = self.online_cross_reference_lang(req, story, uni, opaque)
         return online_units
 
-    def all_punct(self, uni) :
+    def all_punct(self, uni, exclude = []) :
         all = True
         for char in uni :
-            if len(uni) and char not in self.punctuation :
+            if char in exclude or (len(uni) and char not in self.punctuation) :
                 all = False
                 break
         return all
@@ -259,6 +259,7 @@ class English(Processor) :
         super(English, self).__init__(mica, params)
         self.files = dict(dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz", idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx", ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo")
         self.dictionary = load_dictionary(self.files)
+
         self.structs = {
                         "abbr." : True,
                         "adj." : True,
@@ -276,6 +277,28 @@ class English(Processor) :
                         "vi." : True,
                         "vt." : True,
                 }
+
+        self.matches = {        
+                         u"ing" : False, 
+                         u"’s" : False,
+                         u"'s" : False,
+                         u"s" : False,
+                         u"ies" : u"y",
+                         u"er" : False,
+                         u"ed" : False,
+                         u"d" : False,
+                         u"ers" : False,
+                         u"’ve" : False,
+                         u"'ve" : False,
+                         u"’d" : False,
+                         u"'d" : False,
+                         u"’re" : False,
+                         u"'re" : False,
+                         u"’ll" : False,
+                         u"'ll" : False,
+                         #u"’" : False,
+                         #u"'" : False,
+                        }
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
@@ -306,18 +329,103 @@ class English(Processor) :
     def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         units = []
 
+        if uni.count(u"-") :
+            parts = uni.split(u"-")
+            first = True 
+            for part in parts :
+                if first :
+                    first = False
+                else :
+                    units.append(self.add_unit([u"-"], u"-", [u"-"], punctuation = True))
+
+                res = self.recursive_translate_lang(req, story, opaque, part, temp_units, page, tone_keys)
+                if len(res) :
+                    units = units + res
+            return units
+
+        begin_punct = u"" 
+        end_punct = [u""]
+        actual_word = uni
+        word_start = 0
+        end_start = 0
+
+        # Is it an ackronym?
+        ackronym = True 
+
+        if len(uni) % 2 == 0 :
+            for x in range(0, len(uni)) :
+                if x % 2 == 0 :
+                    if self.all_punct(uni[x]) :
+                        ackronym = False
+                        break
+                else :
+                    if not self.all_punct(uni[x]) :
+                        ackronym = False
+                        break
+        else :
+            ackronym = False
+
+        if not ackronym :
+            if self.all_punct(uni[0]) :
+                for x in range(0, len(uni)) :
+                    char = uni[x]
+                    if self.all_punct(char, exclude = [u"'"]) :
+                        begin_punct += char
+                    else : 
+                        word_start = x
+                        break
+                actual_word = uni[word_start:]
+
+            if self.all_punct(uni[-1]) :
+                actual_word = u""
+                for x in range(word_start, len(uni)) :
+                    char = uni[x]
+                    if self.all_punct(char, exclude = [u"'"]) :
+                        break
+                    else :
+                        actual_word += char
+
+                end_start = len(begin_punct) + len(actual_word)
+
+                for x in range(end_start, len(uni)) :
+                    end_punct[0] += uni[x]
+
+        mdebug("Parse result original: " + uni + " begin: *" + begin_punct + "* word " + actual_word + " end: *" + end_punct[0] + "*")
+
+        if begin_punct != u"" :
+             units.append(self.add_unit([begin_punct], begin_punct, [begin_punct], punctuation = True))
+
+        uni = actual_word
+
+        # Names sometimes need to avoid being lowercased
         targ = self.get_first_translation(opaque, uni, False, none_if_not_found = False)
+
+        # Then try lowercasing...
+        if not targ :
+            targ = self.get_first_translation(opaque, uni.lower(), False, none_if_not_found = False)
+
+        for combo, replacement in self.matches.iteritems() :
+            x = len(combo)
+            if not targ and len(uni) > x and uni[-x:] == combo :
+                search = uni[:-x]
+                if replacement :
+                    search += replacement
+                targ = self.get_first_translation(opaque, search, False, none_if_not_found = False)
+
+                if not targ :
+                    targ = self.get_first_translation(opaque, search.lower(), False, none_if_not_found = False)
+                if targ :
+                    break
 
         # Things to do:
 
         '''
-        1. use a while loop around get_first_translation and retry with different variations:
-            - capitlize the first letter
+        use a while loop around get_first_translation and retry with different variations:
+            - capitalize the first letter
             - lowercase everything
             - remove the word endings or conjugations
-        2. Remove preceding or trailing punctuation, such as "Quote" or "end of sentences."
         '''
-        
+
         if targ :
             unit = self.add_unit(uni.split(" "), uni, [targ[0]])
 
@@ -340,6 +448,10 @@ class English(Processor) :
             for unit in online_units :
                 units.append(unit)
 
+        for ep in end_punct :
+            if ep != u"" :
+                 units.append(self.add_unit([ep], ep, [ep], punctuation = True))
+
         return units
     
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
@@ -356,9 +468,8 @@ class English(Processor) :
                 if 'm' in trans :
                     parts = trans['m'].split('\n')[1:]
                     if len(parts) == 0 :
-                        raise Exception("Translation result needs at least the pronunciation and one definition: " + str(trans))
-
-                    if len(parts) == 1 :
+                        targ.append(trans['m'])
+                    elif len(parts) == 1 :
                         targ.append(parts[0])
                     else :
                         kind = False

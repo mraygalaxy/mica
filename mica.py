@@ -966,8 +966,6 @@ class MICA(object):
                             py = u' ' 
                 target = " ".join(unit["multiple_target"][unit["multiple_correct"]])
 
-            mdebug("Result of " + "".join(unit["source"]) + " is py " + py + " target " + target)
-
         return py, target 
 
 
@@ -982,8 +980,14 @@ class MICA(object):
         return percent
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
+        gp = global_processors[story["source_language"]]
         out = ""
-        out += "\n" + _("This character") + " (" + " ".join(unit["source"]) + ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
+        out += "\n" + _("This character") + " ("
+        if gp.already_romanized : 
+            out += "".join(unit["source"])
+        else :
+            out += " ".join(unit["source"])
+        out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
         out += "<tr>"
         if len(unit["multiple_sromanization"]) :
@@ -1006,7 +1010,7 @@ class MICA(object):
                 spy = " ".join(unit["multiple_sromanization"][x])
                 out += "<td>" + spy + " (" + str(percent) + " %) </td>"
             else :
-                spy = " "
+                spy = " ".join(unit["multiple_target"][x])
 
             out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
             if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
@@ -1427,7 +1431,10 @@ class MICA(object):
                     line_out += " page='" + page + "' "
                     line_out += " pinyin=\"" + (py if py else target) + "\" "
                     line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
-                    line_out += " style='color: black; font-weight: normal' "
+                    line_out += " style='color: black; font-weight: normal"
+                    if not unit["punctuation"] :
+                        line_out += "; cursor: pointer"
+                    line_out += "' "
                     line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
                     line_out += source if py else target 
                     line_out += "</a>"
@@ -1453,7 +1460,11 @@ class MICA(object):
                 tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
-                line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small'>"
+                line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small; "
+                if not unit["punctuation"] :
+                    line_out += "cursor: pointer"
+
+                line_out += "'>"
                 if py and (py not in gp.punctuation) :
                     if not disk :
                         if gp.already_romanized :
@@ -1463,7 +1474,7 @@ class MICA(object):
 
                         add_count = ""
                         if action == "home" :
-                            color = "lightgrey"
+                            color = "lightgrey" if not unit["punctuation"] else "white"
                             if py and len(unit["multiple_target"]) :
                                 color = "green"
 
@@ -1486,7 +1497,7 @@ class MICA(object):
                                 line_out += " style='color: " + color + "' "
                         elif py :
                             line_out += " style='color: black' "
-                            color = "lightgrey"
+                            color = "lightgrey" if not unit["punctuation"] else "white"
 
                         line_out += " id='ttip" + trans_id + "'"
 
@@ -1497,7 +1508,20 @@ class MICA(object):
                         line_out += ">"
                         
                         
-                        line_out += (((self.roman_holder(source, color) if py == u' ' else py) if py else target).lower()) + add_count 
+                        if gp.already_romanized :
+                            if color not in [ "lightgrey", "white" ] :
+                                line_out += target
+                            else :
+                                line_out += self.roman_holder(source, color)
+                        else :
+                            if py == u' ' :
+                                line_out += self.roman_holder(source, color)
+                            elif py :
+                                line_out += py
+                            else :
+                                line_out += target.lower()
+        
+                        line_out += add_count
                         line_out += "</a>"
                     else :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
