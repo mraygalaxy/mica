@@ -31,7 +31,7 @@
         <br/><t:slot name='password'/>: <br/><input type="password" id="password" name="password" placeholder="Password" />
         <br/><t:slot name='address'/>: <br/><div style="display:inline" t:render="address"/>
         <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
-        <button type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+        <button onclick="$('#loginModal').modal('show');" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
         </form>
     </div>
     <div class="navbar navbar-default navbar-fixed-top" role='navigation'>
@@ -140,6 +140,24 @@
                                 <i class="icon-plus-sign icon-white"></i>&#160;<t:slot name="create"/></button>
                                 </form>                                   
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id='loginModal'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div style="font-size: large" class="modal-body">
+			<t:slot name="spinner"/>&#160;<t:slot name="signing"/>...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id='compactModal'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div style="font-size: large" class="modal-body">
+			<t:slot name="spinner"/>&#160;<t:slot name="compacting"/>...
                         </div>
                     </div>
                 </div>
