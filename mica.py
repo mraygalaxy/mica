@@ -1591,7 +1591,7 @@ class MICA(object):
                             line_out += "class='reveal reveal" + tid + "'"
                             if meaning_mode == "true":
                                 line_out += "style='display: none'"
-                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i>&#160;" + _("open") + "</a></div>"
+                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>"
                             line_out += "<div class='definition definition" + tid + "' "
                             if meaning_mode == "false":
                                 line_out += "style='display: none'"
@@ -1697,7 +1697,7 @@ class MICA(object):
 
         if not finished :
             mdebug("Raising fatal error.")
-            raise Exception(error)
+            raise OnlineTranslateException(error)
 
         mdebug("Yay, finished.")
         return result
@@ -2680,27 +2680,31 @@ class MICA(object):
                     if len(breakout) > 1 :
                         for x in range(0, len(breakout)) :
                             requests.append(breakout[x].encode("utf-8"))
-                    result = self.translate_and_check_array(req, False, requests, story["target_language"], story["source_language"])
-                    for x in range(0, len(requests)) : 
-                        part = result[x]
-                        if "TranslatedText" not in part :
-                            mdebug("Why didn't we get anything: " + json.dumps(result))
-                            target = _("No translation available.")
-                        else :
-                            target = part["TranslatedText"].encode("utf-8")
-                        
-                        if x == 0 :
-                            p += _("Selected translation") + " (" + source + "): " + target + "<br/>\n"
-                            final["whole"] = (source, target)
-                        else :
-                            char = breakout[x-1].encode("utf-8")
-                            if "parts" not in final :
-                                p += _("Piecemeal translation") + ":<br/>\n"
-                                final["parts"] = []
-                            p += "(" + char + "): "
-                            p += target 
-                            p += "<br/>\n"
-                            final["parts"].append((char, target))
+                    try :
+                        result = self.translate_and_check_array(req, False, requests, story["target_language"], story["source_language"])
+                        for x in range(0, len(requests)) : 
+                            part = result[x]
+                            if "TranslatedText" not in part :
+                                mdebug("Why didn't we get anything: " + json.dumps(result))
+                                target = _("No translation available.")
+                            else :
+                                target = part["TranslatedText"].encode("utf-8")
+                            
+                            if x == 0 :
+                                p += _("Selected translation") + " (" + source + "): " + target + "<br/>\n"
+                                final["whole"] = (source, target)
+                            else :
+                                char = breakout[x-1].encode("utf-8")
+                                if "parts" not in final :
+                                    p += _("Piecemeal translation") + ":<br/>\n"
+                                    final["parts"] = []
+                                p += "(" + char + "): "
+                                p += target 
+                                p += "<br/>\n"
+                                final["parts"].append((char, target))
+                    except OnlineTranslateException, e :
+                        p += _("Internet access error. Try again later: ") + str(e)
+                            
                 else :
                     p += _("No internet access. Offline only.")
                        

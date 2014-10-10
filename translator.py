@@ -13,6 +13,10 @@ class ArgumentOutOfRangeException(Exception):
         self.message = message.replace('ArgumentOutOfRangeException: ', '')
         super(ArgumentOutOfRangeException, self).__init__(self.message)
 
+class OnlineTranslateException(Exception):
+    def __init__(self, message, *args):
+        self.message = message.replace('OnlineTranslateException: ', '')
+        super(OnlineTranslateException, self).__init__(self.message, *args)
 
 class TranslateApiException(Exception):
     def __init__(self, message, *args):
