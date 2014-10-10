@@ -3928,7 +3928,7 @@ class MICA(object):
                     </form>
                     <p>
                     <br/>
-                    <a class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
+                    <a onclick="$('#compactModal').modal('show');" class='btn btn-default btn-primary' href='BOOTDEST/account?pack=1'>Compact databases</a>
                     """
 
                 try :
