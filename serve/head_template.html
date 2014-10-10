@@ -37,7 +37,7 @@
             <input type="checkbox" name="remember" BOOTREMEMBER/> Remember Me
         </label>
         </div>
-        <button type="submit" name="connect" class="btn-primary btn-block" value='1'>Sign in</button>
+        <button onclick="$('#loginModal').modal('show');" type="submit" name="connect" class="btn-primary btn-block" value='1'>Sign in</button>
         </form>
     </div>
     <div class="navbar navbar-default navbar-fixed-top" role='navigation'>
@@ -147,6 +147,24 @@
                                 <i class="icon-plus-sign icon-white"></i>&nbsp;Create</button>
                                 </form>                                   
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id='loginModal'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div style="font-size: large" class="modal-body">
+			<img src="/serve/spinner.gif"/>&nbsp;Signing you in, Please wait...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id='compactModal'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div style="font-size: large" class="modal-body">
+			<img src="/serve/spinner.gif"/>&nbsp;Compacting database, Please wait...
                         </div>
                     </div>
                 </div>
