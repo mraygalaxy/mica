@@ -3289,7 +3289,10 @@ class MICA(object):
                     <p>
                     <br/>
                     """
-                out += "<a class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
+                out += """
+                        <a onclick="$('#compactModal').modal('show');"
+                        """
+                out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
 
                 try :
                     out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"

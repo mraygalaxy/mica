@@ -589,7 +589,10 @@ class HeadElement(Element):
                      aboutsoftware = _("About this software"),
                      signin = _("Login"),
                      rememberme = _("Remember Me"),
-                     address = _("Address")
+                     address = _("Address"),
+                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                     signing = _("Signing you in, Please wait"),
+                     compacting = _("Compacting database, Please wait"),
                      )
        return tag
 
