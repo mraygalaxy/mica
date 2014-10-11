@@ -42,7 +42,6 @@ import Queue
 import string 
 
 
-global_processors = {}
 texts = {}
 
 from common import *
@@ -74,25 +73,15 @@ import twisted
 
 from webob import Request, Response, exc
 
-try :
-    from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-    from pdfminer.converter import PDFPageAggregator
-    from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
-    from pdfminer.pdfpage import PDFPage
-except ImportError, e :
-    mdebug("Could not import pdfminer. Full translation will not work.")
-    pass
-
-mobile = True 
-try :
-    from jnius import autoclass
-    String = autoclass('java.lang.String')
-except ImportError, e :
+if not memorytest and not mobile :
     try :
-        from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
+        from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+        from pdfminer.converter import PDFPageAggregator
+        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+        from pdfminer.pdfpage import PDFPage
     except ImportError, e :
-        mdebug("pyjnius and pyobjus not available. Probably on a server.")
-        mobile = False
+        mdebug("Could not import pdfminer. Full translation will not work.")
+        pass
 
 mdebug("Imports complete.")
 
@@ -336,6 +325,12 @@ class MICA(object):
                 ('splits/all', False),
                ]
 
+        self.processors = {}
+
+        for l, processor_name in lang.iteritems() :
+            if processor_map[l] :
+                self.processors[l] = getattr(processors, processor_map[l])(self, params)
+
         try :
             mdebug("Checking database access")
             if mobile :
@@ -357,11 +352,6 @@ class MICA(object):
         except Exception, e :
             mwarn("Database not available yet: " + str(e))
 
-        mdebug("INIT Testing cjk thread")
-        ct = threading.Thread(target=self.test_cjk)
-        ct.daemon = True
-        ct.start()
-
         if mobile :
             mdebug("INIT Launching runloop timer")
             threading.Timer(5, self.runloop_sched).start()
@@ -370,16 +360,6 @@ class MICA(object):
         vt = threading.Thread(target=self.view_runner_sched)
         vt.daemon = True
         vt.start()
-
-        self.cd = {}
-
-        mdebug("Building tone file")
-        dpfh = open(params["tonefile"])
-        for line in dpfh.readlines() :
-            k, v = line.split('\t')
-            self.cd[k] = v
-
-        dpfh.close()
 
 
     def make_account(self, req, username, password, mica_roles, admin = False, dbname = False, language = "en") :
@@ -662,70 +642,61 @@ class MICA(object):
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
-    def get_cjk_handle_common(self) :
+    def test_dicts_handle_common(self, f) :
+        fname = params["scratch"] + f 
+
         try :
-            if not os.path.isfile(params["cjklib"]) :
-                self.db.get_attachment_to_path("MICA:filelisting", "cjklib.db", params["cjklib"])
-                mdebug("Exported cjklib.")
-            if not os.path.isfile(params["cedict"]) :
-                self.db.get_attachment_to_path("MICA:filelisting", "cedict.db", params["cedict"])
-                mdebug("Exported cedict.")
+            if not os.path.isfile(fname) :
+                self.db.get_attachment_to_path("MICA:filelisting", f, fname)
+                mdebug("Exported " + f + ".")
         except couch_adapter.CommunicationError, e :
-            mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
+            mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
         except couch_adapter.ResourceNotFound, e :
-            mdebug("CJKLIB Not fully replicated yet. Waiting..." + str(e))
+            mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
 
-    def get_cjk_handle_serial(self) :
+    def test_dicts_handle_serial(self) :
         if params["serialize_couch_on_mobile"] :
-            (unused, rq) = (yield)
+            (f, rq) = (yield)
 
-        self.get_cjk_handle_common()
+        self.test_dicts_handle_common(f)
 
         if params["serialize_couch_on_mobile"] :
             rq.put(None)
             rq.task_done()
 
-    def test_cjk(self) :
-        for fn in ["cedict.db", "cjklib.db"] :
-            mdebug("Searching for instances of " + fn)
-            for f in os.walk(cwd) :
-                 if ("" + str(f)).count(fn) :
-                     if f[0][-1] != "/" :
-                         fnd = f[0] + "/" + fn 
-                     else :
-                         fnd = f[0] + fn 
-                     mdebug("Found: " + fnd)
-                     mdebug("Size: " + str(os.path.getsize(fnd)))
-                     if fnd != params["cedict"] and fnd != params["cjklib"] :
-                         mwarn("This file should not be here. Blowing away...")
-                         os.unlink(fnd)
-
-        mdebug("Moving on with test.")
+    def test_dicts(self) :
+        files = ["cjklib.db", "cedict.db", "chinese.txt"]
 
         if mobile :
-            while True :
-                if not os.path.isfile(params["cedict"]) or not os.path.isfile(params["cjklib"]):
-                    mdebug("One of " + params["cedict"] + " or " + params["cjklib"] + " is missing. Exporting...")
+            all_found = False
 
-                    if params["serialize_couch_on_mobile"] :
-                        rq = Queue.Queue()
-                        co = self.get_cjk_handle_serial()
-                        co.next()
-                        params["q"].put((co, None, rq))
-                        resp = rq.get()
-                    else :
-                        self.get_cjk_handle_common()
+            while not all_found :
+                all_found = True
 
-                    sleep(5)
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        fname = params["scratch"] + f
 
-        cjksize = os.path.getsize(params["cjklib"])
-        cesize = os.path.getsize(params["cedict"])
+                        if not os.path.isfile(fname) :
+                            all_found = False
 
-        mdebug("CJKLIB Size: " + str(cjksize))
-        mdebug("CEDICT Size: " + str(cesize))
+                            mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
+                            if params["serialize_couch_on_mobile"] :
+                                rq = Queue.Queue()
+                                co = self.test_dicts_handle_serial()
+                                co.next()
+                                params["q"].put((co, f, rq))
+                                resp = rq.get()
+                            else :
+                                self.test_dicts_handle_common(f)
 
-        assert(cjksize != 0)
-        assert(cesize != 0)
+                            sleep(5)
+                            break
+                        else :
+                            mdebug("Exists: " + f)
+                            size = os.path.getsize(fname)
+                            mdebug("FILE " + f + " size: " + str(size))
+                            assert(size != 0)
 
         cjk, d = get_cjk_handle(params)
 
@@ -742,7 +713,7 @@ class MICA(object):
             # https://github.com/kivy/pyjnius/issues/107
             # So, we have to run forever
             while True :
-                mdebug("CJK test infinite sleep.")
+                mdebug("Dict test infinite sleep.")
                 sleep(100000)
 
     def store_error(self, req, name, msg) :
@@ -780,9 +751,7 @@ class MICA(object):
 
         assert("source_language" in story)
 
-        Processor = getattr(processors, processor_map[story["source_language"]])
-
-        processor = Processor(self, params)
+        processor = getattr(processors, processor_map[story["source_language"]])(self, params)
     
         page_inputs = 0
         if "filetype" not in story or story["filetype"] == "txt" :
@@ -929,10 +898,10 @@ class MICA(object):
         processor.parse_page_stop(opaque)
 
     def get_parts(self, unit, source_language) :
+        gp = self.processors[source_language]
         py = ""
         target = ""
         if unit["multiple_correct"] == -1 :
-            gp = global_processors[source_language]
             if not gp.already_romanized :
                 for widx in range(0, len(unit["sromanization"])) :
                     word = unit["sromanization"][widx]
@@ -946,7 +915,7 @@ class MICA(object):
 
             if py == u'' or py == "":
 #                mdebug("Not useful: " + py + " and " + target + " len: " + str(len(unit["sromanization"])))
-                if not global_processors[source_language].already_romanized :
+                if not gp.already_romanized :
                     return False
                 else :
                     if len(unit["source"]) > 0 :
@@ -959,7 +928,7 @@ class MICA(object):
                     py = u" ".join(unit["multiple_sromanization"][unit["multiple_correct"]])
 
                 if py == "" :
-                    if not global_processors[source_language].already_romanized :
+                    if not gp.already_romanized :
                         return False
                     else :
                         if len(unit["source"]) > 0 :
@@ -980,7 +949,7 @@ class MICA(object):
         return percent
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
-        gp = global_processors[story["source_language"]]
+        gp = self.processors[story["source_language"]]
         out = ""
         out += "\n" + _("This character") + " ("
         if gp.already_romanized : 
@@ -1125,7 +1094,7 @@ class MICA(object):
                 
             for unit in units :
                 char = "".join(unit["source"])
-                if char in global_processors[story["source_language"]].punctuation_without_letters or len(char.strip()) == 0:
+                if char in self.processors[story["source_language"]].punctuation_without_letters or len(char.strip()) == 0:
                     continue
                 if char in found :
                     continue
@@ -1203,7 +1172,7 @@ class MICA(object):
             out += "</h4></div>"
             return out
 
-        req.gp = global_processors[story["source_language"]]
+        req.gp = self.processors[story["source_language"]]
         req.story_name = story["name"]
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         output = load_template(req, ViewElement)
@@ -1225,7 +1194,7 @@ class MICA(object):
         return holder
     
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
-        gp = global_processors[story["source_language"]]
+        gp = self.processors[story["source_language"]]
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
@@ -1432,7 +1401,7 @@ class MICA(object):
                     line_out += " pinyin=\"" + (py if py else target) + "\" "
                     line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
                     line_out += " style='color: black; font-weight: normal"
-                    if not unit["punctuation"] :
+                    if "punctuation" not in unit or not unit["punctuation"] :
                         line_out += "; cursor: pointer"
                     line_out += "' "
                     line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
@@ -1461,7 +1430,7 @@ class MICA(object):
                 nb_unit = str(word[4])
                 source = word[5]
                 line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small; "
-                if not unit["punctuation"] :
+                if "punctuation" not in unit or not unit["punctuation"] :
                     line_out += "cursor: pointer"
 
                 line_out += "'>"
@@ -1804,7 +1773,7 @@ class MICA(object):
                     progress.append([py, target, unit, x, trans_id, page])
                     total_memorized += 1
 
-            if py and py not in global_processors[story["source_language"]].punctuation :
+            if py and py not in self.processors[story["source_language"]].punctuation :
                 unique[unit["hash"]] = True
 
             trans_id += 1
@@ -1854,8 +1823,7 @@ class MICA(object):
     def operation(self, req, story, edit, offset):
         operation = edit["operation"]
 
-        Processor = getattr(processors, processor_map[story["source_language"]])
-        processor = Processor(self, params)
+        processor = getattr(processors, processor_map[story["source_language"]])(self, params)
 
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
@@ -2388,23 +2356,21 @@ class MICA(object):
                             req.db["MICA:filelisting"] = {"foo" : "bar"} 
 
                         listing = req.db["MICA:filelisting"]
+                        mdebug("Checking if files exist............") 
+                        for name, lgp in self.processors.iteritems() :
+                            for f in lgp.get_dictionaries() :
+                                fname = params["scratch"] + f 
 
-                        if '_attachments' not in listing or 'cedict.db' not in listing['_attachments'] :
-                            minfo("Opening cedict file: " + params["cedict"])
-                            fh = open(params["cedict"], 'r')
-                            minfo("Uploading cedict to file listing...")
-                            req.db.put_attachment("MICA:filelisting", 'cedict.db', fh, new_doc = listing)
-                            fh.close()
-                            minfo("Uploaded.")
-                            listing = req.db["MICA:filelisting"]
-
-                        if '_attachments' not in listing or 'cjklib.db' not in listing['_attachments'] :
-                            minfo("Opening cjklib file: " + params["cjklib"])
-                            fh = open(params["cjklib"], 'r')
-                            minfo("Uploading cjklib to file listing...")
-                            req.db.put_attachment("MICA:filelisting", 'cjklib.db', fh, new_doc = listing)
-                            fh.close()
-                            minfo("Uploaded.")
+                                if '_attachments' not in listing or f not in listing['_attachments'] :
+                                    minfo("Opening dict file: " + f)
+                                    fh = open(fname, 'r')
+                                    minfo("Uploading " + f + " to file listing...")
+                                    req.db.put_attachment("MICA:filelisting", f, fh, new_doc = listing)
+                                    fh.close()
+                                    minfo("Uploaded.")
+                                    listing = req.db["MICA:filelisting"]
+                                else :
+                                    mdebug("File " + f + " already exists.")
                     except TypeError, e :
                         mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
                     except couch_adapter.ResourceNotFound, e :
@@ -2672,7 +2638,9 @@ class MICA(object):
                     if not story :
                         name = req.db[self.index(req, req.session.value["current_story"])]["value"]
                         story = req.db[self.story(req, name)]
-                    gp = global_processors[story["source_language"]]
+
+                    gp = self.processors[story["source_language"]]
+
                     breakout = source.decode("utf-8") if isinstance(source, str) else source
                     if gp.already_romanized :
                         breakout = breakout.split(" ")
@@ -3014,7 +2982,7 @@ class MICA(object):
                     # Reload just in case the translation changed anything
                     name = req.db[self.index(req, uuid)]["value"]
                     story = req.db[self.story(req, name)]
-                    gp = global_processors[story["source_language"]]
+                    gp = self.processors[story["source_language"]]
                     
                     if req.action == "edit" and gp.already_romanized :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
@@ -3539,9 +3507,7 @@ def get_options() :
     parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
     parser.add_option("-a", "--slaves", dest = "slaves", default = "127.0.0.1", help = "List of slave addresses")
     parser.add_option("-w", "--slave_port", dest = "slave_port", default = "5050", help = "Port on which the slaves are running")
-    parser.add_option("-e", "--cedict", dest = "cedict", default = False, help = "Location of cedict.db file used by cjklib library.")
-    parser.add_option("-j", "--cjklib", dest = "cjklib", default = False, help = "Location of cjklib.db file used by cjklib library.")
-    parser.add_option("-T", "--tonefile", dest = "tonefile", default = False, help = "Location of pinyin tone txt file.")
+    parser.add_option("-e", "--scratch", dest = "scratch", default = False, help = "Location of scratch directory for replicated attachments.")
     parser.add_option("-z", "--serialize", dest = "serialize", action = "store_true", default = False, help ="Serialize accesses to the couchbase database on mobile.")
 
     parser.add_option("-U", "--adminuser", dest = "adminuser", default = False, help = "couch administrator username for server account creation.")
@@ -3566,9 +3532,7 @@ def get_options() :
                "privkey" : options.privkey,
                "slaves" : options.slaves,
                "slave_port" : options.slave_port,
-               "cedict" : options.cedict,
-               "cjklib" : options.cjklib,
-               "tonefile" : options.tonefile,
+               "scratch" : options.scratch,
                "mobileinternet" : False,
                "transreset" : options.transreset,
                "transcheck" : True,
@@ -3636,8 +3600,8 @@ def go(p) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
 
-    if not params["cedict"] or not params["cjklib"]:
-        merr("You must provide the path to compatible CJKLIB and CEDICT files named 'cedict.db' and 'cjklib.db'. If you don't have them, you'll need to steal them from somewhere, like a linux box where CJKLIB has been installed or build them yourself following their instructions. If you build them, they will be located in the corresponding python installation directory for CJK.")
+    if not params["scratch"] :
+        merr("You must provide the path to a read/write folder where replicated dictionary databases can be placed (particularly on a mobile device.)")
         exit(1)
 
     if "serialize_couch_on_mobile" not in params :
@@ -3660,9 +3624,6 @@ def go(p) :
 
     mdebug("Initializing logging.")
     mica_init_logging(params["log"], duplicate = params["duplicate_logger"])
-
-    if "tonefile" not in params or not params["tonefile"] :
-        params["tonefile"] = cwd + "/chinese.txt" # from https://github.com/lxyu/pinyin
 
     if params["tlog"] :
         if params["tlog"] != 1 :
@@ -3690,9 +3651,10 @@ def go(p) :
 
         mica = MICA(db_adapter)
 
-        for l, processor_name in lang.iteritems() :
-            if processor_map[l] :
-                global_processors[l] = getattr(processors, processor_map[l])(mica, params)
+        mdebug("INIT Testing dictionary thread")
+        ct = threading.Thread(target=mica.test_dicts)
+        ct.daemon = True
+        ct.start()
 
         mica.install_language(params["language"])
 

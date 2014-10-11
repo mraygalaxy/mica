@@ -19,6 +19,9 @@ from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
 
+#memorytest = True 
+memorytest = False
+
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
 DEBUG = logging.DEBUG
@@ -110,6 +113,17 @@ def merr(msg) :
        print msg
    if duplicate_logger and String :
       duplicate_logger.err(String(msg))
+
+mobile = True 
+try :
+    from jnius import autoclass
+    String = autoclass('java.lang.String')
+except ImportError, e :
+    try :
+        from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
+    except ImportError, e :
+        mdebug("pyjnius and pyobjus not available. Probably on a server.")
+        mobile = False
 
 def mica_init_logging(logfile, duplicate = False) :
     global micalogger
