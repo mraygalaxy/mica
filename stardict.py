@@ -177,50 +177,6 @@ class IdxFileReader(object):
             index.append(self._index_idx[number][1:])
         return index
 
-
-class SynFileReader(object):
-    """Read infomation from .syn file and form a dictionary as below:
-    {synonym_word: original_word_index}, in which 'original_word_index' could be a integer or
-    a list of integers.
-
-    """
-    def __init__(self, filename):
-        """Constructor.
-
-        Arguments:
-        - `filename`: The filename of .syn file of stardict.
-        """
-        self._syn = dict()
-        with open(filename, "r") as syn_file:
-            content = syn_file.read()
-        offset = 0
-        while offset < len(content):
-            end = content.find("\0", offset)
-            synonym_word = content[offset:end]
-            offset = end
-            original_word_index = struct.unpack("!I", content[offset, offset+4])
-            offset += 4
-            if synonym_word in self._syn:
-                if isinstance(self._syn[synonym_word], types.ListType):
-                    self._syn[synonym_word].append(original_word_index)
-                else:
-                    self._syn[synonym_word] = [self._syn[synonym_word], original_word_index]
-            else:
-                self._syn[synonym_word] = original_word_index
-
-    def get_syn(self, synonym_word):
-        """
-        
-        Arguments:
-        - `synonym_word`: synonym word.
-        Return:
-        If synonym_word exists in the .syn file, return the corresponding indexes, otherwise False.
-        """
-        if synonym_word not in self._syn:
-            return False
-        return self._syn[synonym_word]
-
-            
 class DictFileReader(object):
     """Read the .dict file, store the data in memory for querying.
     """
@@ -267,8 +223,6 @@ class DictFileReader(object):
             else:
                 result.append(self._get_entry(size))
         return result
-            
-
 
     def get_dict_by_index(self, index):
         """Get the word's dictionary data by it's index infomation.
@@ -332,30 +286,6 @@ class DictFileReader(object):
         self._offset += size
         return result
         
-
-
-def read_idx_file(filename):
-    """
-    
-    Arguments:
-    - `filename`:
-    """
-    index_file = IdxFileReader(filename)
-    for word_str in index_file._word_idx:
-        print word_str, ": ", index_file.get_index_by_word(word_str)
-    for index in range(0, len(index_file._index_idx)):
-        print index, ": ", index_file.get_index_by_num(index)[0]
-
-def read_ifo_file(filename):
-    """
-    
-    Arguments:
-    - `filename`:
-    """
-    ifo_file = IfoFileReader(filename)
-    for key in ifo_file._ifo:
-        print key, " :", ifo_file._ifo[key]
-
 def load_dictionary(files):
 
     ifo_reader = IfoFileReader(files["ifo_file"])
