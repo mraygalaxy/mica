@@ -6,7 +6,6 @@
 from common import *
 from stardict import load_dictionary
 
-import pdb
 import string 
 
 story_format = 2
@@ -18,10 +17,12 @@ pinyinToneMarks = {
     u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
 }
 
-try :
-    import mica_ictclas
-except ImportError, e :
-    mdebug("Could not import ICTCLAS library. Full translation will not work.")
+if not mobile :
+    try :
+        if not memorytest :
+            import mica_ictclas
+    except ImportError, e :
+        mdebug("Could not import ICTCLAS library. Full translation will not work.")
 
 class Processor(object) :
     def __init__(self, mica, params) :
@@ -92,7 +93,6 @@ class Processor(object) :
             try :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
-                pdb.set_trace()
                 if error :
                     self.mica.store_error(req, story['name'], "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 if not handle :
@@ -240,9 +240,9 @@ def get_cjk_handle(params) :
         from cjklib.dictionary import CEDICT
         from cjklib.characterlookup import CharacterLookup
         from cjklib.dbconnector import getDBConnector
-        mdebug("Opening CJK from: " + params["cedict"] + " and " + params["cjklib"])
-        cjkurl = 'sqlite:///' + params['cjklib']
-        cedicturl = 'sqlite:///' + params['cedict']
+        cjkurl = 'sqlite:///' + params["scratch"] + "cjklib.db"
+        cedicturl = 'sqlite:///' + params["scratch"] + "cedict.db"
+        mdebug("Opening CJK from: " + cedicturl + " and " + cjkurl)
         cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
         mdebug("MICA cjklib success!")
         # CEDICT must use a connector, just a url which includes both dictionaries.
@@ -257,8 +257,9 @@ def get_cjk_handle(params) :
 class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
-        self.files = dict(dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz", idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx", ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo")
-        self.dictionary = load_dictionary(self.files)
+        self.files = dict(dict_file = "lazyworm-ec.dict.dz", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
+        if not memorytest :
+            self.dictionary = load_dictionary(self.files)
 
         self.structs = {
                         "abbr." : True,
@@ -299,6 +300,9 @@ class English(Processor) :
                          #u"’" : False,
                          #u"'" : False,
                         }
+
+    def get_dictionaries(self) :
+        return self.files.values()
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
@@ -516,12 +520,24 @@ class ChineseSimplified(Processor) :
         self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_letters))
         self.punctuation.update(copy.deepcopy(self.punctuation_letters))
 
+        if not memorytest :
+            self.cd = {}
+            mdebug("Building tone file")
+            dpfh = open(params["scratch"] + "chinese.txt")
+            for line in dpfh.readlines() :
+                k, v = line.split('\t')
+                self.cd[k] = v
+            dpfh.close()
+
+    def get_dictionaries(self) :
+        return ["cjklib.db", "cedict.db", "chinese.txt"]
+
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []
         for char in chars:
             key = "%X" % ord(char)
             try:
-                result.append(self.mica.cd[key].split(" ")[0].strip().lower())
+                result.append(self.cd[key].split(" ")[0].strip().lower())
             except:
                 result.append(char)
 
