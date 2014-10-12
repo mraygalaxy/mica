@@ -23,43 +23,50 @@ class IfoFileException(Exception):
         """
         return self._description
 
-        
-
 class IfoFileReader(object):
     """Read infomation from .ifo file and parse the infomation a dictionary.
     The structure of the dictionary is shown below:
     {key, value}
     """
     
-    def __init__(self, filename):
+    def __init__(self, db, filename):
         """Constructor from filename.
         
         Arguments:
         - `filename`: the filename of .ifo file of stardict.
         May raise IfoFileException during initialization.
         """
-        self._ifo = dict()
-        with open(filename, "r") as ifo_file:
-            self._ifo["dict_title"] = ifo_file.readline() # dictionary title
-            line = ifo_file.readline() # version info
-            key, equal, value = line.partition("=")
-            key = key.strip()
-            value = value.strip()
-            # check version info, raise an IfoFileException if error encounted
-            if key != "version":
-                raise IfoFileException("Version info expected in the second line of {!r:s}!".format(filename))
-            if value != "2.4.2" and value != "3.0.0":
-                raise IfoFileException("Version expected to be either 2.4.2 or 3.0.0, but {!r:s} read!".format(value))
-            self._ifo[key] = value
-            # read in other infomation in the file
-            for line in ifo_file:
+        self.db = db
+        if "_ifo" not in self.db :
+            self.db["_ifo"] = dict()
+
+            with open(filename, "r") as ifo_file:
+                self.db["_ifo"]["dict_title"] = ifo_file.readline() # dictionary title
+
+                line = ifo_file.readline() # version info
                 key, equal, value = line.partition("=")
                 key = key.strip()
                 value = value.strip()
-                self._ifo[key] = value
-            # check if idxoffsetbits should be discarded due to version info
-            if self._ifo["version"] == "3.0.0" and "idxoffsetbits" in self._ifo:
-                del self._ifo["version"]
+                # check version info, raise an IfoFileException if error encounted
+                if key != "version":
+                    raise IfoFileException("Version info expected in the second line of {!r:s}!".format(filename))
+
+                if value != "2.4.2" and value != "3.0.0":
+                    raise IfoFileException("Version expected to be either 2.4.2 or 3.0.0, but {!r:s} read!".format(value))
+
+                self.db["_ifo"][key] = value
+
+                # read in other infomation in the file
+                for line in ifo_file:
+                    key, equal, value = line.partition("=")
+                    key = key.strip()
+                    value = value.strip()
+                    self.db["_ifo"][key] = value
+
+                # check if idxoffsetbits should be discarded due to version info
+
+                if self.db["_ifo"]["version"] == "3.0.0" and "idxoffsetbits" in self.db["_ifo"]:
+                    del self.db["_ifo"]["version"]
 
     def get_ifo(self, key):
         """Get configuration value.
@@ -69,10 +76,10 @@ class IfoFileReader(object):
         Return:
         - configuration value corresponding to the specified key if exists, otherwise False.
         """
-        if key not in self._ifo:
+        if key not in self.db["_ifo"]:
             return False
-        return self._ifo[key]
 
+        return self.db["_ifo"][key]
 
 class IdxFileReader(object):
     """Read dictionary indexes from the .idx file and store the indexes in a list and a dictionary.
@@ -81,7 +88,7 @@ class IdxFileReader(object):
     the entry in the list.
     """
     
-    def __init__(self, filename, compressed = False, index_offset_bits = 32):
+    def __init__(self, db, filename, compressed = False, index_offset_bits = 32):
         """
         
         Arguments:
@@ -89,29 +96,32 @@ class IdxFileReader(object):
         - `compressed`: indicate whether the .idx file is compressed.
         - `index_offset_bits`: the offset field length in bits.
         """
-        if compressed:
-            with gzip.open(filename, "rb") as index_file:
-                self._content = index_file.read()
-        else:
-            with open(filename, "r") as index_file:
-                self._content = index_file.read()
+        self.db = db
         self._offset = 0
-        self._index = 0
-        self._index_offset_bits = index_offset_bits
-        self._word_idx = dict()
-        self._index_idx = list()
-        for word_str, word_data_offset, word_data_size, index in self:
-            self._index_idx.append((word_str, word_data_offset, word_data_size))
-            if word_str in self._word_idx:
-                if isinstance(self._word_idx[word_str], types.ListType):
-                    self._word_idx[word_str].append(len(self._index_idx)-1)
-                else:
-                    self._word_idx[word_str] = [self._word_idx[word_str], len(self._index_idx)-1]
+        if "_word_idx" not in self.db or "_index_idx" not in self.db :
+            if compressed:
+                with gzip.open(filename, "rb") as index_file:
+                    self._content = index_file.read()
             else:
-                self._word_idx[word_str] = len(self._index_idx)-1
-        del self._content
-        del self._index_offset_bits
-        del self._index
+                with open(filename, "r") as index_file:
+                    self._content = index_file.read()
+            self._index = 0
+            self._index_offset_bits = index_offset_bits
+            self.db["_word_idx"] = dict()
+            self.db["_index_idx"] = list()
+            for word_str, word_data_offset, word_data_size, index in self:
+                self.db["_index_idx"].append((word_str, word_data_offset, word_data_size))
+                if word_str in self.db["_word_idx"]:
+                    if isinstance(self.db["_word_idx"][word_str], types.ListType):
+                        self.db["_word_idx"][word_str].append(len(self.db["_index_idx"])-1)
+                    else:
+                        self.db["_word_idx"][word_str] = [self.db["_word_idx"][word_str], len(self.db["_index_idx"])-1]
+                else:
+                    self.db["_word_idx"][word_str] = len(self.db["_index_idx"])-1
+
+            del self._content
+            del self._index_offset_bits
+            del self._index
 
     def __iter__(self):
         """Define the iterator interface.
@@ -152,9 +162,9 @@ class IdxFileReader(object):
         Return:
         A tuple in form of (word_str, word_data_offset, word_data_size)
         """
-        if number >= len(self._index_idx):
-            raise IndexError("Index out of range! Acessing the {:d} index but totally {:d}".format(number, len(self._index_idx)))
-        return self._index_idx[number]
+        if number >= len(self.db["_index_idx"]):
+            raise IndexError("Index out of range! Acessing the {:d} index but totally {:d}".format(number, len(self.db["_index_idx"])))
+        return self.db["_index_idx"][number]
 
 
     def get_index_by_word(self, word_str):
@@ -166,22 +176,22 @@ class IdxFileReader(object):
         Index infomation corresponding to the specified word if exists, otherwise False.
         The index infomation returned is a list of tuples, in form of [(word_data_offset, word_data_size) ...]
         """
-        if word_str not in self._word_idx:
+        if word_str not in self.db["_word_idx"]:
             return False
-        number =  self._word_idx[word_str]
+        number =  self.db["_word_idx"][word_str]
         index = list()
         if isinstance(number, types.ListType):
             for n in number:
-                index.append(self._index_idx[n][1:])
+                index.append(self.db["_index_idx"][n][1:])
         else:
-            index.append(self._index_idx[number][1:])
+            index.append(self.db["_index_idx"][number][1:])
         return index
 
 class DictFileReader(object):
     """Read the .dict file, store the data in memory for querying.
     """
     
-    def __init__(self, filename, dict_ifo, dict_index, compressed = False):
+    def __init__(self, db, filename, dict_ifo, dict_index, compressed = False):
         """Constructor.
         
         Arguments:
@@ -189,16 +199,27 @@ class DictFileReader(object):
         - `dict_ifo`: IfoFileReader object.
         - `dict_index`: IdxFileReader object.
         """
+        self.db = db
         self._dict_ifo = dict_ifo
         self._dict_index = dict_index
         self._compressed = compressed
         self._offset = 0
-        if self._compressed:
-            with gzip.open(filename, "rb") as dict_file:
-                self._dict_file = dict_file.read()
-        else:
-            with open(filename, "rb") as dict_file:
-                self._dict_file = dict_file.read()
+        if "_dict_file" not in self.db :
+            self.db["_dict_file"] = list()
+            if self._compressed:
+                with gzip.open(filename, "rb") as dict_file:
+                    while True :
+                        char = dict_file.read(1)
+                        if char == '' :
+                            break
+                        self.db["_dict_file"].append(char)
+            else:
+                with open(filename, "rb") as dict_file:
+                    while True :
+                        char = dict_file.read(1)
+                        if char == '' :
+                            break
+                        self.db["_dict_file"].append(char)
 
     def get_dict_by_word(self, word):
         """Get the word's dictionary data by it's name.
@@ -272,25 +293,31 @@ class DictFileReader(object):
                     result[sametypesequence[k]] = self._get_entry_field_size()
         return result
 
+    def end(self, target, start) :
+        while True :
+            if self.db["_dict_file"][start] == target :
+                 return start
+            start += 1
+
     def _get_entry_field_null_trail(self):
-        end = self._dict_file.find("\0", self._offset)
-        result = self._dict_file[self._offset:end]
+        end = self.end("\0", self._offset)
+        result = "".join(self.db["_dict_file"][self._offset:end])
         self._offset = end+1
         return result
         
     def _get_entry_field_size(self, size = None):
         if size == None:
-            size = struct.unpack("!I", self._dict_file[self._offset:self._offset+4])
+            size = struct.unpack("!I", "".join(self.db["_dict_file"][self._offset:self._offset+4]))
             self._offset += 4
-        result = self._dict_file[self._offset:self._offset+size]
+        result = "".join(self.db["_dict_file"][self._offset:self._offset+size])
         self._offset += size
         return result
         
-def load_dictionary(files):
+def load_dictionary(db, files):
 
-    ifo_reader = IfoFileReader(files["ifo_file"])
-    idx_reader = IdxFileReader(files["idx_file"])
-    return DictFileReader(files["dict_file"], ifo_reader, idx_reader, True)
+    ifo_reader = IfoFileReader(db, files["ifo_file"])
+    idx_reader = IdxFileReader(db, files["idx_file"])
+    return DictFileReader(db, files["dict_file"], ifo_reader, idx_reader, True)
 
 def lookup(d, uni) :
     result = d.get_dict_by_word(uni)

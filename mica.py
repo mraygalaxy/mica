@@ -692,21 +692,14 @@ class MICA(object):
 
                             sleep(5)
                             break
-                        else :
-                            mdebug("Exists: " + f)
-                            size = os.path.getsize(fname)
-                            mdebug("FILE " + f + " size: " + str(size))
-                            assert(size != 0)
 
-        cjk, d = get_cjk_handle(params)
-
-        for x in d.getFor(u'白鹭'.decode('utf-8')) :
-            mdebug(str(x))
-        for x in cjk.getReadingForCharacter(u'白','Pinyin') :
-            mdebug(str(x))
-
-        cjk.db.connection.close()
-        d.db.connection.close()
+        for name, lgp in self.processors.iteritems() :
+            for f in lgp.get_dictionaries() :
+                fname = params["scratch"] + f
+                mdebug("Exists: " + f)
+                size = os.path.getsize(fname)
+                mdebug("FILE " + f + " size: " + str(size))
+                assert(size != 0)
 
         if mobile :
             # We are in a thread, but because of this bug, we cannot exit by ourselves:
@@ -2371,6 +2364,10 @@ class MICA(object):
                                     listing = req.db["MICA:filelisting"]
                                 else :
                                     mdebug("File " + f + " already exists.")
+                                    handle = lgp.parse_page_start()
+                                    lgp.test_dictionaries(handle)
+                                    lgp.parse_page_stop(handle)
+
                     except TypeError, e :
                         mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
                     except couch_adapter.ResourceNotFound, e :
