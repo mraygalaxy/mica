@@ -7,6 +7,7 @@ from common import *
 from stardict import load_dictionary
 
 import string 
+import shelve
 
 story_format = 2
 
@@ -258,8 +259,6 @@ class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
         self.files = dict(dict_file = "lazyworm-ec.dict.dz", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
-        if not memorytest :
-            self.dictionary = load_dictionary(self.files)
 
         self.structs = {
                         "abbr." : True,
@@ -303,6 +302,11 @@ class English(Processor) :
 
     def get_dictionaries(self) :
         return self.files.values()
+
+    def test_dictionaries(self, opaque) :
+        self.engdb = shelve.open(self.params["scratch"] + "eng.db", writeback = True)
+        if not memorytest :
+            self.dictionary = load_dictionary(self.engdb, self.files)
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
@@ -459,8 +463,7 @@ class English(Processor) :
         return units
     
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
-        d = opaque
-        result = d.get_dict_by_word(source)
+        result = self.dictionary.get_dict_by_word(source)
 
         targ = [] 
         if result and len(result) > 0 :
@@ -498,10 +501,7 @@ class English(Processor) :
         return False 
 
     def parse_page_start(self) : 
-
-        # This should probably be a mmap(),
-        # we'll have to modify the "FileReaders" over time
-        return self.dictionary
+        return False
 
     def parse_page_stop(self, opaque) :
         d = opaque
@@ -531,6 +531,14 @@ class ChineseSimplified(Processor) :
 
     def get_dictionaries(self) :
         return ["cjklib.db", "cedict.db", "chinese.txt"]
+
+    def test_dictionaries(self, opaque) :
+        cjk, d = opaque 
+
+        for x in d.getFor(u'白鹭'.decode('utf-8')) :
+            mdebug(str(x))
+        for x in cjk.getReadingForCharacter(u'白','Pinyin') :
+            mdebug(str(x))
 
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []
