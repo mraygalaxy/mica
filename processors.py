@@ -7,7 +7,9 @@ from common import *
 from stardict import load_dictionary
 
 import string 
-import shelve
+import ZODB, ZODB.FileStorage
+from BTrees.OOBTree import OOBTree
+import transaction
 
 story_format = 2
 
@@ -259,6 +261,7 @@ class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
         self.files = dict(dict_file = "lazyworm-ec.dict.dz", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
+        self.engdb = False
 
         self.structs = {
                         "abbr." : True,
@@ -304,9 +307,18 @@ class English(Processor) :
         return self.files.values()
 
     def test_dictionaries(self, opaque) :
-        self.engdb = shelve.open(self.params["scratch"] + "eng.db", writeback = True)
         if not memorytest :
-            self.dictionary = load_dictionary(self.engdb, self.files)
+            if not self.engdb :
+                #self.engdb = shelve.open(self.params["scratch"] + "eng.db", writeback = True)
+                zstorage = ZODB.FileStorage.FileStorage(self.params["scratch"] + "eng.db")
+                zdb = ZODB.DB(zstorage)
+                zconnection = zdb.open()
+                db = zconnection.root() 
+                if "root" not in db :
+                    db["root"] = OOBTree()
+                self.engdb = db["root"]
+                self.dictionary = load_dictionary(self.engdb, self.files)
+                transaction.commit()
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
