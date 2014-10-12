@@ -4,6 +4,7 @@ import struct
 import types
 import gzip
 import sys
+from BTrees.OOBTree import OOBTree
 
 class IfoFileException(Exception):
     """Exception while parsing the .ifo file.
@@ -38,7 +39,8 @@ class IfoFileReader(object):
         """
         self.db = db
         if "_ifo" not in self.db :
-            self.db["_ifo"] = dict()
+            self.db["_ifo"] = OOBTree()
+
 
             with open(filename, "r") as ifo_file:
                 self.db["_ifo"]["dict_title"] = ifo_file.readline() # dictionary title
@@ -107,7 +109,7 @@ class IdxFileReader(object):
                     self._content = index_file.read()
             self._index = 0
             self._index_offset_bits = index_offset_bits
-            self.db["_word_idx"] = dict()
+            self.db["_word_idx"] = OOBTree()
             self.db["_index_idx"] = list()
             for word_str, word_data_offset, word_data_size, index in self:
                 self.db["_index_idx"].append((word_str, word_data_offset, word_data_size))
