@@ -207,21 +207,21 @@ class DictFileReader(object):
         self._compressed = compressed
         self._offset = 0
         if "_dict_file" not in self.db :
-            self.db["_dict_file"] = list()
+            self.db["_dict_file"] = OOBTree()
             if self._compressed:
                 with gzip.open(filename, "rb") as dict_file:
                     while True :
                         char = dict_file.read(1)
                         if char == '' :
                             break
-                        self.db["_dict_file"].append(char)
+                        self.db["_dict_file"][len(self.db["_dict_file"])] = char
             else:
                 with open(filename, "rb") as dict_file:
                     while True :
                         char = dict_file.read(1)
                         if char == '' :
                             break
-                        self.db["_dict_file"].append(char)
+                        self.db["_dict_file"][len(self.db["_dict_file"])] = char
 
     def get_dict_by_word(self, word):
         """Get the word's dictionary data by it's name.
