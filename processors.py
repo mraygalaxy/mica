@@ -5,10 +5,9 @@
 
 from common import *
 from stardict import load_dictionary
+from sqlalchemy import *
 
 import string 
-import ZODB, ZODB.FileStorage
-from BTrees.OOBTree import OOBTree
 import transaction
 
 story_format = 2
@@ -260,7 +259,7 @@ def get_cjk_handle(params) :
 class English(Processor) :
     def __init__(self, mica, params) :
         super(English, self).__init__(mica, params)
-        self.files = dict(dict_file = "lazyworm-ec.dict.dz", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
+        self.files = dict(dict_file = "lazyworm-ec.dict", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
         self.engdb = False
 
         self.structs = {
@@ -310,6 +309,18 @@ class English(Processor) :
         if not memorytest :
             if not self.engdb :
                 #self.engdb = shelve.open(self.params["scratch"] + "eng.db", writeback = True)
+
+                self.engdb = {}
+                db = create_engine('sqlite:///' + cwd + 'eng.db')
+                db.echo = False
+                metadata = MetaData(db)
+
+                self.engdb["_word_idx"] = Table('wordlist', metadata,
+                    Column('word', String, primary_key=True),
+                    Column('idx', Integer),
+                    Column('password', String),
+                )
+                users.create(checkfirst=True)
                 zstorage = ZODB.FileStorage.FileStorage(self.params["scratch"] + "eng.db")
                 zdb = ZODB.DB(zstorage)
                 zconnection = zdb.open()
@@ -317,6 +328,7 @@ class English(Processor) :
                 if "root" not in db :
                     db["root"] = OOBTree()
                 self.engdb = db["root"]
+                #self.engdb = {} 
                 self.dictionary = load_dictionary(self.engdb, self.files)
                 transaction.commit()
 

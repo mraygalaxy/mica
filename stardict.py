@@ -1,10 +1,27 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import struct
+import os
 import types
 import gzip
 import sys
 from BTrees.OOBTree import OOBTree
+from common import *
+
+def get_end(fh, target, start) :
+    fh.seek(start, os.SEEK_SET)
+    while True :
+        b = fh.read(1)
+        if b == target :
+             return start
+        start += 1
+
+def get_entry(fh, start, stop) :
+    entry = []
+    fh.seek(start, os.SEEK_SET)
+    for idx in range(start, stop) :
+        entry.append(fh.read(1))
+    return entry
 
 class IfoFileException(Exception):
     """Exception while parsing the .ifo file.
@@ -100,30 +117,30 @@ class IdxFileReader(object):
         """
         self.db = db
         self._offset = 0
-        if "_word_idx" not in self.db or "_index_idx" not in self.db :
-            if compressed:
-                with gzip.open(filename, "rb") as index_file:
-                    self._content = index_file.read()
-            else:
-                with open(filename, "r") as index_file:
-                    self._content = index_file.read()
+        self._size = os.path.getsize(filename)
+        if compressed:
+            self.fh = gzip.open(filename, "rb")
+        else:
+            self.fh = open(filename, "rb")
+
+        if "_word_idx" not in self.db :
             self._index = 0
             self._index_offset_bits = index_offset_bits
             self.db["_word_idx"] = OOBTree()
-            self.db["_index_idx"] = list()
+            self.db["_index_idx"] = OOBTree()
             for word_str, word_data_offset, word_data_size, index in self:
-                self.db["_index_idx"].append((word_str, word_data_offset, word_data_size))
+                self.db["_index_idx"][self._index - 1] = (word_str, word_data_offset, word_data_size)
                 if word_str in self.db["_word_idx"]:
                     if isinstance(self.db["_word_idx"][word_str], types.ListType):
-                        self.db["_word_idx"][word_str].append(len(self.db["_index_idx"])-1)
+                        self.db["_word_idx"][word_str].append(self._index - 1)
                     else:
-                        self.db["_word_idx"][word_str] = [self.db["_word_idx"][word_str], len(self.db["_index_idx"])-1]
+                        self.db["_word_idx"][word_str] = [self.db["_word_idx"][word_str], self._index - 1]
                 else:
-                    self.db["_word_idx"][word_str] = len(self.db["_index_idx"])-1
+                    self.db["_word_idx"][word_str] = self._index - 1
 
-            del self._content
             del self._index_offset_bits
-            del self._index
+
+            mdebug("There were " + str(self._offset) + " total words.")
 
     def __iter__(self):
         """Define the iterator interface.
@@ -135,22 +152,22 @@ class IdxFileReader(object):
         """Define the iterator interface.
         
         """
-        if self._offset == len(self._content):
+        if self._offset == self._size:
             raise StopIteration
         word_data_offset = 0
         word_data_size = 0
-        end = self._content.find("\0", self._offset)
-        word_str = self._content[self._offset: end]
+        end = get_end(self.fh, "\0", self._offset)
+        word_str = b"".join(get_entry(self.fh, self._offset, end))
         self._offset = end+1
         if self._index_offset_bits == 64:
-            word_data_offset, = struct.unpack("!I", self._content[self._offset:self._offset+8])
+            word_data_offset, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+8)))
             self._offset += 8
         elif self._index_offset_bits == 32:
-            word_data_offset, = struct.unpack("!I", self._content[self._offset:self._offset+4])
+            word_data_offset, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
             self._offset += 4
         else:
             raise ValueError
-        word_data_size, = struct.unpack("!I", self._content[self._offset:self._offset+4])
+        word_data_size, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
         self._offset += 4
         self._index += 1
         return (word_str, word_data_offset, word_data_size, self._index)
@@ -164,8 +181,8 @@ class IdxFileReader(object):
         Return:
         A tuple in form of (word_str, word_data_offset, word_data_size)
         """
-        if number >= len(self.db["_index_idx"]):
-            raise IndexError("Index out of range! Acessing the {:d} index but totally {:d}".format(number, len(self.db["_index_idx"])))
+        if number >= self._index :
+            raise IndexError("Index out of range! Acessing the {:d} index but totally {:d}".format(number, self._index))
         return self.db["_index_idx"][number]
 
 
@@ -193,7 +210,7 @@ class DictFileReader(object):
     """Read the .dict file, store the data in memory for querying.
     """
     
-    def __init__(self, db, filename, dict_ifo, dict_index, compressed = False):
+    def __init__(self, filename, dict_ifo, dict_index, compressed = False):
         """Constructor.
         
         Arguments:
@@ -201,27 +218,15 @@ class DictFileReader(object):
         - `dict_ifo`: IfoFileReader object.
         - `dict_index`: IdxFileReader object.
         """
-        self.db = db
         self._dict_ifo = dict_ifo
         self._dict_index = dict_index
         self._compressed = compressed
         self._offset = 0
-        if "_dict_file" not in self.db :
-            self.db["_dict_file"] = OOBTree()
-            if self._compressed:
-                with gzip.open(filename, "rb") as dict_file:
-                    while True :
-                        char = dict_file.read(1)
-                        if char == '' :
-                            break
-                        self.db["_dict_file"][len(self.db["_dict_file"])] = char
-            else:
-                with open(filename, "rb") as dict_file:
-                    while True :
-                        char = dict_file.read(1)
-                        if char == '' :
-                            break
-                        self.db["_dict_file"][len(self.db["_dict_file"])] = char
+
+        if self._compressed:
+            self.fh = gzip.open(filename, "rb")
+        else:
+            self.fh = open(filename, "rb")
 
     def get_dict_by_word(self, word):
         """Get the word's dictionary data by it's name.
@@ -295,23 +300,18 @@ class DictFileReader(object):
                     result[sametypesequence[k]] = self._get_entry_field_size()
         return result
 
-    def end(self, target, start) :
-        while True :
-            if self.db["_dict_file"][start] == target :
-                 return start
-            start += 1
-
     def _get_entry_field_null_trail(self):
-        end = self.end("\0", self._offset)
-        result = "".join(self.db["_dict_file"][self._offset:end])
+        end = end(self.fh, "\0", self._offset)
+        entry = get_entry(self.fh, self._offset, end)
+        result = "".join(entry)
         self._offset = end+1
         return result
         
     def _get_entry_field_size(self, size = None):
         if size == None:
-            size = struct.unpack("!I", "".join(self.db["_dict_file"][self._offset:self._offset+4]))
+            size = struct.unpack("!I", "".join(get_entry(self.fh, self._offset, self._offset+4)))
             self._offset += 4
-        result = "".join(self.db["_dict_file"][self._offset:self._offset+size])
+        result = "".join(get_entry(self.fh, self._offset, self._offset+size))
         self._offset += size
         return result
         
@@ -319,7 +319,7 @@ def load_dictionary(db, files):
 
     ifo_reader = IfoFileReader(db, files["ifo_file"])
     idx_reader = IdxFileReader(db, files["idx_file"])
-    return DictFileReader(db, files["dict_file"], ifo_reader, idx_reader, True)
+    return DictFileReader(files["dict_file"], ifo_reader, idx_reader)
 
 def lookup(d, uni) :
     result = d.get_dict_by_word(uni)

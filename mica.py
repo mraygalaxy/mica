@@ -346,7 +346,10 @@ class MICA(object):
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
                                    
         except TypeError, e :
-            mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+            out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
+            for line in traceback.format_exc().splitlines() :
+                out += line + "\n"
+            mwarn(out)
         except couch_adapter.ResourceNotFound, e :
             mwarn("Account document @ " + self.acct('mica_admin') + " not found: " + str(e))
         except Exception, e :
@@ -784,6 +787,7 @@ class MICA(object):
             self.transmutex.release()
 
         opaque = processor.parse_page_start() 
+        processor.test_dictionaries(opaque)
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -2369,11 +2373,17 @@ class MICA(object):
                                     lgp.parse_page_stop(handle)
 
                     except TypeError, e :
-                        mwarn("Account documents don't exist yet. Probably they are being replicated." + str(e))
+                        out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
+                        for line in traceback.format_exc().splitlines() :
+                            out += line + "\n"
+                        mwarn(out)
                     except couch_adapter.ResourceNotFound, e :
                         mwarn("Account document @ MICA:filelisting not found: " + str(e))
                     except Exception, e :
-                        mwarn("Database not available yet: " + str(e))
+                        out = "Database not available yet: " + str(e)
+                        for line in traceback.format_exc().splitlines() :
+                            out += line + "\n"
+                        mwarn(out)
                 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 req.deeper = deeper
@@ -2680,6 +2690,7 @@ class MICA(object):
 
                     try :
                         opaque = gp.parse_page_start()
+                        gp.test_dictionaries(opaque)
                         tar = gp.get_first_translation(opaque, source.decode("utf-8"), False)
                         if tar :
                             for target in tar :
