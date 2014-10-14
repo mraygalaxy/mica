@@ -1,0 +1,42 @@
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="topview">
+    <div class='row-fluid'>
+        <div class='col-lg-12 nopadding'>
+            <div class='row-fluid'>
+                <div class='col-lg-10 nopadding'>
+                    <div class='row-fluid'>
+                        <!-- this '12' is not intuitive, but it
+                        indicates the start of a new fluid
+                        nesting level that also is subdivided by
+                        units of 12 -->
+                        <div class='col-lg-12 nopadding'>
+                            <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
+                                <div class='jumbotron' id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: large'>&#160;<t:slot name='performingtranslation'/></b></div>
+                                <div id='translationstatus'></div>
+                                <table>
+                                    <tr>
+                                        <td><button type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
+                                        <input id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
+                                        <td>&#160;&#160;&#160;</td>
+                                        <td><div class='btn-group' t:render="view"></div></td>
+                                        <td>&#160;&#160;&#160;</td>
+                                        <td><div id='pagenav'></div></td>
+                                    </tr>
+                                </table>
+                                <script>installreading();</script>
+                            </div><!-- affix reading header -->
+                        </div><!-- col-lg-12 header section -->
+                    </div><!-- row for header section -->
+                    <div id='pagecontent'></div>
+                </div><!-- outer md-10 all section --> 
+
+                <div class='col-lg-2 nopadding'>
+                    <div data-offset-top='55' data-offset-bottom='0' id='statsheader'>
+                        <h4><b><t:slot name='storyname'/></b></h4>
+                        <t:slot name="stats"/> 
+                    </div><!-- statsheader -->
+                </div><!-- col-lg-2 stats section -->
+            </div><!-- inner row-fluid -->
+        </div><!-- col-lg-12 for everything section -->
+    </div><!-- row for everything -->
+    <script><t:slot name='installpages'/></script>
+</html>

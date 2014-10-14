@@ -11,9 +11,15 @@ import socket
 import inspect
 import sys
 import threading
+import gettext
+import locale
+import os
+import re
 from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
+
+cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
@@ -26,6 +32,15 @@ if sys.getdefaultencoding() != "utf-8" :
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
 
+gnutextkwargs = {}
+gettext.install("mica", **gnutextkwargs)
+
+if sys.version_info[0] < 3:
+    # In Python 2, ensure that the _() that gets installed into built-ins
+    # always returns unicodes.  This matches the default behavior under Python
+    # 3, although that keyword argument is not present in the Python 3 API.
+    gnutextkwargs['unicode'] = True
+    
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
@@ -37,6 +52,30 @@ except ImportError, e :
 micalogger = False
 txnlogger = False
 duplicate_logger = False
+
+lang = {
+         u"zh-CHS" : _(u"Chinese Simplified"),
+         u"en" : _(u"English"),
+         u"py" : _(U"Pinyin"),
+       }
+
+samples = {
+         u"zh-CHS" : [u"开源"],
+         u"en" : ["test"],
+         u"py" : _(U"pīnyīn"),
+       }
+
+romanization = {
+        u"zh-CHS" : True,
+        u"en" : False,
+        u"py" : True,
+        }
+
+processor_map = {
+        u"zh-CHS" : u"ChineseSimplified", 
+        u"en" : u"English", 
+        u"py": False,
+}
 
 def minfo(msg) :
    if micalogger :
@@ -71,6 +110,17 @@ def merr(msg) :
        print msg
    if duplicate_logger and String :
       duplicate_logger.err(String(msg))
+
+mobile = True 
+try :
+    from jnius import autoclass
+    String = autoclass('java.lang.String')
+except ImportError, e :
+    try :
+        from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
+    except ImportError, e :
+        mdebug("pyjnius and pyobjus not available. Probably on a server.")
+        mobile = False
 
 def mica_init_logging(logfile, duplicate = False) :
     global micalogger
@@ -212,3 +262,12 @@ class MICASlaveClient(Server):
         self.username = None
         self.print_message = print_message
         self.last_refresh = datetime.now()
+
+def init_localization():
+    try :
+        locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
+        # take first two characters of country code
+        return locale.getlocale()[0][0:2]
+    except Exception, e :
+        mdebug("Could not find locale. Defaulting to english.")
+        return "en"

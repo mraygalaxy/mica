@@ -1,0 +1,8 @@
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="accountslots">
+<li><a href='/account'><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
+<li><a onclick='switchlist()' href='#'><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
+<li><a href='/disconnect'><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
+<li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
+<li><a href='/help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
+<li><a href='/privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
+</html>

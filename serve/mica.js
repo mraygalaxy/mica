@@ -1,6 +1,4 @@
   debugger;
-var bootdest = "";
-//var bootdest = window.location.href.match(/[^/]*\/([^/]*)/g)[2];
 var last_data = '';
 var first_time = true;
 var debug = false;
@@ -154,7 +152,7 @@ function trans_poll_finish(data, uuid, unused) {
 
 function trans_poll(uuid) {
    change('',
-       bootdest + '/home?tstatus=1&uuid=' + uuid, 
+       '/home?tstatus=1&uuid=' + uuid, 
        '#tstatusresult',
        unavailable, 
        false, 
@@ -184,7 +182,7 @@ function trans_start(uuid) {
 function trans(uuid) {
    trans_start(uuid);
    change('#translationstatus', 
-       bootdest + '/home?translate=1&uuid=' + uuid, 
+       '/home?translate=1&uuid=' + uuid, 
        '#translationstatusresult', 
        unavailable, 
        true, 
@@ -240,7 +238,7 @@ function poll(s, finisher, monid) {
 }
 
 function check_nodraw() {
-   go('#pendingtest', bootdest + '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+   go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
 }
 function pending_callback(data) {
         if (!debug && last_data == '')
@@ -249,7 +247,7 @@ function pending_callback(data) {
             if(debug)
                 $('#pendingcount2').html('result: unchanged ' + last_data);
             if(last_data == 'No Pending Objects') {
-				go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+				go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
                 poll(30, check_nodraw, 'pendingcount');
             } else {
                 poll(3, check_nodraw, 'pendingcount');
@@ -265,7 +263,7 @@ function pending_callback(data) {
                 first_time = true;
                 poll(1, check_pending, 'pendingcount');
             } else if (data == 'No Pending Objects') {
-		        go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+		        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
                 last_data = data;
                 poll(30, check_pending, 'pendingcount');
 		    } else {
@@ -285,16 +283,16 @@ function pending_callback(data) {
 function check_pending() {
     if(first_time) {
         first_time = false;
-        go('#pendingtest', bootdest + '/provision?force=1&pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+        go('#pendingtest', '/provision?force=1&pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
     } else {
-        go('#pendingtest', bootdest + '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
-        go('#allstate', bootdest + '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
+        go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
+        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
     }
 }
 function checkMonitor() {
 	var error = "CloudBench is unreachable, will try again later...";
 	$('#count').html("Polling...");
-	go('#monitordata', bootdest + '/monitordata', '', error, false, resetMonitor, false);
+	go('#monitordata', '/monitordata', '', error, false, resetMonitor, false);
 }    
 
 function make_child(node) {
@@ -360,8 +358,8 @@ function make_child(node) {
         }
   }
   function toggle(name, check) {
-           toggle_specific('trans', name, check);
-           toggle_specific('blank', name, 0);
+       toggle_specific('trans', name, check);
+       toggle_specific('blank', name, 0);
   }
 
       
@@ -376,7 +374,7 @@ function make_child(node) {
   	  			 };
       var out = "";
       if (chars.length == 0) {
-          out += "You have not selected anything for instant translation!";
+          out += "You have not selected any words for instant translation!";
       } else if (operation == "split" && chars.length > 1) {
           out += "You cannot split more than one word at a time!";
       } else if (operation == "split" && chars[0].split('').length < 2) {
@@ -495,7 +493,7 @@ function make_child(node) {
       }
       
       out += "<h4>Are you sure you want to perform these edits?</h4>\n";
-      out += "<form method='post' action='" + bootdest + "/edit'>"
+      out += "<form method='post' action='/edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -556,32 +554,44 @@ function make_child(node) {
       $('#regroupModal').modal('show');
   }
 
-  function process_instant() {
+  function process_instant(with_spaces) {
+
       var chars = [];
       var allchars = "";
       $("span.label > a").each(function(index) {
-        var split = $(this).text().split('');
-        for(var x = 0; x < split.length; x++) {
-            chars.push(split[x]);
-        }
+	      if (with_spaces) {
+		chars.push($(this).text());
+	      } else {
+		var split = $(this).text().split('');
+
+		for(var x = 0; x < split.length; x++) {
+		    chars.push(split[x]);
+		}
+	      }
       });
 
       for(var x = 0; x < chars.length; x++) {
           allchars += chars[x];
+	  if (with_spaces) {
+	      if (x != (chars.length - 1))
+                  allchars += " ";
+	  }
       }
         
       if (allchars == "") {
-          alert("You have not selected anything!");
+          alert("You have not selected any words for instant translation!");
       } else {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
-       go('#instantdestination', 
-          bootdest + '/read?human=1&instant=' + allchars, 
+       change('#instantdestination', 
+          '/read?human=1&instant=' + allchars, 
           '#instantresult', 
           unavailable, 
           true, 
           offinstantspin,
-          true);
+          true,
+          $("html").scrollTop(),
+          false);
        }
   }
 
@@ -665,7 +675,7 @@ function multipoprefresh(data, trans_id, spy) {
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           change('#pop' + trans_id, 
-          bootdest + '/home?view=1&uuid=' + uuid + '&multiple_select=1'
+          '/home?view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
@@ -678,6 +688,7 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
 
 var view_images = false;
 var show_both = false;
+var current_meaning_mode = false;
 var current_view_mode = "text";
 var current_page = -1;
 var current_mode = "read";
@@ -698,7 +709,7 @@ function restore_pageimg_width() {
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
-   var url = bootdest + '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
+   var url = '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
    if (show_both) {
@@ -754,19 +765,21 @@ function view(mode, uuid, page) {
    current_uuid = uuid;
 }
 
-function install_pages(mode, pages, uuid, start, view_mode, reload) {
+function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
         current_pages = pages;
         current_view_mode = view_mode;
-		if (view_mode == "text") {
-           view_images = false;
-	       show_both = false;
-		} else if(view_mode == "images") {
-           view_images = true;
-	       show_both = false;
-		} else if(view_mode == "both") {
-           view_images = false;
-	       show_both = true;
-		}
+        current_meaning_mode = meaning_mode;
+        if (view_mode == "text") {
+             view_images = false;
+	     show_both = false;
+        } else if(view_mode == "images") {
+             view_images = true;
+	     show_both = false;
+        } else if(view_mode == "both") {
+             view_images = false;
+	     show_both = true;
+        }
+
         $('#pagenav').bootpag({
             total: pages,
                    page: start + 1,
@@ -790,7 +803,7 @@ function memory_finish(data, opaque1, opaque2) {
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
    change('#memory' + id, 
-          bootdest + '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+          '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -808,6 +821,35 @@ function forget(id, uuid, nb_unit, page) {
     memory(id, uuid, nb_unit, 0, page);
 }
 
+function reveal_all(hide) {
+    //var curr = $("html").scrollTop(),
+    var changed = {};
+    $("div.reveal").each(
+        function() { 
+             var id = $(this).attr('revealid');
+             if (changed[id] == undefined) {
+                 changed[id] = true;
+                 reveal(id, hide);
+             }
+        }
+    );
+    //$("html").scrollTop(curr);
+}
+function reveal(id, hide) {
+   var rele = document.getElementsByClassName("reveal" + id);
+
+   if (!hide) {
+       if(rele[0].style.display != 'none') {
+           toggle_specific('reveal', id, 0);
+           toggle_specific('definition', id, 0);
+       }
+   } else {
+       if(rele[0].style.display == 'none') {
+           toggle_specific('reveal', id, 0);
+           toggle_specific('definition', id, 0);
+       }
+   }
+}
 
 $.browser.device = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
 
@@ -828,13 +870,14 @@ function togglecanvas() {
       }
 }
 
-function offinstantspin(data) {
+function offinstantspin(data, curr, unused) {
     $('#instantspin').attr('style', 'display: none');
     $('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
 //    $(document).unbind("mouseleave");
 //    $(document).unbind("copy");
 //    install_highlight();
+    $("html").scrollTop(curr);
 }
 
 function install_highlight() {
@@ -861,13 +904,15 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
-           go('#instantdestination', 
-              bootdest + '/read?human=1&instant=' + st, 
+           change('#instantdestination', 
+              '/read?human=1&instant=' + st, 
               '#instantresult', 
               unavailable, 
               true, 
               offinstantspin,
-              true);
+              true,
+              $("html").scrollTop(),
+              false);
       }
     }
 
@@ -911,7 +956,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#memolist', 
-              bootdest + '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+              '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
               unavailable, 
               true, 
@@ -921,7 +966,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#editslist', 
-                  bootdest + '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+                  '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
                   unavailable, 
                   true, 
@@ -931,7 +976,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
            go('#history', 
-                  bootdest + '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+                  '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
                   unavailable, 
                   true, 
@@ -948,7 +993,7 @@ function installreading() {
         }
 
         page -= 1;
-        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true);
+        install_pages(current_mode, current_pages, current_uuid, page, current_view_mode, true, current_meaning_mode);
     });
     $("#gotoval").keyup(function(event){
             if(event.keyCode == 13){ $("#goto").click(); }
@@ -958,12 +1003,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	   go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', bootdest + '/home?switchmode=images', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=images', '', unavailable, false, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -976,12 +1021,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', bootdest + '/home?switchmode=both', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=both', '', unavailable, false, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -990,7 +1035,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go('#pagetext', bootdest + '/home?switchmode=text', '', unavailable, false, false, false);
+      go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1003,13 +1048,27 @@ function installreading() {
        view_images = false;
        view(current_mode, current_uuid, current_page);
     });
+
+    $('#meaningButton').click(function () {
+       if($('#meaningButton').attr('class') == 'active btn btn-default') {
+           $('#meaningButton').attr('class', 'btn btn-default');
+           current_meaning_mode = false;
+           go('#pagetext', '/read?meaningmode=false', '', unavailable, false, false, false);
+           reveal_all(true);
+       } else {
+           $('#meaningButton').attr('class', 'active btn btn-default');
+           current_meaning_mode = true;
+           go('#pagetext', '/read?meaningmode=true', '', unavailable, false, false, false);
+           reveal_all(false);
+       }
+    });
 }
 
 function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
     go('#sidebarcontents', 
-    bootdest + '/storylist',
+    '/storylist',
     '#storylistresult', 
     unavailable, 
     true, 
@@ -1019,7 +1078,7 @@ function loadstories(unused) {
 
 function dropstory(uuid) {
     go('#sidebarcontents', 
-    bootdest + '/home?forget=1&uuid=' + uuid,
+    '/home?forget=1&uuid=' + uuid,
     '', 
     unavailable, 
     false, 
@@ -1029,7 +1088,7 @@ function dropstory(uuid) {
 
 function trashstory(uuid, name) {
     go('#sidebarcontents', 
-    bootdest + '/home?delete=1&uuid=' + uuid + "&name=" + name,
+    '/home?delete=1&uuid=' + uuid + "&name=" + name,
     '', 
     unavailable, 
     false, 
@@ -1039,7 +1098,7 @@ function trashstory(uuid, name) {
 
 function reviewstory(uuid, which) {
     go('#sidebarcontents', 
-    bootdest + '/home?reviewed=' + which + '&uuid=' + uuid,
+    '/home?reviewed=' + which + '&uuid=' + uuid,
     '', 
     unavailable, 
     false, 
@@ -1049,7 +1108,7 @@ function reviewstory(uuid, which) {
 
 function finishstory(uuid, which) {
     go('#sidebarcontents', 
-    bootdest + '/home?finished=' + which + '&uuid=' + uuid,
+    '/home?finished=' + which + '&uuid=' + uuid,
     '', 
     unavailable, 
     false, 

@@ -27,3 +27,4 @@ sessions
 resync.py
 databases.tar.bz2
 mica_session
+res/*.bak
