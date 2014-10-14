@@ -628,11 +628,20 @@ def run_template(req, which, content = False) :
     except Exception, e :
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
 
-    d = flattenString(None, obj)
+    try :
+        d = flattenString(None, obj)
+    except Exception, e :
+        merr("Flatten failed: " + str(e) + " \n" + str(content))
 
+    mdebug("We want to yield a template result of: " + str(d))
     d.addErrback(mdebug)
     req.flat = yield d 
+    mdebug("Yield complete.")
 
 def load_template(req, which, content = False) :
     run_template(req, which, content)
+    try :
+        exists = getattr(req, "flat") 
+    except Exception, e :
+        merr("Running the template failed. Did you see an previous error? " + str(e) + " \n" + str(content))
     return req.flat

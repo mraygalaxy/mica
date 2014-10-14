@@ -25,6 +25,8 @@ if not mobile :
         import mica_ictclas
     except ImportError, e :
         mdebug("Could not import ICTCLAS library. Full translation will not work.")
+    except SystemError, e :
+        mdebug("Could not import ICTCLAS library. Full translation will not work.")
 
 class MyListener(PoolListener):
     def connect(self, dbapi_con, con_record):
