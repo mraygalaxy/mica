@@ -22,10 +22,11 @@ i.execute({'name': 'John', 'age': 42},
           {'name': 'Susan', 'age': 57},
           {'name': 'Carl', 'age': 33})
 
-s = users.select()
+s = users.select().where(users.c.name == "Johns")
 rs = s.execute()
 
 row = rs.fetchone()
+print str(row)
 print 'Id:', row[0]
 print 'Name:', row['name']
 print 'Age:', row.age

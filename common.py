@@ -19,9 +19,6 @@ from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
 
-#memorytest = True 
-memorytest = False
-
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 
 DEBUG = logging.DEBUG

@@ -6,7 +6,9 @@ import types
 import gzip
 import sys
 from BTrees.OOBTree import OOBTree
+from sqlalchemy import *
 from common import *
+from time import time
 
 def get_end(fh, target, start) :
     fh.seek(start, os.SEEK_SET)
@@ -56,7 +58,7 @@ class IfoFileReader(object):
         """
         self.db = db
         if "_ifo" not in self.db :
-            self.db["_ifo"] = OOBTree()
+            self.db["_ifo"] = dict()
 
 
             with open(filename, "r") as ifo_file:
@@ -123,21 +125,45 @@ class IdxFileReader(object):
         else:
             self.fh = open(filename, "rb")
 
-        if "_word_idx" not in self.db :
+        s = self.db["_word_idx"].select()
+        rs = s.execute()
+        result = rs.fetchone()
+
+        if result is None :
             self._index = 0
             self._index_offset_bits = index_offset_bits
-            self.db["_word_idx"] = OOBTree()
-            self.db["_index_idx"] = OOBTree()
+            #self.db["_word_idx"] = OOBTree()
+            #self.db["_index_idx"] = OOBTree()
+            trans = self.db["conn"].begin()
             for word_str, word_data_offset, word_data_size, index in self:
-                self.db["_index_idx"][self._index - 1] = (word_str, word_data_offset, word_data_size)
-                if word_str in self.db["_word_idx"]:
-                    if isinstance(self.db["_word_idx"][word_str], types.ListType):
-                        self.db["_word_idx"][word_str].append(self._index - 1)
-                    else:
-                        self.db["_word_idx"][word_str] = [self.db["_word_idx"][word_str], self._index - 1]
-                else:
-                    self.db["_word_idx"][word_str] = self._index - 1
+                #self.db["_index_idx"][self._index - 1] = (word_str, word_data_offset, word_data_size)
 
+                i = self.db["_index_idx"].insert().values(idx = self._index - 1,
+                          word_str = word_str,
+                          word_data_offset = word_data_offset,
+                          word_data_size = word_data_size)
+
+                self.db["conn"].execute(i)
+                #if word_str not in self.db["_word_idx"]:
+                #    self.db["_word_idx"][word_str] = []
+                #self.db["_word_idx"][word_str].append(self._index - 1)
+                s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str)
+                rs = s.execute()
+                result = rs.fetchone()
+                t = time()
+                if result is None :
+                    i = self.db["_word_idx"].insert().values(word_str = word_str, idx = str([]))
+                    self.db["conn"].execute(i)
+                    rs = s.execute()
+                    result = rs.fetchone()
+
+                newlist = eval(result[1])
+                newlist.append(self._index - 1)
+                j = self.db["_word_idx"].update().values(idx = str(newlist)).where(self.db["_word_idx"].c.word_str == word_str)
+
+                self.db["conn"].execute(j)
+
+            trans.commit()
             del self._index_offset_bits
 
             mdebug("There were " + str(self._offset) + " total words.")
@@ -183,8 +209,12 @@ class IdxFileReader(object):
         """
         if number >= self._index :
             raise IndexError("Index out of range! Acessing the {:d} index but totally {:d}".format(number, self._index))
-        return self.db["_index_idx"][number]
 
+        s = self.db["_index_idx"].select().where(self.db["_index_idx"].c.idx == number)
+        rs = s.execute()
+        result = rs.fetchone()
+        mdebug("Result: " + str(result))
+        return [result[1], result[2], result[3]]
 
     def get_index_by_word(self, word_str):
         """Get index infomation of a specified word entry.
@@ -195,15 +225,20 @@ class IdxFileReader(object):
         Index infomation corresponding to the specified word if exists, otherwise False.
         The index infomation returned is a list of tuples, in form of [(word_data_offset, word_data_size) ...]
         """
-        if word_str not in self.db["_word_idx"]:
+        s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str)
+        rs = s.execute()
+        result = rs.fetchone()
+        mdebug("Result for " + word_str + ": " + str(result))
+        if result is None :
             return False
-        number =  self.db["_word_idx"][word_str]
+        wlist = eval(result[1])
         index = list()
-        if isinstance(number, types.ListType):
-            for n in number:
-                index.append(self.db["_index_idx"][n][1:])
-        else:
-            index.append(self.db["_index_idx"][number][1:])
+        for n in wlist :
+            s = self.db["_index_idx"].select().where(self.db["_index_idx"].c.idx == n)
+            rs = s.execute()
+            result = rs.fetchone()
+            mdebug("Result index for " + word_str + ": " + str(result))
+            index.append([result[2], result[3]])
         return index
 
 class DictFileReader(object):
