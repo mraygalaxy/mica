@@ -254,6 +254,9 @@ class IdxFileReader(object):
             rs = s.execute()
             result = rs.fetchone()
             mdebug("Result index for " + word_str + ": " + str(result))
+            if result is None :
+                mwarn("Uh Oh: This isn't supposed to happen, is it? English lookup " + word_str + " returns no index at number " + str(n)) 
+                return False
             index.append([result[2], result[3]])
         return index
 
