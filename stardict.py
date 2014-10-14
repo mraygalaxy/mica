@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import struct
 import os
 import types
@@ -9,6 +9,23 @@ from BTrees.OOBTree import OOBTree
 from sqlalchemy import *
 from common import *
 from time import time
+
+# This is a re-write of the stardict dictionary parser
+# so that instead of loading all the dictionaries into
+# memory we only load them from files when we need them.
+# This makes the dictionaries have no footprint inside
+# a mobile application.
+
+# The IDX files, however had to be ported to a Btree-style
+# structure because they cannot be indexed directly,
+# so we were forced to switch over to sqlite.
+
+# This makes the original stardicts not so portable,
+# but the conversion is only a one-time operation,
+# so it's not a big deal. (It also balloons the original
+# dictionary files to many megabytes, but that's the
+# price of saving the extra RAM while getting the
+# same performance).
 
 def get_end(fh, target, start) :
     fh.seek(start, os.SEEK_SET)
@@ -355,36 +372,3 @@ def load_dictionary(db, files):
     ifo_reader = IfoFileReader(db, files["ifo_file"])
     idx_reader = IdxFileReader(db, files["idx_file"])
     return DictFileReader(files["dict_file"], ifo_reader, idx_reader)
-
-def lookup(d, uni) :
-    result = d.get_dict_by_word(uni)
-
-    if result and len(result) > 0 :
-        #print str(result)
-        for trans in result :
-            if 'm' in trans :
-                print str(trans['m'])
-            else :
-                print "No 'm' index in translation: " + str(trans)
-        '''
-        '''
-    else :
-        print ["No translation available."]
-
-if __name__ == "__main__":
-    #files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
-    #files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
-
-    files = dict(dict_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.dict.dz", idx_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.idx", ifo_file = "stardict-lazyworm-ec-2.4.2/lazyworm-ec.ifo")
-
-    if len(sys.argv) < 2 :
-        print "Need english."
-        exit(1)
-
-    d = load_dictionary(files)
-
-    words = sys.argv[1].split(" ")
-    for word in words :
-        print "Translating: " + word + "\n=============\n"
-        uni = word.decode("utf-8")
-        lookup(d, uni)
