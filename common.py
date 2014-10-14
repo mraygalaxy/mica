@@ -20,6 +20,7 @@ from time import time, strftime, strptime, localtime
 from threading import Lock
 
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+sys.path = [cwd] + sys.path
 
 DEBUG = logging.DEBUG
 INFO = logging.INFO
