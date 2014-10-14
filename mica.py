@@ -365,7 +365,7 @@ class MICA(object):
         vt.start()
 
 
-    def make_account(self, req, username, password, mica_roles, admin = False, dbname = False, language = "en") :
+    def make_account(self, req, username, password, mica_roles, email, admin = False, dbname = False, language = "en") :
         if not dbname :
             new_uuid = str(uuid4.uuid4())
             dbname = "mica_" + new_uuid
@@ -378,7 +378,8 @@ class MICA(object):
                            "type": "user",
                            "mica_database" : dbname,
                            "language" : language,
-                           "date" : timest()
+                           "date" : timest(),
+                           "email" : email,
                           }
             self.userdb["org.couchdb.user:" + username] = user_doc 
         else :
@@ -409,7 +410,8 @@ class MICA(object):
                                            'app_chars_per_line' : 70,
                                            'web_chars_per_line' : 70,
                                            'default_app_zoom' : 1.2,
-                                           'default_web_zoom' : 1.0 } 
+                                           'default_web_zoom' : 1.0,
+                                           'email' : email } 
 
         self.check_all_views(req)
 
@@ -3177,7 +3179,8 @@ class MICA(object):
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
                     admin = req.http.params.get("isadmin", 'off')
-                    language = "en" # make this dynamic later with a real signup process
+                    email = req.http.params.get("email")
+                    language = req.http.params.get("language")
 
                     if newusername == "mica_admin" :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
@@ -3195,7 +3198,7 @@ class MICA(object):
                     if admin == 'on' :
                         roles.append('admin')
 
-                    self.make_account(req, newusername, newpassword, roles, language = language)
+                    self.make_account(req, newusername, newpassword, roles, email, language = language)
 
                     out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
                 elif req.http.params.get("changelanguage") :
@@ -3206,6 +3209,18 @@ class MICA(object):
                     req.session.save()
                     self.install_language(language)
                     out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
+                elif req.http.params.get("changeemail") :
+                    email = req.http.params.get("email")
+                    try :
+                        email_user = self.userdb["org.couchdb.user:" + username]
+                        email_user['email'] = email 
+                        self.userdb["org.couchdb.user:" + username] = email_user
+                    except Exception, e :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
+                    user["email"] = email 
+                    req.db[self.acct(username)] = user
+                    req.session.save()
+                    out += self.heromsg + "\n<h4>" + _("Success! Email changed") + ".</h4></div>"
                 elif req.http.params.get("setappchars") :
                     chars_per_line = int(req.http.params.get("setappchars"))
                     if chars_per_line > 1000 or chars_per_line < 5 :
@@ -3243,15 +3258,18 @@ class MICA(object):
                     req.session.save()
                     out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
 
+                out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
+
                 out += "<p/><h4><b>" + _("Change Password?") + "</b></h4>"
                 if not mobile :
                     out += load_template(req, PasswordElement)
-                    out += """
-                        <table>
-                        <form action='/account' method='post' enctype='multipart/form-data'>
-                        """
                 else :
                     out += _("Please change your password on the website. Will support mobile in a future version.")
+
+                out += """
+                    <table>
+                    <form action='/account' method='post' enctype='multipart/form-data'>
+                    """
 
                 client_id = _("Need your client ID")
                 client_secret = _("Need your client secret")
@@ -3306,8 +3324,18 @@ class MICA(object):
                         out += "<table>"
                         for result in self.userdb.view('accounts/all') :
                             tmp_doc = result["key"]
-                            out += "<tr><td>" + tmp_doc["name"] + "</td></tr>"
+                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;" + (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td></tr>"
                         out += "</table>"
+
+                if not mobile :
+                    out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
+                    out += """
+                        <form action='/account' method='post' enctype='multipart/form-data'>
+                    """
+                    out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
+                    out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
+                else :
+                    out += _("Please change your email address on the website. Will support mobile in a future version.")
 
                 out += "<h4><b>" + _("Language") + "</b>?</h4>"
                 out += """

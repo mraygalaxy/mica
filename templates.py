@@ -443,6 +443,19 @@ class HeadElement(Element):
         return tag
 
     @renderer
+    def user_languages(self, request, tag) :
+        softlangs = []
+        for l, readable in lang.iteritems() :
+            locale = l.split("-")[0]
+            if locale not in softlangs :
+                softlangs.append((locale, readable))
+
+        for l, readable in softlangs :
+            option = tags.option(value=l)
+            tag(option(_(readable)))
+        return tag
+
+    @renderer
     def headnavparent(self, request, tag) :
         if not self.req.session.value['connected'] :
             return tag("")
@@ -565,6 +578,8 @@ class HeadElement(Element):
                      micajs = self.req.mpath + "/mica.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      originallang = _("Original Language"),
+                     email = _("Email Address"),
+                     userlang = _("Preferred Language"),
                      yourlang = _("Your Language"),
                      removespaces = _("Remove Spaces?"),
                      mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
