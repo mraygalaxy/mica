@@ -411,6 +411,7 @@ class MICA(object):
                                            'web_chars_per_line' : 70,
                                            'default_app_zoom' : 1.2,
                                            'default_web_zoom' : 1.0,
+                                           "language" : language,
                                            'email' : email } 
 
         self.check_all_views(req)

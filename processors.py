@@ -9,7 +9,6 @@ from sqlalchemy import *
 from sqlalchemy.interfaces import PoolListener
 
 import string 
-import transaction
 import copy
 
 story_format = 2

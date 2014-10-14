@@ -5,7 +5,6 @@ import os
 import types
 import gzip
 import sys
-from BTrees.OOBTree import OOBTree
 from sqlalchemy import *
 from common import *
 from time import time
