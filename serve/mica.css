@@ -48,6 +48,29 @@ a.trans {
 
 div.trans {
     font-size: x-small;
+    cursor: pointer;
+}
+
+div.transroman {
+    font-size: medium;
+    cursor: pointer;
+}
+
+div.romanlightgrey {
+    background: lightgrey;
+}
+
+div.romanblue {
+    background: blue;
+}
+div.romangreen {
+    background: green;
+}
+div.romanred {
+    background: red;
+}
+div.romanblack {
+    background: black;
 }
 
 .page-wrap {
@@ -64,7 +87,7 @@ div.trans {
   background: white;
   overflow-y: auto;
   transition: width 0.3s ease;
-  }
+}
 }
 
 .content {
@@ -110,8 +133,8 @@ div.trans {
   height: 10px;
   margin: 5px auto;
 }
-.bluesquare {
-  background: blue;
+.lightgraysquare {
+  background: lightgray;
   width: 10px;
   height: 10px;
   margin: 5px auto;
@@ -144,3 +167,11 @@ td.splitright { border-right: solid blue  }
 .navbar-nav .open .dropdown-menu > li > a;
 
 }
+
+div.reveal {
+   background: lightgrey;
+}
+a.reveal {
+   cursor: pointer;
+}
+
