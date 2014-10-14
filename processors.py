@@ -6,9 +6,11 @@
 from common import *
 from stardict import load_dictionary
 from sqlalchemy import *
+from sqlalchemy.interfaces import PoolListener
 
 import string 
 import transaction
+import copy
 
 story_format = 2
 
@@ -21,10 +23,15 @@ pinyinToneMarks = {
 
 if not mobile :
     try :
-        if not memorytest :
-            import mica_ictclas
+        import mica_ictclas
     except ImportError, e :
         mdebug("Could not import ICTCLAS library. Full translation will not work.")
+
+class MyListener(PoolListener):
+    def connect(self, dbapi_con, con_record):
+        dbapi_con.execute('pragma journal_mode=OFF')
+        dbapi_con.execute('PRAGMA synchronous=OFF')
+        #dbapi_con.execute('PRAGMA cache_size=100000')
 
 class Processor(object) :
     def __init__(self, mica, params) :
@@ -303,34 +310,37 @@ class English(Processor) :
                         }
 
     def get_dictionaries(self) :
-        return self.files.values()
+        flist = copy.deepcopy(self.files)
+        del flist["idx_file"]
+        flistvalues = flist.values()
+        flistvalues.append("eng.db")
+        return flistvalues
 
     def test_dictionaries(self, opaque) :
-        if not memorytest :
-            if not self.engdb :
-                #self.engdb = shelve.open(self.params["scratch"] + "eng.db", writeback = True)
+        if not self.engdb :
 
-                self.engdb = {}
-                db = create_engine('sqlite:///' + cwd + 'eng.db')
-                db.echo = False
-                metadata = MetaData(db)
+            self.engdb = {}
+            db = create_engine('sqlite:///' + self.params["scratch"] + 'eng.db', listeners= [MyListener()])
+            db.echo = False
+            metadata = MetaData(db)
+            self.engdb["conn"] = db.connect()
 
-                self.engdb["_word_idx"] = Table('wordlist', metadata,
-                    Column('word', String, primary_key=True),
-                    Column('idx', Integer),
-                    Column('password', String),
-                )
-                users.create(checkfirst=True)
-                zstorage = ZODB.FileStorage.FileStorage(self.params["scratch"] + "eng.db")
-                zdb = ZODB.DB(zstorage)
-                zconnection = zdb.open()
-                db = zconnection.root() 
-                if "root" not in db :
-                    db["root"] = OOBTree()
-                self.engdb = db["root"]
-                #self.engdb = {} 
-                self.dictionary = load_dictionary(self.engdb, self.files)
-                transaction.commit()
+            self.engdb["_index_idx"] = Table('_index_idx', metadata,
+                Column('idx', Integer, primary_key=True),
+                Column('word_str', String),
+                Column('word_data_offset', Integer),
+                Column('word_data_size', Integer),
+            )
+            self.engdb["_index_idx"].create(checkfirst=True)
+
+            self.engdb["_word_idx"] = Table('_word_idx', metadata,
+                Column('word_str', String, primary_key=True),
+                Column('idx', String),
+            )
+
+            self.engdb["_word_idx"].create(checkfirst=True)
+
+            self.dictionary = load_dictionary(self.engdb, self.files)
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
@@ -544,17 +554,8 @@ class ChineseSimplified(Processor) :
         self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_letters))
         self.punctuation.update(copy.deepcopy(self.punctuation_letters))
 
-        if not memorytest :
-            self.cd = {}
-            mdebug("Building tone file")
-            dpfh = open(params["scratch"] + "chinese.txt")
-            for line in dpfh.readlines() :
-                k, v = line.split('\t')
-                self.cd[k] = v
-            dpfh.close()
-
     def get_dictionaries(self) :
-        return ["cjklib.db", "cedict.db", "chinese.txt"]
+        return ["cjklib.db", "cedict.db", "tones.db"]
 
     def test_dictionaries(self, opaque) :
         cjk, d = opaque 
@@ -564,12 +565,46 @@ class ChineseSimplified(Processor) :
         for x in cjk.getReadingForCharacter(u'白','Pinyin') :
             mdebug(str(x))
 
+        self.tonedb = {}
+        db = create_engine('sqlite:///' + self.params["scratch"] + 'tones.db', listeners= [MyListener()])
+        db.echo = False
+        metadata = MetaData(db)
+        self.tonedb["conn"] = db.connect()
+
+        self.tonedb["tones"] = Table('tones', metadata,
+            Column('word', String, primary_key=True),
+            Column('tone', String),
+        )
+
+        self.tonedb["tones"].create(checkfirst=True)
+
+        s = self.tonedb["tones"].select()
+        rs = s.execute()
+        result = rs.fetchone()
+
+        if result is None :
+            trans = self.tonedb["conn"].begin()
+            mdebug("Building tone file")
+            dpfh = open(self.params["scratch"] + "chinese.txt")
+            for line in dpfh.readlines() :
+                k, v = line.split('\t')
+                i = self.tonedb["tones"].insert().values(word = k, tone = v)
+                self.tonedb["conn"].execute(i)
+            dpfh.close()
+            trans.commit()
+        mdebug("Tone test: " + str(self.convertPinyin(u'白')))
+
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []
         for char in chars:
             key = "%X" % ord(char)
             try:
-                result.append(self.cd[key].split(" ")[0].strip().lower())
+                s = self.tonedb["tones"].select().where(self.tonedb["tones"].c.word == key)
+                rs = s.execute()
+                kv = rs.fetchone()
+                mdebug("get_pinyin result: " + str(kv))
+                word, tone = kv[0], kv[1]
+                result.append(tone.split(" ")[0].strip().lower())
             except:
                 result.append(char)
 

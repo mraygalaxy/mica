@@ -73,7 +73,7 @@ import twisted
 
 from webob import Request, Response, exc
 
-if not memorytest and not mobile :
+if not mobile :
     try :
         from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
         from pdfminer.converter import PDFPageAggregator
