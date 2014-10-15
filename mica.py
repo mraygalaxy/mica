@@ -49,7 +49,6 @@ from processors import *
 from translator import *
 from templates import *
 import processors
-
 import couch_adapter
 
 mdebug("Initial imports complete")
