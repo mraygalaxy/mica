@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-from twisted.web.template import Element, renderer, XMLFile, flattenString, tags, XMLString
+from twisted.web.template import Element, renderer, XMLFile, tags, XMLString
+from twisted.web._flatten import _flattenTree
 from twisted.python.filepath import FilePath
 from twisted.internet import defer
+from cStringIO import StringIO
 from common import *
 import os
 import re
@@ -618,7 +620,6 @@ class HeadElement(Element):
                 tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
         return tag
 
-@defer.inlineCallbacks
 def run_template(req, which, content = False) :
     try :
         if content :
@@ -628,20 +629,17 @@ def run_template(req, which, content = False) :
     except Exception, e :
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
 
-    try :
-        d = flattenString(None, obj)
-    except Exception, e :
-        merr("Flatten failed: " + str(e) + " \n" + str(content))
+    io = StringIO()
 
-    mdebug("We want to yield a template result of: " + str(d))
-    d.addErrback(mdebug)
-    req.flat = yield d 
-    mdebug("Yield complete.")
-
-def load_template(req, which, content = False) :
-    run_template(req, which, content)
     try :
-        exists = getattr(req, "flat") 
-    except Exception, e :
-        merr("Running the template failed. Did you see an previous error? " + str(e) + " \n" + str(content))
-    return req.flat
+        state = _flattenTree(None, obj)
+        while True:
+            element = state.next()
+            if type(element) is str:
+                io.write(element)
+            else :
+                break
+    except StopIteration:
+        pass
+
+    return io.getvalue() 
