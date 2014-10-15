@@ -15,6 +15,7 @@
   <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
   <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
   <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
+  <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
   <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
   <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
   </head>
@@ -152,6 +153,15 @@
                     <div class='modal-content'>
                         <div style="font-size: large" class="modal-body">
 			<t:slot name="spinner"/>&#160;<t:slot name="signing"/>...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id='loadingModal'>
+                <div class='modal-dialog'>
+                    <div class='modal-content'>
+                        <div style="font-size: large" class="modal-body">
+			<t:slot name="spinner"/>&#160;<t:slot name="loading"/>...
                         </div>
                     </div>
                 </div>

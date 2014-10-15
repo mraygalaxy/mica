@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-10-15 16:15+0800\n"
+"POT-Creation-Date: 2014-10-15 16:47+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1501,6 +1501,7 @@ msgstr "Xīn de zhànghù"
 #: /home/mrhines/mica-android/mica/util/../templates.py:582
 #: /home/mrhines/mica-android/mica/util/../templates.py:604
 #: /home/mrhines/packages/mica-android/mica/util/../templates.py:622
+#: /home/mrhines/packages/mica-android/mica/util/../templates.py:623
 msgid "Admin"
 msgstr ""
 
@@ -1798,5 +1799,10 @@ msgid "Signing you in, Please wait"
 msgstr ""
 
 #: /home/mrhines/packages/mica-android/mica/util/../templates.py:614
+#: /home/mrhines/packages/mica-android/mica/util/../templates.py:615
 msgid "Compacting database, Please wait"
+msgstr ""
+
+#: /home/mrhines/packages/mica-android/mica/util/../templates.py:614
+msgid "Loading story, Please wait"
 msgstr ""
