@@ -632,7 +632,7 @@ class MICA(object):
             if req.session.value['connected'] and not pretend_disconnected :
                 req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
 
-            contents = load_template(req, HeadElement)
+            contents = run_template(req, HeadElement)
 
         if not nodecode :
             contents = contents.replace("BOOTBODY", body)
@@ -1079,7 +1079,7 @@ class MICA(object):
         history.sort( key=by_total, reverse = True )
         req.history = history
         req.onlineoffline = _("Breakdown") + ": " + _("Online") + ": " + str(online) + ", " + _("Offline") + ": " + str(offline)
-        return load_template(req, HistoryElement)
+        return run_template(req, HistoryElement)
 
     def edits(self, req, story, uuid, page, list_mode) :
         if list_mode :
@@ -1144,7 +1144,7 @@ class MICA(object):
         if list_mode :
             req.history = history
 
-        return load_template(req, EditElement)
+        return run_template(req, EditElement)
 
     def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
@@ -1175,7 +1175,7 @@ class MICA(object):
         req.gp = self.processors[story["source_language"]]
         req.story_name = story["name"]
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
-        output = load_template(req, ViewElement)
+        output = run_template(req, ViewElement)
 
         return output
 
@@ -2392,7 +2392,7 @@ class MICA(object):
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 req.deeper = deeper
                 req.mobile = mobile
-                return self.bootstrap(req, load_template(req, FrontPageElement))
+                return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             username = req.session.value['username']
 
@@ -3095,7 +3095,7 @@ class MICA(object):
                           """
 
                 try :
-                    finallist = load_template(req, StoryElement, storylist) + scripts
+                    finallist = run_template(req, StoryElement, storylist) + scripts
                 except Exception, e:
                     merr("Storylist fill failed: " + str(e))
 
@@ -3264,7 +3264,7 @@ class MICA(object):
 
                 out += "<p/><h4><b>" + _("Change Password?") + "</b></h4>"
                 if not mobile :
-                    out += load_template(req, PasswordElement)
+                    out += run_template(req, PasswordElement)
                 else :
                     out += _("Please change your password on the website. Will support mobile in a future version.")
 
