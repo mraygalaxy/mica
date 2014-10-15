@@ -30,7 +30,7 @@ class PasswordElement(Element) :
         super(PasswordElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html').path)
 
     @renderer
     def password(self, request, tag) :
@@ -49,7 +49,7 @@ class HistoryElement(Element) :
         super(HistoryElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/history_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/history_template.html').path)
 
     @renderer
     def history(self, request, tag) :
@@ -89,7 +89,7 @@ class StaticNavElement(Element) :
         super(StaticNavElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/nav_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/nav_template.html').path)
 
     @renderer
     def accountslots(self, request, tag) :
@@ -161,7 +161,7 @@ class EditHeaderElement(Element) :
         super(EditHeaderElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/edit_header_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/edit_header_template.html').path)
 
     @renderer
     def edit_header(self, request, tag) :
@@ -179,11 +179,12 @@ class MobileAdvertElement(Element) :
         super(MobileAdvertElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html').path)
 
     @renderer
     def mobile(self, request, tag) :
-        tag.fillSlots(granted = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."))
+        tag.fillSlots(feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
+                      access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a web account online first by contacting the author"))
         return tag
 
 class ServerAdvertElement(Element) :
@@ -191,7 +192,7 @@ class ServerAdvertElement(Element) :
         super(ServerAdvertElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html').path)
 
     @renderer
     def server(self, request, tag) :
@@ -203,7 +204,7 @@ class LinkAdvertElement(Element) :
         super(LinkAdvertElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html').path)
 
     @renderer
     def link(self, request, tag) :
@@ -215,12 +216,13 @@ class FrontPageElement(Element) :
         super(FrontPageElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
 
     @renderer
     def pages(self, request, tag) :
         if self.req.mobile :
-            tag(XMLString("<div>" + self.req.deeper + "</div>").load())
+            #tag(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1'><div>" + self.req.deeper + u"</div></html>").load())
+            tag("")
         else :
             pages = [
                 _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
@@ -287,7 +289,7 @@ class EditElement(Element) :
         super(EditElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/edit_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/edit_template.html').path)
 
     @renderer
     def edit(self, request, tag) :
@@ -300,7 +302,7 @@ class LegendElement(Element) :
         super(LegendElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/legend_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/legend_template.html').path)
 
     @renderer
     def legend(self, request, tag) :
@@ -320,7 +322,7 @@ class DynamicViewElement(Element) :
         super(DynamicViewElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/dynamic_view_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/dynamic_view_template.html').path)
 
     @renderer
     def dynamic_view(self, request, tag) :
@@ -345,7 +347,7 @@ class ReadingViewElement(Element) :
         super(ReadingViewElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html').path)
 
     @renderer
     def reading_view(self, request, tag) :
@@ -357,7 +359,7 @@ class StaticViewElement(Element) :
         super(StaticViewElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/static_view_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/static_view_template.html').path)
 
     @renderer
     def static_view(self, request, tag) :
@@ -397,7 +399,7 @@ class ViewElement(Element) :
         super(ViewElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/view_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/view_template.html').path)
 
     @renderer
     def topview(self, request, tag) :
@@ -434,7 +436,7 @@ class HeadElement(Element):
         super(HeadElement, self).__init__() 
         self.req = req
 
-    loader = XMLFile(FilePath(cwd + 'serve/head_template.html'))
+    loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
 
     @renderer
     def languages(self, request, tag) :
