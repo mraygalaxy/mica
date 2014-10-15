@@ -580,6 +580,7 @@ class HeadElement(Element):
                      bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",
                      micajs = self.req.mpath + "/mica.js",
+                     favicon = self.req.mpath + "/favicon.ico",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      originallang = _("Original Language"),
                      email = _("Email Address"),
@@ -611,6 +612,7 @@ class HeadElement(Element):
                      address = _("Address"),
                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                      signing = _("Signing you in, Please wait"),
+                     loading = _("Loading story, Please wait"),
                      compacting = _("Compacting database, Please wait"),
                      )
        return tag

@@ -584,7 +584,7 @@ class MICA(object):
         if mobile :
             sideout += "<b>" + rname + "</b>"
         else :
-            sideout += "\n<a title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid="
+            sideout += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid="
             sideout += story["uuid"]
             sideout += "\">"
             sideout += rname
@@ -598,7 +598,7 @@ class MICA(object):
         sideout += "</td><td>"
         if not mobile :
             if finished or reviewed :
-                sideout += "\n<a title='" + _("Download Romanization") + "' class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
+                sideout += "\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a>"
     
         return sideout
@@ -1724,9 +1724,9 @@ class MICA(object):
                 notsure += ""
                 if not mobile :
                     notsure += "\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>"
-                notsure += "\n<a title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
-                notsure += "\n<a title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
-                notsure += "\n<a title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>"
+                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
+                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
+                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>"
 
                 if finished :
                    finish += notsure
