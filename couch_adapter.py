@@ -662,8 +662,7 @@ class iosMicaServerCouchbaseMobile(object) :
         self.db = db_already_local
 
     def init_localization(self):
-        #return self.db.get_language_().UTF8String()
-        return "en"
+        return self.db.get_language_().UTF8String()
 
     def __getitem__(self, dbname) :
         self.dbname = dbname
