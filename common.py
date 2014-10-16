@@ -12,7 +12,6 @@ import inspect
 import sys
 import threading
 import gettext
-import locale
 import os
 import re
 from datetime import datetime
@@ -264,11 +263,3 @@ class MICASlaveClient(Server):
         self.print_message = print_message
         self.last_refresh = datetime.now()
 
-def init_localization():
-    try :
-        locale.setlocale(locale.LC_ALL, '') # use user's preferred locale
-        # take first two characters of country code
-        return locale.getlocale()[0][0:2]
-    except Exception, e :
-        mdebug("Could not find locale. Defaulting to english.")
-        return "en"

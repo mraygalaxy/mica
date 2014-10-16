@@ -41,7 +41,6 @@ import socket
 import Queue
 import string 
 
-
 texts = {}
 
 from common import *
@@ -301,6 +300,7 @@ class MICA(object):
                 self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
                 self.userdb = self.cs["_users"]
 
+        params["language"] = self.cs.init_localization()
         self.first_request = {}
 
         self.client = {}
@@ -2700,13 +2700,16 @@ class MICA(object):
                         opaque = gp.parse_page_start()
                         gp.test_dictionaries(opaque)
                         tar = gp.get_first_translation(opaque, source.decode("utf-8"), False)
-                        if tar :
-                            for target in tar :
-                                out += "<br/>" + target.encode("utf-8")
-                        else :
-                            out += _("None found.")
-                        gp.parse_page_stop(opaque)
-                    except OSError, e :
+                        try :
+                            if tar :
+                                for target in tar :
+                                    out += "<br/>" + target.encode("utf-8")
+                            else :
+                                out += _("None found.")
+                            gp.parse_page_stop(opaque)
+                        except OSError, e :
+                            out += _("Please wait until this account is fully synchronized for an offline translation.")
+                    except Exception, e :
                         out += _("Please wait until this account is fully synchronized for an offline translation.")
                 else :
                     out += json.dumps(final)
@@ -3607,7 +3610,6 @@ def go(p) :
                mdebug("Language translation " + l + " failed. Bailing...")
                exit(1)
 
-    params["language"] = init_localization()
     mdebug("Verifying options.")
 
     if mobile and "local_database" not in params :
