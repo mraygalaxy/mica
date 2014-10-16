@@ -211,56 +211,65 @@ class LinkAdvertElement(Element) :
         tag.fillSlots(bitcoin = _("Please Donate To Bitcoin Address"))
         return tag
 
+class MobileFrontElement(Element) :
+    def __init__(self, req) :
+        super(MobileFrontElement, self).__init__() 
+        self.req = req
+
+    loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
+
+    @renderer
+    def mobilelinks(self, request, tag) :
+        tag(LinkAdvertElement(self.req))
+        return tag
+
+    @renderer
+    def front(self, request, tag) :
+        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
+                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
+                      howitworks = _("Read about how it works on github.com"),
+                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
+                      mailinglist = _("Join the mailing list"))
+        return tag
+
+    @renderer
+    def pages(self, request, tag) :
+        pages = [
+            _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
+            _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
+            _("Why can't we use the <b>existing content</b> that's already out there?"),
+            _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
+            _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
+            _("When you read a new story, it <b>hides the words</b> you already know."),
+            _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
+            _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
+            _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
+        ]
+
+        first = True
+
+        for page in pages :
+            if first :
+                first = False
+                div = tags.div(**{"class" : "item active", "style" : "text-align: center"})
+            else :
+                div = tags.div(**{"class" : "item", "style" : "text-align: center"})
+
+            div(tags.br(), tags.br(), tags.br(), tags.br())
+            p = XMLString("<div>" + page + "</div>")
+            div(tags.h1(style="width: 75%; margin: 0 auto;")(p.load()))
+            div(tags.br(), tags.br(), tags.br(), tags.br())
+
+            tag(div)
+
+        return tag
+
 class FrontPageElement(Element) :
     def __init__(self, req) :
         super(FrontPageElement, self).__init__() 
         self.req = req
 
     loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
-
-    @renderer
-    def pages(self, request, tag) :
-        if self.req.mobile :
-            #tag(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1'><div>" + self.req.deeper + u"</div></html>").load())
-            tag("")
-        else :
-            pages = [
-                _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
-                _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
-                _("Why can't we use the <b>existing content</b> that's already out there?"),
-                _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
-                _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
-                _("When you read a new story, it <b>hides the words</b> you already know."),
-                _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
-                _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
-                _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
-            ]
-
-            first = True
-
-            for page in pages :
-                if first :
-                    first = False
-                    div = tags.div(**{"class" : "item active", "style" : "text-align: center"})
-                else :
-                    div = tags.div(**{"class" : "item", "style" : "text-align: center"})
-
-                div(tags.br(), tags.br(), tags.br(), tags.br())
-                p = XMLString("<div>" + page + "</div>")
-                div(tags.h1(style="width: 75%; margin: 0 auto;")(p.load()))
-                div(tags.br(), tags.br(), tags.br(), tags.br())
-
-                tag(div)
-
-        return tag
-
-    @renderer
-    def mobilelinks(self, request, tag) :
-        if not self.req.mobile :
-            tag(LinkAdvertElement(self.req))
-        else :
-            tag("")
-        return tag
 
     @renderer
     def frontend(self, request, tag) :
@@ -272,13 +281,17 @@ class FrontPageElement(Element) :
         return tag
 
     @renderer
+    def frontpage(self, request, tag) :
+        if not self.req.mobile :
+            tag(MobileFrontElement(self.req))
+        else :
+            for x in range(0, 15) :
+                tag(tags.br())
+        return tag
+
+    @renderer
     def advertise(self, request, tag) :
-        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
-                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
-                      howitworks = _("Read about how it works on github.com"),
-                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
-                      mailinglist = _("Join the mailing list"),
-                      help = _("for additional help"),
+        tag.fillSlots(help = _("for additional help"),
                       connect =_("You need to connect, first"),
                       click =_("Click the little 'M' at the top"),
                       experimental = _("This is experimental language-learning software"))
@@ -480,11 +493,17 @@ class HeadElement(Element):
             (url, icon, display) = value 
             itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
             if navactive == key :
-                atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
+                if self.req.mobile :
+                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
+                else :
+                    atag = tags.a(href=url)(itag, " ", display)
                 itemtag = tags.li(**{"class":"active"})
                 tag(itemtag(atag))
             else :
-                atag = tags.a(href=url)(itag, " ", display)
+                if self.req.mobile :
+                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
+                else :
+                    atag = tags.a(href=url)(itag, " ", display)
                 tag(tags.li(atag))
 
         if not self.req.pretend_disconnected :
