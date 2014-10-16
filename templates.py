@@ -480,7 +480,7 @@ class HeadElement(Element):
             (url, icon, display) = value 
             itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
             if navactive == key :
-                atag = tags.a(href=url)(itag, " ", display)
+                atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
                 itemtag = tags.li(**{"class":"active"})
                 tag(itemtag(atag))
             else :
