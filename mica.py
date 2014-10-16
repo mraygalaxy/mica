@@ -428,7 +428,12 @@ class MICA(object):
 
             for (name, startend) in self.view_runs :
                 if not db.doc_exist("_design/" + name.split("/")[0]) :
-                    mdebug("View " + name + " does not yet exist. Skipping priming.")
+                    mdebug("View " + name + " does not yet exist. Loading...")
+                    dbsave = self.db
+                    self.db = db
+                    self.view_check(self, name.split("/")[0], recreate = True)
+                    self.db = dbsave
+                    mdebug("Done.")
                     continue
 
                 mdebug("Priming view for user: " + username + " db " + name)
