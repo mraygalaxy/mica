@@ -135,17 +135,18 @@ class IdxFileReader(object):
         """
         self.db = db
         self._offset = 0
-        self._size = os.path.getsize(filename)
-        if compressed:
-            self.fh = gzip.open(filename, "rb")
-        else:
-            self.fh = open(filename, "rb")
 
         s = self.db["_word_idx"].select()
         rs = s.execute()
         result = rs.fetchone()
 
         if result is None :
+            self._size = os.path.getsize(filename)
+            if compressed:
+                self.fh = gzip.open(filename, "rb")
+            else:
+                self.fh = open(filename, "rb")
+
             self._index = 0
             self._index_offset_bits = index_offset_bits
             #self.db["_word_idx"] = OOBTree()
