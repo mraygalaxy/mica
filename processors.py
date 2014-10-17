@@ -296,9 +296,10 @@ class English(Processor) :
                          u"'s" : False,
                          u"s" : False,
                          u"ies" : u"y",
+                         u"ied" : u"d",
                          u"er" : False,
-                         u"ed" : False,
                          u"d" : False,
+                         u"ed" : False,
                          u"ers" : False,
                          u"’ve" : False,
                          u"'ve" : False,
@@ -343,7 +344,10 @@ class English(Processor) :
 
             self.engdb["_word_idx"].create(checkfirst=True)
 
-            self.dictionary = load_dictionary(self.engdb, self.files)
+            full_files = {}
+            for name, f in self.files.iteritems() :
+                full_files[name] = self.params["scratch"] + f
+            self.dictionary = load_dictionary(self.engdb, full_files)
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")

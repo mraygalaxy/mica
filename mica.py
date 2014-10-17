@@ -2644,25 +2644,27 @@ class MICA(object):
                 out += "<div id='instantresult'>"
 
                 p = ""
+                final = { }
+                requests = [source]
+                
+                if not story :
+                    name = req.db[self.index(req, req.session.value["current_story"])]["value"]
+                    story = req.db[self.story(req, name)]
+
+                gp = self.processors[story["source_language"]]
+
+                breakout = source.decode("utf-8") if isinstance(source, str) else source
+                if gp.already_romanized :
+                    breakout = breakout.split(" ")
+                
+                if len(breakout) > 1 :
+                    for x in range(0, len(breakout)) :
+                        requests.append(breakout[x].encode("utf-8"))
+
                 if req.session.value['username'] not in self.client :
                     p += _("Offline only. Missing a translation API key in your account preferences.")
+
                 elif not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                    final = { }
-                    requests = [source]
-                    
-                    if not story :
-                        name = req.db[self.index(req, req.session.value["current_story"])]["value"]
-                        story = req.db[self.story(req, name)]
-
-                    gp = self.processors[story["source_language"]]
-
-                    breakout = source.decode("utf-8") if isinstance(source, str) else source
-                    if gp.already_romanized :
-                        breakout = breakout.split(" ")
-                    
-                    if len(breakout) > 1 :
-                        for x in range(0, len(breakout)) :
-                            requests.append(breakout[x].encode("utf-8"))
                     try :
                         result = self.translate_and_check_array(req, False, requests, story["target_language"], story["source_language"])
                         for x in range(0, len(requests)) : 
@@ -2699,17 +2701,24 @@ class MICA(object):
                     try :
                         opaque = gp.parse_page_start()
                         gp.test_dictionaries(opaque)
-                        tar = gp.get_first_translation(opaque, source.decode("utf-8"), False)
                         try :
-                            if tar :
-                                for target in tar :
-                                    out += "<br/>" + target.encode("utf-8")
-                            else :
-                                out += _("None found.")
+                            for idx in range(0, len(requests)) :
+                                request = requests[idx]
+                                if len(requests) > 1 and idx == 0 :
+                                    continue
+                                tar = gp.get_first_translation(opaque, request.decode("utf-8"), False)
+                                if tar :
+                                    for target in tar :
+                                        out += "<br/>(" + request + "): " + target.encode("utf-8")
+                                else :
+                                    out += "<br/>(" + request + ") " + _("None found.")
+
                             gp.parse_page_stop(opaque)
                         except OSError, e :
+                            mdebug("Looking up target failed: " + str(e))
                             out += _("Please wait until this account is fully synchronized for an offline translation.")
                     except Exception, e :
+                        mdebug("Instant test failed: " + str(e))
                         out += _("Please wait until this account is fully synchronized for an offline translation.")
                 else :
                     out += json.dumps(final)
