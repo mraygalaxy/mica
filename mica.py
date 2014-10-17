@@ -499,6 +499,7 @@ class MICA(object):
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
                     self.disconnect(req.session)
+                    # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
                 resp = self.common(req)
@@ -511,7 +512,7 @@ class MICA(object):
         except couch_adapter.ResourceNotFound, e :
             resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
-#            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
             resp = "<h4>" + _("Exception") + ":</h4>"
             for line in traceback.format_exc().splitlines() :
                 resp += "<br>" + line
@@ -589,6 +590,7 @@ class MICA(object):
         if mobile :
             sideout += "<b>" + rname + "</b>"
         else :
+            # 'original' refers to the original text of the story that the user provided for language learning.
             sideout += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid="
             sideout += story["uuid"]
             sideout += "\">"
@@ -603,6 +605,7 @@ class MICA(object):
         sideout += "</td><td>"
         if not mobile :
             if finished or reviewed :
+                # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
                 sideout += "\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
                 sideout += "<i class='glyphicon glyphicon-download-alt'></i></a>"
     
@@ -620,6 +623,7 @@ class MICA(object):
             body = body.decode("utf-8")
 
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
+            # The demo account is provided for users who want to give the software a try without committing to it.
             body = self.heromsg + "\n<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>" + body
 
         if now :
@@ -955,18 +959,22 @@ class MICA(object):
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
         gp = self.processors[story["source_language"]]
         out = ""
+        # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
         out += "\n" + _("This character") + " ("
         if gp.already_romanized : 
             out += "".join(unit["source"])
         else :
             out += " ".join(unit["source"])
+        # end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
         out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
         out += "<tr>"
         if len(unit["multiple_sromanization"]) :
+            # Pinyin means the romanization of a character-based word, such as Chinese
             out += "<td>" + _("Pinyin") + "</td>"
         out += "<td>" + _("Definition") + "</td>"
-        out += "<td>" + _("Default?") + "</td></tr>"
+        # This appears in a list of items and indicates which is the default item
+        out += "<td>" + _("Default") + "?</td></tr>"
         source = "".join(unit["source"])
 
         total_changes = 0.0
@@ -991,6 +999,7 @@ class MICA(object):
             else :
                 out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
                        "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
+                       # Appears on a button in review mode that allows the user to choose a definition among multiple choices.
                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
 
             out += "</tr>"
@@ -1162,6 +1171,7 @@ class MICA(object):
         upgrade_needed = 0
 
         if "format" not in story or story["format"] == 1 :
+            # The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
             out = self.heromsg + "\n<h4>" + _("The database for this story") + " (<b>" + name + "</b>) " + _("needs to be upgraded to version 2") + "."
             upgrade_needed = 2
 
@@ -1169,7 +1179,7 @@ class MICA(object):
 
         if upgrade_needed > 0 :
             if mobile :
-                out += _("Unfortunately, this can only be performed with the online version. Please login to your account online to perform the upgrade. The changes will then be replicated to all your devices. Thank you.")
+                out += _("Unfortunately, this can only be performed with the online version. Please login to your account online to perform the upgrade. The changes will then be synchronized to all your devices. Thank you.")
             else :
                 out += "<br/><a class='btn btn-default btn-primary' href='/" + req.action + "?storyupgrade=1&uuid=" + uuid + "&version=" + str(upgrade_needed) + "'>" + _("Start Upgrade") + "</a>" 
 
@@ -1711,11 +1721,14 @@ class MICA(object):
 
                 if not mobile :
                     untrans += "<div id='transbutton" + story['uuid'] + "'>"
+                    # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                     untrans += "\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
 
                     if req.session.value['username'] not in self.client :
+                        # A translation API key is a third-party identifier and passcode that allows this software program to operate over the internet and request translations of specific words from one software program (this one) to another one (such as Bing, the free one that we are currently using). This 'API key' or ID as well as a corresponding secret are issued directly by the 3rd party and are input into the preferences section of MICA manually by the user.
                         untrans += _("Please add a translation API key in your account preferences to begin learning with this story") + ".<br/>"
                     else :
+                        # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
                         untrans += "\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
@@ -1733,6 +1746,7 @@ class MICA(object):
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
                 notsure += ""
                 if not mobile :
+                    # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
                     notsure += "\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>"
                 notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
                 notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
@@ -1740,16 +1754,20 @@ class MICA(object):
 
                 if finished :
                    finish += notsure
+                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
                    finish += "\n<a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>"
                    finish += "</td></tr>"
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
+                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
                    reading += "\n<a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>"
+                    # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
                    reading += "<a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>"
                    reading += "</td></tr>"
                 else :
                    noreview += notsure
+                    # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
                    noreview += "\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>"
                    noreview += "</td></tr>"
                    
@@ -2075,7 +2093,8 @@ class MICA(object):
                 req.session.value["connected"] = False
                 req.session.save()
 
-            msg = _("Missing key on server. Please report this to the author. Thank you.")
+            # Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website. 
+            msg = _("Synchronization error. Please report this to the author. Thank you.")
 
         if bootstrap :
             mwarn("bootstrapping: " + msg)
@@ -2272,6 +2291,7 @@ class MICA(object):
                 return self.bootstrap(req, output, pretend_disconnected = True)
             elif req.http.params.get("connect") :
                 if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
+                    # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
                 username = req.http.params.get('username')
                 password = req.http.params.get('password')
@@ -2285,6 +2305,7 @@ class MICA(object):
                 auth_user = self.authenticate(username, password, address)
 
                 if not auth_user :
+                    # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
                     return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
 
                 req.session.value["database"] = auth_user["mica_database"] 
@@ -2297,9 +2318,13 @@ class MICA(object):
                        mdebug("There is an existing user. Verifying it is the same one.")
                        appuser = req.db["MICA:appuser"]
                        if appuser["username"] != username :
+                            # Beginning of a message 
                             return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
-                                appuser["username"] + " " + _("and is configured to stay in sync replication with the server") + ". " + \
+                                # next part of the same message 
+                                appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
+                                 # next part of the same message 
                                 _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
+                                 # end of the message 
                                 _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.") + "</h4></div>")
                     else :
                        mdebug("First time user. Reserving this device: " + username)
@@ -2307,7 +2332,8 @@ class MICA(object):
                        req.db["MICA:appuser"] = appuser
                            
                     if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("Although you have authenticated successfully, we could not start replication successfully. Please try again.") + "</h4></div>")
+                        # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -2553,11 +2579,13 @@ class MICA(object):
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
                     self.clear_story(req)
                     uuid = False
+                # The user has deleted a story from the system.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Deleted") + ".</h4></div>", now = True)
 
             if uuid :
                 if not req.db.doc_exist(self.index(req, uuid)) :
                     self.clear_story(req)
+                    # The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history. 
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
             if req.http.params.get("tstatus") :
@@ -2583,6 +2611,7 @@ class MICA(object):
                 tmp_story = req.db[self.story(req, name)]
                 tmp_story["finished"] = finished 
                 req.db[self.story(req, name)] = tmp_story 
+                # Finished reviewing a story in review mode.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
 
             if req.http.params.get("reviewed") :
@@ -2625,11 +2654,13 @@ class MICA(object):
                 if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
                     self.clear_story(req)
                     uuid = False
+                # 'Forgot' a story using the button in the side-panel.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Forgotten") + ".</h4></div>", now = True)
 
             if req.http.params.get("switchmode") :
                 req.session.value["view_mode"] = req.http.params.get("switchmode")
                 req.session.save()
+                # The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
 
             if req.http.params.get("meaningmode") :
@@ -2640,6 +2671,7 @@ class MICA(object):
             if req.http.params.get("switchlist") :
                 req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
                 req.session.save()
+                # This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
 
             if req.http.params.get("instant") :
@@ -2676,17 +2708,17 @@ class MICA(object):
                             part = result[x]
                             if "TranslatedText" not in part :
                                 mdebug("Why didn't we get anything: " + json.dumps(result))
-                                target = _("No translation available.")
+                                target = _("No instant translation available.")
                             else :
                                 target = part["TranslatedText"].encode("utf-8")
                             
                             if x == 0 :
-                                p += _("Selected translation") + " (" + source + "): " + target + "<br/>\n"
+                                p += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
                                 final["whole"] = (source, target)
                             else :
                                 char = breakout[x-1].encode("utf-8")
                                 if "parts" not in final :
-                                    p += _("Piecemeal translation") + ":<br/>\n"
+                                    p += _("Piecemeal instant translation") + ":<br/>\n"
                                     final["parts"] = []
                                 p += "(" + char + "): "
                                 p += target 
@@ -2696,12 +2728,12 @@ class MICA(object):
                         p += _("Internet access error. Try again later: ") + str(e)
                             
                 else :
-                    p += _("No internet access. Offline only.")
+                    p += _("No internet access. Offline instant translation only.")
                        
                 if human :
-                    out += "<h4>" + _("Online translation") + ":</h4>"
+                    out += "<h4>" + _("Online instant translation") + ":</h4>"
                     out += p 
-                    out += "<h4>" + _("Offline translation") + ":</h4>"
+                    out += "<h4>" + _("Offline instant translation") + ":</h4>"
 
                     try :
                         opaque = gp.parse_page_start()
@@ -2716,15 +2748,15 @@ class MICA(object):
                                     for target in tar :
                                         out += "<br/>(" + request + "): " + target.encode("utf-8")
                                 else :
-                                    out += "<br/>(" + request + ") " + _("None found.")
+                                    out += "<br/>(" + request + ") " + _("No instant translation found.")
 
                             gp.parse_page_stop(opaque)
                         except OSError, e :
-                            mdebug("Looking up target failed: " + str(e))
-                            out += _("Please wait until this account is fully synchronized for an offline translation.")
+                            mdebug("Looking up target instant translation failed: " + str(e))
+                            out += _("Please wait until this account is fully synchronized for an offline instant translation.")
                     except Exception, e :
                         mdebug("Instant test failed: " + str(e))
-                        out += _("Please wait until this account is fully synchronized for an offline translation.")
+                        out += _("Please wait until this account is fully synchronized for an offline instant translation.")
                 else :
                     out += json.dumps(final)
                 out += "</div>"
@@ -2829,6 +2861,7 @@ class MICA(object):
             if req.http.params.get("phistory") :
                 page = req.http.params.get("page")
                 return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
+                                           # statistics in review mode are disabled
                                            (self.history(req, story, uuid, page) if list_mode else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
                                            "</div></div>", now = True)
 
@@ -2887,6 +2920,7 @@ class MICA(object):
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
 
                 if version > story_format :
+                    # 'format' referring to the database format the we are upgrading to
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
 
                 if "upgrading" in story and story["upgrading"] :
@@ -2961,8 +2995,11 @@ class MICA(object):
 
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
                 for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                    # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
                     output += _("Memorized all stories") + ": " + str(result['value']) + "<br/>"
+                # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
                 output += _("Unique memorized page") + ": " + str(total_memorized) + "<br/>"
+                # A count of all the unique words on this page, not just the ones the user has memorized.
                 output += _("Unique words this page") + ": " + str(len(unique)) + "<br/>"
                 if list_mode :
                     output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
@@ -2998,6 +3035,7 @@ class MICA(object):
                     else :
                         output += "<h4>" + _("No words memorized. Get to work!") + "</h4>"
                 else :
+                    # statistics in reading mode are disabled
                     output += "<h4>" + _("Memorization History List Disabled") + ".</h4>"
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + output + "</div></div>", now = True)
@@ -3040,7 +3078,10 @@ class MICA(object):
                                     output += "<img src='data:image/jpeg;base64," + base64.b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
                                     image_found = True
                             if not image_found :
-                               output += _("Image") + " #" + str(nb_image) + " " + _("not available on this page")
+                               # Beginning of a sentence: Original source image of the current page from which the text comes
+                               output += _("Image") + " #" + str(nb_image) + " "
+                               # end of thes sentence, indicating that a particular image number doesn't exist.
+                               output += _("not available on this page")
                             output += "</div></div>"
                             return self.bootstrap(req, output, now = True)
                         else :
@@ -3049,10 +3090,12 @@ class MICA(object):
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
                 else :
+                    # Beginning of a message.
                     output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
                     if mobile :
-                        output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website first. (New stories require a significant amount of computer resources to prepare. Thus, they can only be replicated to the device for regular use.") + "</h5>"
+                        output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + "</h5>"
                     else :
+                        # end of a message
                         output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
                     output += "</div>"
 
@@ -3060,7 +3103,10 @@ class MICA(object):
             elif req.action == "stories" :
                 ftype = "txt" if "filetype" not in story else story["filetype"]
                 if ftype != "txt" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
+                    # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + \
+                               # Tho original story format as it was imported, that is
+                               ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
                 
                 if req.http.params.get("type") :
                     which = req.http.params.get("type")
@@ -3144,9 +3190,13 @@ class MICA(object):
                             mdebug("Compacting view " + name)
                             req.db.compact(name)
 
+                    # The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
                     out += self.heromsg + "\n<h4>" + _("Database compaction complete for your account") + ".</h4></div>\n"
                 elif req.http.params.get("changepassword") :
                     if mobile :
+                        # The next handful of mundane phrases are associated with the creation
+                        # and management of user accounts in the software program and the relevant
+                        # errors that can occur while performing operations on a user's account.
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
                     oldpassword = req.http.params.get("oldpassword")
                     newpassword = req.http.params.get("password")
@@ -3187,7 +3237,7 @@ class MICA(object):
                         else :
                             user['translator_credentials'] = { 'id' : client_id, 'secret' : client_secret }
                             req.db[self.acct(username)] = user
-                            tmsg = _("Your MS translation credentials have been changed to") + ": " + client_id + " => " + client_secret
+                            tmsg = _("Your translation API credentials have been changed to") + ": " + client_id + " => " + client_secret
                     except Exception, e :
                         del self.client[req.session.value['username']]
                         tmsg = _("We tried to test your translation API credentials, but they didn't work because") + ": " + str(e)
@@ -3196,6 +3246,7 @@ class MICA(object):
 
                 elif req.http.params.get("newaccount") :
                     if not self.userdb : 
+                        # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
                     newusername = req.http.params.get("username")
@@ -3247,11 +3298,13 @@ class MICA(object):
                 elif req.http.params.get("setappchars") :
                     chars_per_line = int(req.http.params.get("setappchars"))
                     if chars_per_line > 1000 or chars_per_line < 5 :
+                        # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
                     user["app_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["app_chars_per_line"] = chars_per_line 
                     req.session.save()
+                    # Same as before, but specifically for a mobile device
                     out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setwebchars") :
                     chars_per_line = int(req.http.params.get("setwebchars"))
@@ -3261,29 +3314,34 @@ class MICA(object):
                     req.db[self.acct(username)] = user
                     req.session.value["web_chars_per_line"] = chars_per_line 
                     req.session.save()
+                    # Same as before, but specifically for a website 
                     out += self.heromsg + "\n<h4>" + _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
                 elif req.http.params.get("setappzoom") :
                     zoom = float(req.http.params.get("setappzoom"))
                     if zoom > 3.0 or zoom < 0.5 :
+                        # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
                     user["default_app_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_app_zoom"] = zoom
                     req.session.save()
+                    # Same as before, but specifically for an application running on a mobile device
                     out += self.heromsg + "\n<h4>" + _("Success! App zoom level set to:") + " " + str(zoom) + ".</h4></div>"
                 elif req.http.params.get("setwebzoom") :
                     zoom = float(req.http.params.get("setwebzoom"))
                     if zoom > 3.0 or zoom < 0.5 :
+                        # Same as before, but specifically for an application running on the website 
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
                     user["default_web_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_web_zoom"] = zoom
                     req.session.save()
+                    # Same as before, but specifically for an application running on the website 
                     out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
 
                 out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
 
-                out += "<p/><h4><b>" + _("Change Password?") + "</b></h4>"
+                out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
                 if not mobile :
                     out += run_template(req, PasswordElement)
                 else :
@@ -3294,16 +3352,16 @@ class MICA(object):
                     <form action='/account' method='post' enctype='multipart/form-data'>
                     """
 
-                client_id = _("Need your client ID")
-                client_secret = _("Need your client secret")
+                client_id = _("Need your client API key")
+                client_secret = _("Need your client API secret")
 
                 if username != "demo" and 'translator_credentials' in user :
                      client_id = user['translator_credentials']['id']
                      client_secret = user['translator_credentials']['secret']
                  
-                out += "<tr><td><h5>&#160;" + _("Client ID") + ": </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
-                out += "<tr><td><h5>&#160;" + _("Client Secret") + ": </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
-                out += "<tr><td><button name='changecredentials' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Credentials") + "</button></td></tr>"
+                out += "<tr><td><h5>&#160;" + _("Client API ID") + ": </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
+                out += "<tr><td><h5>&#160;" + _("Client API Secret") + ": </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
+                out += "<tr><td><button name='changecredentials' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change API Credentials") + "</button></td></tr>"
                 out += """
                     </table>
                     </form>
@@ -3316,6 +3374,7 @@ class MICA(object):
                 out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
 
                 try :
+                    # the zoom level or characters-per-line limit
                     out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"
                     out += "<table>"
                     out += "<tr><td>&#160;" + _("Characters per line") + ":</td><td>"
@@ -3397,6 +3456,8 @@ class MICA(object):
                 output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
                 return self.bootstrap(req, output)
             else :
+                # This occurs when you come back to the webpage, and were previously reading a story,
+                # but need to indicate in which mode to read the story (of three modes).
                 return self.bootstrap(req, _("Read, Review, or Edit, my friend?"))
 
         except exc.HTTPTemporaryRedirect, e :

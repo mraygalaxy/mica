@@ -20,6 +20,7 @@ class StoryElement(Element) :
     def story(self, request, tag) :
         tag.fillSlots(notreviewed = _("Not Reviewed"),
                       reading = _("Reading"),
+                      # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
                       untranslated = _("Untranslated"),
                       finished = _("Finished"),
                       stories = _("Stories"))
@@ -39,7 +40,9 @@ class PasswordElement(Element) :
                       confirm = _("Confirm Password"),
                       change = _("Change Password"),
                       microsoft = _("Input Microsoft Translation API Credentials?"),
-                      request = _("You can request free credentials"),
+                      # Beginning of a sentence
+                      request = _("You can request free API credentials"),
+                      # end of the sentence, 'here' is a web link URL.
                       going = _("by going here")
                       )
         return tag
@@ -139,8 +142,10 @@ class EditHistoryElement(Element) :
                     a(i, " ", spy)
 
                     if op == "SPLIT" :
+                        # SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
                         opstr = tags.div(style="color: blue; display: inline")(_("SPLIT") + "   ")
                     else :
+                        # MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
                         opstr = tags.div(style="color: red; display: inline")(_("MERGE") + "   ")
 
                     iidiv(a, " (" + str(total) + "): " + char + ": ", opstr)
@@ -155,9 +160,11 @@ class EditHistoryElement(Element) :
                     div(idiv)
                 tag(div)
             else :
+                # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
                 tag(tags.h4(_("No edit history available.")))
         else :
-            tag(tags.h4(_("Edit list Disabled.")))
+                # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
+            tag(tags.h4(_("Edit history Disabled.")))
 
         return tag
 
@@ -175,7 +182,9 @@ class EditHeaderElement(Element) :
                       retrans = self.req.retrans,
                       previousmerge = _("These characters were previously merged into a word"),
                       previoussplit = _("This word was previously split into characters"),
+                      # These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
                       tryrecco = _("Try Recommendations"),
+                      # Re-translate the current page that the user is reading right now.
                       repage = _("Re-translate page"))
         return tag
 
@@ -234,6 +243,7 @@ class MobileFrontElement(Element) :
                       offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works on github.com"),
                       donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
+                      # Beginning of a sentence
                       mailinglist = _("Join the mailing list"))
         return tag
 
@@ -296,7 +306,9 @@ class FrontPageElement(Element) :
 
     @renderer
     def advertise(self, request, tag) :
+        # end of sentence.
         tag.fillSlots(help = _("for additional help"),
+                      # i.e. signin or login
                       connect =_("You need to connect, first"),
                       click =_("Click the little 'M' at the top"),
                       experimental = _("This is experimental language-learning software"))
@@ -626,24 +638,32 @@ class HeadElement(Element):
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      originallang = _("Original Language"),
                      email = _("Email Address"),
+                     # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
                      yourlang = _("Your Language"),
+                     # Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
                      removespaces = _("Remove Spaces?"),
                      mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
                      notimplemented = _("not implemented"),
+                     # Source story consists of multiple pages, like a PDF
                      multipage = _("multi-page"),
+                     # Story is just a blob of TXT, such as copy/paste.
                      singlepage = _("single-page"),
+                     # i.e. PDF or TXT
                      whatkindfile = _("What kind of file is this?"),
                      selectfile = _("Select File"),
                      uploadfile = _("Upload File"),
                      uploadinstead = _("Or Upload a File Instead"),
+                     # Unique name to identify this story in the system
                      uniquename = _("Unique Name"),
                      uploadtext = _("Upload Text"),
                      copypaste = _("Copy/Paste a Story"),
                      uploadstory = _("Upload Story"),
                      instant = _("Instant Translation"),
                      splitmerge = _("Split/Merge Words"),
+                     # Create account button
                      create = _("Create"),
+                     # confirm password
                      confirmpass = _("Confirm"),
                      password = _("Password"),
                      username = _("Username"),
@@ -663,6 +683,7 @@ class HeadElement(Element):
     def newaccountadmin(self, request, tag) :
         if self.req.session.value['connected'] and not self.req.pretend_disconnected :
             if self.req.user and 'admin' in self.req.user['roles'] :
+                # Admin account, that is
                 tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
         return tag
 
