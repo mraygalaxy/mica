@@ -56,13 +56,13 @@ duplicate_logger = False
 lang = {
          u"zh-CHS" : _(u"Chinese Simplified"),
          u"en" : _(u"English"),
-         u"py" : _(U"Pinyin"),
+         u"py" : _(u"Pinyin"),
        }
 
 samples = {
          u"zh-CHS" : [u"开源"],
-         u"en" : ["test"],
-         u"py" : _(U"pīnyīn"),
+         u"en" : [u"test"],
+         u"py" : _(u"pīnyīn"),
        }
 
 romanization = {
