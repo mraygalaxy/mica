@@ -18,36 +18,43 @@ msgstr "Zhōngwén"
 msgid "English"
 msgstr "Yīngyǔ"
 
+#. Pinyin means the romanization of a character-based word, such as Chinese
 msgid "Pinyin"
 msgstr "Pīnyīn"
 
 msgid "pīnyīn"
 msgstr "pīnyīn"
 
+#. The user has completed logging out / signing out already - then this message appears.
 msgid "Disconnected from MICA"
 msgstr ""
 
-#. exc_type, exc_value, exc_traceback = sys.exc_info()
+#. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
 msgid "Exception"
 msgstr ""
 
 msgid "Please report the exception above to the author. Thank you."
 msgstr ""
 
+#. 'original' refers to the original text of the story that the user provided for language learning.
 msgid "Download Original"
 msgstr ""
 
+#. The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.
 msgid "Download Romanization"
 msgstr ""
 
+#. The demo account is provided for users who want to give the software a try without committing to it.
 msgid ""
 "Demo Account is readonly. You must install the mobile application for "
 "interactive use of the demo account."
 msgstr ""
 
+#. Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
 msgid "This character"
 msgstr "Zhègè hànzì"
 
+#. end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
 msgid "is polyphonic: (has more than one pronunciation"
 msgstr ""
 
@@ -57,6 +64,7 @@ msgstr ""
 msgid "Default?"
 msgstr ""
 
+#. This appears in a list of items and indicates which is the default item
 msgid "Default"
 msgstr ""
 
@@ -78,6 +86,7 @@ msgstr ""
 msgid "Untranslated story! Ahhhh!"
 msgstr ""
 
+#. The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
 msgid "The database for this story"
 msgstr ""
 
@@ -93,17 +102,21 @@ msgstr ""
 msgid "Start Upgrade"
 msgstr ""
 
+#. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
 msgid "Delete"
 msgstr ""
 
+#. A translation API key is a third-party identifier and passcode that allows this software program to operate over the internet and request translations of specific words from one software program (this one) to another one (such as Bing, the free one that we are currently using). This 'API key' or ID as well as a corresponding secret are issued directly by the 3rd party and are input into the preferences section of MICA manually by the user.
 msgid ""
 "Please add a translation API key in your account preferences to begin "
 "learning with this story"
 msgstr ""
 
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
 msgid "Translate"
 msgstr "Fānyì kāishǐ"
 
+#. This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it.
 msgid "Forget"
 msgstr "Yào wàng le"
 
@@ -119,15 +132,19 @@ msgstr "Biānjí"
 msgid "Read"
 msgstr "Yuèdú"
 
+#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section.
 msgid "Not finished"
 msgstr "Méi wánchéng"
 
+#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section.
 msgid "Review not complete"
 msgstr "Méi wánchéng fùxí"
 
+#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section.
 msgid "Finished reading"
 msgstr ""
 
+#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section.
 msgid "Review Complete"
 msgstr "Fùxí hǎo le"
 
@@ -145,14 +162,17 @@ msgstr ""
 msgid "Missing key on server. Please report this to the author. Thank you."
 msgstr ""
 
+#. Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
 msgid ""
 "To login for the first time and begin synchronization with the website, you "
 "must activate internet access."
 msgstr ""
 
+#. User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
 msgid "Invalid credentials. Please try again"
 msgstr ""
 
+#. Beginning of a message
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
@@ -161,11 +181,13 @@ msgstr ""
 msgid "and is configured to stay in sync replication with the server"
 msgstr ""
 
+#. next part of the same message
 msgid ""
 "If you want to change users, you will need to clear this application's data "
 "or reinstall it and re-synchronize the app with"
 msgstr ""
 
+#. end of the message
 msgid ""
 "a new account. This requirement is because MICA databases can become large "
 "over time, so we want you to be aware of that. Thanks."
@@ -176,24 +198,30 @@ msgid ""
 "successfully. Please try again."
 msgstr ""
 
+#. The user has deleted a story from the system.
 msgid "Deleted"
 msgstr ""
 
+#. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
 msgid "Invalid story uuid"
 msgstr ""
 
+#. Finished reviewing a story in review mode.
 msgid "Finished"
 msgstr "Hǎo le"
 
 msgid "Reviewed"
 msgstr "Fùxí le"
 
+#. 'Forgot' a story using the button in the side-panel.
 msgid "Forgotten"
 msgstr "Wàng le"
 
+#. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
 msgid "Mode changed"
 msgstr ""
 
+#. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
 msgid "List statistics mode changed"
 msgstr ""
 
@@ -236,6 +264,7 @@ msgstr "Fānyì hǎo le!"
 msgid "Failed to translate story"
 msgstr ""
 
+#. statistics in review mode are disabled
 msgid "Review History List Disabled"
 msgstr ""
 
@@ -254,6 +283,7 @@ msgstr ""
 msgid "Invalid request."
 msgstr ""
 
+#. 'format' referring to the database format the we are upgrading to
 msgid "No such story format"
 msgstr ""
 
@@ -272,30 +302,37 @@ msgstr ""
 msgid "Invalid Operation"
 msgstr ""
 
+#. In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
 msgid "Memorized all stories"
 msgstr ""
 
+#. Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
 msgid "Unique memorized page"
 msgstr ""
 
+#. A count of all the unique words on this page, not just the ones the user has memorized.
 msgid "Unique words this page"
 msgstr ""
 
 msgid "No words memorized. Get to work!"
 msgstr "Méiyǒu dāncí jì de le. Gōngzuò!"
 
+#. statistics in reading mode are disabled
 msgid "Memorization History List Disabled"
 msgstr ""
 
 msgid "Edit mode is only supported for learning character-based languages"
 msgstr ""
 
+#. Beginning of a sentence: Original source image of the current page from which the text comes
 msgid "Image"
 msgstr "Túpiàn"
 
+#. end of thes sentence, indicating that a particular image number doesn't exist.
 msgid "not available on this page"
 msgstr "zài zhègè yè lǐ méiyǒu"
 
+#. Beginning of a message.
 msgid ""
 "No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
 "at the top."
@@ -308,21 +345,28 @@ msgid ""
 "replicated to the device for regular use."
 msgstr ""
 
+#. end of a message
 msgid "or create one by clicking on Account icon at the top"
 msgstr ""
 
+#. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
 msgid "Story is a"
 msgstr ""
 
+#. Tho original story format as it was imported, that is
 msgid "Viewing original not yet implemented"
 msgstr ""
 
 msgid "Demo account is read-only"
 msgstr ""
 
+#. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
 msgid "Database compaction complete for your account"
 msgstr ""
 
+#. The next handful of mundane phrases are associated with the creation
+#. and management of user accounts in the software program and the relevant
+#. errors that can occur while performing operations on a user's account.
 msgid "Please change your password on the website, first"
 msgstr "Qǐng gēnggǎi nín de mìmǎ zài wǎngzhàn shàng."
 
@@ -360,6 +404,7 @@ msgid ""
 "because"
 msgstr ""
 
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't make accounts"
 msgstr ""
 
@@ -378,26 +423,33 @@ msgstr ""
 msgid "Success! Language changed"
 msgstr "Hǎo le! yǔyán gēnggǎi le"
 
+#. This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
 msgid "Number of characters can't be greater than 1000 or less than 5"
 msgstr ""
 
+#. Same as before, but specifically for a mobile device
 msgid "Success! Mobile Characters-per-line in a story set to:"
 msgstr ""
 
+#. Same as before, but specifically for a website
 msgid "Success! Web Characters-per-line in a story set to:"
 msgstr ""
 
+#. The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
 msgid ""
 "App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
 msgstr ""
 
+#. Same as before, but specifically for an application running on a mobile device
 msgid "Success! App zoom level set to:"
 msgstr ""
 
+#. Same as before, but specifically for an application running on the website
 msgid ""
 "Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
 msgstr ""
 
+#. Same as before, but specifically for an application running on the website
 msgid "Success! Web zoom level set to:"
 msgstr ""
 
@@ -427,6 +479,7 @@ msgstr ""
 msgid "Compact databases"
 msgstr ""
 
+#. the zoom level or characters-per-line limit
 msgid "Change Viewing configuration"
 msgstr ""
 
@@ -451,6 +504,8 @@ msgstr "Yǔyán"
 msgid "Change Language"
 msgstr "gǎibiàn yǔyán"
 
+#. This occurs when you come back to the webpage, and were previously reading a story,
+#. but need to indicate in which mode to read the story (of three modes).
 msgid "Read, Review, or Edit, my friend?"
 msgstr "Wǒ de péngyǒu: Yuèdú, fùxí, háishì biānjí?"
 
@@ -493,6 +548,7 @@ msgstr ""
 msgid "You can request free credentials"
 msgstr ""
 
+#. end of the sentence, 'here' is a web link URL.
 msgid "by going here"
 msgstr ""
 
@@ -516,12 +572,15 @@ msgstr "Bāngmāng"
 msgid "Privacy"
 msgstr ""
 
+#. SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "SPLIT"
 msgstr "Fēnkāi"
 
+#. MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "MERGE"
 msgstr "Hébìng"
 
+#. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "No edit history available."
 msgstr ""
 
@@ -537,9 +596,11 @@ msgstr ""
 msgid "This word was previously split into characters"
 msgstr ""
 
+#. These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
 msgid "Try Recommendations"
 msgstr ""
 
+#. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
 msgstr "Yòu fānyì wǎngyè"
 
@@ -606,12 +667,15 @@ msgid ""
 "server bigger."
 msgstr ""
 
+#. Beginning of a sentence
 msgid "Join the mailing list"
 msgstr ""
 
+#. end of sentence.
 msgid "for additional help"
 msgstr ""
 
+#. i.e. signin or login
 msgid "You need to connect, first"
 msgstr ""
 
@@ -674,12 +738,15 @@ msgstr ""
 msgid "New Account"
 msgstr "Xīn de zhànghù"
 
+#. Admin account, that is
 msgid "Admin"
 msgstr ""
 
+#. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
 msgid "Select"
 msgstr "Xuǎn"
 
+#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
 msgid "Untranslated"
 msgstr "Méi fānyì"
 
@@ -692,6 +759,7 @@ msgstr "Tā de yǔyán"
 msgid "Your Language"
 msgstr "Nǐ de yǔyán"
 
+#. Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
 msgid "Remove Spaces?"
 msgstr ""
 
@@ -701,12 +769,15 @@ msgstr ""
 msgid "not implemented"
 msgstr ""
 
+#. Source story consists of multiple pages, like a PDF
 msgid "multi-page"
 msgstr ""
 
+#. Story is just a blob of TXT, such as copy/paste.
 msgid "single-page"
 msgstr ""
 
+#. i.e. PDF or TXT
 msgid "What kind of file is this?"
 msgstr ""
 
@@ -719,6 +790,7 @@ msgstr ""
 msgid "Or Upload a File Instead"
 msgstr ""
 
+#. Unique name to identify this story in the system
 msgid "Unique Name"
 msgstr ""
 
@@ -737,9 +809,11 @@ msgstr ""
 msgid "Split/Merge Words"
 msgstr ""
 
+#. Create account button
 msgid "Create"
 msgstr ""
 
+#. confirm password
 msgid "Confirm"
 msgstr ""
 
@@ -821,6 +895,7 @@ msgid ""
 "online first by contacting the author"
 msgstr ""
 
+#. The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
 msgid "Preferred Language"
 msgstr ""
 
@@ -843,4 +918,90 @@ msgstr ""
 
 #. This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
 msgid "Change History"
+msgstr ""
+
+#. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
+msgid "Edit history Disabled."
+msgstr ""
+
+#. Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
+msgid "Synchronization error. Please report this to the author. Thank you."
+msgstr ""
+
+msgid ""
+"Unfortunately, this can only be performed with the online version. Please "
+"login to your account online to perform the upgrade. The changes will then "
+"be synchronized to all your devices. Thank you."
+msgstr ""
+
+#. next part of the same message
+msgid "and is configured to stay in synchronization with the server"
+msgstr ""
+
+#. This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
+msgid ""
+"Although you have authenticated successfully, we could not start "
+"synchronization successfully. Please try again."
+msgstr ""
+
+msgid ""
+"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
+"must first create them on the website first. (New stories require a "
+"significant amount of computer resources to prepare. Thus, they can only be "
+"synchronized to the device for regular use."
+msgstr ""
+
+msgid "Your translation API credentials have been changed to"
+msgstr ""
+
+msgid "No instant translation available."
+msgstr ""
+
+msgid "Selected instant translation"
+msgstr ""
+
+msgid "Piecemeal instant translation"
+msgstr ""
+
+msgid "No internet access. Offline instant translation only."
+msgstr ""
+
+msgid "Online instant translation"
+msgstr ""
+
+msgid "Offline instant translation"
+msgstr ""
+
+msgid "No instant translation found."
+msgstr ""
+
+msgid ""
+"Please wait until this account is fully synchronized for an offline instant "
+"translation."
+msgstr ""
+
+#. Beginning of a sentence
+msgid "You can request free API credentials"
+msgstr ""
+
+msgid ""
+"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
+"must first create them on the website. (New stories require a significant "
+"amount of computer resources to prepare. Thus, they can only be synchronized "
+"to the device for regular use."
+msgstr ""
+
+msgid "Need your client API key"
+msgstr ""
+
+msgid "Need your client API secret"
+msgstr ""
+
+msgid "Client API ID"
+msgstr ""
+
+msgid "Client API Secret"
+msgstr ""
+
+msgid "Change API Credentials"
 msgstr ""
