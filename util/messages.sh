@@ -18,15 +18,16 @@ for lang in zh py ; do
 
     if [ ! -e messages_${lang}.po ] ; then
         echo "First time generation of language: $lang"
-	xgettext $dir/../*.py
+	xgettext --omit-header --no-location --package-name=MICA --package-version="beta" --copyright-holder="Michael R. Hines michael@hinespot.com" $dir/../*.py
         mv messages.po messages_${lang}.po
     fi
 
     if [ -e messages_${lang}.po ] ; then
 	cp -f messages_${lang}.po messages_${lang}.po.bak
 	mv -f messages_${lang}.mo messages_${lang}.mo.bak
-	mv -f messages_${lang}.po messages.po
-	xgettext -j $dir/../*.py
+	mv -f messages_${lang}.po messages_dirty.po
+        cat messages_dirty.po | grep -v "^#\." | grep -v "^#:" > messages.po
+	xgettext --add-comments --omit-header --no-location -j $dir/../*.py
 	mv -f messages.po messages_${lang}.po
 	msgfmt -o messages_${lang}.mo messages_${lang}.po 
     fi
