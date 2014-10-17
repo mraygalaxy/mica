@@ -706,7 +706,7 @@ class MICA(object):
         for name, lgp in self.processors.iteritems() :
             for f in lgp.get_dictionaries() :
                 fname = params["scratch"] + f
-                mdebug("Exists: " + f)
+                mdebug("Exists: " + fname)
                 size = os.path.getsize(fname)
                 mdebug("FILE " + f + " size: " + str(size))
                 assert(size != 0)
