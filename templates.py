@@ -93,10 +93,15 @@ class StaticNavElement(Element) :
 
     @renderer
     def accountslots(self, request, tag) :
+                      # Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
         tag.fillSlots(preferences = _("Preferences"),
+                      # Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
                       disconnect = _("Disconnect"),
+                      # About is a traditional description of the software package itself that you might find in other help menus of other programs.
                       about = _("About"),
+                      # Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
                       help = _("Help"),
+                      # The software's privacy policy, such as what user information we keep and do not keep.
                       privacy = _("Privacy"))
         return tag
 
@@ -165,7 +170,7 @@ class EditHeaderElement(Element) :
 
     @renderer
     def edit_header(self, request, tag) :
-        tag.fillSlots(editname = _("Edit Legend"),
+        tag.fillSlots(editname = _("Legend"),
                       processedits = self.req.process_edits,
                       retrans = self.req.retrans,
                       previousmerge = _("These characters were previously merged into a word"),
@@ -319,15 +324,24 @@ class LegendElement(Element) :
 
     @renderer
     def legend(self, request, tag) :
-        tag.fillSlots(title = _("Polyphome Legend"),
+                     # 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
+        tag.fillSlots(title = _("Legend"),
+                      # This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
                       legend1 = _("Correct for tone and meaning"),
+                      # This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
                       legend1post = _("(No review necessary)"),
+                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed. 
                       legend2 = _("Possibly wrong meaning"),
+                      # This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate. 
                       legend2post = _("(but tone is correct)"),
+                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
                       legend3 = _("Possibly wrong tone"),
+                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
                       legend3post = _("(as well as meaning)"),
+                      # This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
                       legend4 = _("Definitely wrong previously"),
-                      history = _("Polyphome Change History"))
+                      # This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
+                      history = _("Change History"))
         return tag
 
 class DynamicViewElement(Element) :
@@ -429,8 +443,11 @@ class ViewElement(Element) :
                       spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                       stats = stats,
                       installpages = self.req.install_pages,
-                      performingtranslation=_("Doing online translation..."),
+                      # This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
+                      performingtranslation= _("Doing instant translation..."),
+                      # 'Go' or 'Skip' ahead to a specific page in a book/story.
                       go = _("Go"),
+                      # Skip ahead to a specific page in a book/story.
                       gotitle = _("Skip to page"))
         
         return tag
@@ -484,8 +501,11 @@ class HeadElement(Element):
             navactive = 'home'
 
         menu = [ 
+                 # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                  ("home" , ("/home", "home", _("Review"))), 
+                 # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
                  ("edit" , ("/edit", "pencil", _("Edit"))), 
+                 # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
                  ("read" , ("/read", "book", _("Read"))), 
             ]
 
@@ -509,16 +529,19 @@ class HeadElement(Element):
         if not self.req.pretend_disconnected :
             itemtag = tags.li(**{"class" : "dropdown"})
             atag = tags.a(**{"class" : "dropdown-toggle", "data-toggle" : "dropdown", "href" : "#"})
+            # Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account. 
             atag(tags.i(**{"class" : "glyphicon glyphicon-user"}), " " + _("Account") + " ", tags.b(**{"class" : "caret"}))
             utag = tags.ul(**{"class" : "dropdown-menu"})
 
             if not self.req.mobile :
                 ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal"})
+                # Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
                 ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
                 utag(tags.li(ttag))
 
                 if self.req.user and 'admin' in self.req.user['roles'] :
                     ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal"})
+                    # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                     ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
                     utag(tags.li(ttag))
 

@@ -1082,7 +1082,12 @@ class MICA(object):
 
         history.sort( key=by_total, reverse = True )
         req.history = history
-        req.onlineoffline = _("Breakdown") + ": " + _("Online") + ": " + str(online) + ", " + _("Offline") + ": " + str(offline)
+        # This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
+        req.onlineoffline = _("Breakdown")
+        # Online indicates a count of how many words were translated over the internet
+        req.onlineoffline += ": " + _("Online") + ": " + str(online) + ", "
+        # Offline indicates a count of how many words were translated using an offline dictionary
+        req.onlineoffline += _("Offline") + ": " + str(offline)
         return run_template(req, HistoryElement)
 
     def edits(self, req, story, uuid, page, list_mode) :
