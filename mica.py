@@ -997,9 +997,9 @@ class MICA(object):
             if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
                 out += "<td>" + _("Default") + "</td>"
             else :
+                # Appears on a button in review mode that allows the user to choose a definition among multiple choices.
                 out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
                        "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
-                       # Appears on a button in review mode that allows the user to choose a definition among multiple choices.
                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
 
             out += "</tr>"
@@ -3589,7 +3589,8 @@ class NONSSLRedirect(object) :
     def __call__(self, environ, start_response):
         req = Params(environ, start_response.im_self.request.session)
         (req.dest, req.path) = prefix(req.unparsed_uri)
-        tossl = "https://" + req.dest + ":" + str(params["sslport"]) + "/" + req.path 
+        address = req.dest.split(":", 1)[0]
+        tossl = "https://" + address + ":" + str(params["sslport"]) + "/" + req.path 
         mdebug("Redirecting non-ssl request to: " + tossl)
         resp = exc.HTTPTemporaryRedirect(location = tossl)
         return resp(environ, start_response)
