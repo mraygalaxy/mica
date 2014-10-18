@@ -76,3 +76,13 @@ $(document).click(function(e) {
         ConnectclickedAway = true;
      }
 });
+
+$(document).ready(function(){
+    $("div.view1").hide();
+    
+    $("div.slide1").click(function(){
+        $("div.view1").slideToggle(400);
+        $("div.tri1").toggleClass("toggle1");
+    });
+    
+});

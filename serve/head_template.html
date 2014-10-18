@@ -28,11 +28,26 @@
   <div class='content'>
     <div style="display:none" id="ConnectContents">
         <form method="POST" action="/connect" accept-charset="UTF-8">
-        <t:slot name='username'/>: <br/><div style='display:inline' t:render="username"/>
-        <br/><t:slot name='password'/>: <br/><input type="password" id="password" name="password" placeholder="Password" />
-        <br/><t:slot name='address'/>: <br/><div style="display:inline" t:render="address"/>
+	<table>
+	<tr><td>
+        <t:slot name='username'/>: 
+	</td></tr><tr><td>
+	<div style='display:inline' t:render="username"/>
+	 </td></tr><tr><td>
+        <t:slot name='password'/>:
+	 </td></tr><tr><td>
+	<input type="password" id="password" name="password" placeholder="Password" />
+	</td></tr><tr><td>
+	<div class="slide1"><div class="tri1"></div><u><t:slot name='address'/></u></div>
+	<div class="view1">
+        <div style="display:inline" t:render="address"/>
+	</div>
+	</td></tr><tr><td>
         <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
+	</td></tr><tr><td>
         <button onclick="$('#loginModal').modal('show');" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+	</td></tr>
+	</table>
         </form>
     </div>
     <div class="navbar navbar-default navbar-fixed-top" role='navigation'>
