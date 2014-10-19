@@ -630,7 +630,12 @@ class HeadElement(Element):
 
     @renderer
     def allslots(self, request, tag) :
+       facebook = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=["email"])
+       facebook = facebook_compliance_fix(facebook)
+       authorization_url, state = facebook.authorization_url(authorization_base_url)
+
        tag.fillSlots(jquery = self.req.bootstrappath + "/js/jquery.js",
+                     facebookurl = authorization_url,
                      bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
                      bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",

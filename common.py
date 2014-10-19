@@ -18,6 +18,15 @@ from datetime import datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
 
+client_id = '707083416036402'
+client_secret = 'd9cbe8d5f31613c85eafffa92c8e052c'
+authorization_base_url = 'https://www.facebook.com/dialog/oauth'
+token_url = 'https://graph.facebook.com/oauth/access_token'
+redirect_uri = 'http://localhost:20000/facebook'
+
+from requests_oauthlib import OAuth2Session
+from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+
 cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
