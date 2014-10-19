@@ -482,8 +482,9 @@ class HeadElement(Element):
 
     @renderer
     def languages(self, request, tag) :
-        for l, readable in lang.iteritems() :
-            if processor_map[l] :
+        for l, readable in supported.iteritems() :
+            src, dest = l.split(",")
+            if processor_map[src] and processor_map[dest] :
                 option = tags.option(value=l)
                 tag(option(_(readable)))
         return tag
@@ -636,11 +637,11 @@ class HeadElement(Element):
                      micajs = self.req.mpath + "/mica.js",
                      favicon = self.req.mpath + "/favicon.ico",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
-                     originallang = _("Original Language"),
+                     # Which language to learn, that is.
+                     langtype = _("Which languages"),
                      email = _("Email Address"),
                      # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
-                     yourlang = _("Your Language"),
                      # Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
                      removespaces = _("Remove Spaces?"),
                      mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),

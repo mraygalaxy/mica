@@ -380,7 +380,12 @@ class MICA(object):
                            "date" : timest(),
                            "email" : email,
                           }
-            self.userdb["org.couchdb.user:" + username] = user_doc 
+            try :
+                self.userdb["org.couchdb.user:" + username] = user_doc 
+            except couch_adapter.CommunicationError, e :
+                user_doc["password"] = "XXXXX"
+                merr("No user for you: " + str(user_doc) + ": " + str(e))
+                raise Exception("Internal validation error upon account creation.")
         else :
             dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
 
@@ -624,7 +629,7 @@ class MICA(object):
 
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
             # The demo account is provided for users who want to give the software a try without committing to it.
-            body = self.heromsg + "\n<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>" + body
+            body = self.heromsg + "\n<h4>" + deeper + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>"
 
         if now :
             contents = body
@@ -960,13 +965,19 @@ class MICA(object):
         gp = self.processors[story["source_language"]]
         out = ""
         # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
-        out += "\n" + _("This character") + " ("
+        if gp.already_romanized :
+            out += "\n" + _("This word") + " ("
+        else :
+            out += "\n" + _("This character") + " ("
         if gp.already_romanized : 
             out += "".join(unit["source"])
         else :
             out += " ".join(unit["source"])
         # end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
-        out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
+        if gp.already_romanized :
+            out += ") " + _("has more than one meaning") + ":<br>"
+        else :
+            out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
         out += "<tr>"
         if len(unit["multiple_sromanization"]) :
@@ -2484,8 +2495,8 @@ class MICA(object):
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
-                source_lang = req.http.params.get("source_language")
-                target_lang = req.http.params.get("target_language")
+                langtype = req.http.params.get("languagetype")
+                source_lang, target_lang = langtype.split(",")
                 source = fh.file.read()
                 return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces, source_lang, target_lang)
 
@@ -2493,8 +2504,8 @@ class MICA(object):
                 removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
-                source_lang = req.http.params.get("source_language")
-                target_lang = req.http.params.get("target_language")
+                langtype = req.http.params.get("languagetype")
+                source_lang, target_lang = langtype.split(",")
                 return self.add_story_from_source(req, filename, source, "txt", removespaces, source_lang, target_lang) 
 
             start_page = "0"
@@ -3097,6 +3108,13 @@ class MICA(object):
                     else :
                         # end of a message
                         output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
+                        output += "<br/><br/>"
+                        output += "<h4>"
+                        # Beginning of a message
+                        output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                        # end of a message
+                        output += _("please read the tutorial") + "</a>."
+                        output += "</h4>"
                     output += "</div>"
 
                 return self.bootstrap(req, output)
@@ -3458,7 +3476,10 @@ class MICA(object):
             else :
                 # This occurs when you come back to the webpage, and were previously reading a story,
                 # but need to indicate in which mode to read the story (of three modes).
-                return self.bootstrap(req, _("Read, Review, or Edit, my friend?"))
+                out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
+                out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                out += _("please read the tutorial") + "</a>."
+                return self.bootstrap(req, out)
 
         except exc.HTTPTemporaryRedirect, e :
             raise e

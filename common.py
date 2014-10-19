@@ -59,6 +59,11 @@ lang = {
          u"py" : _(u"Pinyin"),
        }
 
+supported = {
+          u"en,zh-CHS" : _(u"English to Chinese"),
+          u"zh-CHS,en" : _(u"Chinese to English"),
+        }
+
 samples = {
          u"zh-CHS" : [u"开源"],
          u"en" : [u"test"],
