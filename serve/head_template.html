@@ -236,8 +236,7 @@
                                 </h5>
                                 <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
                                 <br/>
-                                  <t:slot name="originallang"/>? <select name="source_language" t:render="languages"/>
-                                  <t:slot name="yourlang"/>? <select name="target_language" t:render="languages"/>
+                                  <t:slot name="langtype"/>? <select name="languagetype" t:render="languages"/>
                                 <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
                                 </form>                                   
                                 <p/>
@@ -255,8 +254,7 @@
                                       <option disabled="disabled" value='json'>JSON (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
                                       </select>
                                     <br/>
-                                      <t:slot name="originallang"/>? <select name="source_language" t:render="languages"/>
-                                      <t:slot name="yourlang"/>? <select name="target_language" t:render="languages"/>
+                                      <t:slot name="langtype"/>? <select name="languagetype" t:render="languages"/>
                                       <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
                                 </h5>
                                 </form>                                   

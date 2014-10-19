@@ -107,6 +107,8 @@ class MicaDatabaseCouchDB(object) :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couchdb.http.ResourceNotFound, e :
             raise ResourceNotFound(str(e), e)
+        except couchdb.http.ServerError, e :
+            raise CommunicationError("MICA Unvalidated: " + str(e))
 
     def __getitem__(self, name, false_if_not_found = False) :
         try :

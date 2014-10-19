@@ -174,11 +174,9 @@ msgstr "演示账户只能阅读。你必须下载安装app才能互动使用演
 msgid "Demo account is read-only"
 msgstr "演示账户只能阅读"
 
-#. Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
 msgid "This character"
 msgstr "这个字"
 
-#. end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
 msgid "is polyphonic: (has more than one pronunciation"
 msgstr "是多音字：（有多个发音）"
 
@@ -734,10 +732,8 @@ msgstr ""
 msgid "Preferred Language"
 msgstr ""
 
-msgid "Your Language"
-msgstr ""
-
-msgid "Original Language"
+#. Which language to learn, that is.
+msgid "Which languages"
 msgstr ""
 
 #. Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
@@ -898,4 +894,24 @@ msgid "Signing you in, Please wait"
 msgstr ""
 
 msgid "Loading story, Please wait"
+msgstr ""
+
+msgid "English to Chinese"
+msgstr ""
+
+msgid "Chinese to English"
+msgstr ""
+
+msgid "This word"
+msgstr ""
+
+msgid "has more than one meaning"
+msgstr ""
+
+#. Beginning of a message
+msgid "If this is your first time here"
+msgstr ""
+
+#. end of a message
+msgid "please read the tutorial"
 msgstr ""
