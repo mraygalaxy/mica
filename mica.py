@@ -2300,6 +2300,27 @@ class MICA(object):
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
                 return self.bootstrap(req, output, pretend_disconnected = True)
+            elif req.action == "facebook" :
+                client_id = '707083416036402'
+                client_secret = 'd9cbe8d5f31613c85eafffa92c8e052c'
+                authorization_base_url = 'https://www.facebook.com/dialog/oauth'
+                token_url = 'https://graph.facebook.com/oauth/access_token'
+                redirect_uri = 'http://localhost:20000/facebook'
+                facebook = OAuth2Session(client_id, redirect_uri=redirect_uri)
+                facebook = facebook_compliance_fix(facebook)
+
+                if not req.http.params.get("code") :
+                    return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
+                     
+                code = req.http.params.get("code") 
+                facebook.fetch_token(token_url, client_secret=client_secret,
+                code = code)
+
+
+                # Fetch a protected resource, i.e. user profile
+                r = facebook.get('https://graph.facebook.com/10105210908299843')
+                output = r.content
+                return self.bootstrap(req, output, pretend_disconnected = True)
             elif req.http.params.get("connect") :
                 if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                     # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
