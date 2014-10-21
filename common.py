@@ -1,48 +1,27 @@
 # coding: utf-8
-import logging
-from logging.handlers import logging
-from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO
-import socket
-import xmlrpclib
-from xmlrpclib import Server
-import sys
-import copy
-import socket
-import inspect
-import sys
-import threading
-import gettext
-import os
-import re
-from datetime import datetime
+from logging.handlers import RotatingFileHandler 
+from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
+from gettext import install as gettext_install, GNUTranslations, NullTranslations
+from datetime import datetime as datetime_datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
+from xmlrpclib import Server
+from re import compile as re_compile
+from os import path as os_path
+from sys import getdefaultencoding
+import xmlrpclib
+import sys
 
-client_id = '707083416036402'
-client_secret = 'd9cbe8d5f31613c85eafffa92c8e052c'
-authorization_base_url = 'https://www.facebook.com/dialog/oauth'
-token_url = 'https://graph.facebook.com/oauth/access_token'
-redirect_uri = 'http://localhost:20000/facebook'
-
-from requests_oauthlib import OAuth2Session
-from requests_oauthlib.compliance_fixes import facebook_compliance_fix
-
-cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-WARN = logging.WARN
-ERROR = logging.ERROR
-CRITICAL = logging.CRITICAL
-
-if sys.getdefaultencoding() != "utf-8" :
-    print sys.getdefaultencoding()
+if getdefaultencoding() != "utf-8" :
+    print getdefaultencoding()
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
 
 gnutextkwargs = {}
-gettext.install("mica", **gnutextkwargs)
+gettext_install("mica", **gnutextkwargs)
 
 if sys.version_info[0] < 3:
     # In Python 2, ensure that the _() that gets installed into built-ins
@@ -148,23 +127,23 @@ def mica_init_logging(logfile, duplicate = False) :
     while len(logger.handlers) != 0 :
         logger.removeHandler(logger.handlers[0])
 
-    restlogger = logging.getLogger("restkit.client")
-    restlogger.setLevel(level=logging.INFO)
-    txnlogger = logging.getLogger("txn")
-    txnlogger.setLevel(level=logging.INFO)
-    micalogger = logging.getLogger("")
-    micalogger.setLevel(logging.DEBUG)
+    restlogger = getLogger("restkit.client")
+    restlogger.setLevel(level=INFO)
+    txnlogger = getLogger("txn")
+    txnlogger.setLevel(level=INFO)
+    micalogger = getLogger("")
+    micalogger.setLevel(DEBUG)
 
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     if logfile and logfile != 1 :
-        handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
+        handler = RotatingFileHandler(logfile, maxBytes=(1048576*5), backupCount=7)
         handler.setFormatter(formatter)
 
         micalogger.addHandler(handler)
         txnlogger.addHandler(handler)
         restlogger.addHandler(handler)
 
-    streamhandler = logging.StreamHandler()
+    streamhandler = StreamHandler()
     streamhandler.setFormatter(formatter)
 
     micalogger.addHandler(streamhandler)
@@ -177,12 +156,12 @@ def wait_for_port_ready(hostname, port, try_once = False) :
     '''
     while True :
         try:
-            s = socket.socket()
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+            s = socket_socket()
+            s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
             s.bind((hostname, int(port)))
             s.close()
             break
-        except socket.error, (value, message) :
+        except socket_error, (value, message) :
             if value == 98 : 
                 mwarn("Previous port " + str(port) + " taken! ...")
                 if try_once :
@@ -207,9 +186,9 @@ def makeTimestamp(supplied_epoch_time = False) :
     TBD
     '''
     if not supplied_epoch_time :
-        _now = datetime.now()
+        _now = datetime_datetime.now()
     else :
-        _now = datetime.fromtimestamp(supplied_epoch_time)
+        _now = datetime_datetime.fromtimestamp(supplied_epoch_time)
         
     _date = _now.date()
 
@@ -275,5 +254,5 @@ class MICASlaveClient(Server):
         self.msci = None
         self.username = None
         self.print_message = print_message
-        self.last_refresh = datetime.now()
+        self.last_refresh = datetime_datetime.now()
 

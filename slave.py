@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
-import sys
-import inspect
-import threading
-import SocketServer
-import os
-import re
-
+from inspect import getmembers, ismethod, getargspec
+from threading import Thread, Event, current_thread
+from SocketServer import ThreadingMixIn
+from os import path as os_path
+from re import compile as re_compile
 from DocXMLRPCServer import DocXMLRPCServer
 from optparse import OptionParser
-from common import *
 from time import sleep
+from common import *
 
-cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
 def unwrap_kwargs(func, spec):
     def wrapper(*args, **kwargs):
@@ -100,11 +98,11 @@ def remove_service(hostname):
         return service
     return False
 
-class MICASlaveService ( threading.Thread ):
+class MICASlaveService (Thread):
     def __init__(self, debug, port, hostname) :
         super(MICASlaveService, self).__init__()
         
-        self._stop = threading.Event()
+        self._stop = Event()
         self.abort = False
         self.aborted = False
         self.port = port 
@@ -121,12 +119,12 @@ class MICASlaveService ( threading.Thread ):
         self.server.set_server_name("MICA Slave Service (xmlrpc)")
         #self.server.register_introspection_functions()
         self.slave.signatures = {}
-        for methodtuple in inspect.getmembers(self.slave, predicate=inspect.ismethod) :
+        for methodtuple in getmembers(self.slave, predicate=ismethod) :
             name = methodtuple[0]
             if name in ["__init__", "success", "error" ] :
                 continue
             func = getattr(self.slave, name)
-            argspec = inspect.getargspec(func) 
+            argspec = getargspec(func) 
             spec = argspec[0]
             defaults = [] if argspec[3] is None else argspec[3]
             num_spec = len(spec)
@@ -217,7 +215,7 @@ def main() :
             for hostname in hostnames :
                 remove_service(hostname)  
 
-MainThread = threading.current_thread()
+MainThread = current_thread()
 MainThread.abort = False
 
 if options.daemon :

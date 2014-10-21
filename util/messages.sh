@@ -27,6 +27,7 @@ for lang in zh py ; do
 	mv -f messages_${lang}.mo messages_${lang}.mo.bak
 	mv -f messages_${lang}.po messages_dirty.po
         cat messages_dirty.po | grep -v "^#\." | grep -v "^#:" > messages.po
+	rm -f messages_dirty.po
 	xgettext --add-comments --omit-header --no-location -j $dir/../*.py
 	mv -f messages.po messages_${lang}.po
 	msgfmt -o messages_${lang}.mo messages_${lang}.po 
