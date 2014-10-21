@@ -5,11 +5,10 @@
 
 from common import *
 from stardict import load_dictionary
-from sqlalchemy import *
+from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column
 from sqlalchemy.interfaces import PoolListener
-
-import string 
-import copy
+from string import ascii_lowercase, ascii_uppercase
+from copy import deepcopy
 
 story_format = 2
 
@@ -61,8 +60,8 @@ class Processor(object) :
             self.punctuation_numbers[unicode(str(num))] = {}
             self.punctuation_numbers[str(num)] = {}
 
-        self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_numbers))
-        self.punctuation.update(copy.deepcopy(self.punctuation_numbers))
+        self.punctuation_without_newlines.update(deepcopy(self.punctuation_numbers))
+        self.punctuation.update(deepcopy(self.punctuation_numbers))
 
     def parse_page(self, opaque, req, story, groups, page, temp_units = False, progress = False, error = False) :
         if temp_units :
@@ -314,7 +313,7 @@ class English(Processor) :
                         }
 
     def get_dictionaries(self) :
-        flist = copy.deepcopy(self.files)
+        flist = deepcopy(self.files)
         del flist["idx_file"]
         flistvalues = flist.values()
         flistvalues.append("eng.db")
@@ -554,12 +553,12 @@ class ChineseSimplified(Processor) :
 
         self.punctuation_letters = {}
 
-        for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+        for letter in (ascii_lowercase + ascii_uppercase) :
             self.punctuation_letters[letter] = {}
             self.punctuation_letters[letter.decode("utf-8")] = {}
 
-        self.punctuation_without_newlines.update(copy.deepcopy(self.punctuation_letters))
-        self.punctuation.update(copy.deepcopy(self.punctuation_letters))
+        self.punctuation_without_newlines.update(deepcopy(self.punctuation_letters))
+        self.punctuation.update(deepcopy(self.punctuation_letters))
 
     def get_dictionaries(self) :
         return ["cjklib.db", "cedict.db", "tones.db"]
@@ -807,7 +806,7 @@ class ChineseSimplified(Processor) :
                 idx = 0
                 changes = False
                 while idx < len(units) :
-                    new_unit = copy.deepcopy(units[idx])
+                    new_unit = deepcopy(units[idx])
                     if new_unit["trans"] :
                         new_target = []
                         for word in new_unit["target"] :

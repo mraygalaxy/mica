@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import urllib
-import urllib2
-import json
-import warnings
+from urllib import urlencode as urllib_urlencode
+from urllib2 import urlopen as urllib2_urlopen, Request as urllib2_Request
+from json import loads, dumps
 
 from common import *
 
@@ -24,36 +23,9 @@ class TranslateApiException(Exception):
         super(TranslateApiException, self).__init__(self.message, *args)
 
 class Translator(object):
-    """Implements AJAX API for the Microsoft Translator service
-
-    :param app_id: A string containing the Bing AppID. (Deprecated)
-    """
-
     def __init__(self, client_id, client_secret,
             scope="http://api.microsofttranslator.com",
             grant_type="client_credentials", app_id=None, debug=False):
-        """
-
-
-        :param client_id: The client ID that you specified when you registered
-                          your application with Azure DataMarket.
-        :param client_secret: The client secret value that you obtained when
-                              you registered your application with Azure
-                              DataMarket.
-        :param scope: Defaults to http://api.microsofttranslator.com
-        ;param grant_type: Defaults to "client_credentials"
-        :param app_id: Deprecated
-        :param debug: If true, the logging level will be set to debug
-
-        .. versionchanged: 0.4
-            Bing AppID mechanism is deprecated and is no longer supported.
-            See: http://msdn.microsoft.com/en-us/library/hh454950
-        """
-        if app_id is not None:
-            warnings.warn("""app_id is deprected since v0.4.
-            See: http://msdn.microsoft.com/en-us/library/hh454950
-            """, DeprecationWarning, stacklevel=2)
-
         self.client_id = client_id
         self.client_secret = client_secret
         self.scope = scope
@@ -61,23 +33,7 @@ class Translator(object):
         self.access_token = None
 
     def get_access_token(self):
-        """Bing AppID mechanism is deprecated and is no longer supported.
-        As mentioned above, you must obtain an access token to use the
-        Microsoft Translator API. The access token is more secure, OAuth
-        standard compliant, and more flexible. Users who are using Bing AppID
-        are strongly recommended to get an access token as soon as possible.
-
-        .. note::
-            The value of access token can be used for subsequent calls to the
-            Microsoft Translator API. The access token expires after 10
-            minutes. It is always better to check elapsed time between time at
-            which token issued and current time. If elapsed time exceeds 10
-            minute time period renew access token by following obtaining
-            access token procedure.
-
-        :return: The access token to be used with subsequent requests
-        """
-        args = urllib.urlencode({
+        args = urllib_urlencode({
             'client_id': self.client_id,
             'client_secret': self.client_secret,
             'scope': self.scope,
@@ -87,7 +43,7 @@ class Translator(object):
         mdebug("Authenticating...")
         response = False
         try :
-            response = json.loads(urllib2.urlopen(
+            response = loads(urllib2_urlopen(
                 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args, timeout=30
             ).read())
         except IOError, e :
@@ -121,16 +77,16 @@ class Translator(object):
 
         mdebug("urllib request start.")
 
-        request = urllib2.Request(
-            "%s?%s" % (url, urllib.urlencode(p)),
+        request = urllib2_Request(
+            "%s?%s" % (url, urllib_urlencode(p)),
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
 
         mdebug("urllib get response")
-        response = urllib2.urlopen(request, timeout=30).read()
+        response = urllib2_urlopen(request, timeout=30).read()
 
         mdebug("json load")
-        rv =  json.loads(response.decode("utf-8-sig"))
+        rv =  loads(response.decode("utf-8-sig"))
 
         if isinstance(rv, basestring) and \
                 rv.startswith("ArgumentOutOfRangeException"):
@@ -202,9 +158,9 @@ class Translator(object):
             'State': u''
             }.update(options)
         p = {
-            'texts': json.dumps(texts),
+            'texts': dumps(texts),
             'to': to_lang,
-            'options': json.dumps(options),
+            'options': dumps(options),
             }
         mdebug("Translator options set.")
         if from_lang is not None:

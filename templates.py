@@ -6,10 +6,12 @@ from twisted.python.filepath import FilePath
 from twisted.internet import defer
 from cStringIO import StringIO
 from common import *
-import os
-import re
+from os import path as os_path
+from re import compile as re_compile
+from requests_oauthlib import OAuth2Session
+from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
-cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
 class StoryElement(Element) :
     def __init__(self, req, content) :
@@ -35,10 +37,10 @@ class PasswordElement(Element) :
 
     @renderer
     def password(self, request, tag) :
-        tag.fillSlots(oldpassword =_("Old Password"),
-                      password = _("New Password"),
-                      confirm = _("Confirm Password"),
-                      change = _("Change Password"),
+        tag.fillSlots(oldpassword =_("Old Password / Token"),
+                      password = _("New Password / Token"),
+                      confirm = _("Confirm Password / Token"),
+                      change = _("Change Password / Token"),
                       microsoft = _("Input Microsoft Translation API Credentials?"),
                       # Beginning of a sentence
                       request = _("You can request free API credentials"),
@@ -630,9 +632,10 @@ class HeadElement(Element):
 
     @renderer
     def allslots(self, request, tag) :
-       facebook = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=["email"])
+       fbcreds = self.req.oauth["facebook"]
+       facebook = OAuth2Session(fbcreds["client_id"], redirect_uri=self.req.oauth["redirect"] + "facebook", scope = fbcreds["scope"])
        facebook = facebook_compliance_fix(facebook)
-       authorization_url, state = facebook.authorization_url(authorization_base_url)
+       authorization_url, state = facebook.authorization_url(fbcreds["authorization_base_url"])
 
        tag.fillSlots(jquery = self.req.bootstrappath + "/js/jquery.js",
                      facebookurl = authorization_url,
@@ -671,8 +674,8 @@ class HeadElement(Element):
                      create = _("Create"),
                      # confirm password
                      confirmpass = _("Confirm"),
-                     password = _("Password"),
-                     username = _("Username"),
+                     password = _("Password / Token"),
+                     username = _("Account"),
                      newaccount = _("Create New Account"),
                      aboutsoftware = _("About this software"),
                      signin = _("Login"),
@@ -682,6 +685,7 @@ class HeadElement(Element):
                      signing = _("Signing you in, Please wait"),
                      loading = _("Loading story, Please wait"),
                      compacting = _("Compacting database, Please wait"),
+                     facebook = _("login with facebook"),
                      )
        return tag
 

@@ -4,9 +4,24 @@
 from pwd import getpwuid
 from sys import path
 from time import sleep, time as timest
-from threading import Thread, Lock, current_thread
+from threading import Thread, Lock, current_thread, Timer
 from copy import deepcopy
 from cStringIO import StringIO
+from traceback import format_exc
+from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
+from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
+from shutil import rmtree as shutil_rmtree
+from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError
+from codecs import open as codecs_open
+from uuid import uuid4 as uuid_uuid4
+from hashlib import md5 as hashlib_md5
+from json import loads as json_loads, dumps as json_dumps
+from base64 import b64encode as base64_b64encode
+from sys import settrace as sys_settrace
+from socket import timeout as socket_timeout
+from Queue import Queue as Queue_Queue, Empty as Queue_Empty
+from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
+from binascii import hexlify as binascii_hexlify
 
 '''
 def tracefunc(frame, event, arg, indent=[0]):
@@ -18,41 +33,26 @@ def tracefunc(frame, event, arg, indent=[0]):
         indent[0] -= 2
 
     return tracefunc
-#sys.settrace(tracefunc)
+#sys_settrace(tracefunc)
 '''
-
-import traceback
-import os
-import re
-import shutil
-import urllib
-import urllib2
-import copy
-import codecs
-import uuid as uuid4
-import inspect
-import hashlib
-import errno
-import json
-import base64
-import __builtin__
-import sys
-import socket
-import Queue
-import string 
 
 texts = {}
 
-from common import *
+import couch_adapter
+import processors
 from processors import * 
+from common import *
 from translator import *
 from templates import *
-import processors
-import couch_adapter
+
+if not mobile :
+    from requests_oauthlib import OAuth2Session
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
 mdebug("Initial imports complete")
 
-cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
+import sys
 sys.path = [cwd, cwd + "mica/"] + sys.path
 
 #Non-python-core
@@ -67,7 +67,6 @@ from twisted.web.server import Site
 from twisted.web import proxy, server
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
-import twisted
 
 from webob import Request, Response, exc
 
@@ -83,10 +82,10 @@ if not mobile :
 
 mdebug("Imports complete.")
 
-deeper = "<br/><br/></br></br></br></br></br><br/><br/>"
+deeper = "<br/><br/></br></br></br></br></br><br/><br/></br><br/><br/></br><br/><br/>"
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
-for letter in (string.ascii_lowercase + string.ascii_uppercase) :
+for letter in (string_ascii_lowercase + string_ascii_uppercase) :
     pdf_punct += letter.decode("utf-8")
 
 pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
@@ -109,7 +108,6 @@ def parse_lt_objs (lt_objs, page_number):
 
     return (text_content, images)
 
-                
 def repeat(func, args, kwargs):
     success = False
     while not success :
@@ -125,27 +123,27 @@ def filter_lines(data2) :
         if line == "" :
             continue
 
-        for match in re.compile(r'[0-9]+ +[0-9, ]+', flags=re.IGNORECASE).findall(line) :
+        for match in re_compile(r'[0-9]+ +[0-9, ]+', flags=re_IGNORECASE).findall(line) :
             line = line.replace(match, match.replace(" ", ""))
 
         temp_line = line.strip().decode("utf-8") if isinstance(line, str) else line.strip()
         if len(temp_line) == 3 and temp_line[0] == "(" and temp_line[-1] == ")" :
-            matches = re.compile(u'\(.\)', flags=re.IGNORECASE).findall(temp_line)
+            matches = re_compile(u'\(.\)', flags=re_IGNORECASE).findall(temp_line)
 
             if len(matches) == 1 :
                 continue
 
-        line = re.sub(r'( *82303.*$|[0-9][0-9][0-9][0-9][0-9]+ *)', '', line)
-        test_all = re.sub(r'([\x00-\x7F]| )+', '', line)
+        line = re_sub(r'( *82303.*$|[0-9][0-9][0-9][0-9][0-9]+ *)', '', line)
+        test_all = re_sub(r'([\x00-\x7F]| )+', '', line)
 
         if test_all == "" :
             continue
 
-        no_numbers = re.sub(r"([0-9]| )+", "", line)
+        no_numbers = re_sub(r"([0-9]| )+", "", line)
         if isinstance(no_numbers, str) :
             no_numbers = no_numbers.decode("utf-8")
-        while len(re.compile(pdf_expr).findall(no_numbers)) :
-            no_numbers = re.sub(pdf_expr, '', no_numbers)
+        while len(re_compile(pdf_expr).findall(no_numbers)) :
+            no_numbers = re_sub(pdf_expr, '', no_numbers)
             continue
 
         if len(no_numbers) <= 1 :
@@ -164,13 +162,12 @@ def itemhelp(pairs) :
     return pr
 
 mdebug("Setting up prefixes.")
-
-username = getpwuid(os.getuid())[0]
+username = getpwuid(os_getuid())[0]
 relative_prefix_suffix = "serve"
 relative_prefix = "/" + relative_prefix_suffix
 
 def prefix(uri) :
-    result = re.compile("[^/]*\:\/\/([^/]*)(\/(.*))*").search(uri)
+    result = re_compile("[^/]*\:\/\/([^/]*)(\/(.*))*").search(uri)
     address = result.group(1)
     path = result.group(3)
     if path is None :
@@ -207,23 +204,32 @@ class Params(object) :
 
 
 class MICA(object):
-    def authenticate(self, username, password, auth_url) :
+    def authenticate(self, username, password, auth_url, from_third_party = False) :
         try :
-            mdebug("Authenticating to: " + auth_url)
-            username_unquoted = urllib2.quote(username)
+            mdebug("Authenticating to: " + str(auth_url))
+
+            lookup_username = username
+
+            if from_third_party :
+                lookup_username = from_third_party["email"]
+                password = params["admin_pass"]
+                username = params["admin_user"]
+
+            lookup_username_unquoted = urllib2_quote(lookup_username)
+            username_unquoted = urllib2_quote(username)
             userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
-            req = urllib2.Request(auth_url + "/_users/org.couchdb.user:" + username_unquoted)
+            req = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
             req.add_header('Accept', 'application/json')
             req.add_header("Content-type", "application/x-www-form-urlencoded")
             req.add_header('Authorization', userData)
-            res = urllib2.urlopen(req)
+            res = urllib2_urlopen(req)
             mdebug("Authentication success with username: " + username)
-            return json.loads(res.read())
-        except urllib2.URLError, e :
+            return json_loads(res.read())
+        except urllib2_URLError, e :
             mdebug("Invalid username or password: " + username + " " + str(e))
             return False
 
-    def verify_db(self, req, dbname, password = False, cookie = False, users = False) :
+    def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
         username = req.session.value["username"]
 
         if username not in self.dbs or not self.dbs[username] : 
@@ -233,7 +239,11 @@ class MICA(object):
                 self.dbs[username] = self.db
             else :
                 address = req.session.value["address"] if "address" in req.session.value else self.credentials()
-                cs = self.db_adapter(address, username, password, cookie)
+                if not from_third_party :
+                    cs = self.db_adapter(address, username, password, cookie)
+                else :
+                    cs = self.db_adapter(address, params["admin_user"], params["admin_pass"], cookie)
+
                 req.session.value["cookie"] = cs.cookie
                 req.session.save()
                 self.dbs[username] = cs[dbname]
@@ -282,7 +292,10 @@ class MICA(object):
 
     def install_language(self, language) :
         mdebug("Setting language to: " + language)
-        texts[language].install()
+        if language in texts :
+            texts[language].install()
+        else :
+            texts["en"].install()
         mdebug("Language set.")
         
     def __init__(self, db_adapter):
@@ -356,17 +369,17 @@ class MICA(object):
 
         if mobile :
             mdebug("INIT Launching runloop timer")
-            threading.Timer(5, self.runloop_sched).start()
+            Timer(5, self.runloop_sched).start()
 
         mdebug("Starting view runner thread")
-        vt = threading.Thread(target=self.view_runner_sched)
+        vt = Thread(target=self.view_runner_sched)
         vt.daemon = True
         vt.start()
 
 
     def make_account(self, req, username, password, mica_roles, email, admin = False, dbname = False, language = "en") :
         if not dbname :
-            new_uuid = str(uuid4.uuid4())
+            new_uuid = str(uuid_uuid4())
             dbname = "mica_" + new_uuid
 
         if not self.userdb.doc_exist("org.couchdb.user:" + username) :
@@ -465,7 +478,7 @@ class MICA(object):
     def view_runner_sched(self) :
         while True :
             if params["serialize_couch_on_mobile"] :
-                rq = Queue.Queue()
+                rq = Queue_Queue()
                 co = self.view_runner()
                 co.next()
                 params["q"].put((co, None, rq))
@@ -549,12 +562,12 @@ class MICA(object):
             self.db.runloop()
 
     def runloop_sched(self) :
-        rq = Queue.Queue()
+        rq = Queue_Queue()
         co = self.runloop()
         co.next()
         params["q"].put((co, None, rq))
         resp = rq.get()
-        threading.Timer(1, self.runloop_sched).start()
+        Timer(1, self.runloop_sched).start()
 
     def __call__(self, environ, start_response):
         # Hack to make WebOb work with Twisted
@@ -565,7 +578,7 @@ class MICA(object):
         req.dest = ""#prefix(req.unparsed_uri)
         
         if params["serialize_couch_on_mobile"] :
-            rq = Queue.Queue()
+            rq = Queue_Queue()
             co = self.serial_common()
             co.next()
             params["q"].put((co, req, rq))
@@ -640,11 +653,12 @@ class MICA(object):
                 req.view_percent = "0.0"
             req.pretend_disconnected = pretend_disconnected
             req.mobile = mobile
-            req.address = req.session.value["address"] if "address" in req.session.value else self.credentials()
+            req.address = req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else self.credentials()
 
             if req.session.value['connected'] and not pretend_disconnected :
                 req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
 
+            req.oauth = params["oauth"]
             contents = run_template(req, HeadElement)
 
         if not nodecode :
@@ -656,7 +670,7 @@ class MICA(object):
         return contents
 
     def get_polyphome_hash(self, correct, source) :
-        return hashlib.md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
+        return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
 
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
@@ -665,7 +679,7 @@ class MICA(object):
         fname = params["scratch"] + f 
 
         try :
-            if not os.path.isfile(fname) :
+            if not os_path.isfile(fname) :
                 self.db.get_attachment_to_path("MICA:filelisting", f, fname)
                 mdebug("Exported " + f + ".")
         except couch_adapter.CommunicationError, e :
@@ -696,12 +710,12 @@ class MICA(object):
                     for f in lgp.get_dictionaries() :
                         fname = params["scratch"] + f
 
-                        if not os.path.isfile(fname) :
+                        if not os_path.isfile(fname) :
                             all_found = False
 
                             mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
                             if params["serialize_couch_on_mobile"] :
-                                rq = Queue.Queue()
+                                rq = Queue_Queue()
                                 co = self.test_dicts_handle_serial()
                                 co.next()
                                 params["q"].put((co, f, rq))
@@ -716,7 +730,7 @@ class MICA(object):
             for f in lgp.get_dictionaries() :
                 fname = params["scratch"] + f
                 mdebug("Exists: " + fname)
-                size = os.path.getsize(fname)
+                size = os_path.getsize(fname)
                 mdebug("FILE " + f + " size: " + str(size))
                 assert(size != 0)
 
@@ -1676,7 +1690,7 @@ class MICA(object):
                 error = "Connection error. Will try one more time: " + str(e)
             except urllib2.URLError, e :
                 error = "Response was probably too slow. Will try again: " + str(e)
-            except socket.timeout, e :
+            except socket_timeout, e :
                 error = "Response was probably too slow. Will try again: " + str(e)
             except Exception, e :
                 error = "Unknown fatal translation error: " + str(e)
@@ -1971,7 +1985,7 @@ class MICA(object):
         if filetype == "txt" :
             mdebug("Source: " + source)
 
-        new_uuid = str(uuid4.uuid4())
+        new_uuid = str(uuid_uuid4())
 
         story = {
             'uuid' : new_uuid,
@@ -2079,7 +2093,7 @@ class MICA(object):
 
        if not req.db.doc_exist("_design/" + name) :
            mdebug("View " + name + " does not exist. Uploading.")
-           req.db["_design/" + name] = json.loads(vc)
+           req.db["_design/" + name] = json_loads(vc)
 
     def clear_story(self, req) :
         uuid = False
@@ -2296,46 +2310,107 @@ class MICA(object):
         try :
             if req.action == "privacy" :
                 output = ""
-                helpfh = codecs.open(cwd + "serve/privacy_template.html", "r", "utf-8")
+                helpfh = codecs_open(cwd + "serve/privacy_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
                 return self.bootstrap(req, output, pretend_disconnected = True)
-            elif req.action == "facebook" :
-                client_id = '707083416036402'
-                client_secret = 'd9cbe8d5f31613c85eafffa92c8e052c'
-                authorization_base_url = 'https://www.facebook.com/dialog/oauth'
-                token_url = 'https://graph.facebook.com/oauth/access_token'
-                redirect_uri = 'http://localhost:20000/facebook'
-                facebook = OAuth2Session(client_id, redirect_uri=redirect_uri)
-                facebook = facebook_compliance_fix(facebook)
+
+            from_third_party = False
+
+            if not mobile and req.action in ["facebook"] : #google
+                who = req.action
+                creds = params["oauth"][who]
+                redirect_uri = params["oauth"]["redirect"] + who 
+                service = OAuth2Session(creds["client_id"], redirect_uri=redirect_uri)
+
+                if who == "facebook" :
+                    service = facebook_compliance_fix(service)
 
                 if not req.http.params.get("code") :
-                    return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
-                     
-                code = req.http.params.get("code") 
-                facebook.fetch_token(token_url, client_secret=client_secret,
-                code = code)
+                # example   facebook?error=access_denied&error_code=200&error_description=Permissions+error&error_reason=user_denied&state=a55D47cjqwYi8tMXRFa6igjlT78TpE#_=_
+                    if req.http.params.get("error") :
+                        reason = req.http.params.get("error_reason")
+                        if reason == "user_denied" :
+                            # User denied our request to create their account using social networking. Apologize and move on.
+                            return self.bootstrap(req, self.heromsg + deeper + _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
+                        else :
+                            # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
+                            return self.bootstrap(req, self.heromsg + deeper + _("Our service could not create an account from you") + ": " + req.http.params.get("error_description") + " (" + reason + ").</h4></div>")
+                    else :
+                        mdebug(str(req.http.params))  
+                        # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
+                        return self.bootstrap(req, self.heromsg + deeper + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
+                code = req.http.params.get("code")
+                service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
-                # Fetch a protected resource, i.e. user profile
-                r = facebook.get('https://graph.facebook.com/10105210908299843')
-                output = r.content
-                return self.bootstrap(req, output, pretend_disconnected = True)
-            elif req.http.params.get("connect") :
-                if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
-                    # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
-                username = req.http.params.get('username')
-                password = req.http.params.get('password')
-                address = req.http.params.get('address')
+                r = service.get(creds["lookup_url"])
+                
+                # example: {"id":"some_facebook_id","email":"some_email_address","first_name":"some_first_name","gender":"male","last_name":"some_last_name","link":"https:\/\/www.facebook.com\/app_scoped_user_id\/that_same_id_number\/","locale":"en_US","middle_name":"some_middle_name","name":"some_full_name","timezone":8,"updated_time":"2013-11-26T06:04:40+0000","verified":true}
+                values = json_loads(r.content)
+
+                assert("verified" in values)
+
+                if not values["verified"] :
+                    return self.bootstrap(self.heromsg + "\n" + deeper + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later."))
+
+                elif "email" not in values :
+                    authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
+                    out = self.heromsg + "\n" + deeper + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
+                    out += authorization_url
+                    out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
+                    return self.bootstrap(req, out)
+
+                password = binascii_hexlify(os_urandom(4))
+                language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
+
+                from_third_party = values
+
+                if not self.userdb.doc_exist("org.couchdb.user:" + values["email"]) :
+                    self.make_account(req, values["email"], password, ['normal'], values["email"], language = language)
+                    mdebug("Language: " + language)
+
+                    output = ""
+                    output += "<h4>" + _("Congratulations. Your account is created") + ": " + values["email"] 
+                    # Need to reset passwords for people that have logged in via social networks
+                    output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
+
+                    output += "<br/><br/>Save this Password: " + password
+                    output += "<br/><br/>" + _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                    output += _("please read the tutorial") + "</a>"
+                    output += "<br/><br/>Happy Learning!</h4>"
+
+                    from_third_party["output"] = output
+
+            if req.http.params.get("connect") or from_third_party != False :
+                if from_third_party :
+                    username = from_third_party["email"]
+                    req.session.value["from_third_party"] = True 
+                else :
+                    req.session.value["from_third_party"] = False 
+                    if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
+                        # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
+                    username = req.http.params.get('username')
+                    password = req.http.params.get('password')
+
+                if req.http.params.get("address") :
+                    address = req.http.params.get('address')
+                elif "adddress" in req.session.value and req.session.value["address"] != None :
+                    address = req.session.value["address"]
+                else :
+                    address = self.credentials()
+
                 req.session.value["username"] = username
                 req.session.value["address"] = address
+
                 if mobile :
                     req.session.value["password"] = password
+
                 req.session.save()
+                mdebug("authenticating...")
 
-                auth_user = self.authenticate(username, password, address)
-
+                auth_user = self.authenticate(username, password, address, from_third_party = from_third_party)
                 if not auth_user :
                     # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
                     return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
@@ -2343,7 +2418,8 @@ class MICA(object):
                 req.session.value["database"] = auth_user["mica_database"] 
                 req.session.save()
 
-                self.verify_db(req, auth_user["mica_database"], password = password)
+                mdebug("verifying...")
+                self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
 
                 if mobile :
                     if req.db.doc_exist("MICA:appuser") :
@@ -2739,7 +2815,7 @@ class MICA(object):
                         for x in range(0, len(requests)) : 
                             part = result[x]
                             if "TranslatedText" not in part :
-                                mdebug("Why didn't we get anything: " + json.dumps(result))
+                                mdebug("Why didn't we get anything: " + json_dumps(result))
                                 target = _("No instant translation available.")
                             else :
                                 target = part["TranslatedText"].encode("utf-8")
@@ -2790,7 +2866,7 @@ class MICA(object):
                         mdebug("Instant test failed: " + str(e))
                         out += _("Please wait until this account is fully synchronized for an offline instant translation.")
                 else :
-                    out += json.dumps(final)
+                    out += json_dumps(final)
                 out += "</div>"
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
@@ -2990,7 +3066,7 @@ class MICA(object):
 
             if req.http.params.get("oprequest") :
                 oprequest = req.http.params.get("oprequest");
-                edits = json.loads(oprequest) 
+                edits = json_loads(oprequest) 
                 offset = 0
                 
                 for edit in edits :
@@ -3107,7 +3183,7 @@ class MICA(object):
                                 if "images" in original and int(nb_image) < len(original["images"]) :
                                     # I think couch is already base-64 encoding this, so if we can find
                                     # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
-                                    output += "<img src='data:image/jpeg;base64," + base64.b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
+                                    output += "<img src='data:image/jpeg;base64," + base64_b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
                                     image_found = True
                             if not image_found :
                                # Beginning of a sentence: Original source image of the current page from which the text comes
@@ -3122,21 +3198,24 @@ class MICA(object):
                             return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
                     output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
                 else :
-                    # Beginning of a message.
-                    output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
-                    if mobile :
-                        output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + "</h5>"
+                    if from_third_party and "output" in from_third_party :
+                        output += from_third_party["output"]
                     else :
-                        # end of a message
-                        output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
-                        output += "<br/><br/>"
-                        output += "<h4>"
-                        # Beginning of a message
-                        output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
-                        # end of a message
-                        output += _("please read the tutorial") + "</a>."
-                        output += "</h4>"
-                    output += "</div>"
+                        # Beginning of a message.
+                        output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
+                        if mobile :
+                            output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + "</h5>"
+                        else :
+                            # end of a message
+                            output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
+                            output += "<br/><br/>"
+                            output += "<h4>"
+                            # Beginning of a message
+                            output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                            # end of a message
+                            output += _("please read the tutorial") + "</a>"
+                            output += "</h4>"
+                        output += "</div>"
 
                 return self.bootstrap(req, output)
             elif req.action == "stories" :
@@ -3489,7 +3568,7 @@ class MICA(object):
 
             elif req.action == "help" :
                 output = ""
-                helpfh = codecs.open(cwd + "serve/info_template.html", "r", "utf-8")
+                helpfh = codecs_open(cwd + "serve/info_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
                 output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
@@ -3497,9 +3576,12 @@ class MICA(object):
             else :
                 # This occurs when you come back to the webpage, and were previously reading a story,
                 # but need to indicate in which mode to read the story (of three modes).
-                out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-                out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
-                out += _("please read the tutorial") + "</a>."
+                if from_third_party and "output" in from_third_party :
+                    out = from_third_party["output"]
+                else :
+                    out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
+                    out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                    out += _("please read the tutorial") + "</a>"
                 return self.bootstrap(req, out)
 
         except exc.HTTPTemporaryRedirect, e :
@@ -3545,13 +3627,13 @@ class CDict(object):
         else :
             sfn = params["session_dir"] + uid + ".session"
 
-        if os.path.isfile(sfn) :
+        if os_path.isfile(sfn) :
             mdebug("Loading existing session file: " + sfn)
             fh = open(sfn, 'r')
             sc = fh.read().strip()
             fh.close()
             if sc != "" :
-                start = json.loads(sc)
+                start = json_loads(sc)
         else :
             mdebug("No session existing session file: " + sfn)
 
@@ -3565,7 +3647,7 @@ class CDict(object):
 
         #mdebug("Saving to session file: " + sfn)
         fh = open(sfn, 'w')
-        fh.write(json.dumps(self.value))
+        fh.write(json_dumps(self.value))
         fh.close()
         pass
 
@@ -3576,7 +3658,7 @@ def expired(uid):
    mdebug("Session " + uid + " has expired.")
    sessions.remove(uid)
    mdebug("Removing session file.")
-   os.remove(sfn)
+   osremove(sfn)
         
 class GUIDispatcher(Resource) :
     def __init__(self, mica) :
@@ -3720,10 +3802,10 @@ def go(p) :
     for l in lang :
        locale = l.split("-")[0]
        try:
-           texts[locale] = gettext.GNUTranslations(open(cwd + "res/messages_" + locale + ".mo", 'rb'))
+           texts[locale] = GNUTranslations(open(cwd + "res/messages_" + locale + ".mo", 'rb'))
        except IOError:
            if l == u"en" :
-               texts[locale] = gettext.NullTranslations()
+               texts[locale] = NullTranslations()
            else :
                mdebug("Language translation " + l + " failed. Bailing...")
                exit(1)
@@ -3770,16 +3852,16 @@ def go(p) :
         params["serialize_couch_on_mobile"] = False
 
     if not params["keepsession"] :
-        if os.path.isdir(params["session_dir"]) :
+        if os_path.isdir(params["session_dir"]) :
             mdebug("Destroying all session files")
             try :
-                shutil.rmtree(params["session_dir"])
+                shutil_rmtree(params["session_dir"])
             except Exception, e :
                 merr("Failed to remove tree: " + str(e))
 
-    if not os.path.isdir(params["session_dir"]) :
+    if not os_path.isdir(params["session_dir"]) :
         mdebug("Making new session folder.")
-        os.makedirs(params["session_dir"])
+        os_makedirs(params["session_dir"])
 
     mdebug("Registering session adapter.")
     registerAdapter(CDict, Session, IDict)
@@ -3809,12 +3891,17 @@ def go(p) :
         db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
 
         if params["serialize_couch_on_mobile"] :
-            params["q"] = Queue.Queue()
+            params["q"] = Queue_Queue()
+
+        if int(params["sslport"]) == -1 :
+            params["oauth"]["redirect"] += ":" + str(params["port"]) + "/"
+        else :
+            params["oauth"]["redirect"] += ":" + str(params["sslport"]) + "/"
 
         mica = MICA(db_adapter)
 
         mdebug("INIT Testing dictionary thread")
-        ct = threading.Thread(target=mica.test_dicts)
+        ct = Thread(target=mica.test_dicts)
         ct.daemon = True
         ct.start()
 
@@ -3882,7 +3969,7 @@ def go(p) :
                     try :
                         (co, req, rq) = params["q"].get(timeout=10000)
                         break
-                    except Queue.Empty :
+                    except Queue_Empty :
                         pass
                 try :
                     co.send((req, rq))
@@ -3908,7 +3995,7 @@ def second_splash() :
 
     fh = open(cwd + "serve/icon.png", 'r')
     contents = fh.read()
-    encoded1 = base64.b64encode(contents)
+    encoded1 = base64_b64encode(contents)
     fh.close()
 
     output += "<img src='data:image/jpeg;base64," + str(encoded1) + "' width='100%'/>"
@@ -3919,7 +4006,7 @@ def second_splash() :
     output += "<p><p><p>"
     fh = open(cwd + "serve/spinner.gif", 'r')
     contents = fh.read() 
-    encoded2 = base64.b64encode(contents)
+    encoded2 = base64_b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
     output += "&#160;&#160;" + _("Please wait...") + "</p>"

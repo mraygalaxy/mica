@@ -1,13 +1,13 @@
 # coding: utf-8
 from common import *
-import json
-import uuid as uuid4
-import urllib2
-import locale
+from json import loads, dumps
+from uuid import uuid4
+from urllib2 import quote
+from locale import setlocale, LC_ALL, getlocale
 
 try :
-    import couchdb
     from couchdb import Server
+    from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ServerError
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.") 
 
@@ -103,19 +103,19 @@ class MicaDatabaseCouchDB(object) :
     def __setitem__(self, name, doc) :
         try :
             self.db[name] = doc
-        except couchdb.http.Unauthorized, e :
+        except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
-        except couchdb.http.ResourceNotFound, e :
+        except couch_ResourceNotFound, e :
             raise ResourceNotFound(str(e), e)
-        except couchdb.http.ServerError, e :
+        except ServerError, e :
             raise CommunicationError("MICA Unvalidated: " + str(e))
 
     def __getitem__(self, name, false_if_not_found = False) :
         try :
             return self.db[name]
-        except couchdb.http.Unauthorized, e :
+        except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
-        except couchdb.http.ResourceNotFound, e :
+        except couch_ResourceNotFound, e :
             if false_if_not_found :
                 return False
             else :
@@ -143,9 +143,9 @@ class MicaDatabaseCouchDB(object) :
                 try :
                     doc["_rev"] = self.db[name]["_rev"]
                     mdebug("Old revision found.")
-                except couchdb.http.Unauthorized, e :
+                except Unauthorized, e :
                     raise CommunicationError("MICA Unauthorized: " + str(e))
-                except couchdb.http.ResourceNotFound, e :
+                except couch_ResourceNotFound, e :
                     mdebug("No old revision found.")
                     pass
 
@@ -165,9 +165,9 @@ class MicaDatabaseCouchDB(object) :
     def doc_exist(self, name, true_if_deleted = False) :
         try :
             self.db[name]
-        except couchdb.http.Unauthorized, e :
+        except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
-        except couchdb.http.ResourceNotFound, e :
+        except couch_ResourceNotFound, e :
             mdebug(str(e.args))
             ((error, reason),) = e.args
             mdebug("Doc exist returns not found: " + reason)
@@ -182,9 +182,9 @@ class MicaDatabaseCouchDB(object) :
                         self.db.purge([olddoc])
                         mwarn("Purged")
                     return False
-                except couchdb.http.ResourceNotFound, e :
+                except couch_ResourceNotFound, e :
                     merr( "Failed to purge old revisions.")
-                except couchdb.http.Unauthorized, e :
+                except Unauthorized, e :
                     raise CommunicationError("MICA Unauthorized: " + str(e))
 
                 mdebug("Doc was deleted, returning true")
@@ -245,8 +245,8 @@ class MicaServerCouchDB(object) :
 
         if not self.cookie :
             mdebug("No cookie for user: " + username)
-            username_unquoted = urllib2.quote(username)
-            password_unquoted = urllib2.quote(password)
+            username_unquoted = quote(username)
+            password_unquoted = quote(password)
 
             full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
@@ -267,9 +267,9 @@ class MicaServerCouchDB(object) :
 
     def init_localization(self):
         try :
-            mdebug("Locale is: " + locale.setlocale(locale.LC_ALL, '')) # use user's preferred locale
+            mdebug("Locale is: " + setlocale(LC_ALL, '')) # use user's preferred locale
             # take first two characters of country code
-            return locale.getlocale()[0][0:2]
+            return getlocale()[0][0:2]
         except Exception, e :
             mdebug("Could not find locale. Defaulting to english.")
             return "en"
@@ -281,7 +281,7 @@ class MicaServerCouchDB(object) :
             else :
                 db = self.server.create(dbname)
             return MicaDatabaseCouchDB(db)
-        except couchdb.http.Unauthorized, e :
+        except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: dbname: " + dbname + " " + str(e))
 
     def __delitem__(self, name) :
@@ -298,7 +298,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
 
     def __setitem__(self, name, doc) :
         try :
-            err = self.db.put(self.dbname, name, String(json.dumps(doc)))
+            err = self.db.put(self.dbname, name, String(dumps(doc)))
             if err != "" :
                 raise CommunicationError("Error occured putting document: " + name + " " + err)
         except Exception, e :
@@ -318,7 +318,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
                 raise ResourceNotFound("Cannot lookup key: " + name)
 
         if doc is not None :
-            return json.loads(doc)
+            return loads(doc)
 
         # return was None (null)
         raise CommunicationError("Bad exception occured getting document: " + name)
@@ -382,7 +382,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
             if endkey :
                 params["endkey"] = endkey
             if keys :
-                uuid = str(uuid4.uuid4())
+                uuid = str(uuid4())
                 for key in keys :
                     assert(isinstance(key, str) or isinstance(key, unicode))
                     self.db.view_seed(String(uuid), String(username), String(key))
@@ -395,7 +395,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
             if len(params) == 0 :
                 params = ""
             else :
-                params = json.dumps(params)
+                params = dumps(params)
 
             it = self.db.view(String(self.dbname), String(design), String(vname), String(params), String(str(username)))
             if it is None :
@@ -410,7 +410,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
                 result = self.db.view_next(it)
                 if result is None :
                     raise CommunicationError("Iteration error occured for view: " + name)
-                j = json.loads(result)
+                j = loads(result)
                 yield j["result"]
         except Exception, err :
             err_msg = "Error getting view: " + name + " " + str(err)
@@ -451,8 +451,8 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         return self.db.get_push_percent()
 
     def replicate(self, url, user, pw, dbname, localdbname) :
-        username_unquoted = urllib2.quote(user)
-        password_unquoted = urllib2.quote(pw)
+        username_unquoted = quote(user)
+        password_unquoted = quote(pw)
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
         if self.db.replicate(localdbname, String(full_url), False) == -1 :
@@ -490,7 +490,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
 
     def __setitem__(self, name, doc) :
         try :
-            err = self.db.put___(self.dbname, name, String(json.dumps(doc))).UTF8String()
+            err = self.db.put___(self.dbname, name, String(dumps(doc))).UTF8String()
             if err != "" :
                 raise CommunicationError("Error occured putting document: " + name + " " + err)
         except Exception, e :
@@ -510,7 +510,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
                 mwarn("Cannot lookup key: " + name)
                 raise ResourceNotFound("Cannot lookup key: " + name)
         if doc is not None :
-            return json.loads(doc)
+            return loads(doc)
 
         # return was None (null)
         raise CommunicationError("Bad exception occured getting document: " + name)
@@ -562,7 +562,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             if endkey :
                 params["endkey"] = endkey
             if keys :
-                uuid = str(uuid4.uuid4())
+                uuid = str(uuid4())
                 for key in keys :
                     assert(isinstance(key, str) or isinstance(key, unicode))
                     try :
@@ -579,7 +579,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             if len(params) == 0 :
                 params = ""
             else :
-                params = json.dumps(params)
+                params = dumps(params)
 
             try :
                 it = self.db.view____(String(self.dbname), String(design), String(vname), String(params), String(str(username)))
@@ -599,7 +599,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
                     except Exception, e :
                         raise CommunicationError("Could string from result: " + str(e))
 
-                    j = json.loads(result)
+                    j = loads(result)
                     yield j["result"]
         except Exception, err :
             err_msg = "Error getting view: " + name + " " + str(err)
@@ -648,8 +648,8 @@ class iosMicaDatabaseCouchbaseMobile(object) :
             raise ResourceNotFound("Could write attachment to path for document: " + name + ": " + attach)
 
     def replicate(self, url, user, pw, dbname, localdbname) :
-        username_unquoted = urllib2.quote(user)
-        password_unquoted = urllib2.quote(pw)
+        username_unquoted = quote(user)
+        password_unquoted = quote(pw)
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
         if self.db.replicate__(String(localdbname), String(full_url)) == -1 :

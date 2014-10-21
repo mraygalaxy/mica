@@ -1,13 +1,11 @@
 #!/usr/bin/python
 # coding: utf-8
-import struct
-import os
-import types
-import gzip
-import sys
-from sqlalchemy import *
+from gzip import open as gzip_open
+from os import SEEK_SET
+from os.path import getsize 
 from common import *
 from time import time
+from struct import unpack
 
 # This is a re-write of the stardict dictionary parser
 # so that instead of loading all the dictionaries into
@@ -27,7 +25,7 @@ from time import time
 # same performance).
 
 def get_end(fh, target, start) :
-    fh.seek(start, os.SEEK_SET)
+    fh.seek(start, SEEK_SET)
     while True :
         b = fh.read(1)
         if b == target :
@@ -36,7 +34,7 @@ def get_end(fh, target, start) :
 
 def get_entry(fh, start, stop) :
     entry = []
-    fh.seek(start, os.SEEK_SET)
+    fh.seek(start, SEEK_SET)
     for idx in range(start, stop) :
         entry.append(fh.read(1))
     return entry
@@ -141,9 +139,9 @@ class IdxFileReader(object):
         result = rs.fetchone()
 
         if result is None :
-            self._size = os.path.getsize(filename)
+            self._size = getsize(filename)
             if compressed:
-                self.fh = gzip.open(filename, "rb")
+                self.fh = gzip_open(filename, "rb")
             else:
                 self.fh = open(filename, "rb")
 
@@ -203,14 +201,14 @@ class IdxFileReader(object):
         word_str = b"".join(get_entry(self.fh, self._offset, end))
         self._offset = end+1
         if self._index_offset_bits == 64:
-            word_data_offset, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+8)))
+            word_data_offset, = unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+8)))
             self._offset += 8
         elif self._index_offset_bits == 32:
-            word_data_offset, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
+            word_data_offset, = unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
             self._offset += 4
         else:
             raise ValueError
-        word_data_size, = struct.unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
+        word_data_size, = unpack("!I", b"".join(get_entry(self.fh, self._offset, self._offset+4)))
         self._offset += 4
         self._index += 1
         return (word_str, word_data_offset, word_data_size, self._index)
@@ -279,7 +277,7 @@ class DictFileReader(object):
         self._offset = 0
 
         if self._compressed:
-            self.fh = gzip.open(filename, "rb")
+            self.fh = gzip_open(filename, "rb")
         else:
             self.fh = open(filename, "rb")
 
@@ -330,7 +328,7 @@ class DictFileReader(object):
         read_size = 0
         start_offset = self._offset
         while read_size < size:
-            type_identifier = struct.unpack("!c")
+            type_identifier = unpack("!c")
             if type_identifier in "mlgtxykwhnr":
                 result[type_identifier] = self._get_entry_field_null_trail()
             else:
@@ -364,7 +362,7 @@ class DictFileReader(object):
         
     def _get_entry_field_size(self, size = None):
         if size == None:
-            size = struct.unpack("!I", "".join(get_entry(self.fh, self._offset, self._offset+4)))
+            size = unpack("!I", "".join(get_entry(self.fh, self._offset, self._offset+4)))
             self._offset += 4
         result = "".join(get_entry(self.fh, self._offset, self._offset+size))
         self._offset += size
