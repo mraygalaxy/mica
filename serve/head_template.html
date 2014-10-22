@@ -30,7 +30,7 @@
         <form method="POST" action="/connect" accept-charset="UTF-8">
 	<table>
 	<tr><td>
-        <a><t:attr name="href"><t:slot name="facebookurl"/></t:attr><t:slot name='facebook'/></a>
+        <a onclick="$('#loginModal').modal('show');"><t:attr name="href"><t:slot name="facebookurl"/></t:attr><t:slot name='facebook'/></a>
 	</td></tr><tr><td>
         <t:slot name='username'/>: 
 	</td></tr><tr><td>
