@@ -9,6 +9,7 @@ from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column
 from sqlalchemy.interfaces import PoolListener
 from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
+from re import compile as re_compile, IGNORECASE
 
 story_format = 2
 
@@ -629,7 +630,7 @@ class ChineseSimplified(Processor) :
 
     def convertPinyin(self, char):
         s = self.get_pinyin(char)
-        return re.compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=re.IGNORECASE).sub(self.convertPinyinCallback, s)
+        return re_compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=IGNORECASE).sub(self.convertPinyinCallback, s)
 
     def lcs(self, a, b):
         lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]

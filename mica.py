@@ -254,6 +254,7 @@ class MICA(object):
         req.db = self.dbs[username]
 
         mdebug("Testing translation credentials.")
+
         if req.db.doc_exist(self.acct(username)) :
             user = req.db[self.acct(username)]
 
@@ -359,7 +360,7 @@ class MICA(object):
                                    
         except TypeError, e :
             out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
-            for line in traceback.format_exc().splitlines() :
+            for line in format_exc().splitlines() :
                 out += line + "\n"
             mwarn(out)
         except couch_adapter.ResourceNotFound, e :
@@ -430,8 +431,10 @@ class MICA(object):
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
                                            'email' : email } 
-
+        savedb = req.db 
+        req.db = newdb 
         self.check_all_views(req)
+        req.db = savedb
 
     def view_runner_common(self) :
         # This only primes views for logged-in users.
@@ -532,7 +535,7 @@ class MICA(object):
         except Exception, e :
             # This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
             resp = "<h4>" + _("Exception") + ":</h4>"
-            for line in traceback.format_exc().splitlines() :
+            for line in format_exc().splitlines() :
                 resp += "<br>" + line
             resp += "<h2>" + _("Please report the exception above to the author. Thank you.") + "</h2>"
             if "connected" in req.session.value and req.session.value["connected"] :
@@ -595,7 +598,7 @@ class MICA(object):
                 r = resp(environ, start_response)
         except Exception, e :
             merr("RESPONSE MICA ********\nException:")
-            for line in traceback.format_exc().splitlines() :
+            for line in format_exc().splitlines() :
                 merr("RESPONSE MICA ********\n" + line)
 
         return r
@@ -889,7 +892,7 @@ class MICA(object):
                 del story["pages"][str(iidx)]
             except Exception, e :
                 msg = ""
-                for line in traceback.format_exc().splitlines() :
+                for line in format_exc().splitlines() :
                     msg += line + "\n"
                 merr(msg)
                 tmpstory = req.db[self.story(req, name)]
@@ -2408,9 +2411,11 @@ class MICA(object):
                     req.session.value["password"] = password
 
                 req.session.save()
+
                 mdebug("authenticating...")
 
                 auth_user = self.authenticate(username, password, address, from_third_party = from_third_party)
+
                 if not auth_user :
                     # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
                     return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
@@ -2521,14 +2526,14 @@ class MICA(object):
 
                     except TypeError, e :
                         out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
-                        for line in traceback.format_exc().splitlines() :
+                        for line in format_exc().splitlines() :
                             out += line + "\n"
                         mwarn(out)
                     except couch_adapter.ResourceNotFound, e :
                         mwarn("Account document @ MICA:filelisting not found: " + str(e))
                     except Exception, e :
                         out = "Database not available yet: " + str(e)
-                        for line in traceback.format_exc().splitlines() :
+                        for line in format_exc().splitlines() :
                             out += line + "\n"
                         mwarn(out)
                 
@@ -3592,7 +3597,7 @@ class MICA(object):
             mdebug(_("Exception") + ": " + str(msg))
             out = _("Exception") + ":\n" 
             resp = "<h4>" + _("Exception") + ":</h4>"
-            for line in traceback.format_exc().splitlines() :
+            for line in format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
             mdebug(out)
@@ -3609,7 +3614,7 @@ class MICA(object):
                                             + resp + "</div>")
             except Exception, e :
                 merr("OTHER MICA ********Exception:")
-                for line in traceback.format_exc().splitlines() :
+                for line in format_exc().splitlines() :
                     merr("OTHER MICA ********" + line)
             return out
 
@@ -3985,7 +3990,7 @@ def go(p) :
 
     except Exception, e :
         merr("Startup exception: " + str(e))
-        for line in traceback.format_exc().splitlines() :
+        for line in format_exc().splitlines() :
             merr(line)
 
 def second_splash() :
