@@ -631,14 +631,24 @@ class HeadElement(Element):
        return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
 
     @renderer
+    def thirdparty(self, request, tag) :
+       if self.req.mobile :
+           tag("")
+       else :
+           # make this a loop
+           fbcreds = self.req.oauth["facebook"]
+           facebook = OAuth2Session(fbcreds["client_id"], redirect_uri=self.req.oauth["redirect"] + "facebook", scope = fbcreds["scope"])
+           facebook = facebook_compliance_fix(facebook)
+           authorization_url, state = facebook.authorization_url(fbcreds["authorization_base_url"])
+
+           fb = tags.a(**{"class" : "btn btn-default", "onclick" : "$('#loginModal').modal('show');", "href" : authorization_url})(_("login with facebook"))
+           tag(fb)
+
+       return tag
+    @renderer
     def allslots(self, request, tag) :
-       fbcreds = self.req.oauth["facebook"]
-       facebook = OAuth2Session(fbcreds["client_id"], redirect_uri=self.req.oauth["redirect"] + "facebook", scope = fbcreds["scope"])
-       facebook = facebook_compliance_fix(facebook)
-       authorization_url, state = facebook.authorization_url(fbcreds["authorization_base_url"])
 
        tag.fillSlots(jquery = self.req.bootstrappath + "/js/jquery.js",
-                     facebookurl = authorization_url,
                      bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
                      bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",
