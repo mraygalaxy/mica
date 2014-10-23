@@ -2320,7 +2320,7 @@ class MICA(object):
 
             from_third_party = False
 
-            if not mobile and req.action in ["facebook"] : #google
+            if not mobile and req.action in ["facebook", "google"] :
                 who = req.action
                 creds = params["oauth"][who]
                 redirect_uri = params["oauth"]["redirect"] + who 
@@ -2330,17 +2330,18 @@ class MICA(object):
                     service = facebook_compliance_fix(service)
 
                 if not req.http.params.get("code") :
+                    mdebug(str(req.http.params))  
                 # example   facebook?error=access_denied&error_code=200&error_description=Permissions+error&error_reason=user_denied&state=a55D47cjqwYi8tMXRFa6igjlT78TpE#_=_
                     if req.http.params.get("error") :
-                        reason = req.http.params.get("error_reason")
+                        reason = req.http.params.get("error_reason") if req.http.params.get("error_reason") else "Access Denied."
+                        desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                         if reason == "user_denied" :
                             # User denied our request to create their account using social networking. Apologize and move on.
                             return self.bootstrap(req, self.heromsg + deeper + _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
                         else :
                             # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                            return self.bootstrap(req, self.heromsg + deeper + _("Our service could not create an account from you") + ": " + req.http.params.get("error_description") + " (" + reason + ").</h4></div>")
+                            return self.bootstrap(req, self.heromsg + deeper + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
                     else :
-                        mdebug(str(req.http.params))  
                         # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
                         return self.bootstrap(req, self.heromsg + deeper + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
@@ -2349,12 +2350,11 @@ class MICA(object):
 
                 r = service.get(creds["lookup_url"])
                 
-                # example: {"id":"some_facebook_id","email":"some_email_address","first_name":"some_first_name","gender":"male","last_name":"some_last_name","link":"https:\/\/www.facebook.com\/app_scoped_user_id\/that_same_id_number\/","locale":"en_US","middle_name":"some_middle_name","name":"some_full_name","timezone":8,"updated_time":"2013-11-26T06:04:40+0000","verified":true}
                 values = json_loads(r.content)
 
-                assert("verified" in values)
+                assert(creds["verified_key"] in values)
 
-                if not values["verified"] :
+                if not values[creds["verified_key"]] :
                     return self.bootstrap(self.heromsg + "\n" + deeper + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later."))
 
                 elif "email" not in values :

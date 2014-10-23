@@ -635,14 +635,19 @@ class HeadElement(Element):
        if self.req.mobile :
            tag("")
        else :
-           # make this a loop
-           fbcreds = self.req.oauth["facebook"]
-           facebook = OAuth2Session(fbcreds["client_id"], redirect_uri=self.req.oauth["redirect"] + "facebook", scope = fbcreds["scope"])
-           facebook = facebook_compliance_fix(facebook)
-           authorization_url, state = facebook.authorization_url(fbcreds["authorization_base_url"])
+           tag(tags.br(), _("Sign in with") + ": ")
 
-           fb = tags.a(**{"class" : "btn btn-default", "onclick" : "$('#loginModal').modal('show');", "href" : authorization_url})(_("login with facebook"))
-           tag(fb)
+           for name, creds in self.req.oauth.iteritems() :
+               if name == "redirect" :
+                   continue
+               service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+               if name == "facebook" :
+                   service = facebook_compliance_fix(service)
+               authorization_url, state = service.authorization_url(creds["authorization_base_url"])
+
+               servicetag = tags.a(onclick = "$('#loginModal').modal('show');", href = authorization_url)
+               servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+               tag(servicetag)
 
        return tag
     @renderer
@@ -695,7 +700,6 @@ class HeadElement(Element):
                      signing = _("Signing you in, Please wait"),
                      loading = _("Loading story, Please wait"),
                      compacting = _("Compacting database, Please wait"),
-                     facebook = _("login with facebook"),
                      )
        return tag
 
