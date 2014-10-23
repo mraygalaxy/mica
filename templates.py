@@ -11,7 +11,7 @@ from re import compile as re_compile
 
 if not mobile :
     from requests_oauthlib import OAuth2Session
-    from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
@@ -643,8 +643,13 @@ class HeadElement(Element):
                if name == "redirect" :
                    continue
                service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+
                if name == "facebook" :
                    service = facebook_compliance_fix(service)
+
+               if name == "weibo" :
+                   service = weibo_compliance_fix(service)
+
                authorization_url, state = service.authorization_url(creds["authorization_base_url"])
 
                servicetag = tags.a(onclick = "$('#loginModal').modal('show');", href = authorization_url)
