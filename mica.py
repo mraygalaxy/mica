@@ -47,7 +47,7 @@ from templates import *
 
 if not mobile :
     from requests_oauthlib import OAuth2Session
-    from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
 
 mdebug("Initial imports complete")
 
@@ -2320,7 +2320,7 @@ class MICA(object):
 
             from_third_party = False
 
-            if not mobile and req.action in ["facebook", "google"] :
+            if not mobile and req.action in ["facebook", "google", "qq", "weibo"] :
                 who = req.action
                 creds = params["oauth"][who]
                 redirect_uri = params["oauth"]["redirect"] + who 
@@ -2328,6 +2328,9 @@ class MICA(object):
 
                 if who == "facebook" :
                     service = facebook_compliance_fix(service)
+
+                if who == "weibo" :
+                    service = weibo_compliance_fix(service)
 
                 if not req.http.params.get("code") :
                     mdebug(str(req.http.params))  
