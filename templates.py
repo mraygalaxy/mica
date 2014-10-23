@@ -8,8 +8,10 @@ from cStringIO import StringIO
 from common import *
 from os import path as os_path
 from re import compile as re_compile
-from requests_oauthlib import OAuth2Session
-from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+
+if not mobile :
+    from requests_oauthlib import OAuth2Session
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
