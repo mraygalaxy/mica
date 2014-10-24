@@ -2354,8 +2354,10 @@ class MICA(object):
                 code = req.http.params.get("code")
                 service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
+                mdebug("Token fetched successfully.")
                 r = service.get(creds["lookup_url"])
                 
+                return self.bootstrap(req, "User info fetched: " + str(r.content))  
                 values = json_loads(r.content)
 
                 assert(creds["verified_key"] in values)
@@ -2379,7 +2381,7 @@ class MICA(object):
                 from_third_party["username"] = values["email"]
 
                 if not self.userdb.doc_exist("org.couchdb.user:" + values["email"]) :
-                    self.make_account(req, values["email"], password, ['normal'], values["email"], language = language)
+                    #self.make_account(req, values["email"], password, ['normal'], values["email"], language = language)
                     mdebug("Language: " + language)
 
                     output = ""
