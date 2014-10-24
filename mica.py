@@ -210,7 +210,7 @@ class MICA(object):
             lookup_username = username
 
             if from_third_party :
-                lookup_username = from_third_party["email"]
+                lookup_username = from_third_party["username"]
                 password = params["admin_pass"]
                 username = params["admin_user"]
 
@@ -2376,6 +2376,7 @@ class MICA(object):
                 language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
                 from_third_party = values
+                from_third_party["username"] = values["email"]
 
                 if not self.userdb.doc_exist("org.couchdb.user:" + values["email"]) :
                     self.make_account(req, values["email"], password, ['normal'], values["email"], language = language)
@@ -3354,6 +3355,28 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                         
                     out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
+
+                elif req.http.params.get("resetpassword") :
+                    if mobile :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+
+                    newpassword = binascii_hexlify(os_urandom(4))
+
+                    auth_user = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
+                    if not auth_user :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ".</h4></div>")
+
+                    try :
+                        auth_user['password'] = newpassword
+                        del self.dbs[username]
+                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                        req.db["org.couchdb.user:" + username] = auth_user
+                        del self.dbs[username]
+                        self.verify_db(req, req.session.value["database"], newpassword)
+                    except Exception, e :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                        
+                    out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
 
                 elif req.http.params.get("changecredentials") :
                     client_id = req.http.params.get("id")
