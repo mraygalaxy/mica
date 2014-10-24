@@ -82,7 +82,6 @@ if not mobile :
 
 mdebug("Imports complete.")
 
-deeper = "<br/><br/></br></br></br></br></br><br/><br/></br><br/><br/></br><br/><br/>"
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
 for letter in (string_ascii_lowercase + string_ascii_uppercase) :
@@ -645,7 +644,8 @@ class MICA(object):
 
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
             # The demo account is provided for users who want to give the software a try without committing to it.
-            body = self.heromsg + "\n<h4>" + deeper + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>"
+            req.skip_show = True
+            body = self.heromsg + "<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>"
 
         if now :
             contents = body
@@ -2337,13 +2337,16 @@ class MICA(object):
                         desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                         if reason == "user_denied" :
                             # User denied our request to create their account using social networking. Apologize and move on.
-                            return self.bootstrap(req, self.heromsg + deeper + _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
+                            req.skip_show = True
+                            return self.bootstrap(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
                         else :
                             # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                            return self.bootstrap(req, self.heromsg + deeper + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
+                            req.skip_show = True
+                            return self.bootstrap(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
                     else :
                         # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
-                        return self.bootstrap(req, self.heromsg + deeper + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
+                        req.skip_show = True
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
                 code = req.http.params.get("code")
                 service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
@@ -2355,11 +2358,13 @@ class MICA(object):
                 assert(creds["verified_key"] in values)
 
                 if not values[creds["verified_key"]] :
-                    return self.bootstrap(self.heromsg + "\n" + deeper + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later."))
+                    req.skip_show = True
+                    return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later."))
 
                 elif "email" not in values :
                     authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-                    out = self.heromsg + "\n" + deeper + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
+                    req.skip_show = True
+                    out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
                     out += authorization_url
                     out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
                     return self.bootstrap(req, out)
@@ -2393,7 +2398,8 @@ class MICA(object):
                     req.session.value["from_third_party"] = False 
                     if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                         # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
+                        req.skip_show = True
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
                     username = req.http.params.get('username')
                     password = req.http.params.get('password')
 
@@ -2418,7 +2424,8 @@ class MICA(object):
 
                 if not auth_user :
                     # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
-                    return self.bootstrap(req, self.heromsg + "\n" + deeper + _("Invalid credentials. Please try again") + ".</h4></div>")
+                    req.skip_show = True
+                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ".</h4></div>")
 
                 req.session.value["database"] = auth_user["mica_database"] 
                 req.session.save()
@@ -2432,7 +2439,8 @@ class MICA(object):
                        appuser = req.db["MICA:appuser"]
                        if appuser["username"] != username :
                             # Beginning of a message 
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                            req.skip_show = True
+                            return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
                                 # next part of the same message 
                                 appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
                                  # next part of the same message 
@@ -2446,7 +2454,8 @@ class MICA(object):
                            
                     if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
                         # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + deeper + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
+                        req.skip_show = True
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
 
                 req.action = "home"
                 req.session.value['connected'] = True 
@@ -2538,7 +2547,6 @@ class MICA(object):
                         mwarn(out)
                 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
-                req.deeper = deeper
                 req.mobile = mobile
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
