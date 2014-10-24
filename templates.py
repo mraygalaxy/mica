@@ -304,8 +304,7 @@ class FrontPageElement(Element) :
         if not self.req.mobile :
             tag(MobileFrontElement(self.req))
         else :
-            for x in range(0, 15) :
-                tag(tags.br())
+            tag("")
         return tag
 
     @renderer

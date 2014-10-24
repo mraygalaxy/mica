@@ -3580,6 +3580,7 @@ class MICA(object):
                     
             elif req.action == "disconnect" :
                 self.disconnect(req.session)
+                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
 
             elif req.action == "help" :
