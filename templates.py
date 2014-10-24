@@ -43,6 +43,7 @@ class PasswordElement(Element) :
                       password = _("New Password / Token"),
                       confirm = _("Confirm Password / Token"),
                       change = _("Change Password / Token"),
+                      reset = _("Reset Password / Token"),
                       microsoft = _("Input Microsoft Translation API Credentials?"),
                       # Beginning of a sentence
                       request = _("You can request free API credentials"),
