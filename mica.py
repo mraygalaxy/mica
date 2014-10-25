@@ -47,7 +47,9 @@ from templates import *
 
 if not mobile :
     from requests_oauthlib import OAuth2Session
-    from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+    import oauthlib_patch
+    oauthlib_patch.patch()
 
 mdebug("Initial imports complete")
 
@@ -353,7 +355,7 @@ class MICA(object):
                     self.view_check(self, "accounts")
 
                     if "mica_admin" not in self.cs :
-                        self.make_account(self, "mica_admin", "password", [ 'admin', 'normal' ], admin = True, dbname = "mica_admin")
+                        self.make_account(self, "mica_admin", "password", [ 'admin', 'normal' ], "owner@example.com", "mica", admin = True, dbname = "mica_admin")
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
                                    
@@ -377,7 +379,7 @@ class MICA(object):
         vt.start()
 
 
-    def make_account(self, req, username, password, mica_roles, email, admin = False, dbname = False, language = "en") :
+    def make_account(self, req, username, password, mica_roles, email, source, admin = False, dbname = False, language = "en") :
         if not dbname :
             new_uuid = str(uuid_uuid4())
             dbname = "mica_" + new_uuid
@@ -392,6 +394,7 @@ class MICA(object):
                            "language" : language,
                            "date" : timest(),
                            "email" : email,
+                           "source" : source,
                           }
             try :
                 self.userdb["org.couchdb.user:" + username] = user_doc 
@@ -429,6 +432,7 @@ class MICA(object):
                                            'default_app_zoom' : 1.2,
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
+                                           "source" : source, 
                                            'email' : email } 
         savedb = req.db 
         req.db = newdb 
@@ -2320,7 +2324,7 @@ class MICA(object):
 
             from_third_party = False
 
-            if not mobile and req.action in ["facebook", "google", "qq", "weibo"] :
+            if not mobile and req.action in ["facebook", "google", "qq", "live"] :
                 who = req.action
                 creds = params["oauth"][who]
                 redirect_uri = params["oauth"]["redirect"] + who 
@@ -2329,12 +2333,8 @@ class MICA(object):
                 if who == "facebook" :
                     service = facebook_compliance_fix(service)
 
-                if who == "weibo" :
-                    service = weibo_compliance_fix(service)
-
                 if not req.http.params.get("code") :
                     mdebug(str(req.http.params))  
-                # example   facebook?error=access_denied&error_code=200&error_description=Permissions+error&error_reason=user_denied&state=a55D47cjqwYi8tMXRFa6igjlT78TpE#_=_
                     if req.http.params.get("error") :
                         reason = req.http.params.get("error_reason") if req.http.params.get("error_reason") else "Access Denied."
                         desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
@@ -2354,19 +2354,35 @@ class MICA(object):
                 code = req.http.params.get("code")
                 service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
-                mdebug("Token fetched successfully.")
-                r = service.get(creds["lookup_url"])
+                mdebug("Token fetched successfully: " + str(service.token))
+                lookup_url = creds["lookup_url"]
+
+                updated = False
+
+                if "force_token" in creds and creds["force_token"] :
+                    if updated :
+                        lookup_url += "&"
+                    else :
+                        lookup_url += "?"
+                    lookup_url += "access_token=" + service.token["access_token"]
+
+                if who == "qq" :
+                    req.skip_show = True
+                    return self.bootstrap(req, "Test Success! QQ access token: " + service.token["access_token"])  
+
+                r = service.get(lookup_url)
                 
-                return self.bootstrap(req, "User info fetched: " + str(r.content))  
+                mdebug("MICA returned content is: " + str(r.content))
                 values = json_loads(r.content)
 
-                assert(creds["verified_key"] in values)
+                if creds["verified_key"] :
+                    assert(creds["verified_key"] in values)
 
-                if not values[creds["verified_key"]] :
-                    req.skip_show = True
-                    return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later."))
+                    if not values[creds["verified_key"]] :
+                        req.skip_show = True
+                        return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
 
-                elif "email" not in values :
+                if creds["email_key"] not in values :
                     authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
                     req.skip_show = True
                     out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
@@ -2377,16 +2393,29 @@ class MICA(object):
                 password = binascii_hexlify(os_urandom(4))
                 language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
+                if isinstance(values[creds["email_key"]], dict) :
+                    values["email"] = None
+
+                    if "preferred" in values[creds["email_key"]] :
+                        values["email"] = values[creds["email_key"]]["preferred"]
+
+                    if values["email"] is None :
+                        for key, email in values[creds["email_key"]] :
+                            if email is not None :
+                                values["email"] = email 
+
                 from_third_party = values
                 from_third_party["username"] = values["email"]
 
-                if not self.userdb.doc_exist("org.couchdb.user:" + values["email"]) :
-                    #self.make_account(req, values["email"], password, ['normal'], values["email"], language = language)
+                req.skip_show = True
+                return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
+
+                if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
+                    self.make_account(req, values["email"], password, ['normal'], values["email"], who, language = language)
                     mdebug("Language: " + language)
 
                     output = ""
                     output += "<h4>" + _("Congratulations. Your account is created") + ": " + values["email"] 
-                    # Need to reset passwords for people that have logged in via social networks
                     output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
 
                     output += "<br/><br/>Save this Password: " + password
@@ -2395,6 +2424,12 @@ class MICA(object):
                     output += "<br/><br/>Happy Learning!</h4>"
 
                     from_third_party["output"] = output
+                else :
+                    auth_user = self.userdb["org.couchdb.user:" + values["username"]]
+
+                    if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
+                        req.skip_show = True
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;<b>" + auth_user["source"] + "</b>&#160;" + _("Please choose a different social network and try again") + "</h4></div>")
 
             if req.http.params.get("connect") or from_third_party != False :
                 if from_third_party :
@@ -2486,6 +2521,9 @@ class MICA(object):
                     
                 if "language" not in user :
                     user["language"] = params["language"]
+
+                if "source" not in user :
+                    user["source"] = "mica"
 
                 if "date" not in user :
                     user["date"] = timest()
@@ -3431,7 +3469,7 @@ class MICA(object):
                     if admin == 'on' :
                         roles.append('admin')
 
-                    self.make_account(req, newusername, newpassword, roles, email, language = language)
+                    self.make_account(req, newusername, newpassword, roles, email, "mica", language = language)
 
                     out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
                 elif req.http.params.get("changelanguage") :
@@ -3936,9 +3974,13 @@ def go(p) :
             params["q"] = Queue_Queue()
 
         if int(params["sslport"]) == -1 :
-            params["oauth"]["redirect"] += ":" + str(params["port"]) + "/"
+            if int(params["port"]) != 80:
+                params["oauth"]["redirect"] += ":" + str(params["port"])
         else :
-            params["oauth"]["redirect"] += ":" + str(params["sslport"]) + "/"
+            if int(params["sslport"]) != 443:
+                params["oauth"]["redirect"] += ":" + str(params["sslport"])
+
+        params["oauth"]["redirect"] += "/"
 
         mica = MICA(db_adapter)
 
