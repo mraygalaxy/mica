@@ -4,7 +4,8 @@
 from pwd import getpwuid
 from sys import path
 from time import sleep, time as timest
-from threading import Thread, Lock, current_thread, Timer
+from threading import Thread, Lock, current_thread, Timer, local as threading_local
+import threading
 from copy import deepcopy
 from cStringIO import StringIO
 from traceback import format_exc
@@ -22,6 +23,9 @@ from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
+
+import __builtin__
+catalogs = threading.local()
 
 '''
 def tracefunc(frame, event, arg, indent=[0]):
@@ -205,6 +209,13 @@ class Params(object) :
 
 
 class MICA(object):
+
+    def gettext(self, message):
+        try :
+            return texts[catalogs.language].ugettext(message)
+        except AttributeError, e :
+            return texts[self.language].ugettext(message)
+
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         try :
             mdebug("Authenticating to: " + str(auth_url))
@@ -292,12 +303,24 @@ class MICA(object):
     def credentials(self) :
         return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
 
-    def install_language(self, language) :
+    def install_local_language(self, req, language) :
+        if "language" in req.session.value :
+            mdebug("Request prepare lang: " + req.session.value["language"])
+            catalogs.language = req.session.value["language"]
+        else :
+            mdebug("Request prepare default lang: " + self.language) 
+            catalogs.language = self.language
+        
+    def install_global_language(self, language) :
         mdebug("Setting language to: " + language)
         if language in texts :
-            texts[language].install()
+            self.language = language
         else :
-            texts["en"].install()
+            self.language = "en"
+        #if language in texts :
+        #    texts[language].install()
+        #else :
+        #    texts["en"].install()
         mdebug("Language set.")
         
     def __init__(self, db_adapter):
@@ -515,14 +538,15 @@ class MICA(object):
                         mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
 
                     if "language" in req.session.value :
-                        self.install_language(req.session.value["language"])
+                        mdebug("Setting global language inside run_common")
+                        self.install_global_language(req.session.value["language"])
 
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
                     resp = self.common(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
-                    self.disconnect(req.session)
+                    self.disconnect(req, req.session)
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
@@ -582,7 +606,7 @@ class MICA(object):
         req = Params(environ, start_response.im_self.request.session)
         req.db = False
         req.dest = ""#prefix(req.unparsed_uri)
-        
+
         if params["serialize_couch_on_mobile"] :
             rq = Queue_Queue()
             co = self.serial_common()
@@ -2135,7 +2159,7 @@ class MICA(object):
             mwarn("raw: " + msg)
             return msg
 
-    def disconnect(self, session) :
+    def disconnect(self, req, session) :
         session.value['connected'] = False
         username = session.value['username']
         if username in self.dbs :
@@ -2147,10 +2171,15 @@ class MICA(object):
         if username in self.client :
             del self.client[username]
 
+        if "language" in session.value :
+            del session.value["language"]
+
         if session.value['database'] in self.client :
             del self.client[session.value['database']]
 
         session.save()
+
+        self.install_local_language(req, self.language)
 
     def check_all_views(self, req) :
         self.view_check(req, "stories")
@@ -2533,8 +2562,6 @@ class MICA(object):
                     self.view_check(req, "stories", recreate = True)
                     user["story_format"] = story_format
 
-                self.install_language(user["language"])
-
                 if "app_chars_per_line" not in user :
                     user["app_chars_per_line"] = 70
                 if "web_chars_per_line" not in user :
@@ -2595,6 +2622,8 @@ class MICA(object):
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             username = req.session.value['username']
+
+            self.install_local_language(req, req.session.value["language"])
 
             if "app_chars_per_line" not in req.session.value :
                 user = req.db[self.acct(username)]
@@ -3478,7 +3507,7 @@ class MICA(object):
                     req.db[self.acct(username)] = user
                     req.session.value["language"] = language
                     req.session.save()
-                    self.install_language(language)
+                    self.install_local_language(req, language)
                     out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
                 elif req.http.params.get("changeemail") :
                     email = req.http.params.get("email")
@@ -3642,7 +3671,7 @@ class MICA(object):
                 return self.bootstrap(req, out)
                     
             elif req.action == "disconnect" :
-                self.disconnect(req.session)
+                self.disconnect(req, req.session)
                 req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
 
@@ -3989,7 +4018,8 @@ def go(p) :
         ct.daemon = True
         ct.start()
 
-        mica.install_language(params["language"])
+        __builtin__.__dict__['_'] = mica.gettext 
+        mica.install_global_language(params["language"])
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
