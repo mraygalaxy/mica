@@ -304,6 +304,11 @@ class MICA(object):
             catalogs.language = self.language
         
     def install_global_language(self, language) :
+        if language.count("-") :
+            language = language.split("-")[0]
+        if language.count("_") :
+            language = language.split("_")[0]
+
         mdebug("Setting language to: " + language)
         if language in texts :
             self.language = language
