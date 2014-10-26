@@ -52,8 +52,6 @@ from templates import *
 if not mobile :
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
-    import oauthlib_patch
-    oauthlib_patch.patch()
 
 mdebug("Initial imports complete")
 
@@ -2353,7 +2351,7 @@ class MICA(object):
 
             from_third_party = False
 
-            if not mobile and req.action in ["facebook", "google", "qq", "live"] :
+            if not mobile and req.action in ["facebook", "google", "live"] :
                 who = req.action
                 creds = params["oauth"][who]
                 redirect_uri = params["oauth"]["redirect"] + who 
