@@ -263,18 +263,14 @@ class MICA(object):
 
         req.db = self.dbs[username]
 
-        mdebug("Testing translation credentials.")
-
         if req.db.doc_exist(self.acct(username)) :
             user = req.db[self.acct(username)]
 
-            mdebug("Account found for credentials, checking.")
             if user and "translator_credentials" in user :
                 if username not in self.client :
                     mdebug("Recreating credentials.")
                     self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
                     mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
-        mdebug("DB verification complete.")
 
     def acct(self, name) :
         return "MICA:accounts:" + name
@@ -303,10 +299,8 @@ class MICA(object):
 
     def install_local_language(self, req, language) :
         if "language" in req.session.value :
-            mdebug("Request prepare lang: " + req.session.value["language"])
             catalogs.language = req.session.value["language"]
         else :
-            mdebug("Request prepare default lang: " + self.language) 
             catalogs.language = self.language
         
     def install_global_language(self, language) :
@@ -1220,6 +1214,7 @@ class MICA(object):
 
     def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
+            # Begin long explanation
             ut = self.heromsg + "<h4>" + _("This story has not yet been converted to reading format. MICA uses both offline and online resources to perform this conversion, including an offline dictionary as well as an online Translation engine. The online service is free, but requires you to first register. Currently, we use Microsoft to perform the online component of the registration (because it is free and is also not blocked in other countries). You can signup for a free account <a href='https://datamarket.azure.com/developer/applications/'>by going here</a>.")
             ut += "<br/>" + _("Instructions") + ":<br/>"
             ut += "<ol>"
@@ -1229,6 +1224,7 @@ class MICA(object):
             ut += "<li>" + _("The 'Redirect URI' option is simply the address of the MICA website") + ".</li>"
             ut += "<li>" + _("The rest is empty. Clicking 'Create'") + "</li>"
             ut += "<li>" + _("Copy the ID and Secret values to your account preferences on your account in MICA") + ".</li>"
+            # End long explanation
             ut += "<li>" + _("Then re-open the side panel and click 'Translate'") + ".</li>"
             ut += "</ol>"
             ut += "</h4></div>"
@@ -2013,11 +2009,16 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype, removespaces, source_lang, target_lang) :
+    def add_story_from_source(self, req, filename, source, filetype, source_lang, target_lang) :
         if req.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
+
+        gp = self.processors[source_lang]
+
+        removespaces = False if gp.already_romanized else (True if filetype == "txt" else False)
+
         if removespaces :
             mdebug("Remove spaces requested!")
         else :
@@ -2685,21 +2686,19 @@ class MICA(object):
                 self.first_request[username] = True 
                     
             if req.http.params.get("uploadfile") :
-                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, removespaces, source_lang, target_lang)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, source_lang, target_lang)
 
             if req.http.params.get("uploadtext") :
-                removespaces = True if req.http.params.get("removespaces", 'off') == 'on' else False
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
-                return self.add_story_from_source(req, filename, source, "txt", removespaces, source_lang, target_lang) 
+                return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
             start_page = "0"
             view_mode = "text"
@@ -3026,8 +3025,6 @@ class MICA(object):
             else :
                 req.session.value["meaning_mode"] = meaning_mode 
                 req.session.save()
-
-            mdebug("Meaning mode is: " + meaning_mode)
 
             if "list_mode" in req.session.value :
                 list_mode = req.session.value["list_mode"]

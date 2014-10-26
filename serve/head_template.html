@@ -227,40 +227,61 @@
                             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
                             <h3 id="myUploadLabel"><t:slot name='uploadstory'/>:</h3>
                         </div>
-                        
                         <div class="modal-body">
-                                <h4><b><t:slot name='copypaste'/>:</b></h4>
-                                <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
-                                <h5>
-                                   &#160;<button name='uploadtext' type="submit" class="btn-primary" value='empty'>
-                                  <i class="icon-upload icon-white"></i>&#160;<t:slot name='uploadtext'/></button>
-                                   &#160;<t:slot name="uniquename"/>: <input type='text' name='storyname' value=''></input>
-                                </h5>
-                                <br/><textarea style='width: 90%' name="storytext" id="file"></textarea>
-                                <br/>
-                                  <t:slot name="langtype"/>? <select name="languagetype" t:render="languages"/>
-                                <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
-                                </form>                                   
-                                <p/>
-                                <h4><b><t:slot name='uploadinstead'/>:</b></h4>
-                                <form action='/home#main-nav' method='post' enctype='multipart/form-data'>
-                                <h5>
-                                    &#160;<button name='uploadfile' type="submit" class="btn-primary" value='empty'>
-                                    <i class="icon-upload icon-white"></i>&#160;<t:slot name='uploadfile'/></button>
-                                    &#160;<t:slot name='selectfile'/>: <input type="file" name="storyfile" id="file"/> 
-                                    <br/>
-                                      <t:slot name="whatkindfile"/> <select name="filetype">
-                                      <option value='pdf'>PDF (utf-8, <t:slot name="multipage"/>)</option>
-                                      <option value='txt'>TXT (utf-8, <t:slot name="singlepage"/>)</option>
-                                      <option disabled="disabled" value='epub'>EPUB (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
-                                      <option disabled="disabled" value='json'>JSON (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
-                                      </select>
-                                    <br/>
-                                      <t:slot name="langtype"/>? <select name="languagetype" t:render="languages"/>
-                                      <h5>&#160;<input type="checkbox" name="removespaces" checked="checked"/>&#160;<t:slot name="removespaces"/></h5>
-                                </h5>
-                                </form>                                   
-                                <h5><t:slot name="mustbeencoded"/>.</h5>
+                        <div id='uploaderror' style='display: none'><div style='display: inline; color: red'><h4><t:slot name='missing'/>.</h4></div></div>
+                        <h4><b><t:slot name='choose'/>:</b></h4>
+                        <div class='panel-group' id='panelUpload'>
+                             <div class='panel panel-default'>
+                               <div class="panel-heading">
+                                <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelUpload' href='#collapseText'>
+                                 <b>A) <t:slot name='copypaste'/></b>
+                                 </a>
+                               </div>
+                               <div id='collapseText' class='panel-body collapse'>
+                                   <div class='panel-inner'>
+                                    <form id='textform' action='/home' method='post' enctype='multipart/form-data'>
+                                    <h5><div style='display: inline; color: red'>*&#160;</div><t:slot name="uniquename"/>: <input id='textname' type='text' name='storyname' value=''></input>
+                                    </h5>
+                                    <div style='display: inline; color: red'>*&#160;</div>
+                                      <t:slot name="langtype"/>? <select id='textlanguage' name="languagetype" t:render="languages"/>
+                                    <br/><div style='display: inline; color: red'>*&#160;</div><textarea style='width: 90%' name="storytext" id="textvalue"></textarea>
+                                       <br/>
+                                       <input type='hidden' name='uploadtext' value='1'/>
+                                       <input type="button" class="btn-primary" onclick='validatetext()'><t:attr name='value'><t:slot name='uploadtext'/></t:attr></input>
+                                    </form>                                   
+                                   </div>
+                               </div>
+                             </div>
+                             <div class='panel panel-default'>
+                               <div class="panel-heading">
+                                <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelUpload' href='#collapseScanned'>
+                                 <b>B) <t:slot name='uploadinstead'/></b>
+                                 </a>
+                               </div>
+                               <div id='collapseScanned' class='panel-body collapse'>
+                                   <div class='panel-inner'>
+                                    <form id='fileform' action='/home' method='post' enctype='multipart/form-data'>
+                                    <h5><div style='display: inline; color: red'>*&#160;</div>
+                                        <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
+                                        <br/><div style='display: inline; color: red'>*&#160;</div>
+                                          <t:slot name="whatkindfile"/> <select name="filetype" id='uploadtype'>
+                                          <option value=''><t:slot name='noneselected'/></option>
+                                          <option value='pdf'>PDF (utf-8, <t:slot name="multipage"/>)</option>
+                                          <option value='txt'>TXT (utf-8, <t:slot name="singlepage"/>)</option>
+                                          <option disabled="disabled" value='epub'>EPUB (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
+                                          <option disabled="disabled" value='json'>JSON (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
+                                          </select>
+                                        <br/><div style='display: inline; color: red'>*&#160;</div>
+                                          <t:slot name="langtype"/>? <select id='uploadlanguage' name="languagetype" t:render="languages"/>
+                                        <br/>
+                                        <input type='hidden' name='uploadfile' value='1'/>
+                                        <input onclick='validatefile()' type="button" class="btn-primary"><t:attr name='value'><t:slot name='uploadfile'/></t:attr></input> </h5>
+                                    </form>                                   
+                                    <h5><t:slot name="mustbeencoded"/>.</h5>
+                                   </div>
+                               </div>
+                             </div>
+                        </div>
                         </div>
                     </div>
                 </div>
