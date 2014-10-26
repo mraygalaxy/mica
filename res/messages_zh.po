@@ -165,7 +165,6 @@ msgstr "下载原文"
 msgid "Download Romanization"
 msgstr "下载拼音"
 
-#. The demo account is provided for users who want to give the software a try without committing to it.
 msgid ""
 "Demo Account is readonly. You must install the mobile application for "
 "interactive use of the demo account."
@@ -309,17 +308,14 @@ msgstr "同步没有完成。在进度条到达100之前请关注屏幕上方。
 msgid "Synchronization error. Please report this to the author. Thank you."
 msgstr "同步没有完成。请通知程序员，谢谢。"
 
-#. Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
 msgid ""
 "To login for the first time and begin synchronization with the website, you "
 "must activate internet access."
 msgstr "链接互联网以与网站同步"
 
-#. User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
 msgid "Invalid credentials. Please try again"
 msgstr "输入信息错误。请再试一次"
 
-#. Beginning of a message
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
@@ -341,7 +337,6 @@ msgid ""
 "over time, so we want you to be aware of that. Thanks."
 msgstr "如果需要使用新用户，请清空MICA数据库或者重新安装。"
 
-#. This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
 msgid ""
 "Although you have authenticated successfully, we could not start "
 "synchronization successfully. Please try again."
@@ -591,8 +586,6 @@ msgstr "成功！网络放大放小度数设置为："
 msgid "Default zoom level"
 msgstr ""
 
-#. This occurs when you come back to the webpage, and were previously reading a story,
-#. but need to indicate in which mode to read the story (of three modes).
 msgid "Read, Review, or Edit, my friend?"
 msgstr ""
 
@@ -732,7 +725,6 @@ msgstr ""
 msgid "Preferred Language"
 msgstr ""
 
-#. Which language to learn, that is.
 msgid "Which languages"
 msgstr ""
 
@@ -914,4 +906,157 @@ msgstr ""
 
 #. end of a message
 msgid "please read the tutorial"
+msgstr ""
+
+#. Begin long explanation
+msgid ""
+"This story has not yet been converted to reading format. MICA uses both "
+"offline and online resources to perform this conversion, including an "
+"offline dictionary as well as an online Translation engine. The online "
+"service is free, but requires you to first register. Currently, we use "
+"Microsoft to perform the online component of the registration (because it is "
+"free and is also not blocked in other countries). You can signup for a free "
+"account <a href='https://datamarket.azure.com/developer/applications/'>by "
+"going here</a>."
+msgstr ""
+
+msgid "Instructions"
+msgstr ""
+
+msgid "Click here"
+msgstr ""
+
+msgid ""
+"First signin to Microsoft (or create a live account if you do not already "
+"have one)"
+msgstr ""
+
+msgid ""
+"After logging in, Create a new registered application by clicking 'Register'"
+msgstr ""
+
+msgid ""
+"The 'Client ID' and 'Client Secret' are the important pieces of information "
+"that we are trying to create"
+msgstr ""
+
+msgid "The 'Redirect URI' option is simply the address of the MICA website"
+msgstr ""
+
+msgid "The rest is empty. Clicking 'Create'"
+msgstr ""
+
+msgid ""
+"Copy the ID and Secret values to your account preferences on your account in "
+"MICA"
+msgstr ""
+
+#. End long explanation
+msgid "Then re-open the side panel and click 'Translate'"
+msgstr ""
+
+msgid ""
+"We're sorry you feel that way, but we need your authorization to use this "
+"service. You're welcome to try again later. Thanks."
+msgstr ""
+
+msgid "Our service could not create an account from you"
+msgstr ""
+
+msgid ""
+"There was an unknown error trying to authenticate you before creating an "
+"account. Please try again later"
+msgstr ""
+
+msgid ""
+"You have successfully signed in with the 3rd party, but they cannot confirm "
+"that your account has been validated (that you are a real person). Please "
+"try again later."
+msgstr ""
+
+msgid ""
+"We're sorry. You have declined to share your email address, but we need a "
+"valid email address in order to create an account for you"
+msgstr ""
+
+msgid "You're welcome to try again"
+msgstr ""
+
+msgid "Congratulations. Your account is created"
+msgstr ""
+
+msgid ""
+"We have created a default password to be used with your mobile device(s). "
+"Please write it down somewhere. You will need it only if you want to "
+"synchronize your mobile devices with the website. If you do not want to use "
+"the mobile application, you can ignore it. If you do not want to write it "
+"down, you will have to come back to your account preferences and reset it "
+"before trying to login to the mobile application. You are welcome to go to "
+"your preferences now and change this password."
+msgstr ""
+
+msgid ""
+"We're sorry, but someone has already created an account with your credentials"
+msgstr ""
+
+msgid "Original login service"
+msgstr ""
+
+msgid "Please choose a different service and try again"
+msgstr ""
+
+msgid ""
+"Here is the original story. Choose from one of the options in the above "
+"navigation bar to begin learning with this story."
+msgstr ""
+
+msgid "Could not lookup your account! Try again"
+msgstr ""
+
+msgid "Please write (or change) it"
+msgstr ""
+
+msgid "You will need it to login to your mobile device"
+msgstr ""
+
+msgid "Old Password / Token"
+msgstr ""
+
+msgid "New Password / Token"
+msgstr ""
+
+msgid "Confirm Password / Token"
+msgstr ""
+
+msgid "Change Password / Token"
+msgstr ""
+
+msgid "Reset Password / Token"
+msgstr ""
+
+msgid ""
+"To login to this application with a regular account and begin syncing all of "
+"your devices with your web account, you must first request a web account "
+"online. After you have created an online account, you can then login with "
+"your email and password from your online account using any device that you "
+"like."
+msgstr ""
+
+msgid "None Selected"
+msgstr ""
+
+msgid "Sign in with"
+msgstr ""
+
+#. Which language to learn, that is.
+msgid "Which language"
+msgstr ""
+
+msgid "Choose one"
+msgstr ""
+
+msgid "* Please fill in required fields"
+msgstr ""
+
+msgid "Password / Token"
 msgstr ""

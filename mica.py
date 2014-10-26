@@ -681,7 +681,8 @@ class MICA(object):
             if req.session.value['connected'] and not pretend_disconnected :
                 req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
 
-            req.oauth = params["oauth"]
+            if not mobile :
+                req.oauth = params["oauth"]
             contents = run_template(req, HeadElement)
 
         if not nodecode :
@@ -4010,14 +4011,15 @@ def go(p) :
         if params["serialize_couch_on_mobile"] :
             params["q"] = Queue_Queue()
 
-        if int(params["sslport"]) == -1 :
-            if int(params["port"]) != 80:
-                params["oauth"]["redirect"] += ":" + str(params["port"])
-        else :
-            if int(params["sslport"]) != 443:
-                params["oauth"]["redirect"] += ":" + str(params["sslport"])
+        if not mobile :
+            if int(params["sslport"]) == -1 :
+                if int(params["port"]) != 80:
+                    params["oauth"]["redirect"] += ":" + str(params["port"])
+            else :
+                if int(params["sslport"]) != 443:
+                    params["oauth"]["redirect"] += ":" + str(params["sslport"])
 
-        params["oauth"]["redirect"] += "/"
+            params["oauth"]["redirect"] += "/"
 
         mica = MICA(db_adapter)
 
