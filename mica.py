@@ -704,7 +704,7 @@ class MICA(object):
 
         try :
             if not os_path.isfile(fname) :
-                self.db.get_attachment_to_path("MICA:filelisting", f, fname)
+                self.db.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
                 mdebug("Exported " + f + ".")
         except couch_adapter.CommunicationError, e :
             mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
@@ -2593,23 +2593,27 @@ class MICA(object):
 
                 if not mobile :
                     try :
-                        if not req.db.doc_exist("MICA:filelisting") :
-                            req.db["MICA:filelisting"] = {"foo" : "bar"} 
+                        if req.db.doc_exist("MICA:filelisting") :
+                            del req.db["MICA:filelisting"]
 
-                        listing = req.db["MICA:filelisting"]
+                        for name, lgp in self.processors.iteritems() :
+                            for f in lgp.get_dictionaries() :
+                                if not req.db.doc_exist("MICA:filelisting_" + f) :
+                                    req.db["MICA:filelisting_" + f] = {"foo" : "bar"} 
+
                         mdebug("Checking if files exist............") 
                         for name, lgp in self.processors.iteritems() :
                             for f in lgp.get_dictionaries() :
+                                listing = req.db["MICA:filelisting_" + f]
                                 fname = params["scratch"] + f 
 
                                 if '_attachments' not in listing or f not in listing['_attachments'] :
                                     minfo("Opening dict file: " + f)
                                     fh = open(fname, 'r')
                                     minfo("Uploading " + f + " to file listing...")
-                                    req.db.put_attachment("MICA:filelisting", f, fh, new_doc = listing)
+                                    req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
                                     fh.close()
                                     minfo("Uploaded.")
-                                    listing = req.db["MICA:filelisting"]
                                 else :
                                     mdebug("File " + f + " already exists.")
                                     handle = lgp.parse_page_start()
