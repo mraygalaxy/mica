@@ -485,6 +485,7 @@ class HeadElement(Element):
 
     @renderer
     def languages(self, request, tag) :
+        tag(tags.option(value='', selected='selected')(_("None Selected")))
         for l, readable in supported.iteritems() :
             src, dest = l.split(",")
             if processor_map[src] and processor_map[dest] :
@@ -633,9 +634,9 @@ class HeadElement(Element):
 
     @renderer
     def thirdparty(self, request, tag) :
-       if self.req.mobile :
+       if self.req.mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
            tag("")
-       else :
+       else : 
            tag(tags.br(), _("Sign in with") + ": ")
 
            for name, creds in self.req.oauth.iteritems() :
@@ -667,7 +668,7 @@ class HeadElement(Element):
                      favicon = self.req.mpath + "/favicon.ico",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      # Which language to learn, that is.
-                     langtype = _("Which languages"),
+                     langtype = _("Which language"),
                      email = _("Email Address"),
                      # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
@@ -684,10 +685,13 @@ class HeadElement(Element):
                      selectfile = _("Select File"),
                      uploadfile = _("Upload File"),
                      uploadinstead = _("Or Upload a File Instead"),
+                     choose = _("Choose one"),
                      # Unique name to identify this story in the system
                      uniquename = _("Unique Name"),
+                     noneselected = _("None Selected"),
                      uploadtext = _("Upload Text"),
                      copypaste = _("Copy/Paste a Story"),
+                     missing = _("* Please fill in required fields"),
                      uploadstory = _("Upload Story"),
                      instant = _("Instant Translation"),
                      splitmerge = _("Split/Merge Words"),

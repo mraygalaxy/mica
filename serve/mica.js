@@ -102,6 +102,7 @@ if ("liststate" in params)
               newSecs = newRefresh;
               newRefresh = 0;
             }
+
             if(id != false && id != 'false')
                 document.getElementById(id).innerHTML = 'Next Check: ' + left;
             if(left != 0 && barid != false && barid != 'false')
@@ -1131,3 +1132,24 @@ $.fn.goDeep = function(levels, func){
     });
 };
 
+function validatetext() {
+    var ids = [ 'textname', 'textvalue', 'textlanguage' ];
+    for (var i = 0; i < ids.length; i++) {
+         if ($("#" + ids[i]).val() == '') {
+            document.getElementById("uploaderror").style.display = 'block';
+            return;
+         }
+    }
+    $("#textform").submit();
+}
+
+function validatefile() {
+    var ids = [ 'uploadfile', 'uploadtype', 'uploadlanguage' ];
+    for (var i = 0; i < ids.length; i++) {
+         if ($("#" + ids[i]).val() == '') {
+            document.getElementById("uploaderror").style.display = 'block';
+            return;
+         }
+    }
+    $("#fileform").submit();
+}
