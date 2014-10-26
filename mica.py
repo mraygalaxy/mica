@@ -2639,7 +2639,10 @@ class MICA(object):
                 
             username = req.session.value['username']
 
-            self.install_local_language(req, req.session.value["language"])
+            if "language" not in req.session.value :
+                self.install_local_language(req, self.language)
+            else :
+                self.install_local_language(req, req.session.value["language"])
 
             if "app_chars_per_line" not in req.session.value :
                 user = req.db[self.acct(username)]
