@@ -2393,10 +2393,6 @@ class MICA(object):
                         lookup_url += "?"
                     lookup_url += "access_token=" + service.token["access_token"]
 
-                if who == "qq" :
-                    req.skip_show = True
-                    return self.bootstrap(req, "Test Success! QQ access token: " + service.token["access_token"])  
-
                 r = service.get(lookup_url)
                 
                 mdebug("MICA returned content is: " + str(r.content))
