@@ -3723,6 +3723,7 @@ class MICA(object):
                 if "connected" in req.session.value and req.session.value["connected"] :
                     req.session.value["connected"] = False
                     req.session.save()
+                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :
