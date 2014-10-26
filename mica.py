@@ -2414,7 +2414,10 @@ class MICA(object):
                     return self.bootstrap(req, out)
 
                 password = binascii_hexlify(os_urandom(4))
-                language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
+                if "locale" not in values :
+                    language = "en"
+                else :
+                    language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
                 if isinstance(values[creds["email_key"]], dict) :
                     values["email"] = None
@@ -2452,7 +2455,8 @@ class MICA(object):
 
                     if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                         req.skip_show = True
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;<b>" + auth_user["source"] + "</b>&#160;" + _("Please choose a different social network and try again") + "</h4></div>")
+                        source = "mica" if "source" not in auth_user else auth_user["source"]
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
 
             if req.http.params.get("connect") or from_third_party != False :
                 if from_third_party :
