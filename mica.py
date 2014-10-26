@@ -3298,7 +3298,7 @@ class MICA(object):
                         # Beginning of a message.
                         output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
                         if mobile :
-                            output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + "</h5>"
+                            output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
                         else :
                             # end of a message
                             output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
