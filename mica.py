@@ -1220,7 +1220,19 @@ class MICA(object):
 
     def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
-            return _("Untranslated story! Ahhhh!")
+            ut = self.heromsg + "<h4>" + _("This story has not yet been converted to reading format. MICA uses both offline and online resources to perform this conversion, including an offline dictionary as well as an online Translation engine. The online service is free, but requires you to first register. Currently, we use Microsoft to perform the online component of the registration (because it is free and is also not blocked in other countries). You can signup for a free account <a href='https://datamarket.azure.com/developer/applications/'>by going here</a>.")
+            ut += "<br/>" + _("Instructions") + ":<br/>"
+            ut += "<ol>"
+            ut += "<li>" + "<a href='https://datamarket.azure.com/developer/applications/'>" + _("Click here") + "</a>. " + _("First signin to Microsoft (or create a live account if you do not already have one)") + ".</li>"
+            ut += "<li>" + _("After logging in, Create a new registered application by clicking 'Register'") + ".</li>"
+            ut += "<li>" + _("The 'Client ID' and 'Client Secret' are the important pieces of information that we are trying to create") + ".</li>"
+            ut += "<li>" + _("The 'Redirect URI' option is simply the address of the MICA website") + ".</li>"
+            ut += "<li>" + _("The rest is empty. Clicking 'Create'") + "</li>"
+            ut += "<li>" + _("Copy the ID and Secret values to your account preferences on your account in MICA") + ".</li>"
+            ut += "<li>" + _("Then re-open the side panel and click 'Translate'") + ".</li>"
+            ut += "</ol>"
+            ut += "</h4></div>"
+            return ut 
 
         upgrade_needed = 0
 
@@ -3314,7 +3326,8 @@ class MICA(object):
                     which = req.http.params.get("type")
                     
                     if which == "original" :
-                        original = req.db[self.story(req, name) + ":original"]["value"]
+                        original = self.heromsg + _("Here is the original story. Choose from one of the options in the above navigation bar to begin learning with this story.") + "</div>"
+                        original += req.db[self.story(req, name) + ":original"]["value"]
                         return self.bootstrap(req, original.encode("utf-8").replace("\n","<br/>"))
                     elif which == "pinyin" :
                         final = req.db[self.story(req, name) + ":final"]["0"]
