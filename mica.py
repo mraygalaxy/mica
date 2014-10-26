@@ -2430,8 +2430,8 @@ class MICA(object):
                 from_third_party = values
                 from_third_party["username"] = values["email"]
 
-                req.skip_show = True
-                return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
+                #req.skip_show = True
+                #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
 
                 if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
                     self.make_account(req, values["email"], password, ['normal'], values["email"], who, language = language)
