@@ -225,8 +225,8 @@ class MICA(object):
                 password = params["admin_pass"]
                 username = params["admin_user"]
 
-            lookup_username_unquoted = urllib2_quote(lookup_username)
-            username_unquoted = urllib2_quote(username)
+            lookup_username_unquoted = urllib2_quote(str(lookup_username))
+            username_unquoted = urllib2_quote(str(username))
             userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
             req = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
             req.add_header('Accept', 'application/json')
@@ -2417,6 +2417,9 @@ class MICA(object):
                 mdebug("MICA returned content is: " + str(r.content))
                 values = json_loads(r.content)
 
+                if who == "renren" :
+                    values = values["response"]
+
                 if creds["verified_key"] :
                     assert(creds["verified_key"] in values)
 
@@ -2424,7 +2427,7 @@ class MICA(object):
                         req.skip_show = True
                         return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
 
-                if creds["email_key"] not in values :
+                if creds["email_key"] and creds["email_key"] not in values :
                     authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
                     req.skip_show = True
                     out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
@@ -2438,19 +2441,23 @@ class MICA(object):
                 else :
                     language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
-                if isinstance(values[creds["email_key"]], dict) :
-                    values["email"] = None
+                if creds["email_key"] :
+                    if isinstance(values[creds["email_key"]], dict) :
+                        values["email"] = None
 
-                    if "preferred" in values[creds["email_key"]] :
-                        values["email"] = values[creds["email_key"]]["preferred"]
+                        if "preferred" in values[creds["email_key"]] :
+                            values["email"] = values[creds["email_key"]]["preferred"]
 
-                    if values["email"] is None :
-                        for key, email in values[creds["email_key"]] :
-                            if email is not None :
-                                values["email"] = email 
+                        if values["email"] is None :
+                            for key, email in values[creds["email_key"]] :
+                                if email is not None :
+                                    values["email"] = email 
+                    else :
+                        values["email"] = values[creds["email_key"]]
 
                 from_third_party = values
-                from_third_party["username"] = values["email"]
+                if creds["email_key"] :
+                    from_third_party["username"] = values["email"]
 
                 #req.skip_show = True
                 #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
