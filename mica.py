@@ -527,7 +527,7 @@ class MICA(object):
                         # password in the session file
                         # This is OK for now since we're running on a phone....
                         mdebug("Trying to restart replication...")
-                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"]) :
+                        if not self.db.replicate(req.session.value["address"], urllib2_quote(username), urllib2_quote(req.session.value["password"]), req.session.value["database"], params["local_database"]) :
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                     else :
                         # On the server, use cookies to talk to CouchDB
