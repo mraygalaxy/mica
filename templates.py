@@ -704,14 +704,64 @@ class HeadElement(Element):
                      password = _("Password / Token"),
                      username = _("Account"),
                      newaccount = _("Create New Account"),
+                     # This is one of the 'Account' menu items that describes the author of the software.
                      aboutsoftware = _("About this software"),
                      signin = _("Login"),
+                     # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
                      rememberme = _("Remember Me"),
+                     # This appears on the front page when you login. It is the HTTP address of the website.
                      address = _("Address"),
                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                      signing = _("Signing you in, Please wait"),
                      loading = _("Loading story, Please wait"),
+                     # Compacting can also be translated as "cleaning" database.
                      compacting = _("Compacting database, Please wait"),
+                     # This appears as a pop-up when we are loading the text content of a story.
+                     loadingtext = _("Loading Text"),
+                     # This appears as a pop-up when we are image content of a PDF-based story.
+                     loadingimage = _("Loading Image"),
+                     # This appears when you first click on a story to be loaded
+                     loadingstories = _("Loading Stories"),
+                     # This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
+                     loadingstatistics = _("Loading Statistics"),
+                     # This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
+                     notsynchronized = _("This account is not fully synchronized"),
+                     # This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
+                     onlineoffline = _("If you are offline, please go online for an instant translation."),
+                     # This appears when you attempt to perform an instant translation without clicking on any words to translate.
+                     notselected = _("You have not selected any words for instant translation!"),
+                     # This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors. 
+                     seeabove = _("See above for problems with your edit requests."),
+                     # just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
+                     submit = _("Submit"),
+                     # This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
+                     reason = _("Reason"),
+                     # Merge as in merge/split in edit mode.
+                     merge = _("Merge"),
+                     # This appears next to the words that have errors for which you were trying to merge or split.
+                     invalid = _("INVALID"),
+                     # Split as in merge/split in edit mode.
+                     split = _("Split"),
+                     # This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
+                     areyousure = _("Are you sure you want to perform these edits?"),
+                     # Also a message in edit mode.
+                     notconsecutive = _("The selected characters are not consecutive (including punctuation). You cannot merge them."),
+                     # Also a message in edit mode.
+                     atleasttwo = _("You need at least two character groups selected before you can merge them into a word!"),
+                     # Also a message in edit mode.
+                     onlyhasone = _("This word only has one character. It cannot be split!"),
+                     # Also a message in edit mode.
+                     cannotsplit = _("You cannot split more than one word at a time!"),
+                     # This appears on the left-hand panel when a story is being actively translated.
+                     translating = _("Translating"),
+                     # This on the main page when a story is being actively translated.
+                     storiestranslating = _("Stories in translation"),
+                     # This appears after a story has just finished being translated to indicate that you can start using it.
+                     donereload = _("Done! Please reload."),
+                     # This appears during the translation of a story to indicate how many pages have been completed in the translation
+                     working = _("Working"),
+                     # This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
+                     page = _("Page"),
                      )
        return tag
 
