@@ -1213,18 +1213,12 @@ class MICA(object):
     def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
             # Begin long explanation
-            ut = self.heromsg + "<h4>" + _("This story has not yet been converted to reading format. MICA uses both offline and online resources to perform this conversion, including an offline dictionary as well as an online Translation engine. The online service is free, but requires you to first register. Currently, we use Microsoft to perform the online component of the registration (because it is free and is also not blocked in other countries). You can signup for a free account <a href='https://datamarket.azure.com/developer/applications/'>by going here</a>.")
-            ut += "<br/>" + _("Instructions") + ":<br/>"
-            ut += "<ol>"
-            ut += "<li>" + "<a href='https://datamarket.azure.com/developer/applications/'>" + _("Click here") + "</a>. " + _("First signin to Microsoft (or create a live account if you do not already have one)") + ".</li>"
-            ut += "<li>" + _("After logging in, Create a new registered application by clicking 'Register'") + ".</li>"
-            ut += "<li>" + _("The 'Client ID' and 'Client Secret' are the important pieces of information that we are trying to create") + ".</li>"
-            ut += "<li>" + _("The 'Redirect URI' option is simply the address of the MICA website") + ".</li>"
-            ut += "<li>" + _("The rest is empty. Clicking 'Create'") + "</li>"
-            ut += "<li>" + _("Copy the ID and Secret values to your account preferences on your account in MICA") + ".</li>"
-            # End long explanation
-            ut += "<li>" + _("Then re-open the side panel and click 'Translate'") + ".</li>"
-            ut += "</ol>"
+            ut = self.heromsg + "<h4>" + _("This story has not yet been converted to reading format.")
+            ut += " "
+            if mobile :
+                ut += _("Translation requires significant computer power, so you must convert (translate) it online first, and then it will be synchronized with this device.")
+            else :
+                ut += _("Please click 'Translate' in the side panel to proceed.")
             ut += "</h4></div>"
             return ut 
 
@@ -1258,7 +1252,7 @@ class MICA(object):
         req.target_language = story["target_language"]
 
         if mobile :
-            req.remote_server = params["oauth"]["redirect"]
+            req.remote_server = params["couch_server"]
         else :
             req.remote_server = ""
             
@@ -3559,27 +3553,6 @@ class MICA(object):
                 else :
                     out += _("Please change your password on the website. Will support mobile in a future version.")
 
-                out += """
-                    <table>
-                    <form action='/account' method='post' enctype='multipart/form-data'>
-                    """
-
-                client_id = _("Need your client API key")
-                client_secret = _("Need your client API secret")
-
-                if username != "demo" and 'translator_credentials' in user :
-                     client_id = user['translator_credentials']['id']
-                     client_secret = user['translator_credentials']['secret']
-                 
-                out += "<tr><td><h5>&#160;" + _("Client API ID") + ": </td><td><input type='text' name='id' value='" + client_id + "'/></h5></td></tr>"
-                out += "<tr><td><h5>&#160;" + _("Client API Secret") + ": </td><td><input type='text' name='secret' value='" + client_secret + "'/></h5></td></tr>"
-                out += "<tr><td><button name='changecredentials' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change API Credentials") + "</button></td></tr>"
-                out += """
-                    </table>
-                    </form>
-                    <p>
-                    <br/>
-                    """
                 out += """
                         <a onclick="$('#compactModal').modal('show');"
                         """

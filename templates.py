@@ -45,11 +45,6 @@ class PasswordElement(Element) :
                       confirm = _("Confirm Password / Token"),
                       change = _("Change Password / Token"),
                       reset = _("Reset Password / Token"),
-                      microsoft = _("Input Microsoft Translation API Credentials?"),
-                      # Beginning of a sentence
-                      request = _("You can request free API credentials"),
-                      # end of the sentence, 'here' is a web link URL.
-                      going = _("by going here")
                       )
         return tag
 
@@ -428,7 +423,8 @@ class StaticViewElement(Element) :
 
             onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + self.req.remote_server + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
         else :
-            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '', false, false)"
+            #onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '', false, false)"
+            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', 'https://mica.hinespot.com', 'family%40hinespot.com', 'Iamtwo34')"
 
         tag.fillSlots(textclass = tclasses["text"],
                       imageclass = tclasses["images"],

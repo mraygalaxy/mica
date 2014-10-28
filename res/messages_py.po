@@ -103,12 +103,6 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#. A translation API key is a third-party identifier and passcode that allows this software program to operate over the internet and request translations of specific words from one software program (this one) to another one (such as Bing, the free one that we are currently using). This 'API key' or ID as well as a corresponding secret are issued directly by the 3rd party and are input into the preferences section of MICA manually by the user.
-msgid ""
-"Please add a translation API key in your account preferences to begin "
-"learning with this story"
-msgstr ""
-
 #. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
 msgid "Translate"
 msgstr "Fānyì kāishǐ"
@@ -217,10 +211,6 @@ msgstr ""
 
 #. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
 msgid "List statistics mode changed"
-msgstr ""
-
-msgid ""
-"Offline only. Missing a translation API key in your account preferences."
 msgstr ""
 
 msgid "No translation available."
@@ -385,19 +375,6 @@ msgstr ""
 msgid "password changed"
 msgstr "mìmǎ gēnggǎi le"
 
-msgid ""
-"We tried to test your translation API credentials, but they didn't work. "
-"Please check them and try again =)"
-msgstr ""
-
-msgid "Your MS translation credentials have been changed to"
-msgstr ""
-
-msgid ""
-"We tried to test your translation API credentials, but they didn't work "
-"because"
-msgstr ""
-
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't make accounts"
 msgstr ""
@@ -532,16 +509,6 @@ msgid "Confirm Password"
 msgstr "Què rèn mì mǎ"
 
 msgid "Gēng gǎi mì mǎ"
-msgstr ""
-
-msgid "Input Microsoft Translation API Credentials?"
-msgstr ""
-
-msgid "You can request free credentials"
-msgstr ""
-
-#. end of the sentence, 'here' is a web link URL.
-msgid "by going here"
 msgstr ""
 
 #. Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
@@ -942,9 +909,6 @@ msgid ""
 "synchronized to the device for regular use."
 msgstr ""
 
-msgid "Your translation API credentials have been changed to"
-msgstr ""
-
 msgid "No instant translation available."
 msgstr ""
 
@@ -971,30 +935,11 @@ msgid ""
 "translation."
 msgstr ""
 
-#. Beginning of a sentence
-msgid "You can request free API credentials"
-msgstr ""
-
 msgid ""
 "Brand new stories cannot (yet) be created/uploaded yet on the device. You "
 "must first create them on the website. (New stories require a significant "
 "amount of computer resources to prepare. Thus, they can only be synchronized "
 "to the device for regular use."
-msgstr ""
-
-msgid "Need your client API key"
-msgstr ""
-
-msgid "Need your client API secret"
-msgstr ""
-
-msgid "Client API ID"
-msgstr ""
-
-msgid "Client API Secret"
-msgstr ""
-
-msgid "Change API Credentials"
 msgstr ""
 
 msgid "English to Chinese"
@@ -1021,53 +966,6 @@ msgid "Read, Review, or Edit, my friend?<br/><br/>"
 msgstr ""
 
 msgid "Which languages"
-msgstr ""
-
-#. Begin long explanation
-msgid ""
-"This story has not yet been converted to reading format. MICA uses both "
-"offline and online resources to perform this conversion, including an "
-"offline dictionary as well as an online Translation engine. The online "
-"service is free, but requires you to first register. Currently, we use "
-"Microsoft to perform the online component of the registration (because it is "
-"free and is also not blocked in other countries). You can signup for a free "
-"account <a href='https://datamarket.azure.com/developer/applications/'>by "
-"going here</a>."
-msgstr ""
-
-msgid "Instructions"
-msgstr ""
-
-msgid "Click here"
-msgstr ""
-
-msgid ""
-"First signin to Microsoft (or create a live account if you do not already "
-"have one)"
-msgstr ""
-
-msgid ""
-"After logging in, Create a new registered application by clicking 'Register'"
-msgstr ""
-
-msgid ""
-"The 'Client ID' and 'Client Secret' are the important pieces of information "
-"that we are trying to create"
-msgstr ""
-
-msgid "The 'Redirect URI' option is simply the address of the MICA website"
-msgstr ""
-
-msgid "The rest is empty. Clicking 'Create'"
-msgstr ""
-
-msgid ""
-"Copy the ID and Secret values to your account preferences on your account in "
-"MICA"
-msgstr ""
-
-#. End long explanation
-msgid "Then re-open the side panel and click 'Translate'"
 msgstr ""
 
 msgid ""
@@ -1174,4 +1072,28 @@ msgid "* Please fill in required fields"
 msgstr ""
 
 msgid "Password / Token"
+msgstr ""
+
+#. Begin long explanation
+msgid "This story has not yet been converted to reading format."
+msgstr ""
+
+msgid ""
+"Translation requires significant computer power, so you must convert "
+"(translate) it online first, and then it will be synchronized with this "
+"device."
+msgstr ""
+
+msgid "Please click 'Translate' in the side panel to proceed."
+msgstr ""
+
+msgid "Translation access denied"
+msgstr ""
+
+msgid ""
+"To login to this application with a regular account and begin syncing all of "
+"your devices with your web account, you must first request a free web "
+"account online @ http://mica.hinespot.com. After you have created an online "
+"account, you can then login with your email and password from your online "
+"account using any device that you like."
 msgstr ""
