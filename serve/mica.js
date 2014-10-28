@@ -29,6 +29,10 @@ if ("liststate" in params)
   var failcount = 0;
   var newRefresh = 0;
   var finish = false;
+
+function local(msgid) {
+    return $("#" + msgid).html();
+}
   function populateRefreshChoices() {
       e = document.getElementById('changerefresh');
       e.options.length=0;
@@ -60,7 +64,7 @@ if ("liststate" in params)
         },
         success: function (response) {
             var data = "none";
-            if(response.indexOf("This account is not fully synchronized") != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+            if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
@@ -143,10 +147,10 @@ function trans_poll_finish(data, uuid, unused) {
     }
 
     if (result == "yes" || first_time) {
-        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;Working: Page " + page + "/" + pages + ", " + percent + "%");
+        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;" + local("working") + ": " + local("page") + ": " + page + "/" + pages + ", " + percent + "%");
         trans_wait_poll(uuid);
     } else {
-        $("#translationstatus" + uuid).html('Done! Please reload.');
+        $("#translationstatus" + uuid).html(local('donereload'));
         loadstories(false);
     }
 }
@@ -176,8 +180,8 @@ function trans_start(uuid) {
     first_time = true;
     finish = trans_poll;
     trans_poll(uuid);
-    $("#translationstatus").html(spinner + "&nbsp;Stories in translation...");
-    $("#translationstatus" + uuid).html(spinner + "&nbsp;Translating...");
+    $("#translationstatus").html(spinner + "&nbsp;" + local("storiestranslating") + "...");
+    $("#translationstatus" + uuid).html(spinner + "&nbsp;" + local("translating") + "...");
 }
 
 function trans(uuid) {
@@ -192,41 +196,6 @@ function trans(uuid) {
        uuid,
        false);
 }
-  function resetMonitor(data) {
-      if(data != 'error') {
-          htmlobj = $(data);
-          $("#summary").html(htmlobj.find("#monitorsummary"));
-          htmlobj = $(data);
-          $("#taball").html(htmlobj.find("#monitordata"));
-          htmlobj = $(data);
-          var choices = new Array('p', 'h', 's', 'a');
-          var x = 0;
-          for(x = 0; x <=3 ; x++) {
-              y = choices[x];
-              htmlobj = $(data);
-              result = htmlobj.find("#monitor" + y);
-              if((result.html() + "") == "null")
-                  $("#tab" + y).html("<h3>This performance category is not configured. <a href='monitordata'>Try loading the data directly</a> to see if there are any python errors. Click 'Options' to activate.</h3>");
-              else
-                  $("#tab" + y).html(result);
-          }
-      } else {
-          $("#summary").html("<h4 style='color: red'>CloudBench is unavailable. Will try again later...</h4>");
-      }
-      finish = checkMonitor;
-      do_refresh = true;
-      CountBack('count', 'countbar', secs);
-  }
-  function startRefresh() {
-      checkMonitor();
-      $('#refreshButton').button('disable');
-      $('#refreshButton').on('click', stopRefresh);
-  }
-  function stopRefresh() {
-      do_refresh = false;
-      $('#refreshButton').button('enable');
-      $('#refreshButton').on('click', startRefresh);
-  }
 
 function poll(s, finisher, monid) {
         secs = s;
@@ -237,64 +206,6 @@ function poll(s, finisher, monid) {
         else
             CountBack(false, false, s);
 }
-
-function check_nodraw() {
-   go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
-}
-function pending_callback(data) {
-        if (!debug && last_data == '')
-            $('#pendingcount2').html('');
-        if(data == 'unchanged') {
-            if(debug)
-                $('#pendingcount2').html('result: unchanged ' + last_data);
-            if(last_data == 'No Pending Objects') {
-				go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
-                poll(30, check_nodraw, 'pendingcount');
-            } else {
-                poll(3, check_nodraw, 'pendingcount');
-            }
-        } else if(data == 'error' || data == 'none' || data == 'No Pending Objects') {
-            last_data = '';
-            $('#pendingtest').html('');
-            //$('#pendingstatus').html('');
-            if("operation" in params) {
-               $('#pendingtest').html(heromsg + "<h4>&nbsp;&nbsp;Request(s) Complete.</h4></div>");
-            }
-            if(data == 'error') {
-                first_time = true;
-                poll(1, check_pending, 'pendingcount');
-            } else if (data == 'No Pending Objects') {
-		        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
-                last_data = data;
-                poll(30, check_pending, 'pendingcount');
-		    } else {
-                last_data = data;
-                poll(30, check_pending, 'pendingcount');
-            }
-            if(debug)
-                $('#pendingcount2').html('result: ' + data);
-        } else {
-            last_data = data;
-            $('#pendingtest').html(last_data);
-            if(debug)
-                $('#pendingcount2').html('result: new pending data');
-            poll(3, check_pending, 'pendingcount');
-        }
-}
-function check_pending() {
-    if(first_time) {
-        first_time = false;
-        go('#pendingtest', '/provision?force=1&pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
-    } else {
-        go('#pendingtest', '/provision?pending=1&object=' + active, '#pendingresult', unavailable, true, pending_callback, false);
-        go('#allstate', '/provision?allstate=1&liststate=' + liststate + '&object=' + active, '#allstate', unavailable, true, false, true);
-    }
-}
-function checkMonitor() {
-	var error = "CloudBench is unreachable, will try again later...";
-	$('#count').html("Polling...");
-	go('#monitordata', '/monitordata', '', error, false, resetMonitor, false);
-}    
 
 function make_child(node) {
      var contents = "<" + node.nodeName;
@@ -375,15 +286,16 @@ function make_child(node) {
   	  			 };
       var out = "";
       if (chars.length == 0) {
-          out += "You have not selected any words for instant translation!";
+          out += local("notselected");
       } else if (operation == "split" && chars.length > 1) {
-          out += "You cannot split more than one word at a time!";
+          out += local("cannotsplit");
       } else if (operation == "split" && chars[0].split('').length < 2) {
-          out += "This word only has one character. It cannot be split!";
+          out += local("onlyhasone");
       } else if (operation == "merge" && chars.length < 2) {
       	  if (batch)
       	      return "";
-          out += "You need at least two character groups selected before you can merge them into a word!";
+          out += local("atleasttwo");
+
       } else {
           var consecutive = true;
 
@@ -413,7 +325,7 @@ function make_child(node) {
           if (consecutive) {
 	      	  op["failed"] = false;
           } else {
-              out = "The selected characters are not consecutive (including punctuation). You cannot merge them.";
+              out = local("notconsecutive");
           }
       }
       
@@ -493,7 +405,7 @@ function make_child(node) {
 		  edits.push(prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation));
       }
       
-      out += "<h4>Are you sure you want to perform these edits?</h4>\n";
+      out += "<h4>" + local("areyousure") + "</h4>\n";
       out += "<form method='post' action='/edit'>"
       var editcount = 1;
       out += "<table>"
@@ -502,7 +414,7 @@ function make_child(node) {
       	  out += "<td>#" + editcount + ")&nbsp;</td>";
       	  	
       	  if (edits[x]["operation"] == "split") {
-      	  	  out += "<td>Split "; 
+      	  	  out += "<td>" + local("split") + " "; 
 	      	  if (edits[x]["failed"] == true) {
 		      	  out += "(INVALID)"
 	      	  } else {
@@ -510,9 +422,9 @@ function make_child(node) {
 	      	  }
 	      	  out += ":&nbsp;</td><td>" + edits[x]["chars"] + "(" + edits[x]["pinyin"] + ")</td>";
 	      } else {
-      	  	  out += "<td>Merge "; 
+      	  	  out += "<td>" + local("merge") + " "; 
 	      	  if (edits[x]["failed"] == true) {
-		      	  out += "(INVALID)"
+		      	  out += "(" + local("invalid") + ")"
 	      	  } else {
 		      	  editcount += 1;
 	      	  }
@@ -531,22 +443,22 @@ function make_child(node) {
 	      	  	  if (y < (edits[x]["units"] - 1)) {
 	      	  	      out += ", &nbsp;";
 	      	  	  }
-				  out += "</td>"
+				  out += "</td>";
 	      	  }
       	  }
 	      out += "</tr>";
       	  if (edits[x]["failed"] == true) {
-      	  	out += "<tr><td></td><td>Reason:</td><td colspan='100'>" + edits[x]["out"] + "</td></tr>"
+      	  	out += "<tr><td></td><td>" + local("reason") + ":</td><td colspan='100'>" + edits[x]["out"] + "</td></tr>";
       	  }
       }
       out += "</table>"
-  	  out += "<input type='hidden' name='oprequest' value='" + JSON.stringify(edits) + "'/>\n"
-  	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n"
-  	  out += "<p/><p/>"
+  	  out += "<input type='hidden' name='oprequest' value='" + JSON.stringify(edits) + "'/>\n";
+  	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n";
+  	  out += "<p/><p/>";
   	  if (editcount > 1) {
-	      out += "<input class='btn btn-default btn-primary' name='submit' type='submit' value='Submit'/>";
+	      out += "<input class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
 	  } else {
-	      out += "See above for problems with your edit requests."
+	      out += local("seeabove");
   	  	
   	  }
       out += "</form>"
@@ -580,7 +492,7 @@ function make_child(node) {
       }
         
       if (allchars == "") {
-          alert("You have not selected any words for instant translation!");
+          alert(local("notselected"));
       } else {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
@@ -594,7 +506,7 @@ function make_child(node) {
 
        change('#instantdestination', url,
           '#instantresult', 
-          unavailable, 
+          local(onlineoffline),
           true, 
           offinstantspin,
           true,
@@ -723,7 +635,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;Loading Image...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;Loading Text...</div>");
+       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
     
         $('#pageimg' + curr_img_num).affix();
         $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -751,9 +663,9 @@ function view(mode, uuid, page) {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
-	       $("#pagesingle").html(spinner + "&nbsp;Loading Image...");
+	       $("#pagesingle").html(spinner + "&nbsp;" + local("loadingimage") + "...");
        } else {
-	       $("#pagesingle").html(spinner + "&nbsp;Loading Text...");
+	       $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext") + "...");
        	
        }
        
@@ -964,7 +876,7 @@ var list_mode = true;
 function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
-               $("#memolist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+               $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
            go('#memolist', 
               '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
@@ -974,7 +886,7 @@ function listreload(mode, uuid, page) {
               true);
        } else if (mode == "edit") {
            if (list_mode)
-               $("#editslist").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+               $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
            go('#editslist', 
                   '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
@@ -984,7 +896,7 @@ function listreload(mode, uuid, page) {
                   true);
        } else if (mode == "home") {
            if (list_mode)
-               $("#history").html(spinner + "&nbsp;<h4>Loading statistics</h4>");
+               $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
            go('#history', 
                   '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
@@ -1076,7 +988,7 @@ function installreading() {
 
 function loadstories(unused) {
 
-    $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;Loading stories...");
+    $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
     go('#sidebarcontents', 
     '/storylist',
     '#storylistresult', 
