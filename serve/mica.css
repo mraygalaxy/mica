@@ -21,9 +21,6 @@ body {
 	margin-top: -55px;
 }
 
-.navbar-default {
-	background-image: -webkit-linear-gradient(top, white, #DBD7D7);
-}
 a.brand:hover {
 	color : white;
 }
