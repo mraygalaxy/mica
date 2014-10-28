@@ -105,6 +105,7 @@ def merr(msg) :
       duplicate_logger.err(String(msg))
 
 mobile = True 
+
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
