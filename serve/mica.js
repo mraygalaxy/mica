@@ -60,7 +60,7 @@ function local(msgid) {
                   $(id).html("<div class='hero-unit' style='padding: 5px'><h4>" + spinner + "&nbsp;&nbsp;" + error + "</h4></div>");
               }
              if(callback != false)
-               callback('error');
+               callback(error);
         },
         success: function (response) {
             var data = "none";
@@ -506,7 +506,7 @@ function make_child(node) {
 
        change('#instantdestination', url,
           '#instantresult', 
-          local(onlineoffline),
+          local("onlineoffline"),
           true, 
           offinstantspin,
           true,
@@ -542,7 +542,7 @@ function make_child(node) {
                   $(id).html(error);
               }
              if(callback != false) {
-               callback('error');
+               callback(error);
              }
         },
         success: function (response) {
