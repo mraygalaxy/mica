@@ -291,28 +291,13 @@ class MICA(object):
     def credentials(self) :
         return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
 
-    def install_local_language(self, req, language) :
-        if "language" in req.session.value :
+    def install_local_language(self, req, language = False) :
+        if language :
+            catalogs.language = language
+        elif "language" in req.session.value :
             catalogs.language = req.session.value["language"]
         else :
             catalogs.language = self.language
-        
-    def install_global_language(self, language) :
-        if language.count("-") :
-            language = language.split("-")[0]
-        if language.count("_") :
-            language = language.split("_")[0]
-
-        mdebug("Setting language to: " + language)
-        if language in texts :
-            self.language = language
-        else :
-            self.language = "en"
-        #if language in texts :
-        #    texts[language].install()
-        #else :
-        #    texts["en"].install()
-        mdebug("Language set.")
         
     def __init__(self, db_adapter):
         self.client = Translator(params["trans_id"], params["trans_secret"])
@@ -526,10 +511,6 @@ class MICA(object):
                         # On the server, use cookies to talk to CouchDB
                         cookie = req.session.value["cookie"]
                         mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
-
-                    if "language" in req.session.value :
-                        mdebug("Setting global language inside run_common")
-                        self.install_global_language(req.session.value["language"])
 
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
@@ -2170,12 +2151,7 @@ class MICA(object):
         if username in self.view_runs :
             del self.view_runs[username]
 
-        if "language" in session.value :
-            del session.value["language"]
-
         session.save()
-
-        self.install_local_language(req, self.language)
 
     def check_all_views(self, req) :
         self.view_check(req, "stories")
@@ -2341,11 +2317,19 @@ class MICA(object):
     def common(self, req) :
         try :
             if req.action == "privacy" :
+                self.install_local_language(req)
                 output = ""
                 helpfh = codecs_open(cwd + "serve/privacy_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
+
                 return self.bootstrap(req, output, pretend_disconnected = True)
+
+            if req.action == "switchlang" and req.http.params.get("lang") : 
+                req.session.value["language"] = req.http.params.get("lang")
+                req.session.save()
+                self.install_local_language(req)
+                return self.bootstrap(req, run_template(req, FrontPageElement))
 
             if req.action == "instant" :
                 if "connected" not in req.session.value or not req.session.value["connected"] :
@@ -2709,15 +2693,13 @@ class MICA(object):
                             out += line + "\n"
                         mwarn(out)
                 
+            self.install_local_language(req)
+
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             username = req.session.value['username']
 
-            if "language" not in req.session.value :
-                self.install_local_language(req, self.language)
-            else :
-                self.install_local_language(req, req.session.value["language"])
 
             if "app_chars_per_line" not in req.session.value :
                 user = req.db[self.acct(username)]
@@ -3490,7 +3472,7 @@ class MICA(object):
                     req.db[self.acct(username)] = user
                     req.session.value["language"] = language
                     req.session.save()
-                    self.install_local_language(req, language)
+                    self.install_local_language(req)
                     out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
                 elif req.http.params.get("changeemail") :
                     email = req.http.params.get("email")
@@ -3634,10 +3616,13 @@ class MICA(object):
                     
             elif req.action == "disconnect" :
                 self.disconnect(req, req.session)
+                self.install_local_language(req)
                 req.skip_show = True
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
+                return self.bootstrap(req, run_template(req, FrontPageElement))
+                #return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
 
             elif req.action == "help" :
+                self.install_local_language(req)
                 output = ""
                 helpfh = codecs_open(cwd + "serve/info_template.html", "r", "utf-8")
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
@@ -3646,11 +3631,10 @@ class MICA(object):
                 return self.bootstrap(req, output)
 
             else :
-                # This occurs when you come back to the webpage, and were previously reading a story,
-                # but need to indicate in which mode to read the story (of three modes).
                 if from_third_party and "output" in from_third_party :
                     out = from_third_party["output"]
                 else :
+                    # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
                     out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
                     out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
                     out += _("please read the tutorial") + "</a>"
@@ -3984,7 +3968,21 @@ def go(p) :
         ct.start()
 
         __builtin__.__dict__['_'] = mica.gettext 
-        mica.install_global_language(params["language"])
+        language = params["language"]
+
+        if language.count("-") :
+            language = language.split("-")[0]
+        if language.count("_") :
+            language = language.split("_")[0]
+
+        mdebug("Setting language to: " + language)
+
+        if language in texts :
+            mica.language = language
+        else :
+            mica.language = "en"
+
+        mdebug("Language set.")
 
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))

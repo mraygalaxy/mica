@@ -296,6 +296,20 @@ class FrontPageElement(Element) :
         return tag
 
     @renderer
+    def switchlang(self, request, tag) :
+        softlangs = []
+        for l, readable in lang.iteritems() :
+            locale = l.split("-")[0]
+            if locale not in softlangs :
+                softlangs.append((locale, readable))
+
+        for l, readable in softlangs :
+            tag(tags.br())
+            tag(tags.a(href='/switchlang?lang=' + l)(readable))
+
+        return tag
+
+    @renderer
     def frontpage(self, request, tag) :
         if not mobile :
             tag(MobileFrontElement(self.req))
@@ -310,6 +324,7 @@ class FrontPageElement(Element) :
                       # i.e. signin or login
                       connect =_("You need to connect, first"),
                       click =_("Click the little 'M' at the top"),
+                      changelanguage="Change Language",
                       experimental = _("This is experimental language-learning software"))
         return tag
 

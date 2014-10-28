@@ -1,12 +1,20 @@
 <html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="advertise">
     <div class='row-fluid'>
-        <div class='col-lg-12'>
+        <div class='col-lg-11'>
             <div style='display: inline' t:render="frontpage"/>
         </div><!-- col-lg-12 -->
+        <div class='col-lg-1'>
+            <h4><t:slot name='changelanguage'/>:</h4>
+            <div t:render='switchlang'/>
+        </div>
     </div><!-- row-fluid -->
-    <h4><t:slot name="connect"/>.</h4>
-    <br/>(<t:slot name="click"/>.)
-    <p/>
-    <br/><t:slot name="experimental"/>.
-    <div style="display: inline" t:render="frontend"/>
+    <div class='row-fluid'>
+        <div class='col-lg-12'>
+            <h4><t:slot name="connect"/>.</h4>
+            <br/>(<t:slot name="click"/>.)
+            <p/>
+            <br/><t:slot name="experimental"/>.
+            <div style="display: inline" t:render="frontend"/>
+        </div>
+    </div>
 </html>
