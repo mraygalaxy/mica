@@ -266,12 +266,6 @@ class MICA(object):
         if req.db.doc_exist(self.acct(username)) :
             user = req.db[self.acct(username)]
 
-            if user and "translator_credentials" in user :
-                if username not in self.client :
-                    mdebug("Recreating credentials.")
-                    self.client[username] = Translator(user["translator_credentials"]["id"], user["translator_credentials"]["secret"])
-                    mdebug("Loaded translation credentials for user " + username + ": " + str(self.client[username]))
-
     def acct(self, name) :
         return "MICA:accounts:" + name
 
@@ -321,6 +315,7 @@ class MICA(object):
         mdebug("Language set.")
         
     def __init__(self, db_adapter):
+        self.client = Translator(params["trans_id"], params["trans_secret"])
         self.mutex = Lock()
         self.transmutex = Lock()
         self.heromsg = "<div class='jumbotron' style='padding: 5px'>"
@@ -337,8 +332,6 @@ class MICA(object):
 
         params["language"] = self.cs.init_localization()
         self.first_request = {}
-
-        self.client = {}
 
         # Replacements must be in this order
         
@@ -680,7 +673,6 @@ class MICA(object):
             else :
                 req.view_percent = "0.0"
             req.pretend_disconnected = pretend_disconnected
-            req.mobile = mobile
             req.address = req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else self.credentials()
 
             if req.session.value['connected'] and not pretend_disconnected :
@@ -1262,6 +1254,14 @@ class MICA(object):
         req.gp = self.processors[story["source_language"]]
         req.story_name = story["name"]
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
+        req.source_language = story["source_language"]
+        req.target_language = story["target_language"]
+
+        if mobile :
+            req.remote_server = params["oauth"]["redirect"]
+        else :
+            req.remote_server = ""
+            
         output = run_template(req, ViewElement)
 
         return output
@@ -1700,11 +1700,6 @@ class MICA(object):
         self.mutex.acquire()
         mdebug("Acquired.")
 
-        assert(req.session.value['username'] in self.client)
-
-        client = self.client[req.session.value['username']]
-        assert(client)
-
         attempts = 15
         finished = False
         stop = False
@@ -1714,10 +1709,10 @@ class MICA(object):
             try : 
                 if attempt > 0 :
                     mdebug("Previous attempt failed. Re-authenticating")
-                    client.access_token = client.get_access_token()
+                    self.client.access_token = self.client.get_access_token()
 
                 mdebug("Entering online translation.")
-                result = client.translate_array(requests, lang, from_lang = from_lang)
+                result = self.client.translate_array(requests, lang, from_lang = from_lang)
 
                 if not len(result) or "TranslatedText" not in result[0] :
                     mdebug("Probably key expired: " + str(result))
@@ -1792,12 +1787,8 @@ class MICA(object):
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                     untrans += "\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
 
-                    if req.session.value['username'] not in self.client :
-                        # A translation API key is a third-party identifier and passcode that allows this software program to operate over the internet and request translations of specific words from one software program (this one) to another one (such as Bing, the free one that we are currently using). This 'API key' or ID as well as a corresponding secret are issued directly by the 3rd party and are input into the preferences section of MICA manually by the user.
-                        untrans += _("Please add a translation API key in your account preferences to begin learning with this story") + ".<br/>"
-                    else :
-                        # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
-                        untrans += "\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
+                    # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
+                    untrans += "\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans += "<br/>" + err.replace("\n", "<br/>")
@@ -2185,14 +2176,8 @@ class MICA(object):
         if username in self.view_runs :
             del self.view_runs[username]
 
-        if username in self.client :
-            del self.client[username]
-
         if "language" in session.value :
             del session.value["language"]
-
-        if session.value['database'] in self.client :
-            del self.client[session.value['database']]
 
         session.save()
 
@@ -2367,6 +2352,91 @@ class MICA(object):
                 output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
                 helpfh.close()
                 return self.bootstrap(req, output, pretend_disconnected = True)
+
+            if req.action == "instant" :
+                if "connected" not in req.session.value or not req.session.value["connected"] :
+                    if not req.http.params.get("username") or not req.http.params.get("password") :
+                        return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + "</div>", now = True)
+                    else :
+                        username = req.http.params.get("username")
+                        password = req.http.params.get("password")
+                        auth_user = self.authenticate(username, password, self.credentials())
+                        if not auth_user :
+                            return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": invalid credentials</div>", now = True)
+                target_language = req.http.params.get("target_language")
+                source_language = req.http.params.get("source_language")
+                source = req.http.params.get("source")
+                language = req.http.params.get("lang")
+                out = ""
+                self.install_local_language(req, lang)
+                out += "<div id='instantresult'>"
+                out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
+                final = { }
+                requests = [source]
+                gp = self.processors[source_language]
+
+                breakout = source.decode("utf-8") if isinstance(source, str) else source
+                if gp.already_romanized :
+                    breakout = breakout.split(" ")
+                
+                if len(breakout) > 1 :
+                    for x in range(0, len(breakout)) :
+                        requests.append(breakout[x].encode("utf-8"))
+
+                if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
+                    try :
+                        result = self.translate_and_check_array(req, False, requests, target_language, source_language)
+                        for x in range(0, len(requests)) : 
+                            part = result[x]
+                            if "TranslatedText" not in part :
+                                mdebug("Why didn't we get anything: " + json_dumps(result))
+                                target = _("No instant translation available.")
+                            else :
+                                target = part["TranslatedText"].encode("utf-8")
+                            
+                            if x == 0 :
+                                out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
+                                final["whole"] = (source, target)
+                            else :
+                                char = breakout[x-1].encode("utf-8")
+                                if "parts" not in final :
+                                    out += _("Piecemeal instant translation") + ":<br/>\n"
+                                    final["parts"] = []
+                                out += "(" + char + "): "
+                                out += target 
+                                out += "<br/>\n"
+                                final["parts"].append((char, target))
+                    except OnlineTranslateException, e :
+                        out += _("Internet access error. Try again later: ") + str(e)
+                else :
+                    out += _("No internet access. Offline instant translation only.")
+                       
+                out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
+
+                try :
+                    opaque = gp.parse_page_start()
+                    gp.test_dictionaries(opaque)
+                    try :
+                        for idx in range(0, len(requests)) :
+                            request = requests[idx]
+                            if len(requests) > 1 and idx == 0 :
+                                continue
+                            tar = gp.get_first_translation(opaque, request.decode("utf-8"), False)
+                            if tar :
+                                for target in tar :
+                                    out += "<br/>(" + request + "): " + target.encode("utf-8")
+                            else :
+                                out += "<br/>(" + request + ") " + _("No instant translation found.")
+
+                        gp.parse_page_stop(opaque)
+                    except OSError, e :
+                        mdebug("Looking up target instant translation failed: " + str(e))
+                        out += _("Please wait until this account is fully synchronized for an offline instant translation.")
+                except Exception, e :
+                    mdebug("Instant test failed: " + str(e))
+                    out += _("Please wait until this account is fully synchronized for an offline instant translation.")
+                out += "</div>"
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
             from_third_party = False
 
@@ -2646,7 +2716,6 @@ class MICA(object):
                         mwarn(out)
                 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
-                req.mobile = mobile
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             username = req.session.value['username']
@@ -2896,94 +2965,6 @@ class MICA(object):
                 req.session.save()
                 # This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
-
-            if req.http.params.get("instant") :
-                source = req.http.params.get("instant")
-                human = int(req.http.params.get("human")) if req.http.params.get("human") else 0
-                out = ""
-                out += "<div id='instantresult'>"
-
-                p = ""
-                final = { }
-                requests = [source]
-                
-                if not story :
-                    name = req.db[self.index(req, req.session.value["current_story"])]["value"]
-                    story = req.db[self.story(req, name)]
-
-                gp = self.processors[story["source_language"]]
-
-                breakout = source.decode("utf-8") if isinstance(source, str) else source
-                if gp.already_romanized :
-                    breakout = breakout.split(" ")
-                
-                if len(breakout) > 1 :
-                    for x in range(0, len(breakout)) :
-                        requests.append(breakout[x].encode("utf-8"))
-
-                if req.session.value['username'] not in self.client :
-                    p += _("Offline only. Missing a translation API key in your account preferences.")
-
-                elif not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                    try :
-                        result = self.translate_and_check_array(req, False, requests, story["target_language"], story["source_language"])
-                        for x in range(0, len(requests)) : 
-                            part = result[x]
-                            if "TranslatedText" not in part :
-                                mdebug("Why didn't we get anything: " + json_dumps(result))
-                                target = _("No instant translation available.")
-                            else :
-                                target = part["TranslatedText"].encode("utf-8")
-                            
-                            if x == 0 :
-                                p += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
-                                final["whole"] = (source, target)
-                            else :
-                                char = breakout[x-1].encode("utf-8")
-                                if "parts" not in final :
-                                    p += _("Piecemeal instant translation") + ":<br/>\n"
-                                    final["parts"] = []
-                                p += "(" + char + "): "
-                                p += target 
-                                p += "<br/>\n"
-                                final["parts"].append((char, target))
-                    except OnlineTranslateException, e :
-                        p += _("Internet access error. Try again later: ") + str(e)
-                            
-                else :
-                    p += _("No internet access. Offline instant translation only.")
-                       
-                if human :
-                    out += "<h4>" + _("Online instant translation") + ":</h4>"
-                    out += p 
-                    out += "<h4>" + _("Offline instant translation") + ":</h4>"
-
-                    try :
-                        opaque = gp.parse_page_start()
-                        gp.test_dictionaries(opaque)
-                        try :
-                            for idx in range(0, len(requests)) :
-                                request = requests[idx]
-                                if len(requests) > 1 and idx == 0 :
-                                    continue
-                                tar = gp.get_first_translation(opaque, request.decode("utf-8"), False)
-                                if tar :
-                                    for target in tar :
-                                        out += "<br/>(" + request + "): " + target.encode("utf-8")
-                                else :
-                                    out += "<br/>(" + request + ") " + _("No instant translation found.")
-
-                            gp.parse_page_stop(opaque)
-                        except OSError, e :
-                            mdebug("Looking up target instant translation failed: " + str(e))
-                            out += _("Please wait until this account is fully synchronized for an offline instant translation.")
-                    except Exception, e :
-                        mdebug("Instant test failed: " + str(e))
-                        out += _("Please wait until this account is fully synchronized for an offline instant translation.")
-                else :
-                    out += json_dumps(final)
-                out += "</div>"
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
             if req.http.params.get("translate") :
                 output = "<div id='translationstatusresult'>" + self.heromsg
@@ -3475,29 +3456,6 @@ class MICA(object):
                         
                     out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
 
-                elif req.http.params.get("changecredentials") :
-                    client_id = req.http.params.get("id")
-                    client_secret = req.http.params.get("secret")
-                    self.client[req.session.value['username']] = Translator(client_id, client_secret)
-
-                    try :
-                        # Doesn't matter which languages we test - we just want
-                        # to make sure the credentials are valid
-                        result = self.translate_and_check_array(req, False, samples[u"zh-CHS"], u"en", u"zh-CHS")
-
-                        if not len(result) or "TranslatedText" not in result[0] :
-                            tmsg = _("We tried to test your translation API credentials, but they didn't work. Please check them and try again =)")
-                            del self.client[req.session.value['username']]
-                        else :
-                            user['translator_credentials'] = { 'id' : client_id, 'secret' : client_secret }
-                            req.db[self.acct(username)] = user
-                            tmsg = _("Your translation API credentials have been changed to") + ": " + client_id + " => " + client_secret
-                    except Exception, e :
-                        del self.client[req.session.value['username']]
-                        tmsg = _("We tried to test your translation API credentials, but they didn't work because") + ": " + str(e)
-
-                    out += self.heromsg + "\n<h4>" + tmsg + "</h4></div>"
-
                 elif req.http.params.get("newaccount") :
                     if not self.userdb : 
                         # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
@@ -3710,6 +3668,7 @@ class MICA(object):
                 helpfh.close()
                 output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
                 return self.bootstrap(req, output)
+
             else :
                 # This occurs when you come back to the webpage, and were previously reading a story,
                 # but need to indicate in which mode to read the story (of three modes).

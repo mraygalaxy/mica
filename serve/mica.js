@@ -555,7 +555,7 @@ function make_child(node) {
       $('#regroupModal').modal('show');
   }
 
-  function process_instant(with_spaces) {
+  function process_instant(with_spaces, lang, source, target, dest, username, password) {
 
       var chars = [];
       var allchars = "";
@@ -584,8 +584,15 @@ function make_child(node) {
       } else {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
-       change('#instantdestination', 
-          '/read?human=1&instant=' + allchars, 
+
+       var url = dest + '/instant?source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
+
+       if (username)
+           url += "&username=" + username
+       if (password)
+           url += "&password=" + password
+
+       change('#instantdestination', url,
           '#instantresult', 
           unavailable, 
           true, 
@@ -872,6 +879,8 @@ function togglecanvas() {
 }
 
 function offinstantspin(data, curr, unused) {
+    //var data = JSON.parse(data);
+    $('#instantdestination').html(data);
     $('#instantspin').attr('style', 'display: none');
     $('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
@@ -883,12 +892,12 @@ function offinstantspin(data, curr, unused) {
 
 function install_highlight() {
 
-    if(!window.Kolich){
-      Kolich = {};
+    if(!window.Trans){
+      Trans = {};
     }
 
-    Kolich.Selector = {};
-    Kolich.Selector.getSelected = function(){
+    Trans.Selector = {};
+    Trans.Selector.getSelected = function(){
       var t = '';
       if(window.getSelection){
         t = window.getSelection();
@@ -900,30 +909,30 @@ function install_highlight() {
       return t;
     }
 
-    Kolich.Selector.mouseup = function(){
-      var st = Kolich.Selector.getSelected();
+    Trans.Selector.mouseup = function(){
+      var st = Trans.Selector.getSelected();
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
            change('#instantdestination', 
-              '/read?human=1&instant=' + st, 
+              '/instant?source=' + st + "&lang=en", 
               '#instantresult', 
               unavailable, 
-              true, 
+              false, 
               offinstantspin,
-              true,
+              false,
               $("html").scrollTop(),
               false);
       }
     }
 
-    Kolich.Selector.mouseleave = Kolich.Selector.mouseup;
-    Kolich.Selector.copy = Kolich.Selector.mouseup;
+    Trans.Selector.mouseleave = Trans.Selector.mouseup;
+    Trans.Selector.copy = Trans.Selector.mouseup;
 
     $(document).ready(function(){
-      $(document).bind("mouseup", Kolich.Selector.mouseup);
-      $(document).bind("mouseleave", Kolich.Selector.mouseleave);
-      $(document).bind("copy", Kolich.Selector.mousecopy);
+      $(document).bind("mouseup", Trans.Selector.mouseup);
+      $(document).bind("mouseleave", Trans.Selector.mouseleave);
+      $(document).bind("copy", Trans.Selector.mousecopy);
     });
 }
 

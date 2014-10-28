@@ -8,6 +8,7 @@ from cStringIO import StringIO
 from common import *
 from os import path as os_path
 from re import compile as re_compile
+from urllib2 import quote as urllib2_quote
 
 if not mobile :
     from requests_oauthlib import OAuth2Session
@@ -292,7 +293,7 @@ class FrontPageElement(Element) :
 
     @renderer
     def frontend(self, request, tag) :
-        if self.req.mobile :
+        if mobile :
             tag(MobileAdvertElement(self.req))
         else :
             tag(ServerAdvertElement(self.req))
@@ -301,7 +302,7 @@ class FrontPageElement(Element) :
 
     @renderer
     def frontpage(self, request, tag) :
-        if not self.req.mobile :
+        if not mobile :
             tag(MobileFrontElement(self.req))
         else :
             tag("")
@@ -421,7 +422,13 @@ class StaticViewElement(Element) :
                 tclasses["meaning"] += "active "
             tclasses["meaning"] += "btn btn-default"
                 
-        onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ")"
+        if mobile :
+            assert("password" in self.req.session.value)
+            assert("username" in self.req.session.value)
+
+            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + self.req.remote_server + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
+        else :
+            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '', false, false)"
 
         tag.fillSlots(textclass = tclasses["text"],
                       imageclass = tclasses["images"],
@@ -530,14 +537,14 @@ class HeadElement(Element):
             (url, icon, display) = value 
             itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
             if navactive == key :
-                if self.req.mobile :
+                if mobile :
                     atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
                 itemtag = tags.li(**{"class":"active"})
                 tag(itemtag(atag))
             else :
-                if self.req.mobile :
+                if mobile :
                     atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
@@ -550,7 +557,7 @@ class HeadElement(Element):
             atag(tags.i(**{"class" : "glyphicon glyphicon-user"}), " " + _("Account") + " ", tags.b(**{"class" : "caret"}))
             utag = tags.ul(**{"class" : "dropdown-menu"})
 
-            if not self.req.mobile :
+            if not mobile :
                 ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal"})
                 # Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
                 ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
@@ -614,7 +621,7 @@ class HeadElement(Element):
     def head(self, request, tag):
         zoom_level = 1.0
 
-        if self.req.mobile :
+        if mobile :
             if "default_app_zoom" in self.req.session.value :
                 zoom_level = self.req.session.value["default_app_zoom"]
         else :
@@ -634,7 +641,7 @@ class HeadElement(Element):
 
     @renderer
     def thirdparty(self, request, tag) :
-       if self.req.mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
+       if mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
            tag("")
        else : 
            tag(tags.br(), _("Sign in with") + ": ")
