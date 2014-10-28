@@ -3170,6 +3170,8 @@ class MICA(object):
                         result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
                     except OSError, e :
                         return self.warn_not_replicated(req)
+                    except AttributeError, e :
+                        return self.warn_not_replicated(req)
                     
                     if not result[0] and len(result) > 1 :
                         return self.bootstrap(req, result[1])
@@ -3179,6 +3181,7 @@ class MICA(object):
                     offset = ret[1]
                     
                     if not success :
+                        # This occurs in Edit mode when a merge/split request failed.
                         return self.bootstrap(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
                     
             if req.http.params.get("memolist") :
