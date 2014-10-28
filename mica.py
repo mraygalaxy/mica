@@ -1252,7 +1252,7 @@ class MICA(object):
         req.target_language = story["target_language"]
 
         if mobile :
-            req.remote_server = params["couch_server"]
+            req.remote_server = "https://" + params["couch_server"]
         else :
             req.remote_server = ""
             
