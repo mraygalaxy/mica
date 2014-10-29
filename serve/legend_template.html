@@ -6,7 +6,25 @@
 <tr><td style='vertical-align: top'><div class='redsquare'></div></td><td>&#160;</td><td><t:slot name='legend3'/><br/><t:slot name='legend3post'/></td></tr>
 <tr><td style='vertical-align: top'><div class='blacksquare'></div></td><td>&#160;</td><td><t:slot name='legend4'/></td></tr>
 </table>
+<p/>
+<a href='#' class='btn btn-info'><t:attr name='onclick'><t:slot name='processreviews'/></t:attr><t:slot name='tryrecco'/></a><p/>
 <br/>
 <t:slot name='history'/>:<br/>
 <div id='history'></div>
+    <div class="modal fade" id='reviewModal'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+                    <h3 id="myReviewLabel"><t:slot name='reviews'/>:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div id='reviewdestination'></div>
+                </div>
+            </div>
+        </div>
+    </div>
+<div style='display: none' id='reviewchange'><t:slot name='reviewchange'/></div>
+<div style='display: none' id='norecommend'><t:slot name='norecommend'/></div>
 </html>

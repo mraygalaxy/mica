@@ -1238,6 +1238,7 @@ class MICA(object):
         else :
             req.remote_server = ""
             
+        req.process_reviews = "process_reviews('" + uuid + "', true)"
         output = run_template(req, ViewElement)
 
         return output
@@ -1257,6 +1258,7 @@ class MICA(object):
         return holder
     
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
+        output = [output]
         gp = self.processors[story["source_language"]]
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
@@ -1359,6 +1361,7 @@ class MICA(object):
         merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
         merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
 
+        recommendations = False
 
         for line in lines :
             disk_out = ""
@@ -1504,18 +1507,37 @@ class MICA(object):
                         else :
                             line_out.append("<a class='trans' ")
 
+                        largest_hcode = False 
+                        largest_index = -1
+                        largest = -1
                         add_count = ""
+
                         if action == "home" :
                             color = "lightgrey" if not unit["punctuation"] else "white"
                             if py and len(unit["multiple_target"]) :
                                 color = "green"
 
                             changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
-                            
+
                             if changes :
                                 if unit["hash"] in changes["record"] :
                                     color = "black"
                                     add_count = " (" + str(int(changes["total"])) + ")"
+
+                                for hcode, record in changes["record"].iteritems() :
+                                    curr = record["total_selected"]
+                                    if largest < curr :
+                                        largest_hcode = hcode
+                                        largest = curr 
+                                    elif largest == curr :
+                                        # If there is no winner, then don't recommend anything
+                                        largest = -1
+                                        largest_hcode = False
+                                        break
+
+                                if largest_hcode == unit["hash"] :
+                                    largest_hcode = False
+                                    largest = -1
 
                             if color != "black" and py and len(unit["multiple_sromanization"]) :
                                 fpy = " ".join(unit["multiple_sromanization"][0])
@@ -1539,6 +1561,25 @@ class MICA(object):
 
                         line_out.append(">")
                         
+                        if largest_hcode :
+                            if not recommendations :
+                                recommendations = 0
+
+                            recommendations += 1
+
+                            for idx in range(0, len(unit["multiple_target"])) :
+                                hcode = self.get_polyphome_hash(idx, source)
+                                if hcode == largest_hcode :
+                                    largest_index = idx
+                                    break
+
+                            assert(largest_index != -1)
+
+                            if len(unit["multiple_sromanization"]) :
+                                largest_target = " ".join(unit["multiple_sromanization"][largest_index])
+                            else :
+                                largest_target = " ".join(unit["multiple_target"][largest_index])
+                            line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'style='text-decoration: underline'>")
                         
                         if gp.already_romanized :
                             if color not in [ "lightgrey", "white" ] :
@@ -1554,6 +1595,10 @@ class MICA(object):
                                 line_out.append(target.lower())
         
                         line_out.append(add_count)
+
+                        if largest_hcode :
+                            line_out.append("</span>")
+
                         line_out.append("</a>")
                     else :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
@@ -1664,12 +1709,15 @@ class MICA(object):
                 line_out.append("</table>")
 
             if not disk :
-                output += "".join(line_out)
+                output.append("".join(line_out))
             else :
-                output += disk_out
+                output.append(disk_out)
+
+        if recommendations :
+            output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output 
 
         mdebug("View Page " + str(page) + " story " + name + " complete.")
-        return output
+        return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
         mdebug("Acquiring mutex?")
@@ -2314,6 +2362,23 @@ class MICA(object):
             mdebug("Exiting")
         except Exception, e :
             self.store_error(req, name, "Failure to upgrade story: " + str(e))
+
+    def multiple_select(self, req, record, nb_unit, mindex, trans_id, page, name) :
+        # This is also kind of silly: getting a whole page
+        # of units just to update one of them.
+        # Maybe it's not so high overhead. I dunno.
+        page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+        unit = page_dict["units"][nb_unit]
+        
+        unit["multiple_correct"] = mindex
+        
+        self.rehash_correct_polyphome(unit) 
+        
+        page_dict["units"][nb_unit] = unit
+        req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
+
+        if record :
+            self.add_record(req, unit, mindex, self.tones, "selected") 
 
     def common(self, req) :
         try :
@@ -3016,21 +3081,8 @@ class MICA(object):
                 mindex = int(req.http.params.get("index"))
                 trans_id = int(req.http.params.get("trans_id"))
                 page = req.http.params.get("page")
-                
-                # This is also kind of silly: getting a whole page
-                # of units just to update one of them.
-                # Maybe it's not so high overhead. I dunno.
-                page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
-                unit = page_dict["units"][nb_unit]
-                
-                unit["multiple_correct"] = mindex
-                
-                self.rehash_correct_polyphome(unit) 
-                
-                page_dict["units"][nb_unit] = unit
-                req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
 
-                self.add_record(req, unit, mindex, self.tones, "selected") 
+                self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                            self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page) + \
@@ -3230,6 +3282,20 @@ class MICA(object):
                 except OSError, e :
                     return self.warn_not_replicated(req)
                 
+            if req.http.params.get("bulkreview") :
+                count = int(req.http.params.get("count"))
+
+                mdebug("Going to perform reviews for " + str(count) + " words.")
+
+                for idx in range(0, count) :
+                    nb_unit = int(req.http.params.get("nbunit" + str(idx)))
+                    mindex = int(req.http.params.get("index" + str(idx)))
+                    trans_id = int(req.http.params.get("transid" + str(idx)))
+                    page = req.http.params.get("page" + str(idx))
+                    
+                    mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
+                    self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
+
             if req.action in ["home", "read", "edit" ] :
                 
                 if uuid :

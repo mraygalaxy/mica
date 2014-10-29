@@ -196,6 +196,7 @@ class EditHeaderElement(Element) :
     def edit_header(self, request, tag) :
         tag.fillSlots(editname = _("Legend"),
                       processedits = self.req.process_edits,
+                      splitmerge = _("Split/Merge Words"),
                       retrans = self.req.retrans,
                       previousmerge = _("These characters were previously merged into a word"),
                       previoussplit = _("This word was previously split into characters"),
@@ -361,7 +362,13 @@ class LegendElement(Element) :
                       # This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
                       legend4 = _("Definitely wrong previously"),
                       # This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
-                      history = _("Change History"))
+                      history = _("Change History"),
+                      processreviews = self.req.process_reviews,
+                      tryrecco = _("Try Recommendations"),
+                      reviews = _("Bulk Review Words"),
+                      reviewchange = _("Change"),
+                      norecommend = _("NO review recommendations available."),
+                 )
         return tag
 
 class DynamicViewElement(Element) :
@@ -622,6 +629,7 @@ class HeadElement(Element):
 
             row(tags.td(style='width: 2px')())
         else :
+            row(tags.td(style='width: 10px; align: center')(" "))
             row(tags.td()(tags.b()(_("MICA Language Learning"))))
             row(tags.td(style='width: 10px; align: center')(" "))
             row(tags.td(style='width: 10px; align: center')("|"))
@@ -740,7 +748,6 @@ class HeadElement(Element):
                      missing = _("* Please fill in required fields"),
                      uploadstory = _("Upload Story"),
                      instant = _("Instant Translation"),
-                     splitmerge = _("Split/Merge Words"),
                      # Create account button
                      create = _("Create"),
                      # confirm password

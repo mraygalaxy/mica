@@ -606,6 +606,40 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           spy);
 }
 
+function process_reviews(uuid, batch) {
+      var count = 0;
+      var out = "";
+      var form = "";
+      form += "<form method='post' action='/home'>"
+      out += "<ol>";
+
+      $("span.review").each(function(index) {
+
+        out += "<li>(" + $(this).attr('source') + ") " + local("reviewchange") + ": " + $(this).attr('target') + "</li>";
+        form += "<input type='hidden' name='transid" + count + "' value='" + $(this).attr('transid') + "'/>\n";
+        form += "<input type='hidden' name='index" + count + "' value='" + $(this).attr('index') + "'/>\n";
+        form += "<input type='hidden' name='nbunit" + count + "' value='" + $(this).attr('nbunit') + "'/>\n";
+        form += "<input type='hidden' name='page" + count + "' value='" + $(this).attr('page') + "'/>\n";
+        //form += "<input type='hidden' name='target" + count + "' value='" + $(this).attr('target') + "'/>\n";
+        //form += "<input type='hidden' name='source" + count + "' value='" + $(this).attr('source') + "'/>\n";
+
+        count += 1;
+      });
+
+      out += "</ol>";
+      form += "<input type='hidden' name='count' value='" + count + "'/>\n";
+      
+      form += "<input class='btn btn-default btn-primary' name='bulkreview' type='submit' value='" + local("submit") + "'/>";
+      form += "</form>"
+      out += form
+
+      if (count == 0) {
+          out = "<h4>" + local('norecommend') + "</h4>";
+      }
+      $('#reviewdestination').html(out);
+      $('#reviewModal').modal('show');
+}
+
 var view_images = false;
 var show_both = false;
 var current_meaning_mode = false;
