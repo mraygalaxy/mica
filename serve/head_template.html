@@ -85,31 +85,7 @@
                   <span class="icon-bar"></span>
 				  
                </button>
-                   <div class='navbar-brand'>
-                       <table><tr>
-                       <td>
-                       <a t:render="cloudname" id='offnav' href='#'>
-                            <t:attr name="onclick"><t:slot name="toggle"/></t:attr>
-                       </a>
-                       </td>
-                       <td>
-                       &#160;
-                       </td><td>
-                       </td><td>
-                       <i class='glyphicon glyphicon-download'></i>
-                       </td><td>
-                       <span id='pullstat' class="badge pull-right" t:render="pull"></span>
-                       </td><td>
-                       <i class='glyphicon glyphicon-upload'></i>
-                       </td><td>
-                       <span id='pushstat' class="badge pull-right" t:render="push"></span>
-                       </td><td>
-                       <i class='glyphicon glyphicon-eye-open'></i>
-                       </td><td>
-                       <a href=''><span id='viewstat' class="badge pull-right" t:render="views"></span></a>
-                       </td>
-                       </tr></table>
-                   </div>
+	       <div class='navbar-brand'><table t:render="cloudnav"/></div>
               </div><!--.navbar-header-->
               <div class="navbar-collapse collapse">
                    <ul class="nav navbar-nav" t:render="headnavparent"/>

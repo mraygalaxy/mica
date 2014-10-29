@@ -10,6 +10,12 @@ from os import path as os_path
 from re import compile as re_compile
 from urllib2 import quote as urllib2_quote
 
+softlangs = []
+for l, readable in lang.iteritems() :
+    locale = l.split("-")[0]
+    if locale not in softlangs :
+        softlangs.append((locale, readable))
+
 if not mobile :
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
@@ -301,20 +307,6 @@ class FrontPageElement(Element) :
         return tag
 
     @renderer
-    def switchlang(self, request, tag) :
-        softlangs = []
-        for l, readable in lang.iteritems() :
-            locale = l.split("-")[0]
-            if locale not in softlangs :
-                softlangs.append((locale, readable))
-
-        for l, readable in softlangs :
-            tag(tags.br())
-            tag(tags.a(href='/switchlang?lang=' + l)(readable))
-
-        return tag
-
-    @renderer
     def frontpage(self, request, tag) :
         if not mobile :
             tag(MobileFrontElement(self.req))
@@ -329,7 +321,6 @@ class FrontPageElement(Element) :
                       # i.e. signin or login
                       connect =_("You need to connect, first"),
                       click =_("Click the little 'M' at the top"),
-                      changelanguage="Change Language",
                       experimental = _("This is experimental language-learning software"))
         return tag
 
@@ -510,12 +501,6 @@ class HeadElement(Element):
 
     @renderer
     def user_languages(self, request, tag) :
-        softlangs = []
-        for l, readable in lang.iteritems() :
-            locale = l.split("-")[0]
-            if locale not in softlangs :
-                softlangs.append((locale, readable))
-
         for l, readable in softlangs :
             option = tags.option(value=l)
             tag(option(_(readable)))
@@ -582,18 +567,6 @@ class HeadElement(Element):
         return tag
 
     @renderer
-    def pull(self, request, tag):
-        return tag(self.req.db.pull_percent() if self.req.db else "")
-
-    @renderer
-    def push(self, request, tag):
-        return tag(self.req.db.push_percent() if self.req.db else "")
-
-    @renderer
-    def views(self, request, tag) :
-        return tag(self.req.view_percent)
-
-    @renderer
     def scriptpopover(self, request, tag) :
         popoveractivate = "$('#connectpop').popover('show');"
         return tag(popoveractivate if (not self.req.session.value["connected"] and not self.req.skip_show and not self.req.pretend_disconnected) else "")
@@ -603,18 +576,69 @@ class HeadElement(Element):
          return tag("" if not self.req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in self.req.session.value and self.req.session.value['list_mode']) else "false") + ");\n"))
 
     @renderer
-    def cloudname(self, request, tag) :
-        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
-            bootcanvastoggle = "togglecanvas()"
-        else :
-            bootcanvastoggle = ""
+    def cloudnav(self, request, tag) :
+        row = tags.tr()
 
-        tag.fillSlots(toggle = bootcanvastoggle)
+        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
+            atag =  tags.a(href='#', id='offnav', onclick='togglecanvas()')
+        else :
+            atag = tags.a(href='#', id='offnav', onclick='')
 
         if not self.req.session.value['connected'] :
-            return tag(tags.img(id = "connectpop", src=self.req.mpath + '/icon-120x120.png', width='25px'))
+            atag(tags.img(id = "connectpop", src=self.req.mpath + '/icon-120x120.png', width='25px'))
         else :
-            return tag(tags.img(src=self.req.mpath + '/icon-120x120.png', width='25px'))
+            atag(tags.img(src=self.req.mpath + '/icon-120x120.png', width='25px'))
+
+        row(tags.td(atag))
+
+        row(tags.td(style='width: 2px')())
+
+        if mobile :
+            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-download"})))
+            row(tags.td(style='width: 2px')())
+            pull = self.req.db.pull_percent() if self.req.db else ""
+            row(tags.td(style='width: 2px')())
+            row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pullstat"})(pull)))
+            row(tags.td(style='width: 2px')())
+            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-upload"})))
+            row(tags.td(style='width: 2px')())
+            push = self.req.db.push_percent() if self.req.db else ""
+            row(tags.td(style='width: 2px')())
+            row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pushstat"})(push)))
+            row(tags.td(style='width: 2px')())
+
+        if "connected" in self.req.session.value and self.req.session.value["connected"] :
+            rowcell = tags.td()
+            rowcell(tags.a(href=''))
+            rowcell(tags.span(**{"class" : "badge pull-right", "id" : "viewstat"})(self.req.view_percent))
+            row(rowcell)
+            row(tags.td(style='width: 2px')())
+
+            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-eye-open"})))
+
+            row(tags.td(style='width: 10px')())
+
+            row(tags.td()(tags.b()(self.req.session.value["username"])))
+
+            row(tags.td(style='width: 2px')())
+        else :
+            row(tags.td()(tags.b()(_("MICA Language Learning"))))
+            row(tags.td(style='width: 10px; align: center')(" "))
+            row(tags.td(style='width: 10px; align: center')("|"))
+
+            if not mobile :
+                row(tags.td(style='width: 10px')())
+                row(tags.td()(tags.b()(_("Change Language"))))
+                row(tags.td(style='width: 10px')())
+
+                rowcell = tags.td(style="font-size: x-small")
+
+                for l, readable in softlangs :
+                    rowcell(" | ", tags.a(href='/switchlang?lang=' + l)(readable))
+
+                row(rowcell)
+
+        tag(row)
 
         return tag
 
