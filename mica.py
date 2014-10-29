@@ -353,7 +353,7 @@ class MICA(object):
                     self.view_check(self, "accounts")
 
                     if "mica_admin" not in self.cs :
-                        self.make_account(self, "mica_admin", "password", [ 'admin', 'normal' ], "owner@example.com", "mica", admin = True, dbname = "mica_admin")
+                        self.make_account(self, "mica_admin", "password", "owner@example.com", "mica", admin = True, dbname = "mica_admin")
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
                                    
@@ -377,7 +377,7 @@ class MICA(object):
         vt.start()
 
 
-    def make_account(self, req, username, password, mica_roles, email, source, admin = False, dbname = False, language = "en") :
+    def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
         if not dbname :
             new_uuid = str(uuid_uuid4())
             dbname = "mica_" + new_uuid
@@ -424,7 +424,7 @@ class MICA(object):
 
         if not newdb.doc_exist(self.acct(username)) :
             mdebug("Making initial account parameters.")
-            newdb[self.acct(username)] = { 'roles' : mica_roles, 
+            newdb[self.acct(username)] = { 
                                            'app_chars_per_line' : 70,
                                            'web_chars_per_line' : 70,
                                            'default_app_zoom' : 1.2,
@@ -2511,7 +2511,7 @@ class MICA(object):
                 #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
 
                 if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
-                    self.make_account(req, values["email"], password, ['normal'], values["email"], who, language = language)
+                    self.make_account(req, values["email"], password, values["email"], who, language = language)
                     mdebug("Language: " + language)
 
                     output = ""
@@ -2569,6 +2569,7 @@ class MICA(object):
                     req.skip_show = True
                     return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ".</h4></div>")
 
+                req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
                 req.session.value["database"] = auth_user["mica_database"] 
                 req.session.save()
 
@@ -3437,7 +3438,7 @@ class MICA(object):
                     newusername = req.http.params.get("username")
                     newpassword = req.http.params.get("password")
                     newpasswordconfirm = req.http.params.get("confirm")
-                    admin = req.http.params.get("isadmin", 'off')
+                    admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
                     email = req.http.params.get("email")
                     language = req.http.params.get("language")
 
@@ -3448,18 +3449,55 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-                    if 'admin' not in user["roles"] and admin == 'on' :
+
+                    if not req.session.value["isadmin"] :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
 
                     if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
-                    roles = ['normal']
-                    if admin == 'on' :
-                        roles.append('admin')
 
-                    self.make_account(req, newusername, newpassword, roles, email, "mica", language = language)
+                    self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
 
                     out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
+                elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
+                    if mobile :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
+
+                    username = req.http.params.get("username") 
+
+                    if not self.userdb : 
+                        # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+
+                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
+
+                    auth_user = self.userdb["org.couchdb.user:" + username]
+
+
+                    if req.session.value["username"] != username :
+                        if not req.session.value["isadmin"] :
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
+                        role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
+
+                        if role_length == 0 :
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
+
+                    dbname = auth_user["mica_database"]
+                    mdebug("Confirming database before delete: " + dbname)
+
+                    todelete = self.cs[dbname]
+
+                    del self.userdb["org.couchdb.user:" + username]
+                    del self.cs[dbname]
+
+                    if req.session.value["username"] != username :
+                        out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
+                    else :
+                        self.disconnect(req, req.session)
+                        req.skip_show = True
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
+    
                 elif req.http.params.get("changelanguage") :
                     language = req.http.params.get("language")
                     user["language"] = language
@@ -3562,15 +3600,17 @@ class MICA(object):
                     merr("Keep having this problem: " + str(user) + " " + str(e))
                     raise e
                 
-                if not mobile and 'admin' in user['roles'] :
-                    out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
-                    if not self.userdb :
-                        out += _("Server is misconfigured. Cannot list accounts.")
-                    else :
+                # Security breach, switch to user db
+                if self.userdb :
+                    if not mobile and req.session.value["isadmin"] :
+                        out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
                         out += "<table>"
                         for result in self.userdb.view('accounts/all') :
                             tmp_doc = result["key"]
-                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;" + (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td></tr>"
+                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
+                            out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
+                            out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
+                            out += "</tr>"
                         out += "</table>"
 
                 if not mobile :
@@ -3605,6 +3645,11 @@ class MICA(object):
                     <br/>
                 """
                 out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
+                out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
+                if not mobile :
+                    out += run_template(req, DeleteAccountElement)
+                else :
+                    out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
 
                 return self.bootstrap(req, out)
                     
