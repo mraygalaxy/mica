@@ -2407,12 +2407,13 @@ class MICA(object):
                         auth_user = self.authenticate(username, password, self.credentials())
                         if not auth_user :
                             return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": invalid credentials</div>", now = True)
+                            
                 target_language = req.http.params.get("target_language")
                 source_language = req.http.params.get("source_language")
                 source = req.http.params.get("source")
                 language = req.http.params.get("lang")
                 out = ""
-                self.install_local_language(req, lang)
+                self.install_local_language(req, language)
                 out += "<div id='instantresult'>"
                 out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
                 final = { }
