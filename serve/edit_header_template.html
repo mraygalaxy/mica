@@ -10,4 +10,18 @@
 
 <a href='#' class='btn btn-info'><t:attr name='onclick'><t:slot name='processedits'/></t:attr><t:slot name='tryrecco'/></a><p/>
 <a class='btn btn-info'><t:attr name='href'><t:slot name='retrans'/></t:attr><t:slot name='repage'/></a><p/>
+    <div class="modal fade" id='regroupModal'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+                    <h3 id="myLoginLabel"><t:slot name='splitmerge'/>:</h3>
+                </div>
+                
+                <div class="modal-body">
+                    <div id='regroupdestination'></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </html>
