@@ -1361,11 +1361,11 @@ class MICA(object):
 
         for line in lines :
             disk_out = ""
-            line_out = ""
+            line_out = []
 
             if not disk :
-                line_out += "\n<table>"
-                line_out += "\n<tr>"
+                line_out.append("\n<table>")
+                line_out.append("\n<tr>")
 
                 prev_merge = False
                 for word_idx in range(0, len(line)) :
@@ -1382,7 +1382,7 @@ class MICA(object):
                     use_batch = False
                     skip_prev_merge = False
 
-                    line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small' "
+                    line_out.append("\n<td style='vertical-align: top; text-align: center; font-size: small' ")
 
                     if action == "edit" :
                         if py :
@@ -1430,11 +1430,11 @@ class MICA(object):
                                 curr_merge = False
 
                         if curr_merge :
-                            line_out += "class='mergetop mergebottom"
+                            line_out.append("class='mergetop mergebottom")
                             if not prev_merge : 
                                 batch += 1
-                                line_out += " mergeleft"
-                            line_out += "'"
+                                line_out.append(" mergeleft")
+                            line_out.append("'")
                             use_batch = "merge" 
                         else :
                             if not curr_merge :
@@ -1442,46 +1442,46 @@ class MICA(object):
                                 if sourcesplits and unit["hash"] in sourcesplits["record"] :
                                     batch += 1
                                     use_batch = "split" 
-                                    line_out += "class='splittop splitbottom splitleft splitright'"
+                                    line_out.append("class='splittop splitbottom splitleft splitright'")
 
                         prev_merge = curr_merge if not skip_prev_merge else False
 
-                    line_out += ">"
-                    line_out += "<span id='spanselect_" + trans_id + "' class='"
-                    line_out += "batch" if use_batch else "none"
-                    line_out += "'>"
+                    line_out.append(">")
+                    line_out.append("<span id='spanselect_" + trans_id + "' class='")
+                    line_out.append("batch" if use_batch else "none")
+                    line_out.append("'>")
                     if gp.already_romanized :
-                        line_out += "<a class='transroman'"
+                        line_out.append("<a class='transroman'")
                     else :
-                        line_out += "<a class='trans'"
-                    line_out += " uniqueid='" + tid + "' "
-                    line_out += " nbunit='" + nb_unit + "' "
-                    line_out += " transid='" + trans_id + "' "
-                    line_out += " batchid='" + (str(batch) if use_batch else "-1") + "' "
-                    line_out += " operation='" + (str(use_batch) if use_batch else "none") + "' "
-                    line_out += " page='" + page + "' "
-                    line_out += " pinyin=\"" + (py if py else target) + "\" "
-                    line_out += " index='" + (str(unit["multiple_correct"]) if py else '-1') + "' "
-                    line_out += " style='color: black; font-weight: normal"
+                        line_out.append("<a class='trans'")
+                    line_out.append(" uniqueid='" + tid + "' ")
+                    line_out.append(" nbunit='" + nb_unit + "' ")
+                    line_out.append(" transid='" + trans_id + "' ")
+                    line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
+                    line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
+                    line_out.append(" page='" + page + "' ")
+                    line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
+                    line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
+                    line_out.append(" style='color: black; font-weight: normal")
                     if "punctuation" not in unit or not unit["punctuation"] :
-                        line_out += "; cursor: pointer"
-                    line_out += "' "
-                    line_out += " onclick=\"select_toggle('" + trans_id + "')\">"
-                    line_out += source if py else target 
-                    line_out += "</a>"
-                    line_out += "</span>"
-                    line_out += "</td>"
+                        line_out.append("; cursor: pointer")
+                    line_out.append("' ")
+                    line_out.append(" onclick=\"select_toggle('" + trans_id + "')\">")
+                    line_out.append(source if py else target )
+                    line_out.append("</a>")
+                    line_out.append("</span>")
+                    line_out.append("</td>")
 
                     if py :
                         if action == "edit" and merge_end :
                             # mergeright
-                            line_out += merge_end_spacer 
+                            line_out.append(merge_end_spacer )
                         elif action == "edit" and curr_merge :
-                            line_out += merge_spacer 
+                            line_out.append(merge_spacer )
                         else :
-                            line_out += spacer 
+                            line_out.append(spacer )
 
-                line_out += "</tr>\n<tr>"
+                line_out.append("</tr>\n<tr>")
 
             for word in line :
                 target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
@@ -1491,17 +1491,17 @@ class MICA(object):
                 tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
-                line_out += "\n<td style='vertical-align: top; text-align: center; font-size: small; "
+                line_out.append("\n<td style='vertical-align: top; text-align: center; font-size: small; ")
                 if "punctuation" not in unit or not unit["punctuation"] :
-                    line_out += "cursor: pointer"
+                    line_out.append("cursor: pointer")
 
-                line_out += "'>"
+                line_out.append("'>")
                 if py and (py not in gp.punctuation) :
                     if not disk :
                         if gp.already_romanized :
-                            line_out += "<a class='transroman' "
+                            line_out.append("<a class='transroman' ")
                         else :
-                            line_out += "<a class='trans' "
+                            line_out.append("<a class='trans' ")
 
                         add_count = ""
                         if action == "home" :
@@ -1525,66 +1525,66 @@ class MICA(object):
                                          break
 
                             if color != "" :
-                                line_out += " style='color: " + color + "' "
+                                line_out.append(" style='color: " + color + "' ")
                         elif py :
-                            line_out += " style='color: black' "
+                            line_out.append(" style='color: black' ")
                             color = "lightgrey" if not unit["punctuation"] else "white"
 
-                        line_out += " id='ttip" + trans_id + "'"
+                        line_out.append(" id='ttip" + trans_id + "'")
 
                         if action in ["read","edit"] or not(len(unit["multiple_target"])) :
-                            line_out += " onclick=\"toggle('" + tid + "', "
-                            line_out += ("0" if action == "read" else "1") + ")\""
+                            line_out.append(" onclick=\"toggle('" + tid + "', ")
+                            line_out.append(("0" if action == "read" else "1") + ")\"")
 
-                        line_out += ">"
+                        line_out.append(">")
                         
                         
                         if gp.already_romanized :
                             if color not in [ "lightgrey", "white" ] :
-                                line_out += target
+                                line_out.append(target)
                             else :
-                                line_out += self.roman_holder(source, color)
+                                line_out.append(self.roman_holder(source, color))
                         else :
                             if py == u' ' :
-                                line_out += self.roman_holder(source, color)
+                                line_out.append(self.roman_holder(source, color))
                             elif py :
-                                line_out += py
+                                line_out.append(py)
                             else :
-                                line_out += target.lower()
+                                line_out.append(target.lower())
         
-                        line_out += add_count
-                        line_out += "</a>"
+                        line_out.append(add_count)
+                        line_out.append("</a>")
                     else :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                 else :
                     if disk :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                     else :
-                        line_out += (("hold" if py == u' ' else py) if py else target).lower()
+                        line_out.append((("hold" if py == u' ' else py) if py else target).lower())
 
                 if not disk :
-                    line_out += "<br/>"
+                    line_out.append("<br/>")
 
                     if action == "home" and py and len(unit["multiple_target"]) :
-                        line_out += "<div style='display: none' id='pop" + str(trans_id) + "'>"
-                        line_out += self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
-                        line_out += "</div>"
-                        line_out += "<script>"
-                        line_out += "multipopinstall('" + str(trans_id) + "', 0);\n"
-                        line_out += "</script>"
+                        line_out.append("<div style='display: none' id='pop" + str(trans_id) + "'>")
+                        line_out.append(self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page))
+                        line_out.append("</div>")
+                        line_out.append("<script>")
+                        line_out.append("multipopinstall('" + str(trans_id) + "', 0);\n")
+                        line_out.append("</script>")
 
-                    line_out += "</td>"
+                    line_out.append("</td>")
 
                     if py :
-                        line_out += spacer
+                        line_out.append(spacer)
                 else :
                     disk_out += " "
 
             if disk :
                 disk_out += "\n"
             else :
-                line_out += "</tr>"
-                line_out += "<tr>"
+                line_out.append("</tr>")
+                line_out.append("<tr>")
 
             if not disk :
                 for word in line :
@@ -1602,68 +1602,68 @@ class MICA(object):
                             memorized = True
                             
                     tid = unit["hash"] if py else str(word[2])
-                    line_out += "\n<td style='vertical-align: top; text-align: center'>"
-                    line_out += "<table><tr>"
-                    line_out += "<td><div style='display: none' class='memory" + tid + "'>"
-                    line_out += "<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;"
-                    line_out += "</div></td>"
-                    line_out += "</tr><tr><td>"
+                    line_out.append("\n<td style='vertical-align: top; text-align: center'>")
+                    line_out.append("<table><tr>")
+                    line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
+                    line_out.append("<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;")
+                    line_out.append("</div></td>")
+                    line_out.append("</tr><tr><td>")
                     if gp.already_romanized :
-                        line_out += "<div class='transroman "
+                        line_out.append("<div class='transroman ")
                     else :
-                        line_out += "<div class='trans "
+                        line_out.append("<div class='trans ")
                         
-                    line_out += " trans" + tid + "' style='display: "
-                    line_out += "block" if (action == "read" and not memorized) else "none"
-                    line_out += "' id='trans" + tid + "'>"
+                    line_out.append(" trans" + tid + "' style='display: ")
+                    line_out.append("block" if (action == "read" and not memorized) else "none")
+                    line_out.append("' id='trans" + tid + "'>")
                     if py and not unit["punctuation"] :
                         if not memorized :
-                            line_out += "<div revealid='" + tid + "' "
-                            line_out += "class='reveal reveal" + tid + "'"
+                            line_out.append("<div revealid='" + tid + "' ")
+                            line_out.append("class='reveal reveal" + tid + "'")
                             if meaning_mode == "true":
-                                line_out += "style='display: none'"
-                            line_out += "><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>"
-                            line_out += "<div class='definition definition" + tid + "' "
+                                line_out.append("style='display: none'")
+                            line_out.append("><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
+                            line_out.append("<div class='definition definition" + tid + "' ")
                             if meaning_mode == "false":
-                                line_out += "style='display: none'"
-                            line_out += ">"
+                                line_out.append("style='display: none'")
+                            line_out.append(">")
                         if action in ["read", "edit"] :
                             if gp.already_romanized :
-                                line_out += "<a class='transroman' "
+                                line_out.append("<a class='transroman' ")
                             else :
-                                line_out += "<a class='trans' "
-                            line_out += "onclick=\"memorize('" + \
-                                        tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">"
+                                line_out.append("<a class='trans' ")
+                            line_out.append("onclick=\"memorize('" + \
+                                        tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">")
 
-                        line_out += target.replace("/"," /<br/>")
+                        line_out.append(target.replace("/"," /<br/>"))
 
                         if action in [ "read", "edit" ] :
-                            line_out += "</a>"
+                            line_out.append("</a>")
 
                         if not memorized :
-                            line_out += "</div>"
+                            line_out.append("</div>")
 
-                    line_out += "<br/>"
-                    line_out += "</div>"
-                    line_out += "<div style='display: "
-                    line_out += "none" if (action in ["read", "edit"] and not memorized) else "block"
+                    line_out.append("<br/>")
+                    line_out.append("</div>")
+                    line_out.append("<div style='display: ")
+                    line_out.append("none" if (action in ["read", "edit"] and not memorized) else "block")
                     if gp.already_romanized :
-                        line_out += "' class='transroman"
+                        line_out.append("' class='transroman")
                     else :
-                        line_out += "' class='trans"
+                        line_out.append("' class='trans")
                     
-                    line_out += " blank" + tid + "'>"
-                    line_out += "&#160;</div>"
-                    line_out += "</td>"
-                    line_out += "</tr></table>"
-                    line_out += "</td>"
+                    line_out.append(" blank" + tid + "'>")
+                    line_out.append("&#160;</div>")
+                    line_out.append("</td>")
+                    line_out.append("</tr></table>")
+                    line_out.append("</td>")
                     if py :
-                        line_out += "<td>&#160;</td>"
-                line_out += "</tr>"
-                line_out += "</table>"
+                        line_out.append("<td>&#160;</td>")
+                line_out.append("</tr>")
+                line_out.append("</table>")
 
             if not disk :
-                output += line_out
+                output += "".join(line_out)
             else :
                 output += disk_out
 
