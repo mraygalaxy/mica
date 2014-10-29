@@ -603,30 +603,30 @@ class MICA(object):
     
     def sidestart(self, req, name, username, story, reviewed, finished) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
-        sideout = ""
-        sideout += "\n<tr>"
-        sideout += "<td style='font-size: x-small; width: 100px'>" 
+        sideout = []
+        sideout.append("\n<tr>")
+        sideout.append("<td style='font-size: x-small; width: 100px'>" )
         if mobile :
-            sideout += "<b>" + rname + "</b>"
+            sideout.append("<b>" + rname + "</b>")
         else :
             # 'original' refers to the original text of the story that the user provided for language learning.
-            sideout += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid="
-            sideout += story["uuid"]
-            sideout += "\">"
-            sideout += rname
-            sideout += "</a>"
+            sideout.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
+            sideout.append(story["uuid"])
+            sideout.append("\">")
+            sideout.append(rname)
+            sideout.append("</a>")
         
         if (finished or reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
-            sideout += "<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
-            sideout += pr + "%;'> (" + pr + "%)</div></div>"
+            sideout.append("<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+            sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
-        sideout += "</td><td>"
+        sideout.append("</td><td>")
         if not mobile :
             if finished or reviewed :
                 # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
-                sideout += "\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">"
-                sideout += "<i class='glyphicon glyphicon-download-alt'></i></a>"
+                sideout.append("\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
+                sideout.append("<i class='glyphicon glyphicon-download-alt'></i></a>")
     
         return sideout
 
@@ -1731,10 +1731,10 @@ class MICA(object):
     def makestorylist(self, req):
         untrans_count = 0
         reading_count = 0
-        reading = self.template("reading")
-        noreview = self.template("noreview")
-        untrans = self.template("untrans")
-        finish = self.template("finished")
+        reading = [self.template("reading")]
+        noreview = [self.template("noreview")]
+        untrans = [self.template("untrans")]
+        finish = [self.template("finished")]
         
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -1755,55 +1755,55 @@ class MICA(object):
             if not story["translated"] : 
                 untrans_count += 1
                 untrans += self.sidestart(req, name, username, story, reviewed, finished)
-                untrans += "\n"
+                untrans.append("\n")
 
                 if not mobile :
-                    untrans += "<div id='transbutton" + story['uuid'] + "'>"
+                    untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
-                    untrans += "\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;"
+                    untrans.append("\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;")
 
                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
-                    untrans += "\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>"
+                    untrans.append("\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
-                            untrans += "<br/>" + err.replace("\n", "<br/>")
+                            untrans.append("<br/>" + err.replace("\n", "<br/>"))
 
-                    untrans += "</div>&#160;"
+                    untrans.append("</div>&#160;")
 
-                untrans += "<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>"
+                untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
 
                 if "translating" in story and story["translating"] :
-                    untrans += "\n<script>translist.push('" + story["uuid"] + "');</script>"
-                untrans += "</td>"
-                untrans += "</tr>"
+                    untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
+                untrans.append("</td>")
+                untrans.append("</tr>")
             else :
                 notsure = self.sidestart(req, name, username, story, reviewed, finished)
-                notsure += ""
+                notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure += "\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>"
-                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>"
-                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>"
-                notsure += "\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>"
+                    notsure.append("\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
 
                 if finished :
                    finish += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
-                   finish += "\n<a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>"
-                   finish += "</td></tr>"
+                   finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
+                   finish.append("</td></tr>")
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                   reading += "\n<a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>"
+                   reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                   reading += "<a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>"
-                   reading += "</td></tr>"
+                   reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
+                   reading.append("</td></tr>")
                 else :
                    noreview += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
-                   noreview += "\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>"
-                   noreview += "</td></tr>"
+                   noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
+                   noreview.append("</td></tr>")
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
     
@@ -3168,7 +3168,7 @@ class MICA(object):
                     
             if req.http.params.get("memolist") :
                 page = req.http.params.get("page")
-                output = ""
+                output = []
                         
                 result = self.memocount(req, story, page)
                 
@@ -3177,49 +3177,49 @@ class MICA(object):
                 pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
                 for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
                     # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
-                    output += _("Memorized all stories") + ": " + str(result['value']) + "<br/>"
+                    output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
                 # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
-                output += _("Unique memorized page") + ": " + str(total_memorized) + "<br/>"
+                output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
                 # A count of all the unique words on this page, not just the ones the user has memorized.
-                output += _("Unique words this page") + ": " + str(len(unique)) + "<br/>"
+                output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
                 if list_mode :
-                    output += "<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: "
-                    output += str(pr) + "%;'> (" + str(pr) + "%)</div></div>"
+                    output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+                    output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
 
                     if total_memorized :
-                        output += "<div class='panel-group' id='panelMemorized'>\n"
+                        output.append("<div class='panel-group' id='panelMemorized'>\n")
                         for p in progress :
-                            output += """
+                            output.append("""
                                     <div class='panel panel-default'>
                                       <div class="panel-heading">
-                                      """
+                                      """)
                             py, target, unit, nb_unit, trans_id, page_idx = p
                             if len(target) and target[0] == '/' :
                                 target = target[1:-1]
                             tid = unit["hash"] if py else trans_id 
 
-                            output += "<a class='trans btn-default btn-xs' onclick=\"forget('" + \
+                            output.append("<a class='trans btn-default btn-xs' onclick=\"forget('" + \
                                     str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
-                                    "<i class='glyphicon glyphicon-remove'></i></a>"
+                                    "<i class='glyphicon glyphicon-remove'></i></a>")
 
-                            output += "&#160; " + "".join(unit["source"]) + ": "
-                            output += "<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>"
+                            output.append("&#160; " + "".join(unit["source"]) + ": ")
+                            output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
 
-                            output += "<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py
-                            output += "</a>"
-                            output += "</div>"
-                            output += "<div id='collapse" + tid + "' class='panel-body collapse'>"
-                            output += "<div class='panel-inner'>" + target.replace("/"," /") + "</div>"
-                            output += "</div>"
-                            output += "</div>"
-                        output += "</div>"
+                            output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
+                            output.append("</a>")
+                            output.append("</div>")
+                            output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
+                            output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
+                            output.append("</div>")
+                            output.append("</div>")
+                        output.append("</div>")
                     else :
-                        output += "<h4>" + _("No words memorized. Get to work!") + "</h4>"
+                        output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
                 else :
                     # statistics in reading mode are disabled
-                    output += "<h4>" + _("Memorization History List Disabled") + ".</h4>"
+                    output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
 
-                return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + output + "</div></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -3311,7 +3311,7 @@ class MICA(object):
                         return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
                     
             elif req.action == "storylist" :
-                storylist = self.template("storylist")
+                storylist = [self.template("storylist")]
 
                 result = repeat(self.makestorylist, args = [req], kwargs = {})
                 
@@ -3320,30 +3320,24 @@ class MICA(object):
                 
                 untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
                 
-                reading += "</table></div></div></div>\n"
-                noreview += "</table></div></div></div>\n"
-                untrans += "</table></div></div></div>\n"
-                finish += "</table></div></div></div>\n"
+                reading.append("</table></div></div></div>\n")
+                noreview.append("</table></div></div></div>\n")
+                untrans.append("</table></div></div></div>\n")
+                finish.append("</table></div></div></div>\n")
 
-                scripts = ""
+                scripts = [""]
 
                 if untrans_count :
-                    storylist += untrans + reading + noreview + finish + "</div></td></tr></table>"
-                    scripts += """
-                            <script>$('#collapseUntranslated').collapse('show');</script>
-                            """
+                    storylist += untrans + reading + noreview + finish + ["</div></td></tr></table>"]
+                    scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
                 elif reading_count :
-                    storylist += reading + untrans + noreview + finish + "</div></td></tr></table>"
-                    scripts += """
-                            <script>$('#collapseReading').collapse('show');</script>
-                            """
+                    storylist += reading + untrans + noreview + finish + ["</div></td></tr></table>"]
+                    scripts.append("<script>$('#collapseReading').collapse('show');</script>")
                 else :
-                    storylist += noreview + reading + untrans + finish + "</div></td></tr></table>"
-                    scripts += """
-                            <script>$('#collapseReviewing').collapse('show');</script>
-                            """
+                    storylist += noreview + reading + untrans + finish + ["</div></td></tr></table>"]
+                    scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
 
-                scripts += """
+                scripts.append("""
                             
                            <script>
                            for(var tidx = 0; tidx < translist.length; tidx++) {
@@ -3351,10 +3345,10 @@ class MICA(object):
                            }
                            translist = [];
                            </script>
-                          """
+                          """)
 
                 try :
-                    finallist = run_template(req, StoryElement, storylist) + scripts
+                    finallist = run_template(req, StoryElement, "".join(storylist)) + "".join(scripts)
                 except Exception, e:
                     merr("Storylist fill failed: " + str(e))
 
