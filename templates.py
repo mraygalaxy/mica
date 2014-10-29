@@ -31,6 +31,21 @@ class StoryElement(Element) :
                       stories = _("Stories"))
         return tag
 
+class DeleteAccountElement(Element) :
+    def __init__(self, req) :
+        super(DeleteAccountElement, self).__init__() 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/deleteaccount_template.html').path)
+
+    @renderer
+    def delete(self, request, tag) :
+        tag.fillSlots(delete = _("Delete Account?"),
+                      deleteconfirm = _("Yes, delete my account."),
+                      suredelete = _("Are you sure you want to delete your account? This is IRREVERSIBLE."),
+                      username = self.req.session.value["username"],
+                      )
+        return tag
+
 class PasswordElement(Element) :
     def __init__(self, req) :
         super(PasswordElement, self).__init__() 
@@ -556,7 +571,7 @@ class HeadElement(Element):
                 ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
                 utag(tags.li(ttag))
 
-                if self.req.user and 'admin' in self.req.user['roles'] :
+                if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
                     ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal"})
                     # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                     ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
@@ -766,7 +781,7 @@ class HeadElement(Element):
     @renderer
     def newaccountadmin(self, request, tag) :
         if self.req.session.value['connected'] and not self.req.pretend_disconnected :
-            if self.req.user and 'admin' in self.req.user['roles'] :
+            if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
                 # Admin account, that is
                 tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
         return tag
