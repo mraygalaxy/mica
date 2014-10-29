@@ -259,7 +259,8 @@ class MICA(object):
                 self.dbs[username] = cs[dbname]
 
             mdebug("Installing view counter.")
-            self.views_ready[username] = 0
+            if username not in self.views_ready :
+                self.views_ready[username] = 0
 
         req.db = self.dbs[username]
 

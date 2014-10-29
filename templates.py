@@ -632,9 +632,16 @@ class HeadElement(Element):
                 row(tags.td(style='width: 10px')())
 
                 rowcell = tags.td(style="font-size: x-small")
+                       
+                first = True
 
                 for l, readable in softlangs :
-                    rowcell(" | ", tags.a(href='/switchlang?lang=' + l)(readable))
+                    if not first :
+                        rowcell(" | ")
+                    else :
+                        first = False
+
+                    rowcell(tags.a(href='/switchlang?lang=' + l)(readable))
 
                 row(rowcell)
 
