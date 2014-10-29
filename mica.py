@@ -3609,6 +3609,7 @@ class MICA(object):
                             tmp_doc = result["key"]
                             out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
                             out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
+                            out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
                             out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
                             out += "</tr>"
                         out += "</table>"
