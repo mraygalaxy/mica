@@ -571,6 +571,7 @@ class HeadElement(Element):
 
             utag(StaticNavElement(self.req))
             tag(itemtag(atag, utag))
+        tag(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
         return tag
 
     @renderer
@@ -624,17 +625,13 @@ class HeadElement(Element):
             row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-eye-open"})))
 
             row(tags.td(style='width: 10px')())
-
-            row(tags.td()(tags.b()(self.req.session.value["username"])))
-
-            row(tags.td(style='width: 2px')())
         else :
             row(tags.td(style='width: 10px; align: center')(" "))
             row(tags.td()(tags.b()(_("MICA Language Learning"))))
-            row(tags.td(style='width: 10px; align: center')(" "))
-            row(tags.td(style='width: 10px; align: center')("|"))
 
             if not mobile :
+                row(tags.td(style='width: 10px; align: center')(" "))
+                row(tags.td(style='width: 10px; align: center')("|"))
                 row(tags.td(style='width: 10px')())
                 row(tags.td()(tags.b()(_("Change Language"))))
                 row(tags.td(style='width: 10px')())
