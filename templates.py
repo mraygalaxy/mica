@@ -35,8 +35,7 @@ class PasswordElement(Element) :
     def __init__(self, req) :
         super(PasswordElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html').path)
 
     @renderer
     def password(self, request, tag) :
@@ -52,8 +51,7 @@ class HistoryElement(Element) :
     def __init__(self, req) :
         super(HistoryElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/history_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/history_template.html').path)
 
     @renderer
     def history(self, request, tag) :
@@ -92,8 +90,7 @@ class StaticNavElement(Element) :
     def __init__(self, req) :
         super(StaticNavElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/nav_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/nav_template.html').path)
 
     @renderer
     def accountslots(self, request, tag) :
@@ -113,8 +110,7 @@ class EditHistoryElement(Element) :
     def __init__(self, req) :
         super(EditHistoryElement, self).__init__() 
         self.req = req
-
-    loader = XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='edit_history'/>")
+        self.loader = XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='edit_history'/>")
 
     @renderer
     def edit_history(self, request, tag) :
@@ -173,8 +169,7 @@ class EditHeaderElement(Element) :
     def __init__(self, req) :
         super(EditHeaderElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/edit_header_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/edit_header_template.html').path)
 
     @renderer
     def edit_header(self, request, tag) :
@@ -193,8 +188,7 @@ class MobileAdvertElement(Element) :
     def __init__(self, req) :
         super(MobileAdvertElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html').path)
 
     @renderer
     def mobile(self, request, tag) :
@@ -206,8 +200,7 @@ class ServerAdvertElement(Element) :
     def __init__(self, req) :
         super(ServerAdvertElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html').path)
 
     @renderer
     def server(self, request, tag) :
@@ -217,8 +210,7 @@ class LinkAdvertElement(Element) :
     def __init__(self, req) :
         super(LinkAdvertElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html').path)
 
     @renderer
     def link(self, request, tag) :
@@ -229,8 +221,7 @@ class MobileFrontElement(Element) :
     def __init__(self, req) :
         super(MobileFrontElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
 
     @renderer
     def mobilelinks(self, request, tag) :
@@ -283,8 +274,7 @@ class FrontPageElement(Element) :
     def __init__(self, req) :
         super(FrontPageElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
 
     @renderer
     def frontend(self, request, tag) :
@@ -332,8 +322,7 @@ class EditElement(Element) :
     def __init__(self, req) :
         super(EditElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/edit_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/edit_template.html').path)
 
     @renderer
     def edit(self, request, tag) :
@@ -345,8 +334,7 @@ class LegendElement(Element) :
     def __init__(self, req) :
         super(LegendElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/legend_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/legend_template.html').path)
 
     @renderer
     def legend(self, request, tag) :
@@ -374,8 +362,7 @@ class DynamicViewElement(Element) :
     def __init__(self, req) :
         super(DynamicViewElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/dynamic_view_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/dynamic_view_template.html').path)
 
     @renderer
     def dynamic_view(self, request, tag) :
@@ -399,8 +386,7 @@ class ReadingViewElement(Element) :
     def __init__(self, req) :
         super(ReadingViewElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html').path)
 
     @renderer
     def reading_view(self, request, tag) :
@@ -411,8 +397,7 @@ class StaticViewElement(Element) :
     def __init__(self, req) :
         super(StaticViewElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/static_view_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/static_view_template.html').path)
 
     @renderer
     def static_view(self, request, tag) :
@@ -457,8 +442,7 @@ class ViewElement(Element) :
     def __init__(self, req) :
         super(ViewElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/view_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/view_template.html').path)
 
     @renderer
     def topview(self, request, tag) :
@@ -497,8 +481,7 @@ class HeadElement(Element):
     def __init__(self, req) :
         super(HeadElement, self).__init__() 
         self.req = req
-
-    loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
 
     @renderer
     def languages(self, request, tag) :
@@ -614,9 +597,9 @@ class HeadElement(Element):
         tag.fillSlots(toggle = bootcanvastoggle)
 
         if not self.req.session.value['connected'] :
-            return tag(tags.img(id = "connectpop", src=self.req.mpath + '/favicon.ico', width='20px'))
+            return tag(tags.img(id = "connectpop", src=self.req.mpath + '/icon-120x120.png', width='25px'))
         else :
-            return tag(tags.img(src=self.req.mpath + '/favicon.ico', width='20px'))
+            return tag(tags.img(src=self.req.mpath + '/icon-120x120.png', width='25px'))
 
         return tag
 
@@ -682,7 +665,7 @@ class HeadElement(Element):
                      bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",
                      micajs = self.req.mpath + "/mica.js",
-                     favicon = self.req.mpath + "/favicon.ico",
+                     favicon = self.req.mpath + "/icon-120x120.png",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      # Which language to learn, that is.
                      langtype = _("Which language"),
