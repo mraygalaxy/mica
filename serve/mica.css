@@ -40,10 +40,10 @@ td.trans {
 }
 
 .navbar-default {
-background-image: -webkit-linear-gradient(top, #ffffff 0%, #dfdfdf 100%);
-background-image: linear-gradient(to bottom, #ffffff 0%, #dfdfdf 100%);
-background-repeat: repeat-x;
-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#ffdfdfdf', GradientType=0);
+    background-image: -webkit-linear-gradient(top, #ffffff 0%, #dfdfdf 100%);
+    background-image: linear-gradient(to bottom, #ffffff 0%, #dfdfdf 100%);
+    background-repeat: repeat-x;
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#ffdfdfdf', GradientType=0);
 }
 
 a.trans {
