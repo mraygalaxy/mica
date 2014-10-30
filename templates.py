@@ -709,7 +709,7 @@ class HeadElement(Element):
                servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
                tr(tags.td(servicetag))
 
-       tag(tags.table()(tr))
+           tag(tags.table()(tr))
 
        return tag
     @renderer
