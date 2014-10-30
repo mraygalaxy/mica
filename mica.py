@@ -2483,6 +2483,29 @@ class MICA(object):
                 out += "</div>"
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
+            from oauthlib.common import to_unicode
+
+            def baidu_compliance_fix(session):
+                self.fixed = False
+
+                def _compliance_fix(r):
+                    if self.fixed :
+                        return r
+                    self.fixed = True
+                    # Facebook returns a content-type of text/plain when sending their
+                    # x-www-form-urlencoded responses, along with a 200. If not, let's
+                    # assume we're getting JSON and bail on the fix.
+                    mdebug("Going to dump response token text: " + r.text)
+                    token = json_loads(r.text)
+                    mdebug("Adding bearer to token type") 
+                    token['token_type'] = 'Bearer'
+                    r._content = to_unicode(dumps(token)).encode('UTF-8')
+                    return r
+
+                session.register_compliance_hook('access_token_response', _compliance_fix)
+                return session
+
+
             from_third_party = False
 
             if not mobile and req.action in params["oauth"].keys() :
@@ -2493,6 +2516,9 @@ class MICA(object):
 
                 if who == "facebook" :
                     service = facebook_compliance_fix(service)
+
+                if who == "baidu" :
+                    service = baidu_compliance_fix(service)
 
                 if not req.http.params.get("code") :
                     mdebug(str(req.http.params))  
@@ -2516,6 +2542,7 @@ class MICA(object):
                 service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
                 mdebug("Token fetched successfully: " + str(service.token))
+                del service.token["token_type"]
                 lookup_url = creds["lookup_url"]
 
                 updated = False
