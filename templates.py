@@ -688,7 +688,9 @@ class HeadElement(Element):
        if mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
            tag("")
        else : 
-           tag(tags.br(), _("Sign in with") + ": ")
+           tag(tags.br(), tags.b()(_("Sign in with")), ": ", tags.br())
+
+           tr = tags.tr()
 
            for name, creds in self.req.oauth.iteritems() :
                if name == "redirect" :
@@ -705,7 +707,9 @@ class HeadElement(Element):
 
                servicetag = tags.a(onclick = "$('#loginModal').modal('show');", href = authorization_url)
                servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
-               tag(servicetag)
+               tr(tags.td(servicetag))
+
+       tag(tags.table()(tr))
 
        return tag
     @renderer
