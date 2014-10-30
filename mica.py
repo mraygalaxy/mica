@@ -2515,6 +2515,7 @@ class MICA(object):
             from_third_party = False
 
             if not mobile and req.action in params["oauth"].keys() :
+                self.install_local_language(req)
                 who = req.action
                 creds = params["oauth"][who]
                 redirect_uri = params["oauth"]["redirect"] + who 
