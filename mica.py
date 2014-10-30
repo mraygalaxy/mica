@@ -1720,6 +1720,7 @@ class MICA(object):
                 output.append(disk_out)
 
         if recommendations :
+            # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
             output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output 
 
         mdebug("View Page " + str(page) + " story " + name + " complete.")
