@@ -768,6 +768,7 @@ class HeadElement(Element):
                      address = _("Address"),
                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                      signing = _("Signing you in, Please wait"),
+                     
                      loading = _("Loading story, Please wait"),
                      # Compacting can also be translated as "cleaning" database.
                      compacting = _("Compacting database, Please wait"),

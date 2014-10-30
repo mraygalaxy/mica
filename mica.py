@@ -2525,8 +2525,7 @@ class MICA(object):
                 if who == "baidu" :
                     service = baidu_compliance_fix(service)
 
-                if not req.http.params.get("code") :
-                    mdebug(str(req.http.params))  
+                if not req.http.params.get("code") and not req.http.params.get("finish") :
                     if req.http.params.get("error") :
                         reason = req.http.params.get("error_reason") if req.http.params.get("error_reason") else "Access Denied."
                         desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
@@ -2544,10 +2543,19 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
                 code = req.http.params.get("code")
+
+                req.skip_show = True
+                if not req.http.params.get("finish") :
+                    return self.bootstrap(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
+
+
                 service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
                 mdebug("Token fetched successfully: " + str(service.token))
-                del service.token["token_type"]
+
+                if who == "baidu" :
+                    del service.token["token_type"]
+
                 lookup_url = creds["lookup_url"]
 
                 updated = False
@@ -2624,6 +2632,7 @@ class MICA(object):
 
                     from_third_party["output"] = output
                 else :
+                    from_third_party["redirect"] = "<script>window.location.href='/home';</script>" 
                     auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
                     if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
@@ -3377,7 +3386,10 @@ class MICA(object):
                     output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
                 else :
                     if from_third_party and "output" in from_third_party :
-                        output += from_third_party["output"]
+                        return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+                    elif from_third_party and "redirect" in from_third_party :
+                        return self.bootstrap(req, from_third_party["redirect"], now = True)
+
                     else :
                         # Beginning of a message.
                         output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
@@ -3776,7 +3788,9 @@ class MICA(object):
 
             else :
                 if from_third_party and "output" in from_third_party :
-                    out = from_third_party["output"]
+                    return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+                elif from_third_party and "redirect" in from_third_party :
+                    return self.bootstrap(req, from_third_party["redirect"], now = True)
                 else :
                     # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
                     out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
