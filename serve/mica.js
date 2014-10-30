@@ -660,6 +660,16 @@ function restore_pageimg_width() {
     $('#pageimg' + curr_img_num).css('width', '100%');
 }
 
+function finish_new_account(code, who) {
+    go('#newaccountresultdestination', 
+        "/" + who + "?finish=1&code=" + code,
+        '', 
+        'error', 
+        true,
+        false, 
+        true);
+}
+
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
