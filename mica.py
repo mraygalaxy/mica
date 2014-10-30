@@ -50,6 +50,7 @@ from translator import *
 from templates import *
 
 if not mobile :
+    from oauthlib.common import to_unicode
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
 
@@ -316,7 +317,8 @@ class MICA(object):
                 self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
                 self.userdb = self.cs["_users"]
 
-        params["language"] = self.cs.init_localization()
+        if "language" not in params :
+            params["language"] = self.cs.init_localization()
         self.first_request = {}
 
         # Replacements must be in this order
@@ -602,7 +604,7 @@ class MICA(object):
 
         return r
     
-    def sidestart(self, req, name, username, story, reviewed, finished) :
+    def sidestart(self, req, name, username, story, reviewed, finished, gp) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
         sideout = []
         sideout.append("\n<tr>")
@@ -623,7 +625,7 @@ class MICA(object):
             sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
         sideout.append("</td><td>")
-        if not mobile :
+        if not mobile and not gp.already_romanized :
             if finished or reviewed :
                 # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
                 sideout.append("\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
@@ -1386,7 +1388,7 @@ class MICA(object):
                     use_batch = False
                     skip_prev_merge = False
 
-                    line_out.append("\n<td style='vertical-align: top; text-align: center; font-size: small' ")
+                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: small' ")
 
                     if action == "edit" :
                         if py :
@@ -1495,7 +1497,7 @@ class MICA(object):
                 tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
-                line_out.append("\n<td style='vertical-align: top; text-align: center; font-size: small; ")
+                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: small; ")
                 if "punctuation" not in unit or not unit["punctuation"] :
                     line_out.append("cursor: pointer")
 
@@ -1648,7 +1650,7 @@ class MICA(object):
                             memorized = True
                             
                     tid = unit["hash"] if py else str(word[2])
-                    line_out.append("\n<td style='vertical-align: top; text-align: center'>")
+                    line_out.append("\n<td style='vertical-align: bottom; text-align: center'>")
                     line_out.append("<table><tr>")
                     line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
                     line_out.append("<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;")
@@ -1668,7 +1670,7 @@ class MICA(object):
                             line_out.append("class='reveal reveal" + tid + "'")
                             if meaning_mode == "true":
                                 line_out.append("style='display: none'")
-                            line_out.append("><a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
+                            line_out.append(">&#160;&#160;<a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
                             line_out.append("<div class='definition definition" + tid + "' ")
                             if meaning_mode == "false":
                                 line_out.append("style='display: none'")
@@ -1794,6 +1796,8 @@ class MICA(object):
         items.sort(key = itemhelp, reverse = True)
 
         for name, story in items :
+            gp = self.processors[story["source_language"]]
+
             reviewed = not ("reviewed" not in story or not story["reviewed"])
             finished = not ("finished" not in story or not story["finished"])
             if isinstance(story['uuid'], tuple) :
@@ -1803,7 +1807,7 @@ class MICA(object):
 
             if not story["translated"] : 
                 untrans_count += 1
-                untrans += self.sidestart(req, name, username, story, reviewed, finished)
+                untrans += self.sidestart(req, name, username, story, reviewed, finished, gp)
                 untrans.append("\n")
 
                 if not mobile :
@@ -1826,11 +1830,11 @@ class MICA(object):
                 untrans.append("</td>")
                 untrans.append("</tr>")
             else :
-                notsure = self.sidestart(req, name, username, story, reviewed, finished)
+                notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure.append("\n<a title='" + _("Forget") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>")
+                    notsure.append("\n<a title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
@@ -1838,20 +1842,20 @@ class MICA(object):
                 if finished :
                    finish += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
-                   finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
+                   finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
                    finish.append("</td></tr>")
                 elif reviewed :
                    reading_count += 1
                    reading += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                   reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
+                   reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                   reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
+                   reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
                    reading.append("</td></tr>")
                 else :
                    noreview += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
-                   noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
+                   noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
                    noreview.append("</td></tr>")
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count] 
@@ -2483,8 +2487,6 @@ class MICA(object):
                 out += "</div>"
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
 
-            from oauthlib.common import to_unicode
-
             def baidu_compliance_fix(session):
                 self.fixed = False
 
@@ -2504,7 +2506,6 @@ class MICA(object):
 
                 session.register_compliance_hook('access_token_response', _compliance_fix)
                 return session
-
 
             from_third_party = False
 
@@ -2988,6 +2989,10 @@ class MICA(object):
                     pages = self.nb_pages(req, tmp_story["name"])
                     if pages == 1 :
                         final = {}
+
+                        if req.db.doc_exist(self.story(req, name) + ":final") :
+                            final["_rev"] = req.db[self.story(req, name) + ":final"]["_rev"]
+
                         minfo("Generating final pagesets...")
                         
                         for page in range(0, pages) :
@@ -3280,7 +3285,7 @@ class MICA(object):
                                 target = target[1:-1]
                             tid = unit["hash"] if py else trans_id 
 
-                            output.append("<a class='trans btn-default btn-xs' onclick=\"forget('" + \
+                            output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
                                     str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
                                     "<i class='glyphicon glyphicon-remove'></i></a>")
 
@@ -4200,7 +4205,10 @@ def go(p) :
         for line in format_exc().splitlines() :
             merr(line)
 
-def second_splash() :
+def second_splash(language) :
+    if language not in texts :
+        language = "en"
+
     fh = open(cwd + "serve/splash_template.html", 'r')
     output = fh.read()
     fh.close()
@@ -4221,7 +4229,7 @@ def second_splash() :
     encoded2 = base64_b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    output += "&#160;&#160;" + _("Please wait...") + "</p>"
+    output += "&#160;&#160;" + texts[language].ugettext(_("Please wait...")) + "</p>"
     output += """ 
 </div>    
 <div class="inner3">
