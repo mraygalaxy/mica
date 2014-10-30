@@ -247,7 +247,10 @@ class MobileFrontElement(Element) :
 
     @renderer
     def mobilelinks(self, request, tag) :
-        tag(LinkAdvertElement(self.req))
+        if self.req.front_ads :
+            tag(tags.table()(LinkAdvertElement(self.req)))
+        else :
+            tag("")
         return tag
 
     @renderer

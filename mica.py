@@ -580,6 +580,10 @@ class MICA(object):
         req = Params(environ, start_response.im_self.request.session)
         req.db = False
         req.dest = ""#prefix(req.unparsed_uri)
+        req.front_ads = False
+
+        if not mobile and not params["couch_server"].count("localhost") :
+            req.front_ads = True
 
         if params["serialize_couch_on_mobile"] :
             rq = Queue_Queue()
