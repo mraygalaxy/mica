@@ -2634,7 +2634,7 @@ class MICA(object):
 
                     from_third_party["output"] = output
                 else :
-                    from_third_party["redirect"] = "<h3>Redirecting...</h3><script>window.location.href='/home';</script>" 
+                    from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/home';</script>" 
                     auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
                     if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
