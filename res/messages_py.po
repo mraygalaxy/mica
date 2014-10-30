@@ -274,6 +274,7 @@ msgstr ""
 msgid "Story upgrade status"
 msgstr ""
 
+#. This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Page"
 msgstr "Wǎngyè"
 
@@ -283,6 +284,7 @@ msgstr ""
 msgid "Story upgrade started. You may refresh to follow its status."
 msgstr ""
 
+#. This occurs in Edit mode when a merge/split request failed.
 msgid "Invalid Operation"
 msgstr ""
 
@@ -320,13 +322,6 @@ msgstr "zài zhègè yè lǐ méiyǒu"
 msgid ""
 "No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
 "at the top."
-msgstr ""
-
-msgid ""
-"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
-"must first create them on the website first. (New stories require a "
-"significant amount of computer resources to prepare. Thus, they can only be "
-"replicated to the device for regular use."
 msgstr ""
 
 #. end of a message
@@ -475,6 +470,7 @@ msgstr "Yǔyán"
 msgid "Change Language"
 msgstr "gǎibiàn yǔyán"
 
+#. This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
 msgid "Read, Review, or Edit, my friend?"
 msgstr "Wǒ de péngyǒu: Yuèdú, fùxí, háishì biānjí?"
 
@@ -785,15 +781,18 @@ msgstr "Yònghù míng"
 msgid "Create New Account"
 msgstr "zuò xīn zhànghù"
 
+#. This is one of the 'Account' menu items that describes the author of the software.
 msgid "About this software"
 msgstr ""
 
 msgid "Login"
 msgstr "dēnglù"
 
+#. This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
 msgid "Remember Me"
 msgstr "Jìde wǒ"
 
+#. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Address"
 msgstr "Dìzhǐ"
 
@@ -861,6 +860,7 @@ msgstr ""
 msgid "Signing you in, Please wait"
 msgstr ""
 
+#. Compacting can also be translated as "cleaning" database.
 msgid "Compacting database, Please wait"
 msgstr ""
 
@@ -900,13 +900,6 @@ msgstr ""
 msgid ""
 "Although you have authenticated successfully, we could not start "
 "synchronization successfully. Please try again."
-msgstr ""
-
-msgid ""
-"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
-"must first create them on the website first. (New stories require a "
-"significant amount of computer resources to prepare. Thus, they can only be "
-"synchronized to the device for regular use."
 msgstr ""
 
 msgid "No instant translation available."
@@ -960,9 +953,6 @@ msgstr ""
 
 #. end of a message
 msgid "please read the tutorial"
-msgstr ""
-
-msgid "Read, Review, or Edit, my friend?<br/><br/>"
 msgstr ""
 
 msgid "Which languages"
@@ -1096,4 +1086,149 @@ msgid ""
 "account online @ http://mica.hinespot.com. After you have created an online "
 "account, you can then login with your email and password from your online "
 "account using any device that you like."
+msgstr ""
+
+msgid ""
+"Please delete your account on the website and then uninstall the "
+"application. Will support mobile in a future version."
+msgstr ""
+
+msgid "No such account. Cannot delete it."
+msgstr ""
+
+msgid "Go away and die."
+msgstr ""
+
+msgid ""
+"Admin accounts can't be deleted by other people. The admin must delete their "
+"own account."
+msgstr ""
+
+msgid "Success! Account was deleted"
+msgstr ""
+
+msgid "Your account has been permanently deleted."
+msgstr ""
+
+msgid "Delete Account?"
+msgstr ""
+
+msgid "Yes, delete my account."
+msgstr ""
+
+msgid "Are you sure you want to delete your account? This is IRREVERSIBLE."
+msgstr ""
+
+#. This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
+msgid "Bulk Review Words"
+msgstr ""
+
+msgid "NO review recommendations available."
+msgstr ""
+
+#. The name of the software
+msgid "MICA Language Learning"
+msgstr ""
+
+#. This appears as a pop-up when we are loading the text content of a story.
+msgid "Loading Text"
+msgstr ""
+
+#. This appears as a pop-up when we are image content of a PDF-based story.
+msgid "Loading Image"
+msgstr ""
+
+#. This appears when you first click on a story to be loaded
+msgid "Loading Stories"
+msgstr ""
+
+#. This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
+msgid "Loading Statistics"
+msgstr ""
+
+#. This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
+msgid "This account is not fully synchronized"
+msgstr ""
+
+#. This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
+msgid "If you are offline, please go online for an instant translation."
+msgstr ""
+
+#. This appears when you attempt to perform an instant translation without clicking on any words to translate.
+msgid "You have not selected any words for instant translation!"
+msgstr ""
+
+#. This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors.
+msgid "See above for problems with your edit requests."
+msgstr ""
+
+#. just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
+msgid "Submit"
+msgstr ""
+
+#. This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
+msgid "Reason"
+msgstr ""
+
+#. Merge as in merge/split in edit mode.
+msgid "Merge"
+msgstr ""
+
+#. This appears next to the words that have errors for which you were trying to merge or split.
+msgid "INVALID"
+msgstr ""
+
+#. Split as in merge/split in edit mode.
+msgid "Split"
+msgstr ""
+
+#. This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
+msgid "Are you sure you want to perform these edits?"
+msgstr ""
+
+#. Also a message in edit mode.
+msgid ""
+"The selected characters are not consecutive (including punctuation). You "
+"cannot merge them."
+msgstr ""
+
+#. Also a message in edit mode.
+msgid ""
+"You need at least two character groups selected before you can merge them "
+"into a word!"
+msgstr ""
+
+#. Also a message in edit mode.
+msgid "This word only has one character. It cannot be split!"
+msgstr ""
+
+#. Also a message in edit mode.
+msgid "You cannot split more than one word at a time!"
+msgstr ""
+
+#. This appears on the left-hand panel when a story is being actively translated.
+msgid "Translating"
+msgstr ""
+
+#. This on the main page when a story is being actively translated.
+msgid "Stories in translation"
+msgstr ""
+
+#. This appears after a story has just finished being translated to indicate that you can start using it.
+msgid "Done! Please reload."
+msgstr ""
+
+#. This appears during the translation of a story to indicate how many pages have been completed in the translation
+msgid "Working"
+msgstr ""
+
+msgid "Start learning!"
+msgstr ""
+
+#. This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
+msgid "Found Recommendations"
+msgstr ""
+
+#. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
+msgid "No review recommendations available."
 msgstr ""
