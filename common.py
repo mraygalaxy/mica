@@ -1,7 +1,6 @@
 # coding: utf-8
 from logging.handlers import RotatingFileHandler 
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
-from gettext import install as gettext_install, GNUTranslations, NullTranslations
 from datetime import datetime as datetime_datetime
 from time import time, strftime, strptime, localtime
 from threading import Lock
@@ -9,8 +8,15 @@ from xmlrpclib import Server
 from re import compile as re_compile
 from os import path as os_path
 from sys import getdefaultencoding
+from locale import setlocale, LC_ALL, getlocale
+from gettext import install as gettext_install, GNUTranslations, NullTranslations
+
+import __builtin__
 import xmlrpclib
 import sys
+import threading
+
+texts = {}
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
@@ -20,15 +26,6 @@ if getdefaultencoding() != "utf-8" :
     print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     reload(sys).setdefaultencoding("utf-8")
 
-gnutextkwargs = {}
-gettext_install("mica", **gnutextkwargs)
-
-if sys.version_info[0] < 3:
-    # In Python 2, ensure that the _() that gets installed into built-ins
-    # always returns unicodes.  This matches the default behavior under Python
-    # 3, although that keyword argument is not present in the Python 3 API.
-    gnutextkwargs['unicode'] = True
-    
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
@@ -36,10 +33,71 @@ except ImportError, e :
     String = False
     print("pyjnius not available. Probably on a server.")
 
+gnutextkwargs = {}
+catalogs = threading.local()
+
+if sys.version_info[0] < 3:
+    # In Python 2, ensure that the _() that gets installed into built-ins
+    # always returns unicodes.  This matches the default behavior under Python
+    # 3, although that keyword argument is not present in the Python 3 API.
+    gnutextkwargs['unicode'] = True
+
+gettext_install("mica", **gnutextkwargs)
 
 micalogger = False
 txnlogger = False
 duplicate_logger = False
+
+def get_global_language() :
+    global global_language
+    return global_language
+
+def gettext(message):
+    global global_language
+    try :
+        result = texts[catalogs.language].ugettext(message)
+        print "Returning preferred result"
+        return result
+    except AttributeError, e :
+        print "Returning global result: " + global_language
+        return texts[global_language].ugettext(message)
+
+def pre_init_localization(language, log = False) :
+    global global_language 
+    if String and log :
+        log.debug(String("Beginning localization: " + language))
+
+    for l in lang :
+       locale = l.split("-")[0]
+       try:
+           texts[locale] = GNUTranslations(open(cwd + "res/messages_" + locale + ".mo", 'rb'))
+       except IOError:
+           if l == u"en" :
+               texts[locale] = NullTranslations()
+           else :
+               print("Language translation " + l + " failed. Bailing...")
+               exit(1)
+
+    __builtin__.__dict__['_'] = gettext 
+
+    if language.count("-") :
+        language = language.split("-")[0]
+    if language.count("_") :
+        language = language.split("_")[0]
+
+    if language in texts :
+        global_language = language
+
+    test = "Translation test: " + texts[global_language].ugettext("Please wait...")
+    test2 = "Translation test 2: " + _("Please wait...")
+    if String and log :
+        log.debug(String("language set to: " + global_language))
+        log.debug(String(test))
+        log.debug(String(test2))
+    else :
+        print("Language set to: " + global_language)
+        print(test)
+        print(test2)
 
 lang = {
          u"zh-CHS" : _(u"Chinese Simplified"),
