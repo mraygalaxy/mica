@@ -401,7 +401,7 @@ class MICA(object):
             mdebug("Installing security on admin database.")
             new_security = {"admins" : 
                             { 
-                              "names" : ["mica_admin"], 
+                              "names" : ["mica_admin", username], 
                               "roles" : [] if admin else [username + "_master"] 
                             },
                         "members" :
