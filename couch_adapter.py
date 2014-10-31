@@ -3,7 +3,6 @@ from common import *
 from json import loads, dumps
 from uuid import uuid4
 from urllib2 import quote
-from locale import setlocale, LC_ALL, getlocale
 
 try :
     from couchdb import Server
@@ -265,15 +264,6 @@ class MicaServerCouchDB(object) :
 
         self.server.resource.headers["Cookie"] = self.cookie
 
-    def init_localization(self):
-        try :
-            mdebug("Locale is: " + setlocale(LC_ALL, '')) # use user's preferred locale
-            # take first two characters of country code
-            return getlocale()[0][0:2]
-        except Exception, e :
-            mdebug("Could not find locale. Defaulting to english.")
-            return "en"
-
     def __getitem__(self, dbname) :
         try :
             if dbname in self.server :
@@ -463,9 +453,6 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
             return True
 
 class AndroidMicaServerCouchbaseMobile(object) :
-    def init_localization(self):
-        return self.db.get_language()
-
     def __init__(self, db_already_local) :
         self.db = db_already_local
 
@@ -662,9 +649,6 @@ class iosMicaDatabaseCouchbaseMobile(object) :
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
-
-    def init_localization(self):
-        return self.db.get_language().UTF8String()
 
     def __getitem__(self, dbname) :
         self.dbname = dbname

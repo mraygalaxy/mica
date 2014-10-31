@@ -24,9 +24,6 @@ from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
 
-import __builtin__
-catalogs = threading.local()
-
 '''
 def tracefunc(frame, event, arg, indent=[0]):
     if event == "call":
@@ -39,8 +36,6 @@ def tracefunc(frame, event, arg, indent=[0]):
     return tracefunc
 #sys_settrace(tracefunc)
 '''
-
-texts = {}
 
 import couch_adapter
 import processors
@@ -209,12 +204,6 @@ class Params(object) :
 
 class MICA(object):
 
-    def gettext(self, message):
-        try :
-            return texts[catalogs.language].ugettext(message)
-        except AttributeError, e :
-            return texts[self.language].ugettext(message)
-
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         try :
             mdebug("Authenticating to: " + str(auth_url))
@@ -299,7 +288,7 @@ class MICA(object):
         elif "language" in req.session.value :
             catalogs.language = req.session.value["language"]
         else :
-            catalogs.language = self.language
+            catalogs.language = get_global_language()
         
     def __init__(self, db_adapter):
         self.client = Translator(params["trans_id"], params["trans_secret"])
@@ -317,8 +306,6 @@ class MICA(object):
                 self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
                 self.userdb = self.cs["_users"]
 
-        if "language" not in params :
-            params["language"] = self.cs.init_localization()
         self.first_request = {}
 
         # Replacements must be in this order
@@ -2732,7 +2719,7 @@ class MICA(object):
                     return self.warn_not_replicated(req)
                     
                 if "language" not in user :
-                    user["language"] = params["language"]
+                    user["language"] = get_global_language()
 
                 if "source" not in user :
                     user["source"] = "mica"
@@ -2758,7 +2745,12 @@ class MICA(object):
                 req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
                 req.session.value["default_app_zoom"] = user["default_app_zoom"]
                 req.session.value["default_web_zoom"] = user["default_web_zoom"]
-                req.session.value["language"] = user["language"]
+
+                if req.session.value["username"] == "demo" :
+                    req.session.value["language"] = get_global_language()
+                else :
+                    req.session.value["language"] = user["language"]
+
                 req.db[self.acct(username)] = user
                 req.session.save()
 
@@ -4012,24 +4004,20 @@ def get_options() :
 slaves = {}
 params = None
 
-def pre_init_localization() :
-    for l in lang :
-       locale = l.split("-")[0]
-       try:
-           texts[locale] = GNUTranslations(open(cwd + "res/messages_" + locale + ".mo", 'rb'))
-       except IOError:
-           if l == u"en" :
-               texts[locale] = NullTranslations()
-           else :
-               mdebug("Language translation " + l + " failed. Bailing...")
-               exit(1)
-
 def go(p) :
     global params
     params = p
 
     if not mobile :
-        pre_init_localization()
+        prelang = "en"
+        try :
+            mdebug("Locale is: " + setlocale(LC_ALL, '')) # use user's preferred locale
+            # take first two characters of country code
+            prelang = getlocale()[0][0:2]
+        except Exception, e :
+            mdebug("Could not find locale. Defaulting to english.")
+
+        pre_init_localization(prelang)
 
     mdebug("Verifying options.")
 
@@ -4131,23 +4119,6 @@ def go(p) :
         ct.daemon = True
         ct.start()
 
-        __builtin__.__dict__['_'] = mica.gettext 
-        language = params["language"]
-
-        if language.count("-") :
-            language = language.split("-")[0]
-        if language.count("_") :
-            language = language.split("_")[0]
-
-        mdebug("Setting language to: " + language)
-
-        if language in texts :
-            mica.language = language
-        else :
-            mica.language = "en"
-
-        mdebug("Language set.")
-
         reactor._initThreadPool()
         site = Site(GUIDispatcher(mica))
         site.sessionFactory = MicaSession
@@ -4229,10 +4200,7 @@ def go(p) :
         for line in format_exc().splitlines() :
             merr(line)
 
-def second_splash(language) :
-    if language not in texts :
-        language = "en"
-
+def second_splash() :
     fh = open(cwd + "serve/splash_template.html", 'r')
     output = fh.read()
     fh.close()
@@ -4253,7 +4221,7 @@ def second_splash(language) :
     encoded2 = base64_b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    #output += texts[language].ugettext(_("Please wait...")) + "</p>"
+    output += "&#160;&#160;" + _("Please wait...") + "</p>"
     output += """ 
 </div>    
 <div class="inner3">
