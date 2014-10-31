@@ -1096,6 +1096,7 @@ msgstr ""
 msgid "No such account. Cannot delete it."
 msgstr ""
 
+#. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
 msgstr ""
 
@@ -1231,4 +1232,7 @@ msgstr ""
 
 #. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
 msgid "No review recommendations available."
+msgstr ""
+
+msgid "Redirecting"
 msgstr ""
