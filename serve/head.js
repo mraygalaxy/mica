@@ -11,20 +11,25 @@ function pullstat(info) {
 function viewstat(info) {
     $("#viewstat").html(info);
 }
-    function switchinstall(initlist) {
-        list_mode = initlist;
-        if (list_mode) {
-               $("#switchlisttext").html('Stats Shown');
-        } else {
-               $("#switchlisttext").html('Stats Hidden');
-        }
-    }
 
-    function switchlist() {
-           go('#switchlisttext', '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
-           switchinstall(list_mode ? false : true);
-           listreload(current_mode, current_uuid, current_page);
-    }
+function local(msgid) {
+    return $("#" + msgid).html();
+}
+
+function switchinstall(initlist) {
+	list_mode = initlist;
+	if (list_mode) {
+	       $("#switchlisttext").html(local('statsshown'));
+	} else {
+	       $("#switchlisttext").html(local('statshide'));
+	}
+}
+
+function switchlist() {
+   go('#switchlisttext', '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
+   switchinstall(list_mode ? false : true);
+   listreload(current_mode, current_uuid, current_page);
+}
 
 var ConnectisVisible = false;
 var ConnectclickedAway = false;

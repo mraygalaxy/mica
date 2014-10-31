@@ -821,6 +821,9 @@ class HeadElement(Element):
                      working = _("Working"),
                      # This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
                      page = _("Page"),
+                     # These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
+                     statshide = _("Stats Hidden"),
+                     statsshown = _("Stats Shown"),
                      )
        return tag
 
