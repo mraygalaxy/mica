@@ -100,7 +100,7 @@ class HistoryElement(Element) :
             cdiv = tags.div(**{"class" : "panel-body collapse", "id" : "collapse" + tid})
             icdiv = tags.div(**{"class" : "panel-inner"})
             icdiv(targ.replace("\"", "\\\"").replace("\'", "\\\""))#.replace("/", " /<br/>"))
-            cdiv(idiv)
+            cdiv(icdiv)
             div(idiv, cdiv)
 
             tag(div)

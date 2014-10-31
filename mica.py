@@ -1074,6 +1074,7 @@ class MICA(object):
         return keys
         
     def history(self, req, story, uuid, page) :
+        gp = self.processors[story["source_language"]]
         history = []
         found = {}
         tid = 0
@@ -1102,7 +1103,10 @@ class MICA(object):
             record = changes["record"][unit["hash"]]
             if char not in found :
                 found[char] = True
-                history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
+                if gp.already_romanized :
+                    history.append([char, str(changes["total"]), "", "<br/>".join(record["target"]), tid])
+                else :
+                    history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
                         
             tid += 1
         
@@ -2375,6 +2379,7 @@ class MICA(object):
 
         if record :
             self.add_record(req, unit, mindex, self.tones, "selected") 
+        return unit
 
     def common(self, req) :
         try :
@@ -3122,7 +3127,7 @@ class MICA(object):
                 trans_id = int(req.http.params.get("trans_id"))
                 page = req.http.params.get("page")
 
-                self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
+                unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
 
                 return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                            self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page) + \
