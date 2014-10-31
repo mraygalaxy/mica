@@ -296,7 +296,7 @@ msgstr "已删除"
 
 #. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
 msgid "Invalid story uuid"
-msgstr ""
+msgstr "无效的故事uuid"
 
 #. Finished reviewing a story in review mode.
 msgid "Finished"
@@ -1024,136 +1024,141 @@ msgid ""
 "Please delete your account on the website and then uninstall the "
 "application. Will support mobile in a future version."
 msgstr ""
+"请在网页上删除你的帐户，然后卸载这个应用。会在将来的版本里面支持移动设备。"
 
 msgid "No such account. Cannot delete it."
-msgstr ""
+msgstr "没有这个帐户。不能删除。"
 
+#. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
-msgstr ""
+msgstr "快滚然后去死吧！"
 
 msgid ""
 "Admin accounts can't be deleted by other people. The admin must delete their "
 "own account."
-msgstr ""
+msgstr "管理帐户不能被其他人删除。管理帐户必须自己删除自己的帐户。"
 
 msgid "Success! Account was deleted"
-msgstr ""
+msgstr "成功！帐户已删除。"
 
 msgid "Your account has been permanently deleted."
-msgstr ""
+msgstr "你帐户被永久删除了。"
 
 msgid "Delete Account?"
-msgstr ""
+msgstr "确定删除帐户吗？"
 
 msgid "Yes, delete my account."
-msgstr ""
+msgstr "确定，删除我的帐户。"
 
 msgid "Are you sure you want to delete your account? This is IRREVERSIBLE."
-msgstr ""
+msgstr "确定要删除你的帐户吗？这是不可逆转的。"
 
 #. This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
 msgid "Bulk Review Words"
-msgstr ""
+msgstr "批量检查单词"
 
 #. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
 msgid "No review recommendations available."
-msgstr ""
+msgstr "可检查的建议不存在"
 
 #. This appears as a pop-up when we are loading the text content of a story.
 msgid "Loading Text"
-msgstr ""
+msgstr "加载文字"
 
 #. This appears as a pop-up when we are image content of a PDF-based story.
 msgid "Loading Image"
-msgstr ""
+msgstr "加载图片"
 
 #. This appears when you first click on a story to be loaded
 msgid "Loading Stories"
-msgstr ""
+msgstr "加载故事"
 
 #. This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
 msgid "Loading Statistics"
-msgstr ""
+msgstr "加载统计数据"
 
 #. This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
 msgid "This account is not fully synchronized"
-msgstr ""
+msgstr "这个帐户没有完全同步"
 
 #. This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
 msgid "If you are offline, please go online for an instant translation."
-msgstr ""
+msgstr "如果你现在离线，请上线进行即时翻译"
 
 #. This appears when you attempt to perform an instant translation without clicking on any words to translate.
 msgid "You have not selected any words for instant translation!"
-msgstr ""
+msgstr "你没有选择任何单词进行即时翻译"
 
 #. This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors.
 msgid "See above for problems with your edit requests."
-msgstr ""
+msgstr "对于你的编辑请求，请看上面来查错。"
 
 #. just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
 msgid "Submit"
-msgstr ""
+msgstr "提交"
 
 #. This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
 msgid "Reason"
-msgstr ""
+msgstr "原因"
 
 #. Merge as in merge/split in edit mode.
 msgid "Merge"
-msgstr ""
+msgstr "合并"
 
 #. This appears next to the words that have errors for which you were trying to merge or split.
 msgid "INVALID"
-msgstr ""
+msgstr "无效"
 
 #. Split as in merge/split in edit mode.
 msgid "Split"
-msgstr ""
+msgstr "分开"
 
 #. This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
 msgid "Are you sure you want to perform these edits?"
-msgstr ""
+msgstr "你确定你要进行这些编辑吗？"
 
 #. Also a message in edit mode.
 msgid ""
 "The selected characters are not consecutive (including punctuation). You "
 "cannot merge them."
-msgstr ""
+msgstr "所选的字不是连着的（包括标点符号）。你不能合并它们。"
 
 #. Also a message in edit mode.
 msgid ""
 "You need at least two character groups selected before you can merge them "
 "into a word!"
-msgstr ""
+msgstr "你需要选者至少两个字才能合并成一个词!"
 
 #. Also a message in edit mode.
 msgid "This word only has one character. It cannot be split!"
-msgstr ""
+msgstr "这个词只有一个字，不能分开！"
 
 #. Also a message in edit mode.
 msgid "You cannot split more than one word at a time!"
-msgstr ""
+msgstr "你一次只能分解一个词！"
 
 #. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
-msgstr ""
+msgstr "正在翻译"
 
 #. This on the main page when a story is being actively translated.
 msgid "Stories in translation"
-msgstr ""
+msgstr "故事正在翻译"
 
 #. This appears after a story has just finished being translated to indicate that you can start using it.
 msgid "Done! Please reload."
-msgstr ""
+msgstr "完成！请重载。"
 
 #. This appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Working"
-msgstr ""
+msgstr "正在工作中"
 
 msgid "Start learning!"
-msgstr ""
+msgstr "开始学习！"
 
 #. This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
 msgid "Found Recommendations"
-msgstr ""
+msgstr "MICA建议"
+
+msgid "Redirecting"
+msgstr "重定向"

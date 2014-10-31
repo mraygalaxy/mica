@@ -3587,6 +3587,7 @@ class MICA(object):
 
                     if req.session.value["username"] != username :
                         if not req.session.value["isadmin"] :
+                            # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
                             return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
                         role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
 
