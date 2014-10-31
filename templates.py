@@ -124,7 +124,9 @@ class StaticNavElement(Element) :
                       # Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
                       help = _("Help"),
                       # The software's privacy policy, such as what user information we keep and do not keep.
-                      privacy = _("Privacy"))
+                      privacy = _("Privacy"),
+                      switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
+                      )
         return tag
 
 class EditHistoryElement(Element) :
