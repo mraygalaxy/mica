@@ -1236,3 +1236,10 @@ msgstr ""
 
 msgid "Redirecting"
 msgstr ""
+
+#. These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
+msgid "Stats Hidden"
+msgstr ""
+
+msgid "Stats Shown"
+msgstr ""

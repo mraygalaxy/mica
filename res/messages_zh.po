@@ -1162,3 +1162,10 @@ msgstr "MICA建议"
 
 msgid "Redirecting"
 msgstr "重定向"
+
+#. These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
+msgid "Stats Hidden"
+msgstr "统计数据隐藏的"
+
+msgid "Stats Shown"
+msgstr "统计出现了"
