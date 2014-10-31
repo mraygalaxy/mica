@@ -4012,10 +4012,7 @@ def get_options() :
 slaves = {}
 params = None
 
-def go(p) :
-    global params
-    params = p
-
+def pre_init_localization() :
     for l in lang :
        locale = l.split("-")[0]
        try:
@@ -4026,6 +4023,13 @@ def go(p) :
            else :
                mdebug("Language translation " + l + " failed. Bailing...")
                exit(1)
+
+def go(p) :
+    global params
+    params = p
+
+    if not mobile :
+        pre_init_localization()
 
     mdebug("Verifying options.")
 
@@ -4249,7 +4253,7 @@ def second_splash(language) :
     encoded2 = base64_b64encode(contents)
     fh.close()
     output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    output += "&#160;&#160;" + texts[language].ugettext(_("Please wait...")) + "</p>"
+    #output += texts[language].ugettext(_("Please wait...")) + "</p>"
     output += """ 
 </div>    
 <div class="inner3">
