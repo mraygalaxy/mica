@@ -119,6 +119,11 @@ We intend to add multiple languages soon:
 
 <h2>花园里有三只蝴蝶，一只是红色的，一只是黄色的，一只是白色的。</h2>
 
+Here is a similar example if you are learning English and, for example,
+are a native Chinese speaker:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engupload.png"/>
+
 Since we assume the user is starting from scratch, MICA has never seen
 these characters before and will create a new story in your database
 containing your new story.
@@ -186,6 +191,10 @@ speaker to "review" their newly uploaded story in this mode:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/viewmode.png"/>
 
+Here is a similar example in Review mode of an English story from before:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engreview.png"/>
+
 The way review mode works is that non-blue words may or may not have more
 than one definition, sound, or tone. In Chinese, these kinds of words are
 also are called <b>"Polyphomes"</b>. These are words that have been identified 
@@ -224,16 +233,14 @@ percentages to figure out which polyphomes have the highest chance of
 being correct. The new story does not have any black words yet because 
 we have not performed any corrections - to come later.
 
-<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition1.png"/>
-
-In the above example, we have clicked on the the words and pinyin 
+In the below example, we have clicked on the the words and pinyin 
 for 'one': "yī" (一). This first results in exposing a small blue 'play
 button. By clicking this button, the learner is challenged to first remember
 what the meaning is before revealing it. This results in expanding all occurrences
 of the character and its translation, resulting in showing the translation 
 for that word.
 
-<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition1.png"/>
 
 Red, green, and black words, however need to be reviewed for accuracy, 
 by clicking on the word, the different possibilities for that character 
@@ -241,7 +248,12 @@ will appear. Let's first start with a "green" word:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple1.png"/>
 
-In the above example, we have clicked on the sound 'lǐ' (里), which
+If this were an english story, we could click on the word "Red",
+revealing both a noun and an adjective:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition2.png"/>
+
+In the above Chinese example, we have clicked on the sound 'lǐ' (里), which
 usually means 'inside' of something. As you can see in the pop-up,
 the 'Default' selected polyphome is incorrect - it translates to
 500 meters (or half a kilometer. Half of a unit of measure is very
@@ -259,6 +271,12 @@ the correct word is 'inside':
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple.png"/>
 
+Similarly, for English, the word "Red" is not a noun in this case,
+but instead is an adjective. So by choosing the right meaning, we
+have the result:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engcorrect.png"/>
+
 Also pay attention to the "Percentages" on the left-hand side
 of the correct choice: This indicates that MICA
 has recorded how 'popular' this selection is and will re-use this
@@ -269,6 +287,10 @@ Upon refreshing the page, this character is now listed as
 'black', indicating that it now has a history in MICA:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple2.png"/>
+
+Similary, for English, we would have:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple4.png"/>
 
 It also includes a "(1)" next to it as well as being listed on
 the right-hand side of the page indicating that this particular
@@ -429,6 +451,10 @@ You will now see a complete view of the reviewed story.
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading1.png"/>
 
+In English, the example might look like:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading3.png"/>
+
 In this mode, you will see a slightly different structure:
 All the original words and corrected meanings are black,
 but their translations are not automatically expanded by default.
@@ -437,7 +463,6 @@ context before indicating to MICA which ones you have memorized.
 
 By click the 'reveal' button icon at the top: 
 
-
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reveal.png"/>
 
 We can automatically reveal all the meanings. (Or you can just click the individual
@@ -445,6 +470,10 @@ blue icons to reveal individual means, which is more common while
 using the software over time.)
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading.png"/>
+
+And again, for English:
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading2.png"/>
 
 What does this mean? If a word is automatically expanded upon
 first loading the page, it means that you have not yet memorized
@@ -458,6 +487,10 @@ We have clicked on the translations of the words "yī" (一), and 'zhī' (只):
 
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing.png"/>
 
+In English, we can reveal and click on the word "Violet":
+
+<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing2.png"/>
+
 MICA will process the request and then hide the translations
 from you, indicating that you have memorized those words. In both cases,
 MICA will memorize and record memorizations for all occurrences of those words. 
@@ -465,6 +498,10 @@ MICA will memorize and record memorizations for all occurrences of those words.
 The resulting page will look like this with the memorized words hidden:
 
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized.png"/>
+
+And again In English: 
+
+<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized2.png"/>
 
 These words will stay hidden by default the next time you come
 back to read this story in the future.
