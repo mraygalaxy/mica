@@ -128,6 +128,12 @@ processor_map = {
         u"py": False,
 }
 
+tutorials = {
+        u"zh" : "info_template.html", 
+        u"en" : "info_template.html", 
+        u"py": "info_template.html",
+}
+
 def minfo(msg) :
    if micalogger :
        micalogger.info(msg)

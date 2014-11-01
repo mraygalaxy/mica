@@ -620,8 +620,8 @@ msgstr ""
 "Zài IOS hé Android shèbèi shàng MICA tóngyàng kěyǐ zài méiyǒu wǎngluò de "
 "qíngkuàng xià yùnxíng, érqiě bǎozhèng tóngbù."
 
-msgid "Read about how it works on github.com"
-msgstr "Qǐng zài github.com shàng yuèdú zhège shì zěnme gōngzuò de."
+msgid "Read about how it works"
+msgstr "Qǐng yuèdú zhège shì zěnme gōngzuò de."
 
 msgid ""
 "Running the website on a cloud server is not free, so account signups are "
