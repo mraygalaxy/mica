@@ -284,11 +284,15 @@ class MICA(object):
 
     def install_local_language(self, req, language = False) :
         if language :
-            catalogs.language = language
+            l = language
         elif "language" in req.session.value :
-            catalogs.language = req.session.value["language"]
+            l = req.session.value["language"]
         else :
-            catalogs.language = get_global_language()
+            l = get_global_language()
+
+        catalogs.language = l
+
+        return l
         
     def __init__(self, db_adapter):
         self.client = Translator(params["trans_id"], params["trans_secret"])
@@ -2392,6 +2396,18 @@ class MICA(object):
 
                 return self.bootstrap(req, output, pretend_disconnected = True)
 
+            if req.action == "help" :
+                l = self.install_local_language(req)
+                output = ""
+
+                helpfh = codecs_open(cwd + "serve/" + tutorials[l], "r", "utf-8")
+                output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
+                helpfh.close()
+                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
+                req.skip_show = True
+                return self.bootstrap(req, output)
+
+
             if req.action == "switchlang" and req.http.params.get("lang") : 
                 req.session.value["language"] = req.http.params.get("lang")
                 req.session.save()
@@ -3776,15 +3792,6 @@ class MICA(object):
                 req.skip_show = True
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 #return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
-
-            elif req.action == "help" :
-                self.install_local_language(req)
-                output = ""
-                helpfh = codecs_open(cwd + "serve/info_template.html", "r", "utf-8")
-                output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
-                helpfh.close()
-                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
-                return self.bootstrap(req, output)
 
             else :
                 if from_third_party and "output" in from_third_party :

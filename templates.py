@@ -259,7 +259,7 @@ class MobileFrontElement(Element) :
     def front(self, request, tag) :
         tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
                       offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
-                      howitworks = _("Read about how it works on github.com"),
+                      howitworks = _("Read about how it works"),
                       donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
                       # Beginning of a sentence
                       mailinglist = _("Join the mailing list"))

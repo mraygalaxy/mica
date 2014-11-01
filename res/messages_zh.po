@@ -598,8 +598,8 @@ msgid ""
 "with both iOS and Android"
 msgstr "在IOS和Android设备上MICA同样可以在没有网络的情况下运行，而且保证同步。"
 
-msgid "Read about how it works on github.com"
-msgstr "请在github.com上阅读这个是怎么工作的。"
+msgid "Read about how it works"
+msgstr "请阅读这个是怎么工作的。"
 
 msgid ""
 "Running the website on a cloud server is not free, so account signups are "
