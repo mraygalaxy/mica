@@ -1013,7 +1013,7 @@ msgid ""
 "account using any device that you like."
 msgstr ""
 "用普通账户登陆然后开始让你的所有的设备同步网络账户，你必须在http://mica."
-"hisnespot.com申请一个免费的在线网络账户。当你创建了在线账户，你可以用你的在线"
+"hinespot.com申请一个免费的在线网络账户。当你创建了在线账户，你可以用你的在线"
 "账户邮箱和密码使用任何你喜欢的设备。"
 
 #. The name of the software

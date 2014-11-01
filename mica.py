@@ -1809,10 +1809,10 @@ class MICA(object):
                 if not mobile :
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
-                    untrans.append("\n<a title='" + _("Delete") + "' style='font-size: x-small' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;")
+                    untrans.append("\n<a title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;")
 
                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
-                    untrans.append("\n<a style='font-size: x-small' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
+                    untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans.append("<br/>" + err.replace("\n", "<br/>"))
