@@ -1,4 +1,4 @@
-# English => Pinyin Localizations for MICA
+# English => Pinyin Simplified Localizations for MICA
 msgid ""
 msgstr ""
 "Project-Id-Version: beta\n"
@@ -7,113 +7,14 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Michael R. Hines <michael@hinespot.com>\n"
 "Language-Team: Ge Chen <chengehines@gmail.com>\n"
-"Language: Pinyin\n"
+"Language: Chinese Simplified\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Chinese Simplified"
-msgstr "Zhōngwén"
-
-msgid "English"
-msgstr "Yīngyǔ"
-
-#. Pinyin means the romanization of a character-based word, such as Chinese
-msgid "Pinyin"
-msgstr "Pīnyīn"
-
-msgid "pīnyīn"
-msgstr "pīnyīn"
-
-#. The user has completed logging out / signing out already - then this message appears.
-msgid "Disconnected from MICA"
-msgstr ""
-
-#. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
-msgid "Exception"
-msgstr ""
-
-msgid "Please report the exception above to the author. Thank you."
-msgstr ""
-
-#. 'original' refers to the original text of the story that the user provided for language learning.
-msgid "Download Original"
-msgstr ""
-
-#. The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.
-msgid "Download Romanization"
-msgstr ""
-
-msgid ""
-"Demo Account is readonly. You must install the mobile application for "
-"interactive use of the demo account."
-msgstr ""
-
-msgid "This character"
-msgstr "Zhègè hànzì"
-
-msgid "is polyphonic: (has more than one pronunciation"
-msgstr ""
-
-msgid "Definition"
-msgstr ""
-
-msgid "Default?"
-msgstr ""
-
-#. This appears in a list of items and indicates which is the default item
-msgid "Default"
-msgstr ""
-
-msgid "Xuǎn"
-msgstr ""
-
-#. This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
-msgid "Breakdown"
-msgstr ""
-
-#. Online indicates a count of how many words were translated over the internet
-msgid "Online"
-msgstr ""
-
-#. Offline indicates a count of how many words were translated using an offline dictionary
-msgid "Offline"
-msgstr ""
-
-msgid "Untranslated story! Ahhhh!"
-msgstr ""
-
-#. The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
-msgid "The database for this story"
-msgstr ""
-
-msgid "needs to be upgraded to version 2"
-msgstr ""
-
-msgid ""
-"Unfortunately, this can only be performed with the online version. Please "
-"login to your account online to perform the upgrade. The changes will then "
-"be replicated to all your devices. Thank you."
-msgstr ""
-
-msgid "Start Upgrade"
-msgstr ""
-
-#. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
-msgid "Delete"
-msgstr ""
-
-#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
-msgid "Translate"
-msgstr "Fānyì kāishǐ"
-
-#. This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it.
-msgid "Forget"
-msgstr "Yào wàng le"
-
 #. 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
 msgid "Review"
-msgstr "Fùxí"
+msgstr "Jiǎnchá"
 
 #. 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
 msgid "Edit"
@@ -123,409 +24,95 @@ msgstr "Biānjí"
 msgid "Read"
 msgstr "Yuèdú"
 
-#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section.
-msgid "Not finished"
-msgstr "Méi wánchéng"
-
-#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section.
-msgid "Review not complete"
-msgstr "Méi wánchéng fùxí"
-
-#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section.
-msgid "Finished reading"
-msgstr ""
-
-#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section.
-msgid "Review Complete"
-msgstr "Fùxí hǎo le"
-
-msgid "Upload Failed! Story already exists"
-msgstr ""
-
-msgid "Upload Complete! Story ready for translation"
-msgstr ""
-
-msgid ""
-"This account is not fully synchronized. You can follow the progress at the "
-"top of the screen until the 'download' arrow reaches 100."
-msgstr ""
-
-msgid "Missing key on server. Please report this to the author. Thank you."
-msgstr ""
-
-msgid ""
-"To login for the first time and begin synchronization with the website, you "
-"must activate internet access."
-msgstr ""
-
-msgid "Invalid credentials. Please try again"
-msgstr ""
-
-msgid ""
-"We're sorry. The MICA Reader database on this device already belongs to the "
-"user"
-msgstr ""
-
-msgid "and is configured to stay in sync replication with the server"
-msgstr ""
-
-#. next part of the same message
-msgid ""
-"If you want to change users, you will need to clear this application's data "
-"or reinstall it and re-synchronize the app with"
-msgstr ""
-
-#. end of the message
-msgid ""
-"a new account. This requirement is because MICA databases can become large "
-"over time, so we want you to be aware of that. Thanks."
-msgstr ""
-
-msgid ""
-"Although you have authenticated successfully, we could not start replication "
-"successfully. Please try again."
-msgstr ""
-
-#. The user has deleted a story from the system.
-msgid "Deleted"
-msgstr ""
-
-#. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
-msgid "Invalid story uuid"
-msgstr ""
-
-#. Finished reviewing a story in review mode.
-msgid "Finished"
-msgstr "Hǎo le"
-
-msgid "Reviewed"
-msgstr "Fùxí le"
-
-#. 'Forgot' a story using the button in the side-panel.
-msgid "Forgotten"
-msgstr "Wàng le"
-
-#. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
-msgid "Mode changed"
-msgstr ""
-
-#. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
-msgid "List statistics mode changed"
-msgstr ""
-
-msgid "No translation available."
-msgstr "Méiyǒu fānyì"
-
-msgid "Selected translation"
-msgstr ""
-
-msgid "Piecemeal translation"
-msgstr ""
-
-msgid "No internet access. Offline only."
-msgstr ""
-
-msgid "Online translation"
-msgstr ""
-
-msgid "Offline translation"
-msgstr ""
-
-msgid "None found."
-msgstr "Méiyǒu zhǎodào."
-
-msgid ""
-"Please wait until this account is fully synchronized for an offline "
-"translation."
-msgstr ""
-
-msgid "Story already translated. To re-translate, please select 'Forget'."
-msgstr "Gùshì yǐjīng fānyì le. rúguǒ nǐ yào yòu fānyì, qǐng àn 'Yào wàng le'."
-
-msgid "Translation complete!"
-msgstr "Fānyì hǎo le!"
-
-msgid "Failed to translate story"
-msgstr ""
-
-#. statistics in review mode are disabled
-msgid "Review History List Disabled"
-msgstr ""
-
-msgid "Memorized!"
-msgstr "Jì de le!"
-
-msgid "Story upgrades not allowed on mobile devices."
-msgstr ""
-
-msgid "Invalid upgrade parameters 1"
-msgstr ""
-
-msgid "Upgrade complete"
-msgstr ""
-
-msgid "Invalid request."
-msgstr ""
-
-#. 'format' referring to the database format the we are upgrading to
-msgid "No such story format"
-msgstr ""
-
-msgid "Story upgrade status"
-msgstr ""
-
-#. This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
-msgid "Page"
-msgstr "Wǎngyè"
-
-msgid "Last upgrade Exception"
-msgstr ""
-
-msgid "Story upgrade started. You may refresh to follow its status."
-msgstr ""
-
-#. This occurs in Edit mode when a merge/split request failed.
-msgid "Invalid Operation"
-msgstr ""
-
-#. In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
-msgid "Memorized all stories"
-msgstr ""
-
-#. Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
-msgid "Unique memorized page"
-msgstr ""
-
-#. A count of all the unique words on this page, not just the ones the user has memorized.
-msgid "Unique words this page"
-msgstr ""
-
-msgid "No words memorized. Get to work!"
-msgstr "Méiyǒu dāncí jì de le. Gōngzuò!"
-
-#. statistics in reading mode are disabled
-msgid "Memorization History List Disabled"
-msgstr ""
-
-msgid "Edit mode is only supported for learning character-based languages"
-msgstr ""
-
-#. Beginning of a sentence: Original source image of the current page from which the text comes
-msgid "Image"
-msgstr "Túpiàn"
-
-#. end of thes sentence, indicating that a particular image number doesn't exist.
-msgid "not available on this page"
-msgstr "zài zhègè yè lǐ méiyǒu"
-
-#. Beginning of a message.
-msgid ""
-"No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
-"at the top."
-msgstr ""
-
-#. end of a message
-msgid "or create one by clicking on Account icon at the top"
-msgstr ""
-
-#. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
-msgid "Story is a"
-msgstr ""
-
-#. Tho original story format as it was imported, that is
-msgid "Viewing original not yet implemented"
-msgstr ""
-
-msgid "Demo account is read-only"
-msgstr ""
-
-#. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
-msgid "Database compaction complete for your account"
-msgstr ""
-
-#. The next handful of mundane phrases are associated with the creation
-#. and management of user accounts in the software program and the relevant
-#. errors that can occur while performing operations on a user's account.
-msgid "Please change your password on the website, first"
-msgstr "Qǐng gēnggǎi nín de mìmǎ zài wǎngzhàn shàng."
-
-msgid "Password must be at least 8 characters! Try again"
-msgstr "nǐ de mìmǎ yīnggāi yǒu bā gè hànzì! Qǐng yòu xuǎn"
-
-msgid "Passwords don't match! Try again"
-msgstr "nàxiē mìmǎ bù yíyàng! Qǐng yòu xuǎn"
-
-msgid "Old passwords don't match! Try again"
-msgstr "Lǎo de mìmǎ bù yíyàng! Qǐng yòu xuǎn"
-
-msgid "Password change failed"
-msgstr ""
-
-msgid "Success!"
-msgstr "Hǎo le!"
-
-msgid "User"
-msgstr ""
-
-msgid "password changed"
-msgstr "mìmǎ gēnggǎi le"
-
-#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-msgid "Server not configured correctly. Can't make accounts"
-msgstr ""
-
-msgid "Invalid account name! Try again"
-msgstr ""
-
-msgid "Non-admin users can't create admin accounts. What are you doing?!"
-msgstr ""
-
-msgid "Account already exists! Try again"
-msgstr ""
-
-msgid "Success! New user was created"
-msgstr ""
-
-msgid "Success! Language changed"
-msgstr "Hǎo le! yǔyán gēnggǎi le"
-
-#. This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
-msgid "Number of characters can't be greater than 1000 or less than 5"
-msgstr ""
-
-#. Same as before, but specifically for a mobile device
-msgid "Success! Mobile Characters-per-line in a story set to:"
-msgstr ""
-
-#. Same as before, but specifically for a website
-msgid "Success! Web Characters-per-line in a story set to:"
-msgstr ""
-
-#. The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
-msgid ""
-"App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
-msgstr ""
-
-#. Same as before, but specifically for an application running on a mobile device
-msgid "Success! App zoom level set to:"
-msgstr ""
-
-#. Same as before, but specifically for an application running on the website
-msgid ""
-"Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
-msgstr ""
-
-#. Same as before, but specifically for an application running on the website
-msgid "Success! Web zoom level set to:"
-msgstr ""
-
-msgid "Change Password?"
-msgstr "Gēnggǎi mìmǎ?"
-
-msgid ""
-"Please change your password on the website. Will support mobile in a future "
-"version."
-msgstr ""
-
-msgid "Need your client ID"
-msgstr "Xūyào nǐ de MS client ID"
-
-msgid "Need your client secret"
-msgstr "Xūyào nǐ de MS client secret"
-
-msgid "Client ID"
-msgstr "MS Client ID"
-
-msgid "Client Secret"
-msgstr "MS Client Secret"
-
-msgid "Change Credentials"
-msgstr ""
-
-msgid "Compact databases"
-msgstr ""
-
-#. the zoom level or characters-per-line limit
-msgid "Change Viewing configuration"
-msgstr ""
-
-msgid "Characters per line"
-msgstr ""
-
-msgid "Change"
-msgstr "Gēnggǎi"
-
-msgid "Default zoom level"
-msgstr ""
-
-msgid "Accounts"
+#. Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account.
+msgid "Account"
 msgstr "Zhànghù"
-
-msgid "Server is misconfigured. Cannot list accounts."
-msgstr ""
-
-msgid "Language"
-msgstr "Yǔyán"
-
-msgid "Change Language"
-msgstr "gǎibiàn yǔyán"
-
-#. This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
-msgid "Read, Review, or Edit, my friend?"
-msgstr "Wǒ de péngyǒu: Yuèdú, fùxí, háishì biānjí?"
-
-msgid "Please report the above exception to the author. Thank you"
-msgstr ""
-
-msgid "Error: Something bad happened"
-msgstr ""
-
-msgid "Please wait..."
-msgstr "qǐng děng xī xià"
-
-msgid "Not Reviewed"
-msgstr "Méi fùxí"
-
-msgid "Reading"
-msgstr "Yuèdú xiànzài"
-
-msgid "Méi fānyì"
-msgstr ""
-
-msgid "Stories"
-msgstr "Gùshì"
-
-msgid "Old Password"
-msgstr "Lǎo de mì mǎ"
-
-msgid "New Password"
-msgstr "Xīn de mì mǎ"
-
-msgid "Confirm Password"
-msgstr "Què rèn mì mǎ"
-
-msgid "Gēng gǎi mì mǎ"
-msgstr ""
 
 #. Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
 msgid "Preferences"
-msgstr ""
+msgstr "Shèzhì"
+
+#. Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
+msgid "Upload New Story"
+msgstr "Shàngchuán xīn gùshì"
+
+#. Make a new account, a button inside the 'Account' section of the top-most navigation panel
+msgid "New Account"
+msgstr "Xīn zhànghù"
 
 #. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
 msgid "Disconnect"
-msgstr ""
+msgstr "Tuì chū"
 
 #. About is a traditional description of the software package itself that you might find in other help menus of other programs.
 msgid "About"
-msgstr ""
+msgstr "Guān yú"
 
 #. Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
 msgid "Help"
-msgstr "Bāngmāng"
+msgstr "Bāng zhù"
 
 #. The software's privacy policy, such as what user information we keep and do not keep.
 msgid "Privacy"
-msgstr ""
+msgstr "Yǐnsī zhèngcè"
+
+msgid "Chinese Simplified"
+msgstr "Jiǎntǐ zhōngwén"
+
+msgid "English"
+msgstr "Yīng yǔ"
+
+#. 'Go' or 'Skip' ahead to a specific page in a book/story.
+msgid "Go"
+msgstr "Dào"
+
+#. 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
+msgid "Legend"
+msgstr "Túlì"
+
+#. This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
+msgid "Correct for tone and meaning"
+msgstr "Dúyīn hé yìsì zhèngquè"
+
+#. This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
+msgid "(No review necessary)"
+msgstr "（bù xūyào jiǎnchá）"
+
+#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed.
+msgid "Possibly wrong meaning"
+msgstr "Yìyì kěnéng cuò de"
+
+#. This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate.
+msgid "(but tone is correct)"
+msgstr "（dànshì yīndiào duì de）"
+
+#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
+msgid "Possibly wrong tone"
+msgstr "Yīndiào kěnéng cuò de"
+
+#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
+msgid "(as well as meaning)"
+msgstr "（yìsì yě cuò de）"
+
+#. This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
+msgid "Definitely wrong previously"
+msgstr "Yǐqián cuò guò"
+
+#. This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
+msgid "Change History"
+msgstr "Duōyīn xiūgǎi lìshǐ"
+
+#. This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
+msgid "Breakdown"
+msgstr "Fēnjiě"
+
+#. Online indicates a count of how many words were translated over the internet
+msgid "Online"
+msgstr "Xiànshàng fānyì"
+
+#. Offline indicates a count of how many words were translated using an offline dictionary
+msgid "Offline"
+msgstr "Xiànxià fānyì"
 
 #. SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "SPLIT"
@@ -537,27 +124,436 @@ msgstr "Hébìng"
 
 #. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "No edit history available."
-msgstr ""
-
-msgid "Edit list Disabled."
-msgstr ""
-
-msgid "Edit Legend"
-msgstr ""
+msgstr "bù cúnzài xiūgǎi lìshǐ。"
 
 msgid "These characters were previously merged into a word"
-msgstr ""
+msgstr "zhè xiē zì yǐqián hébìng chéng yīgè cí"
 
 msgid "This word was previously split into characters"
-msgstr ""
+msgstr "Zhègè cí yǐqián fēnjiě chéng dānge zì"
 
 #. These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
 msgid "Try Recommendations"
-msgstr ""
+msgstr "Shìshì tuījiàn"
 
 #. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
-msgstr "Yòu fānyì wǎngyè"
+msgstr "Chóngxīn fānyì běn yè"
+
+#. The user has completed logging out / signing out already - then this message appears.
+msgid "Disconnected from MICA"
+msgstr "tuīchū wánchéng"
+
+#. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
+msgid "Exception"
+msgstr "Bàocuò"
+
+msgid "Please report the exception above to the author. Thank you."
+msgstr "Qǐng tōngzhī chéngxùyuán bào cuò xìnxī， xiè xiè。"
+
+msgid "Please report the above exception to the author. Thank you"
+msgstr "Qǐng tōngzhī chéngxùyuán bào cuò xìnxī， xiè xiè。"
+
+msgid "Error: Something bad happened"
+msgstr "Bāocuò！"
+
+#. 'original' refers to the original text of the story that the user provided for language learning.
+msgid "Download Original"
+msgstr "Xiàzǎi yuánwén"
+
+#. The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.
+msgid "Download Romanization"
+msgstr "Xiàzǎi pīnyīn"
+
+msgid ""
+"Demo Account is readonly. You must install the mobile application for "
+"interactive use of the demo account."
+msgstr ""
+"Yǎnshì zhànghù zhǐnéng yuèdú。nǐ bìxū xiàzǎi ānzhuāng ‘app’ cáinéng hùdòng "
+"shǐyòng yǎnshì zhànghù。"
+
+msgid "Demo account is read-only"
+msgstr "Yǎnshì zhànghù zhǐnéng yuèdú"
+
+msgid "This character"
+msgstr "Zhège zì"
+
+msgid "is polyphonic: (has more than one pronunciation"
+msgstr "shì duōyīn zì：（yǒu duō ge fāyīn）"
+
+#. Pinyin means the romanization of a character-based word, such as Chinese
+msgid "Pinyin"
+msgstr "Pīnyīn"
+
+msgid "pīnyīn"
+msgstr "Pīnyīn"
+
+msgid "Definition"
+msgstr "Fān yì"
+
+#. This appears in a list of items and indicates which is the default item
+msgid "Default"
+msgstr "Mò rèn"
+
+#. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
+msgid "Select"
+msgstr "Xuǎn zé"
+
+#. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
+msgid "Delete"
+msgstr "Shān chú"
+
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
+msgid "Translate"
+msgstr "Fān yì"
+
+#. This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it.
+msgid "Forget"
+msgstr "Fù yuán"
+
+#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section.
+msgid "Not finished"
+msgstr "Méi dú wán"
+
+#. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section.
+msgid "Review not complete"
+msgstr "Jiǎnchá wèi wángchéng"
+
+msgid "Not Reviewed"
+msgstr "Wèi jiǎnchá"
+
+#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
+msgid "Untranslated"
+msgstr "Wèi fānyì"
+
+msgid "Untranslated story!"
+msgstr "Wèi fānyì de gùshì！"
+
+msgid "Stories"
+msgstr "Gùshì"
+
+#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section.
+msgid "Finished reading"
+msgstr "Yǐdú wán"
+
+msgid "Reading"
+msgstr "Yuèdú"
+
+#. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section.
+msgid "Review Complete"
+msgstr "Jiǎnchá wángchéng"
+
+msgid "Upload Failed! Story already exists"
+msgstr "Shàngchuán shībài！Gùshì yǐ cúnzài"
+
+msgid "Upload Complete! Story ready for translation"
+msgstr "Shàngchuán wánchéng！zhǔnbèi fānyì"
+
+msgid ""
+"This account is not fully synchronized. You can follow the progress at the "
+"top of the screen until the 'download' arrow reaches 100."
+msgstr ""
+"Tóngbù méiyǒu wánchéng。Zài jìndù tiáo dàodá 100 zhīqián qǐng guānzhù píngmù "
+"shàng fāng。"
+
+#. Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
+msgid "Synchronization error. Please report this to the author. Thank you."
+msgstr "Tóngbù méiyǒu wánchéng。Qǐng tōngzhī chéngxùyuán，xièxiè。"
+
+msgid ""
+"To login for the first time and begin synchronization with the website, you "
+"must activate internet access."
+msgstr "Liànjiē hùliánwǎng yǐ yǔ wǎngzhàn tóngbù"
+
+msgid "Invalid credentials. Please try again"
+msgstr "Shūrù xìnxī cuòwù. Qǐng zài shì yīcì"
+
+msgid ""
+"We're sorry. The MICA Reader database on this device already belongs to the "
+"user"
+msgstr "Bàoqiàn, zhège shèbèi shàng de MICA shùjùkù shǔyú yònghù"
+
+#. next part of the same message
+msgid "and is configured to stay in synchronization with the server"
+msgstr "。Lìng yīgè zhànghù yǐjīng zài zhège shèbèi shàng shǐyòng MICA la."
+
+#. next part of the same message
+msgid ""
+"If you want to change users, you will need to clear this application's data "
+"or reinstall it and re-synchronize the app with"
+msgstr ""
+"Yīnwèi MICA shùjùkù zài shǐyòng guòchéng zhōng huì biàn dà, suǒyǐ MICA bù "
+"zhīchí tóngyī shèbèi shàng duō yònghù shǐyòng."
+
+#. end of the message
+msgid ""
+"a new account. This requirement is because MICA databases can become large "
+"over time, so we want you to be aware of that. Thanks."
+msgstr ""
+"Rúguǒ xūyào shǐyòng xīn yònghù, qǐng qīngkōng MICA shùjùkù huòzhě chóngxīn "
+"ānzhuāng."
+
+msgid ""
+"Although you have authenticated successfully, we could not start "
+"synchronization successfully. Please try again."
+msgstr "Shūrù xìnxī zhèngquè, dànshì tóngbù bù chénggōng, qǐng chóng shì yīcì."
+
+#. The user has deleted a story from the system.
+msgid "Deleted"
+msgstr "Yǐ shānchú"
+
+#. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
+msgid "Invalid story uuid"
+msgstr "Wúxiào de gùshì de UUID"
+
+#. Finished reviewing a story in review mode.
+msgid "Finished"
+msgstr "Yuèdú wánchéng"
+
+msgid "Reviewed"
+msgstr "Jiǎnchá wánchéng"
+
+#. 'Forgot' a story using the button in the side-panel.
+msgid "Forgotten"
+msgstr "Wàngjì"
+
+#. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
+msgid "Mode changed"
+msgstr "Móshì zhuǎnhuàn gǎibiàn"
+
+msgid "show text only"
+msgstr "Jǐn xiǎnshì wénzì"
+
+msgid "side-by-side text and image"
+msgstr "Bìngliè wénzì hé túpiàn"
+
+msgid "show image only"
+msgstr "Zhǐ xiǎnshì túpiàn"
+
+#. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
+msgid "List statistics mode changed"
+msgstr "Tǒngjì liè dān móshì gǎibiàn"
+
+#. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
+msgid "Edit history Disabled."
+msgstr "Yǐncáng xiūgǎi qīngdān"
+
+#. statistics in review mode are disabled
+msgid "Review History List Disabled"
+msgstr "Yǐncáng jiǎnchá lìshǐ qīngdān"
+
+#. statistics in reading mode are disabled
+msgid "Memorization History List Disabled"
+msgstr "Yǐncáng jìyì lìshǐ qīngdān"
+
+msgid "Story already translated. To re-translate, please select 'Forget'."
+msgstr "Gùshì yǐ fānyì wánchéng. Chóngxīn fānyì, qǐng xuǎnzé ‘fùyuán’."
+
+msgid "Translation complete!"
+msgstr "Fānyì wánchéng!"
+
+msgid "Failed to translate story"
+msgstr "Fānyì shībài"
+
+msgid "Memorized!"
+msgstr "Jìdé la!"
+
+#. This occurs in Edit mode when a merge/split request failed.
+msgid "Invalid Operation"
+msgstr "Cāozuò wúxiào"
+
+#. In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
+msgid "Memorized all stories"
+msgstr "Suǒyǒu jìdé de dāncí"
+
+#. Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
+msgid "Unique memorized page"
+msgstr "Běn yè jìdé de dāncí"
+
+#. A count of all the unique words on this page, not just the ones the user has memorized.
+msgid "Unique words this page"
+msgstr "Běn yè suǒyǒu dāncí"
+
+msgid "No words memorized. Get to work!"
+msgstr "Bù jìdé yīgè. Jiāyóu!"
+
+msgid "Edit mode is only supported for learning character-based languages"
+msgstr "Biānjí móshì jǐn zhīchí túxíng wénzì xuéxí"
+
+#. Beginning of a sentence: Original source image of the current page from which the text comes
+msgid "Image"
+msgstr "Túpiàn"
+
+#. end of thes sentence, indicating that a particular image number doesn't exist.
+msgid "not available on this page"
+msgstr "Běn yè bù cúnzài"
+
+#. Beginning of a message.
+msgid ""
+"No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
+"at the top."
+msgstr ""
+"Méiyǒu jiāzài gùshì. Qǐng diǎnjī zài cè biān shàngfāng de'M'xuǎnzé gùshì "
+"yuèdú."
+
+#. end of a message
+msgid "or create one by clicking on Account icon at the top"
+msgstr "Huòzhě diǎnjī shàngfāng zhànghù ànjiàn jiāzài xīn gùshì"
+
+msgid ""
+"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
+"must first create them on the website. (New stories require a significant "
+"amount of computer resources to prepare. Thus, they can only be synchronized "
+"to the device for regular use."
+msgstr ""
+"Xīn gùshì jǐn zhīchí zài wǎngzhàn jiāzài.(Yīnwèi jiāzài xīn gùshì xūyào "
+"qiángdà de jìsuàn zhīchí, suǒyǐ zài cǐ shèbèi zhǐ néngtóngbù。）"
+
+#. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
+msgid "Story is a"
+msgstr "Gùshì shì"
+
+#. Tho original story format as it was imported, that is
+msgid "Viewing original not yet implemented"
+msgstr "Yuánwén yuèdú zhèngzài jiànshè zhōng"
+
+#. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
+msgid "Database compaction complete for your account"
+msgstr "Shùjùkù yǐ qīngkōng"
+
+msgid "Compact databases"
+msgstr "Qīngkōng shùjùkù"
+
+#. Compacting can also be translated as "cleaning" database.
+msgid "Compacting database, Please wait"
+msgstr "Qǐng yāsuō shùjùkù"
+
+#. The next handful of mundane phrases are associated with the creation
+#. and management of user accounts in the software program and the relevant
+#. errors that can occur while performing operations on a user's account.
+msgid "Please change your password on the website, first"
+msgstr "Qǐng zài wǎngzhàn xiūgǎi nǐ de mìmǎ"
+
+msgid "Password must be at least 8 characters! Try again"
+msgstr "Mìmǎ bìxū yǒu 8 wèi! Qǐng zài shì yīcì"
+
+msgid "Passwords don't match! Try again"
+msgstr "Liǎng cì mìmǎ bùyīzhì! Qǐng zài shì yīcì"
+
+msgid "Old passwords don't match! Try again"
+msgstr "Jiù de mìmǎ bùduì! Qǐng zài shì yīcì"
+
+msgid "Password change failed"
+msgstr "Mìmǎ xiūgǎi shībài"
+
+msgid "Success!"
+msgstr "Chénggōng!"
+
+msgid "User"
+msgstr "Yònghù"
+
+msgid "password changed"
+msgstr "mìmǎ xiūgǎi chénggōng"
+
+msgid "Change"
+msgstr "Xiūgǎi"
+
+msgid "Accounts"
+msgstr "Zhànghù"
+
+msgid "Server is misconfigured. Cannot list accounts."
+msgstr "Fúwù pèizhì cuòwù, bùnéng xiǎnshì zhànghù."
+
+msgid "Language"
+msgstr "Yǔyán"
+
+msgid "Change Language"
+msgstr "Gǎibiàn yǔyán"
+
+msgid "Old Password"
+msgstr "Jiù mìmǎ"
+
+msgid "New Password"
+msgstr "Xīn mìmǎ"
+
+msgid "Confirm Password"
+msgstr "Quèrèn mìmǎ"
+
+msgid "Change Password"
+msgstr "Xiūgǎi mìmǎ"
+
+msgid ""
+"Please change your password on the website. Will support mobile in a future "
+"version."
+msgstr ""
+"Qǐng zài wǎngzhàn xiūgǎi nǐ de mìmǎ. Jiàng zài yǐhòu de bǎnběn zhōng zhīchí "
+"yídòng shè bié xiūgǎi."
+
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+msgid "Server not configured correctly. Can't make accounts"
+msgstr "Fúwùqì shèzhì bù zhèngquè. Bùnéng kāishè zhànghù"
+
+msgid "Invalid account name! Try again"
+msgstr "Wúxiào zhànghù míng! Qǐng zài shì yīcì"
+
+msgid "Non-admin users can't create admin accounts. What are you doing?!"
+msgstr "Fēi guǎnlǐ zhě zhànghù bùnéng shèlì guǎnlǐ zhànghù. Nǐ zài gànshénme?!"
+
+msgid "Account already exists! Try again"
+msgstr "Zhànghù yǐ cúnzài! Qǐng zài shì yīcì"
+
+msgid "Success! New user was created"
+msgstr "Chénggōng! Xīn yònghù chuàngjiàn chénggōng"
+
+msgid "Success! Language changed"
+msgstr "Chénggōng! Yǔyán gǎibiàn chénggōng"
+
+#. This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
+msgid "Number of characters can't be greater than 1000 or less than 5"
+msgstr "Dāncí shùliàng bùnéng chāoguò 1000 gè bìngqiě dàyú 5 gè"
+
+#. Same as before, but specifically for a mobile device
+msgid "Success! Mobile Characters-per-line in a story set to:"
+msgstr "Chénggōng! Yídòng shèbèi měi xíng cíhuì shù shèzhì wèi:"
+
+msgid "Characters per line"
+msgstr "Měi xíng cíhuì liàng"
+
+#. Same as before, but specifically for a website
+msgid "Success! Web Characters-per-line in a story set to:"
+msgstr "Chénggōng! Wǎngluò měi xíng cíhuì shù liáng shèzhì wèi: "
+
+#. The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
+msgid ""
+"App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
+msgstr "APP fàngdà fǎng xiǎo dùshu bìxū shì dàyú 0.5 Xiǎoyú 3.0 De"
+
+#. Same as before, but specifically for an application running on a mobile device
+msgid "Success! App zoom level set to:"
+msgstr "Chénggōng! APP fàngdà fǎng xiǎo dùshu shèzhì wèi:"
+
+#. the zoom level or characters-per-line limit
+msgid "Change Viewing configuration"
+msgstr "Gǎibiàn shìtú pèizhì"
+
+#. Same as before, but specifically for an application running on the website
+msgid ""
+"Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
+msgstr "Wǎngluò fàngdà fàng xiǎo dùshu bìxū dàyú 0.5 Xiǎoyú 3.0 De"
+
+#. Same as before, but specifically for an application running on the website
+msgid "Success! Web zoom level set to:"
+msgstr "Chénggōng! Wǎngluò fàngdà fàng xiǎo dùshu shèzhì wèi:"
+
+msgid "Default zoom level"
+msgstr "Mòrèn fàngdà fàng xiǎo zhí"
+
+#. This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
+msgid "Read, Review, or Edit, my friend?"
+msgstr "Yuèdú, jiǎnchá huòzhě biānjí, wǒ de péngyǒu?"
+
+msgid "Please wait..."
+msgstr "Qǐng děngdài..."
 
 msgid ""
 "To get a \"feel\" for how MICA works, you can use the DEMO account with the "
@@ -565,212 +561,207 @@ msgid ""
 "stories from the online demo account, but all changes you make will not be "
 "synchronized."
 msgstr ""
-
-msgid "Accounts are granted on-request only."
-msgstr ""
+"Wèile tǐyàn MICA shì zěnme gōngzuò de, nǐ kěyǐ shǐyòng yǎnshì zhànghào, "
+"yònghù míng’demo’ mìmǎ’micademo’. Zhègè zhànghào lǐ yǐ cóng zàixiàn yǎnshì "
+"zhànghù lǐ xiàzàile gùshì, dànshì nǐ suǒ zuò de suǒyǒu gǎibiàn bù huì tóngbù."
 
 msgid "Please Donate To Bitcoin Address"
-msgstr ""
+msgstr "Qǐng juānkuǎn dào bitcoin dìzhǐ"
 
 msgid "<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."
-msgstr ""
-
-msgid "Instead of hiring folks to <b>slave over</b> databases of translations,"
-msgstr ""
-
-msgid "Why can't we use the <b>existing content</b> that's already out there?"
-msgstr ""
-
-msgid ""
-"Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."
-msgstr ""
-
-msgid ""
-"MICA works by <b>analytics</b>: You read <b>existing</b> books or stories "
-"and it <b>tracks your brain</b>."
-msgstr ""
-
-msgid "When you read a new story, it <b>hides the words</b> you already know."
-msgstr ""
+msgstr "<b>MICA</b> shì yī zhǒng <b>xīn de</b>xuéxí yǔyán de fāngfǎ."
 
 msgid ""
 "It knows how to track <b>polymphones and tones</b> in a Character-based "
 "language."
 msgstr ""
+"Tā zhīdào zài jīyú zìfú de yǔyán lǐ zěnme gēnzōng <b>duō yīnzì hé shēngdiào "
+"</b>."
+
+msgid "Instead of hiring folks to <b>slave over</b> databases of translations,"
+msgstr "Yùqí gùyōng biérén lái fānyì,"
+
+msgid "Why can't we use the <b>existing content</b> that's already out there?"
+msgstr "Wèishéme wǒmen bùnéng shǐyòng <b>yǐ cún de nèiróng </b>?"
+
+msgid ""
+"Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."
+msgstr "Xiàng <b>shū </b>, bókè, xīn wénzhāng shènzhì <b>shèjiāo méitǐ </b>."
+
+msgid ""
+"MICA works by <b>analytics</b>: You read <b>existing</b> books or stories "
+"and it <b>tracks your brain</b>."
+msgstr ""
+"MICA shì yòng <b>fēnxī </b>lái gōngzuò: Nǐ yuè de <b>yǐ cúnzài </b>de shū "
+"huòzhě gùshì, tā kěyǐ <b>gēnzōng nǐ dedànǎo </b>."
+
+msgid "When you read a new story, it <b>hides the words</b> you already know."
+msgstr ""
+"Dāng nǐ yuèdú yīgè xīn gùshì de shíhòu, tā <b>huì yǐncáng </b>nǐ yǐjīng jìdé "
+"de dāncí."
 
 msgid ""
 "MICA is not a translator. It makes you <b>learn by reading</b> in context."
 msgstr ""
+"MICA bùshì fānyì qì. Tā shì ràng nǐ zài yǒu shàngxiàwén zhōng <b> biān yuèdú "
+"biān xuéxí </b>."
 
 msgid "Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."
 msgstr ""
+"Chōu rèn kǎ hěn sǒng.<Br/><b>shì shì MICA!</b>xuéxí yī zhǒng xīn yǔyán."
 
 msgid "Learning a language should be just like reading a book"
-msgstr ""
+msgstr "Xuéxí yǔyán yīnggāi jiù xiàng yuèdú yī běn shū yīyàng."
 
 msgid ""
 "MICA also works offline on mobile devices and automatically stays in sync "
 "with both iOS and Android"
 msgstr ""
+"Zài IOS hé Android shèbèi shàng MICA tóngyàng kěyǐ zài méiyǒu wǎngluò de "
+"qíngkuàng xià yùnxíng, érqiě bǎozhèng tóngbù."
 
 msgid "Read about how it works on github.com"
-msgstr ""
+msgstr "Qǐng zài github.com shàng yuèdú zhège shì zěnme gōngzuò de."
 
 msgid ""
 "Running the website on a cloud server is not free, so account signups are "
 "not open. If you'd like an account, please consider donating to make the "
 "server bigger."
 msgstr ""
+"Zài yún fúwù shàng yùnxíng zhège wǎngzhàn bùshì miǎnfèi de, suǒyǐ shēnqǐng "
+"zhànghù zhànshí méiyǒu kāifàng. Rúguǒ nǐ xiǎng yǒngyǒu yīgèzhànghù, qǐng "
+"kǎolǜ juānzèng shǐ fúwù biàn dà. Xièxiè."
 
 #. Beginning of a sentence
 msgid "Join the mailing list"
-msgstr ""
+msgstr "Shēnqǐng yóujiàn lièbiǎo"
 
 #. end of sentence.
 msgid "for additional help"
-msgstr ""
+msgstr "éwài bāngzhù"
 
 #. i.e. signin or login
 msgid "You need to connect, first"
-msgstr ""
+msgstr "Nǐ xūyào xiān liànjiē"
 
 msgid "Click the little 'M' at the top"
-msgstr ""
+msgstr "Diǎnjī zài shàngfāng de xiǎo ’M’"
 
 msgid "This is experimental language-learning software"
-msgstr ""
-
-msgid "Polyphome Legend"
-msgstr ""
-
-#. This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
-msgid "Correct for tone and meaning"
-msgstr "Yìsi hé shēngdiào dōu hěnhǎo"
-
-#. This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
-msgid "(No review necessary)"
-msgstr "Bù xūyào fùxí"
-
-#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed.
-msgid "Possibly wrong meaning"
-msgstr "Kěnéng cuò de yìsi"
-
-#. This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate.
-msgid "(but tone is correct)"
-msgstr "(dànshì shēngdiào shì hěnhǎo)"
-
-#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
-msgid "Possibly wrong tone"
-msgstr "Kěnēng cuò de shēngdiào"
-
-#. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
-msgid "(as well as meaning)"
-msgstr "(yě yì si)"
-
-#. This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
-msgid "Definitely wrong previously"
-msgstr "Yǐqián yídìng cuò de"
-
-msgid "Polyphome Change History"
-msgstr ""
-
-msgid "Doing online translation..."
-msgstr "Qù wǎngzhàn shàng fānyì..."
-
-#. 'Go' or 'Skip' ahead to a specific page in a book/story.
-msgid "Go"
-msgstr "Qù"
-
-#. Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account.
-msgid "Account"
-msgstr "Zhànghù"
-
-#. Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
-msgid "Upload New Story"
-msgstr ""
-
-#. Make a new account, a button inside the 'Account' section of the top-most navigation panel
-msgid "New Account"
-msgstr "Xīn de zhànghù"
+msgstr "Zhè shìgè zhèngzài shíyàn zhōng de yǔyán xuéxí ruǎnjiàn"
 
 #. Admin account, that is
 msgid "Admin"
+msgstr "Guǎnlǐ"
+
+#. The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
+msgid "The database for this story"
+msgstr "Zhège gùshì de shùjùkù"
+
+msgid "needs to be upgraded to version 2"
+msgstr "xūyào shēngjí dào bǎnběn 2"
+
+msgid ""
+"Unfortunately, this can only be performed with the online version. Please "
+"login to your account online to perform the upgrade. The changes will then "
+"be synchronized to all your devices. Thank you."
+msgstr ""
+"Duìbùqǐ, zhège zhǐ néng zàixiàn shǐyòng. Qǐng zàixiàn dēnglù nǐ de zhànghù "
+"ránhòu shēngjí. Xiūgǎi jiāng tóngbù dào nǐ suǒyǒu de shèbèi. Xièxiè."
+
+msgid "Start Upgrade"
+msgstr "Kāishǐ shēngjí"
+
+msgid "Story upgrades not allowed on mobile devices."
+msgstr "Yídòng shèbèi bùnéng shàngchuán gùshì."
+
+msgid "Invalid upgrade parameters 1"
 msgstr ""
 
-#. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
-msgid "Select"
-msgstr "Xuǎn"
+msgid "Upgrade complete"
+msgstr "Shēngjí wánchéng"
 
-#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-msgid "Untranslated"
-msgstr "Méi fānyì"
+msgid "Invalid request."
+msgstr ""
 
-msgid "Change Password"
-msgstr "Gēnggǎi mìmǎ"
+#. 'format' referring to the database format the we are upgrading to
+msgid "No such story format"
+msgstr "Zhège gùshì géshì bù cúnzài"
 
-msgid "Original Language"
-msgstr "Tā de yǔyán"
+msgid "Story upgrade status"
+msgstr "Gùshì shēngjí zhuàngtài"
 
-msgid "Your Language"
-msgstr "Nǐ de yǔyán"
+#. This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
+msgid "Page"
+msgstr "Yè"
+
+msgid "Last upgrade Exception"
+msgstr ""
+
+msgid "Story upgrade started. You may refresh to follow its status."
+msgstr "Gùshì shēngjí yǐ kāishǐ, nǐ kěyǐ shuāxīn lái gēnzōng zhuàngtài."
+
+#. The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
+msgid "Preferred Language"
+msgstr "Shǒuxuǎn de yǔyán"
+
+msgid "Which languages"
+msgstr "Nǎge yǔyán"
 
 #. Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
 msgid "Remove Spaces?"
-msgstr ""
+msgstr "Shānchú kònggé?"
 
 msgid "NOTE: Story *must* be UTF-8 encoded"
-msgstr ""
+msgstr "Zhùyì: Gùshì*bìxū*shì UTF-8 dàimǎ de"
 
 msgid "not implemented"
-msgstr ""
+msgstr "méiyǒu bèi zhíxíng"
 
 #. Source story consists of multiple pages, like a PDF
 msgid "multi-page"
-msgstr ""
+msgstr "duō yè"
 
 #. Story is just a blob of TXT, such as copy/paste.
 msgid "single-page"
-msgstr ""
+msgstr "dān yè"
 
 #. i.e. PDF or TXT
 msgid "What kind of file is this?"
-msgstr ""
+msgstr "Zhè shì shénme lèixíng de wénjiàn?"
 
 msgid "Select File"
-msgstr ""
+msgstr "Xuǎnzé wénjiàn"
 
 msgid "Upload File"
-msgstr ""
+msgstr "Shàngchuán wénjiàn"
 
 msgid "Or Upload a File Instead"
-msgstr ""
+msgstr "Huòzhě shàngchuán yīgè wénjiàn"
 
 #. Unique name to identify this story in the system
 msgid "Unique Name"
-msgstr ""
+msgstr "Dānyī dútè de míngzì"
 
 msgid "Upload Text"
-msgstr ""
+msgstr "Shàngchuán wénběn"
 
 msgid "Copy/Paste a Story"
-msgstr ""
+msgstr "Fùzhì/zhāntiē gùshì"
 
 msgid "Upload Story"
-msgstr ""
-
-msgid "Instant Translation"
-msgstr ""
+msgstr "Shàngchuán gùshì"
 
 msgid "Split/Merge Words"
-msgstr ""
+msgstr "Fēnkāi/hébìng cíyǔ"
 
 #. Create account button
 msgid "Create"
-msgstr ""
+msgstr "Chuàngjiàn"
 
 #. confirm password
 msgid "Confirm"
-msgstr ""
+msgstr "Quèrèn"
 
 msgid "Password"
 msgstr "Mìmǎ"
@@ -779,214 +770,170 @@ msgid "Username"
 msgstr "Yònghù míng"
 
 msgid "Create New Account"
-msgstr "zuò xīn zhànghù"
+msgstr "Chuàngjiàn xīn zhànghù"
 
 #. This is one of the 'Account' menu items that describes the author of the software.
 msgid "About this software"
-msgstr ""
+msgstr "Ruǎnjiàn jiǎnjiè"
 
 msgid "Login"
-msgstr "dēnglù"
+msgstr "Dēnglù"
 
 #. This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
 msgid "Remember Me"
-msgstr "Jìde wǒ"
+msgstr "Jì zhù wǒ"
 
 #. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Address"
 msgstr "Dìzhǐ"
 
 msgid "Split this word into multiple characters"
-msgstr ""
+msgstr "Bǎ zhège cí fēnjiě chéng duō gè zì"
 
 msgid "Merge these characters into a single word"
-msgstr ""
+msgstr "Hébìng zhèxiē zì biàn chéng yīgè cí"
 
-msgid "show text only"
-msgstr ""
+#. This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
+msgid "Doing instant translation..."
+msgstr "Jìnxíng zàixiàn fānyì..."
 
-msgid "side-by-side text and image"
-msgstr ""
-
-msgid "show image only"
-msgstr ""
+msgid "Instant Translation"
+msgstr "Zàixiàn fānyì"
 
 msgid "instant translation of one or more words"
-msgstr ""
+msgstr "Yīgè cí huòzhě duō gè cì de zàixiàn fānyì"
+
+msgid "No instant translation available."
+msgstr "Fānyì bù cúnzài"
+
+msgid "Selected instant translation"
+msgstr "Zhěngtǐ fānyì"
+
+msgid "Piecemeal instant translation"
+msgstr "Dāngè fānyì"
+
+msgid "No internet access. Offline instant translation only."
+msgstr "Wú wǎngluò liànjiē. Líxiàn shǐyòng."
+
+msgid "Online instant translation"
+msgstr "Zàixiàn fānyì"
+
+msgid "Offline instant translation"
+msgstr "Líxiàn fānyì"
+
+msgid "No instant translation found."
+msgstr "Zhǎo bù dào."
+
+msgid ""
+"Please wait until this account is fully synchronized for an offline instant "
+"translation."
+msgstr "Qǐng děngdài tóngbù wánchéng jìnxíng fānyì."
 
 #. Skip ahead to a specific page in a book/story.
 msgid "Skip to page"
-msgstr ""
-
-msgid "open"
-msgstr ""
+msgstr "Tiào dào"
 
 msgid "show/hide translations"
-msgstr ""
+msgstr "Xiǎnshì/yǐncáng fānyì"
 
 msgid "Internet access error. Try again later: "
-msgstr ""
+msgstr "Wǎngluò liánjiē cuòwù, qǐng shāo hòu zài shì: "
 
 msgid "Email address change failed"
-msgstr ""
+msgstr "Gēnghuàn yóuxiāng shībài"
 
 msgid "Success! Email changed"
-msgstr ""
+msgstr "Chénggōng! Yóujiàn xiūgǎi chénggōng"
 
 msgid "Email Address"
-msgstr ""
+msgstr "Yóuxiāng dìzhǐ"
 
 msgid "Please Provide"
-msgstr ""
+msgstr "Qǐng tígōng"
 
 msgid "Change Email"
-msgstr ""
+msgstr "Xiūgǎi yóuxiāng"
 
 msgid ""
 "Please change your email address on the website. Will support mobile in a "
 "future version."
 msgstr ""
+"Qǐng zài wǎngzhàn lǐ xiūgǎi nǐ de yóujiàn dìzhǐ, jiàng zài yǐhòu de bǎnběn "
+"zhōng zhīchí yídòng shèbèi xiūgǎi."
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
 "your devices with your web account, you must first request a web account "
 "online first by contacting the author"
 msgstr ""
-
-#. The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
-msgid "Preferred Language"
-msgstr ""
+"Yòng pǔtōng zhànghù dēnglù shǐyòng zhège yìngyòng ránhòu kāishǐ ràng nǐ de "
+"shèbèi yǔ zàixiàn wǎngzhàn zhànghù tóngbù, nǐ bìxū liánxì zuòzhě "
+"shēnqǐngyīgè zàixiàn zhànghù."
 
 msgid "Signing you in, Please wait"
-msgstr ""
-
-#. Compacting can also be translated as "cleaning" database.
-msgid "Compacting database, Please wait"
-msgstr ""
+msgstr "Zhèngzài dēnglù, qǐng shāo hòu"
 
 msgid "Loading story, Please wait"
-msgstr ""
-
-#. 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
-msgid "Legend"
-msgstr ""
-
-#. This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
-msgid "Doing instant translation..."
-msgstr ""
-
-#. This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
-msgid "Change History"
-msgstr ""
-
-#. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
-msgid "Edit history Disabled."
-msgstr ""
-
-#. Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
-msgid "Synchronization error. Please report this to the author. Thank you."
-msgstr ""
-
-msgid ""
-"Unfortunately, this can only be performed with the online version. Please "
-"login to your account online to perform the upgrade. The changes will then "
-"be synchronized to all your devices. Thank you."
-msgstr ""
-
-#. next part of the same message
-msgid "and is configured to stay in synchronization with the server"
-msgstr ""
-
-msgid ""
-"Although you have authenticated successfully, we could not start "
-"synchronization successfully. Please try again."
-msgstr ""
-
-msgid "No instant translation available."
-msgstr ""
-
-msgid "Selected instant translation"
-msgstr ""
-
-msgid "Piecemeal instant translation"
-msgstr ""
-
-msgid "No internet access. Offline instant translation only."
-msgstr ""
-
-msgid "Online instant translation"
-msgstr ""
-
-msgid "Offline instant translation"
-msgstr ""
-
-msgid "No instant translation found."
-msgstr ""
-
-msgid ""
-"Please wait until this account is fully synchronized for an offline instant "
-"translation."
-msgstr ""
-
-msgid ""
-"Brand new stories cannot (yet) be created/uploaded yet on the device. You "
-"must first create them on the website. (New stories require a significant "
-"amount of computer resources to prepare. Thus, they can only be synchronized "
-"to the device for regular use."
-msgstr ""
+msgstr "Jiāzài gùshì, qǐng shāo hòu"
 
 msgid "English to Chinese"
-msgstr ""
+msgstr "Yīngyǔ dào zhōngwén"
 
 msgid "Chinese to English"
-msgstr ""
+msgstr "Zhōngwén dào yīngyǔ"
 
 msgid "This word"
-msgstr ""
+msgstr "Zhège cí"
 
 msgid "has more than one meaning"
-msgstr ""
+msgstr "yǒngyǒu duō gè yìsi"
 
 #. Beginning of a message
 msgid "If this is your first time here"
-msgstr ""
+msgstr "Rúguǒ zhè shì nǐ dì yī cì dào zhèlǐ lái"
 
 #. end of a message
 msgid "please read the tutorial"
-msgstr ""
-
-msgid "Which languages"
-msgstr ""
+msgstr "qǐng yuèdú shǐyòng jiàochéng"
 
 msgid ""
 "We're sorry you feel that way, but we need your authorization to use this "
 "service. You're welcome to try again later. Thanks."
 msgstr ""
+"Fēicháng bàoqiàn nǐ zhèyàng juédé, dànshì wǒ xūyào nǐ de xǔkě lái shǐyòng "
+"zhège fúwù. Huānyíng nǐ yǐhòu zài shì xièxiè."
 
 msgid "Our service could not create an account from you"
-msgstr ""
+msgstr "Wǒmen de fúwù bùnéng wéi nǐ chuàngjiàn yīgè zhànghù"
 
 msgid ""
 "There was an unknown error trying to authenticate you before creating an "
 "account. Please try again later"
 msgstr ""
+"Zài nǐ zhǔnbèi chuàngjiàn zhànghù zhīqián yǒu yīgè rènzhèng cuòwù. Qǐng shāo "
+"hòu zài shì"
 
 msgid ""
 "You have successfully signed in with the 3rd party, but they cannot confirm "
 "that your account has been validated (that you are a real person). Please "
 "try again later."
 msgstr ""
+"Nǐ yǐ chénggōng lìyòng dì sānfāng xìnxī dēnglù, dànshì tāmen bùnéng quèrèn "
+"nǐ de zhànghù yǐjīng bèi rènzhèng (tāmen bù quèdìng nǐshì yīgè zhēnrén). "
+"Qǐng shāo hòu zài shì."
 
 msgid ""
 "We're sorry. You have declined to share your email address, but we need a "
 "valid email address in order to create an account for you"
 msgstr ""
+"Fēicháng duìbùqǐ, nǐ bù yuànyì fēnxiǎng nǐ de yóuxiāng dìzhǐ, dànshì wǒmen "
+"xūyào yīgè yǒuxiào de yóuxiāng dìzhǐ lái chuànglì nǐde zhànghù"
 
 msgid "You're welcome to try again"
-msgstr ""
+msgstr "Huānyíng nǐ zài shì yīcì"
 
 msgid "Congratulations. Your account is created"
-msgstr ""
+msgstr "Gōngxǐ nǐ. Nǐ de zhànghù yǐjīng jiànlì chénggōng."
 
 msgid ""
 "We have created a default password to be used with your mobile device(s). "
@@ -997,45 +944,53 @@ msgid ""
 "before trying to login to the mobile application. You are welcome to go to "
 "your preferences now and change this password."
 msgstr ""
+"Wǒmen chuàngjiànle yīgè zài nǐ yídòng shèbèi shàng shǐyòng de mòrèn mìmǎ. "
+"Qǐng bǎ zhège mìmǎ jì xiàlái. Rúguǒ nǐ xiǎng hé nǐde yídòng shèbèi hé wǎngyè "
+"tóngbù nǐ jiāng xūyào tā. Rúguǒ nǐ bùxiǎng shǐyòng yídòng ruǎnjiàn qǐng "
+"hūlüè tā. Rúguǒ nǐ bù xiǎng xiěZhège mìmǎ, nǐ kěyǐ yǐhòu zài zhànghù piānhào "
+"chóng zhì. Zài dēnglù yídòng shèbèi qián, huānyíng nǐ qù zhànghù piānhào lǐ "
+"xiūgǎinǐ de mìmǎ."
 
 msgid ""
 "We're sorry, but someone has already created an account with your credentials"
-msgstr ""
+msgstr "Duìbùqǐ, dànshì yǐjīng yǒurén yòng nǐ de píngzhèng jiànlì zhànghù la"
 
 msgid "Original login service"
-msgstr ""
+msgstr "Yuánshǐ dēnglù fúwù"
 
 msgid "Please choose a different service and try again"
-msgstr ""
+msgstr "Qǐng xuǎnzé lìngwài yīgè fúwù ránhòu chóng shì"
 
 msgid ""
 "Here is the original story. Choose from one of the options in the above "
 "navigation bar to begin learning with this story."
 msgstr ""
+"Zhè shì yuán yǒu gùshì, qǐng cóng shàngmiàn dǎoháng qū xuǎnzé yīgè xuǎnxiàng "
+"lái kāishǐ xuéxí."
 
 msgid "Could not lookup your account! Try again"
-msgstr ""
+msgstr "Zhǎo bù dào nǐ de zhànghù! qǐng chóng shì"
 
 msgid "Please write (or change) it"
-msgstr ""
+msgstr "Qǐng shūxiě huòzhě xiūgǎi"
 
 msgid "You will need it to login to your mobile device"
-msgstr ""
+msgstr "Nǐ xūyào dēnglù nǐ de yídòng shèbèi"
 
 msgid "Old Password / Token"
-msgstr ""
+msgstr "Lǎo de mìmǎ"
 
 msgid "New Password / Token"
-msgstr ""
+msgstr "Xīn mìmǎ"
 
 msgid "Confirm Password / Token"
-msgstr ""
+msgstr "Quèrèn mìmǎ"
 
 msgid "Change Password / Token"
-msgstr ""
+msgstr "Xiūgǎi mìmǎ"
 
 msgid "Reset Password / Token"
-msgstr ""
+msgstr "Chóng zhì mìmǎ"
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -1044,41 +999,47 @@ msgid ""
 "your email and password from your online account using any device that you "
 "like."
 msgstr ""
+"Yòng pǔtōng zhànghù dēnglù zhège yìngyòng ránhòu ràng nǐ de shèbèi kāishǐ yǔ "
+"nǐ de wǎngluò zhànghù tóngbù, nǐ bìxū xiān shēnqǐng yīgèwǎngluò zhànghù. "
+"Dāng nǐ chuàngjiànle yīgè wǎngluò zhànghù, nǐ kěyǐ yòng nǐ de yóuxiāng hé "
+"mìmǎ lái dēnglù rènyì yīgè nǐ xǐhuānde shèbèi."
 
 msgid "None Selected"
-msgstr ""
+msgstr "Méiyǒu xuǎnzé rènhé yīgè"
 
 msgid "Sign in with"
-msgstr ""
+msgstr "Dēnglù"
 
 #. Which language to learn, that is.
 msgid "Which language"
-msgstr ""
+msgstr "Nà zhǒng yǔyán"
 
 msgid "Choose one"
-msgstr ""
+msgstr "Xuǎnzé yīgè"
 
 msgid "* Please fill in required fields"
-msgstr ""
+msgstr "* Qǐng tiánxiě suǒ yāoqiú dì dìfāng"
 
 msgid "Password / Token"
-msgstr ""
+msgstr "Mìmǎ"
 
 #. Begin long explanation
 msgid "This story has not yet been converted to reading format."
-msgstr ""
+msgstr "Zhège gùshì hái méiyǒu bèi zhuǎnhuà chéng kě yuèdú géshì."
 
 msgid ""
 "Translation requires significant computer power, so you must convert "
 "(translate) it online first, and then it will be synchronized with this "
 "device."
 msgstr ""
+"Fānyì xūyào jùdà de jìsuàn nénglì, suǒyǐ nǐ bìxū xiān zàixiàn zhuǎnhuà "
+"(fānyì) ránhòu zài yǔ zhège shèbèi tóngbù."
 
 msgid "Please click 'Translate' in the side panel to proceed."
-msgstr ""
+msgstr "Qǐng diǎnjī cè biān de ‘fānyì’."
 
 msgid "Translation access denied"
-msgstr ""
+msgstr "Fānyì quánxiàn jùjué"
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -1087,159 +1048,166 @@ msgid ""
 "account, you can then login with your email and password from your online "
 "account using any device that you like."
 msgstr ""
+"Yòng pǔtōng zhànghù dēnglù ránhòu kāishǐ ràng nǐ de suǒyǒu de shèbèi tóngbù "
+"wǎngluò zhànghù, nǐ bìxū zài http://mica.hinespot.com shēnqǐng yīgè miǎnfèi "
+"de zàixiàn wǎngluò zhànghù. Dāng nǐ chuàngjiànle zàixiàn zhànghù, nǐ kěyǐ "
+"yòng nǐ de zàixiàn."
+
+#. The name of the software
+msgid "MICA Language Learning"
+msgstr "MICA yǔyán xuéxí"
 
 msgid ""
 "Please delete your account on the website and then uninstall the "
 "application. Will support mobile in a future version."
 msgstr ""
+"Qǐng zài wǎngyè shàng shānchú nǐ de zhànghù, ránhòu xièzài zhège yìngyòng. "
+"Huì zài jiānglái de bǎnběn lǐmiàn zhīchí yídòng shèbèi."
 
 msgid "No such account. Cannot delete it."
-msgstr ""
+msgstr "Méiyǒu zhège zhànghù. Bùnéng shānchú."
 
 #. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
-msgstr ""
+msgstr "Kuài gǔn ránhòu qù sǐ ba."
 
 msgid ""
 "Admin accounts can't be deleted by other people. The admin must delete their "
 "own account."
 msgstr ""
+"Guǎnlǐ zhànghù bùnéng bèi qítā rén shānchú. Guǎnlǐ zhànghù bìxū zìjǐ shānchú "
+"zìjǐ de zhànghù."
 
 msgid "Success! Account was deleted"
-msgstr ""
+msgstr "Chénggōng! Zhànghù yǐ shānchú."
 
 msgid "Your account has been permanently deleted."
-msgstr ""
+msgstr "Nǐ zhànghù bèi yǒngjiǔ shānchú le."
 
 msgid "Delete Account?"
-msgstr ""
+msgstr "Quèdìng shānchú zhànghù ma?"
 
 msgid "Yes, delete my account."
-msgstr ""
+msgstr "Quèdìng, shānchú wǒ de zhànghù."
 
 msgid "Are you sure you want to delete your account? This is IRREVERSIBLE."
-msgstr ""
+msgstr "Quèdìng yào shānchú nǐ de zhànghù ma? Zhè shì bùkě nìzhuǎn de."
 
 #. This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
 msgid "Bulk Review Words"
-msgstr ""
+msgstr "Pīliàng jiǎnchá dāncí"
 
-msgid "NO review recommendations available."
-msgstr ""
-
-#. The name of the software
-msgid "MICA Language Learning"
-msgstr ""
+#. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
+msgid "No review recommendations available."
+msgstr "Kě jiǎnchá de jiànyì bù cúnzài."
 
 #. This appears as a pop-up when we are loading the text content of a story.
 msgid "Loading Text"
-msgstr ""
+msgstr "Jiāzài wénzì"
 
 #. This appears as a pop-up when we are image content of a PDF-based story.
 msgid "Loading Image"
-msgstr ""
+msgstr "Jiā zǎi túpiàn"
 
 #. This appears when you first click on a story to be loaded
 msgid "Loading Stories"
-msgstr ""
+msgstr "Jiāzài gùshì"
 
 #. This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
 msgid "Loading Statistics"
-msgstr ""
+msgstr "Jiāzài tǒngjì shùjù"
 
 #. This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
 msgid "This account is not fully synchronized"
-msgstr ""
+msgstr "Zhège zhànghù méiyǒu wánquán tóngbù"
 
 #. This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
 msgid "If you are offline, please go online for an instant translation."
-msgstr ""
+msgstr "Rúguǒ nǐ xiànzài líxiàn, qǐng shàngxiàn jìnxíng jíshí fānyì."
 
 #. This appears when you attempt to perform an instant translation without clicking on any words to translate.
 msgid "You have not selected any words for instant translation!"
-msgstr ""
+msgstr "Nǐ méiyǒu xuǎnzé rènhé dāncí jìnxíng jíshí fānyì!"
 
 #. This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors.
 msgid "See above for problems with your edit requests."
-msgstr ""
+msgstr "Duìyú nǐ de biānjí qǐngqiú, qǐng kàn shàngmiàn lái chá cuò."
 
 #. just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
 msgid "Submit"
-msgstr ""
+msgstr "Tíjiāo"
 
 #. This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
 msgid "Reason"
-msgstr ""
+msgstr "Yuányīn"
 
 #. Merge as in merge/split in edit mode.
 msgid "Merge"
-msgstr ""
+msgstr "Hébìng"
 
 #. This appears next to the words that have errors for which you were trying to merge or split.
 msgid "INVALID"
-msgstr ""
+msgstr "Wúxiào"
 
 #. Split as in merge/split in edit mode.
 msgid "Split"
-msgstr ""
+msgstr "Fēnkāi"
 
 #. This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
 msgid "Are you sure you want to perform these edits?"
-msgstr ""
+msgstr "Nǐ quèdìng nǐ yào jìnxíng zhèxiē biānjí ma?"
 
 #. Also a message in edit mode.
 msgid ""
 "The selected characters are not consecutive (including punctuation). You "
 "cannot merge them."
 msgstr ""
+"Suǒ xuǎn de zì bùshì liánzhe de (bāokuò biāodiǎn fúhào). Nǐ bùnéng hébìng "
+"tāmen."
 
 #. Also a message in edit mode.
 msgid ""
 "You need at least two character groups selected before you can merge them "
 "into a word!"
-msgstr ""
+msgstr "Nǐ xūyào xuǎn zhě zhìshǎo liǎng gè zì cáinéng hébìng chéng yīgè cí!"
 
 #. Also a message in edit mode.
 msgid "This word only has one character. It cannot be split!"
-msgstr ""
+msgstr "Zhège cí zhǐyǒu yīgè zì, bùnéng fēnkāi!"
 
 #. Also a message in edit mode.
 msgid "You cannot split more than one word at a time!"
-msgstr ""
+msgstr "Nǐ yīcì zhǐ néng fēn jiè yīgè cí!"
 
 #. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
-msgstr ""
+msgstr "Zhèngzài fānyì"
 
 #. This on the main page when a story is being actively translated.
 msgid "Stories in translation"
-msgstr ""
+msgstr "Gùshì zhèngzài fānyì"
 
 #. This appears after a story has just finished being translated to indicate that you can start using it.
 msgid "Done! Please reload."
-msgstr ""
+msgstr "Wánchéng! Qǐng zhòng zài."
 
 #. This appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Working"
-msgstr ""
+msgstr "Zhèngzài gōngzuò zhōng"
 
 msgid "Start learning!"
-msgstr ""
+msgstr "Kāishǐ xuéxí!"
 
 #. This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
 msgid "Found Recommendations"
-msgstr ""
-
-#. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
-msgid "No review recommendations available."
-msgstr ""
+msgstr "MICA Jiànyì"
 
 msgid "Redirecting"
-msgstr ""
+msgstr "Zhòng dìngxiàng"
 
 #. These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
 msgid "Stats Hidden"
-msgstr ""
+msgstr "Tǒngjì shùjù yǐncáng de"
 
 msgid "Stats Shown"
-msgstr ""
+msgstr "Tǒngjì chūxiàn le"
