@@ -21,15 +21,17 @@ already in place for more languages in the future.
 <h3 id='motivation'>Motivation:</h3>
 The basic observation behind creating this learning
 system is very simple: The most well-spoken foreigners
-in the USA all have one thing in common: 
+in the we know all have a particular trait in common
+that really stands out: 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reader.jpg"/>
 
 They are all voracious readers - sometimes they even have 
-better SAT scores than native speakers. It's spooky how well 
+better test scores than native speakers. It's spooky how well 
 avid reading correlates to fluent speaking.
 
-But it's not fair, why?
+While we focus on Chinese in this introduction, the benefits
+of our approach to learning can apply to any language.
 
 <h3>Meet the Enemy:</h3>
 
@@ -41,7 +43,7 @@ But it's not fair, why?
 
 
 
-These are the characters than represent Chinese Characters.
+These are the 'characters' that represent Chinese Characters.
 
 <h3 id='problem'>The phonetic problem:</h3>
 
@@ -59,21 +61,21 @@ But they are taking for granted that the romanization bootstraps
 their language learning by giving them (nearly) immediate
 access to the ability to pronounce what they see. =)
 
-Ok, so, why is this a problem at all? Chinese people don't
-seem to think it's a problem, right? Well, it's a problem of
-frequency:
+Ok, so, why is this a problem at all? Speakers of character-based
+languages don't seem to think it's a problem, right? 
+Well, it's a problem of frequency:
 
-What does a foreigner in China do on a daily basis?
+What would a foreigner in China, for example, do on a daily basis?
 
-1. Reading Chinese philosophy texts?                  No.
-2. Studying for your Chinese law degree?              Ummmm. No.
-3. Driving around the city reading street signs?      Hell no.
+1. Reading philosophy texts?                          No.
+2. Studying for your law degree?                      Ummmm. No.
+3. Driving around the city reading street signs?      (Maybe). 
 4. Having casual dinners with VIPs and business men?  Yeah, right.
 5. Arguing with the wife about what's for dinner?     Yes! Yes!
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/teacher.jpg"/>
 
-So, in my daily language learning class here in China, I told
+So, in my daily language learning classes, I told
 the teacher, "I don't want to battle with the phonetic problem",
 and immediately her reaction was, "What? You want to be illiterate?"
 
@@ -88,8 +90,8 @@ watch the most TV shows, too =).
 So, we need a tool - something to bridge the gap
 between the ability to vocalize language and the ability to read
 the vocalizations. Something that would immediately
-give us the same mental stimulus for Chinese that a well-spoken
-foreign English speaker would experience in the USA.
+give us the same mental stimulus for Character-based languages
+that a well-spoken foreign English speaker would experience.
 
 <h4>Enter: MICA.</h4>
 
@@ -100,18 +102,20 @@ foreign English speaker would experience in the USA.
 Getting Started:
 
 First, begin by copy and pasting a story using the 'Upload New Story'
-button:
+button in the "Account" menu at the top:
 
 You have two choices:
 
-1. Upload a text file in native Chinese Characters (like a short story 
+1. Upload a text file in native Characters (like a short story 
 or even an e-book) in UTF-8 encoded format.
-2. Copy and paste a news article or email in Native Chinese characters.
+2. Copy and paste a news article or email in native characters.
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/upload.png"/>
 
 As you can see in the above example, I have copy and pasted
-the following characters:
+the following characters, and selected "Chinese to English". If you
+are learning English instead, you could similarly choose "English to Chinese".
+We intend to add multiple languages soon:
 
 <h2>花园里有三只蝴蝶，一只是红色的，一只是黄色的，一只是白色的。</h2>
 
@@ -124,7 +128,7 @@ section:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/uploaded.png"/>
 
-There are 3 sections in the left-hand pane:
+There are 4 sections in the left-hand pane:
 
 <ol>
 <li><b>"Untranslated"</b>: These are stories that you just uploaded but
@@ -135,19 +139,19 @@ polyphomes, which we will explain later.</li>
 <li><b>"Reading"</b>: These are post-reviewed stories which have passed up
 through the lower two sections and ready for regular language learning
 and review.</li>
+<li><b>"Finished"</b>: Stories go here when you're finish learning from them.</li>
 </ol>
 
-You can begin by first clicking 'Translate' and waiting for your first
-translation. (Multiple stories can be translated in parallel).
+You can begin by first clicking 'Translate' and waiting for your first translation.
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/translating.png"/>
 
-Once the translation has completed, you'll see a message instructing
-you to refresh the page. Some large stories can take a very long
-time to translate as MICA is doing a lot of work to properly group
+Once the translation has completed, the story will appear in the "Not reviewed" section.
+Some large stories, particularly ones that are very dense or have many pages,
+can take a very long time to translate as MICA is doing a lot of work to properly group
 together characters into words and prepare the story for you. Periodically
 MICA has to go online to get a translation, or even reverse-engineer
-Pinyin-to-character pronunciations, so be patient.
+Pinyin-to-character pronunciations, so be patient. (There's a lot going on behind the scenes).
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/translated.png"/>
 
@@ -158,77 +162,84 @@ to indicate the next steps you have to take in the story:
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/notreviewed.png"/>
 
 First, you should click on the 'Magnifying Glass' icon to open
-the story in 'View' mode.
+the story in 'Review' mode.
 
-<h3 id='review'>Reviewing before Learning (View Mode):</h3>
+<h3 id='review'>Reviewing before Learning (Review Mode):</h3>
 
-Now, we get to the good stuff first: View mode is the first of the
+Now, we get to the good stuff first: Review mode is the first of the
 three modes and designed to give the language learner and opportunity 
 to read a "Sanitized" translated story.
 
-This means that we need "clean" Pinyin for the learner to read. We
-want to be able to process large amounts of pinyin to the learner
-from MICA as fast as possible as if the learner were reading a book
-of literature with the same experience as an English novel.
+This mode is used to build "clean" material for the learner to read. We
+want to be able to process large amounts of meanings (and pinyin if this
+is a character-based language) for the learner from MICA as fast as 
+possible as if the learner were reading a book of literature with the 
+same experience as an English novel. To do that, we first need to review
+the text first for any errors in meaning or tone.
 
-The problem is that not all Chinese characters have the same tone,
+The problem in general is that not all words have a single meaning, and in
+particular with Chinese, not all characters have the same tone,
 and even words that have the same tone don't have the same meaning!
 
-In "View" mode, a new learner will want to get a native-Chinese speaking
-friend to "review" their newly uploaded story in this mode:
+In "Review" mode, a new learner will want to get a "buddy" who is a native
+speaker to "review" their newly uploaded story in this mode:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/viewmode.png"/>
 
-The way review mode works is that non-blue words are called <b>"Polyphomes"</b>.
-These are words that have been identified as not having a single 
-sound per character and are fuzzy or have the same sound but multiple
-English definitions.
+The way review mode works is that non-blue words may or may not have more
+than one definition, sound, or tone. In Chinese, these kinds of words are
+also are called <b>"Polyphomes"</b>. These are words that have been identified 
+as not having a single meaning and/or sound per word and are fuzzy or 
+have the same sound but multiple definitions (for Chinese only).
 
 As you can see from the "Legend" on the side, MICA classifies
-character groups into words and then analyzes each word in
-different ways:
+and analyzes words in different ways:
 
-<div style='font-weight: bold; color: blue; display: inline'>Blue words</div> only have a single sound and single meaning, and by
-clicking on them you will see the English translation of the word 
+<div style='font-weight: bold; color: grey; display: inline'>Grey words</div> only have a single sound and single meaning, and by
+clicking on them you will see their translations of the word 
 after the story was processed. For the reviewer, it is not necessary to
-spend to much time correcting these words as they are NOT Polyphomes
-and their translations (both pinyin and English) already accurate.
+spend to much time on these words as they are NOT Polyphomes
+and their translations already accurate. (If they are not correct, then
+the database used by MICA can sometimes be wrong as well - it is not impossible).
 
-<div style='font-weight: bold; color: green; display: inline'>Green words</div> only have a single sound but have different English
-meanings. Technically, they are not polyphomes, but they are treated
-as fuzzy, because they have different meanings. The language learner will
+<div style='font-weight: bold; color: green; display: inline'>Green words</div> only have a single sound but have different
+meanings. For languages like Chinese, technically, they are not polyphomes, but they 
+are treated as fuzzy, because they have different meanings. The language learner will
 not inadvertently learn the wrong sound (safe), but may inadvertently learn
 the wrong meaning. However, even if the wrong meaning is memorized without
 a proper review by a native speaker, the incorrect meaning will immediately
 become obvious in context as the meaning will likely not make much sense.
 
-<div style='font-weight: bold; color: red; display: inline'>Red words</div> are polyphomes that have both several different sounds
-as well as English translations. These words need special attention by 
-the reviewer so that the language learner does memorize the wrong tone. 
+<div style='font-weight: bold; color: red; display: inline'>Red words</div> may several different sounds
+as well sounds. These words need special attention by the reviewer 
+so that the language learner does memorize the wrong meaning or tone. 
 Eventually, more advanced learners can perform these reviews by oneself
-because they will be able to select the correct English translation paired
-with the correct tone by reading in context.
+because they will be able to select the correct choice by reading in context.
 
-<div style='font-weight: bold; color: black; display: inline'>Black words</div> are polyphomes that have a "history" of being wrong
+<div style='font-weight: bold; color: black; display: inline'>Black words</div> are words that have a "history" of being wrong
 because they were previously reviewed and corrected in the past across
-the entire story database. MICA automatically recognizes these words upon 
-new translations and assigns percentages to figure out which polyphomes
-have the highest chance of being correct. The new story does not have
-any black words yet because we have not performed any corrections - 
-to come later.
+the entire story database. MICA performs sophisticated analytics to 
+automatically recognize these words upon new translations and assigns 
+percentages to figure out which polyphomes have the highest chance of 
+being correct. The new story does not have any black words yet because 
+we have not performed any corrections - to come later.
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition1.png"/>
 
 In the above example, we have clicked on the the words and pinyin 
-for 'one': "yī" (一). This results in expanding all occurrences
-of the character and its translation, resulting in showing the English
-for that character grouping.
+for 'one': "yī" (一). This first results in exposing a small blue 'play
+button. By clicking this button, the learner is challenged to first remember
+what the meaning is before revealing it. This results in expanding all occurrences
+of the character and its translation, resulting in showing the translation 
+for that word.
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition.png"/>
 
 Red, green, and black words, however need to be reviewed for accuracy, 
 by clicking on the word, the different possibilities for that character 
 will appear. Let's first start with a "green" word:
 
-<img width='40%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple1.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple1.png"/>
 
 In the above example, we have clicked on the sound 'lǐ' (里), which
 usually means 'inside' of something. As you can see in the pop-up,
@@ -246,104 +257,108 @@ the wrong word, when in fact you have not.
 So, by choosing the 'Select' button, we can correct MICA so that
 the correct word is 'inside':
 
-<img width='40%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple.png"/>
 
 Also pay attention to the "Percentages" on the left-hand side
-of the correctly chosen polyphome: This indicates that MICA
+of the correct choice: This indicates that MICA
 has recorded how 'popular' this selection is and will re-use this
-information the next time a story is translated. 
+information the next time a story is translated, so that the
+reviewer does not need to select it again in the future.
 
-Upon refreshing the page, this character is now listed as a
-'black' polyphome, indicating that it now has a history in
-MICA:
+Upon refreshing the page, this character is now listed as
+'black', indicating that it now has a history in MICA:
 
 <img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple2.png"/>
 
 It also includes a "(1)" next to it as well as being listed on
 the right-hand side of the page indicating that this particular
-character has undergone that number of changes in the history
+word has undergone that number of changes in the history
 of the database of stories for this user.
 
-The next time a story that is translated containing this character,
-MICA will modify the default polyphome to be the most popular one
+The next time a story that is translated containing this word,
+MICA will modify the default choice to be the most popular one
 so that the reviewer can focus their time on harder-to-identify
-polyphomes.
+words.
 
 Finally, let's take a look at "red" words, as in the word 'zhī' (只):
 
-<img width='40%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple3.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple3.png"/>
 
 This time, notice that MICA is telling us that there are multiple
 completely different sounds for the same word. In this case,
 there are both a 1st tone and 3rd tone listings for the same
-character. This time, MICA chose the correct polyphome by
+character. This time, MICA chose the correct choice by
 default, so there is no need to spend anymore time on this word. 
 
-Unfortunately, if you haven't learned at least a little Chinese
-before starting the software, you'll have to ask your best
-friend, your significant other, or your co-worker who does 
-read/write Chinese to help you out on your first few stories 
+Unfortunately, if you haven't learned at least a little of your new
+language before starting the software, you'll have to ask your best
+friend, your significant other, or your co-worker who
+is a native speaker to help you out on your first few stories 
 until you get fluent enough at context-matching to know when a 
-tone is the wrong tone or not by yourself.
+choice is wrong or not by yourself.
 
 <h3 id='editing'>Edit Mode:</h3>
 
 This mode is equally as import as 'Review' mode: Sometimes, MICA 
 improperly groups the wrong words together, for example in a 
-different story: 
+different story:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badgroup.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badgroup.png"/>
+
+This mode is not supported when learning a language like English,
+because because words are single units of meaning. But in a Character-based
+language, a single "word" can be composed of multiple picture-based
+characters. This mode will be disabled if your story is originally
+written in English.
 
 In the above example, the characters (穿着) are incorrectly
 grouped together by MICA, and since they are grouped together
 they have a single, fixed meaning: 'Chuān zhuó', which translates
-as "attire" a [beautiful flower dress]. This not correct, and instead 
+as "attire" a [beautiful flower dress]. This is not correct, and instead 
 the characters should be separated, as in: (穿 着), which instead 
 means: "Chuān zhe", which translates as "wear a" [beautiful flower dress].
 
 Without a native speaker reviewing the story, the language learner
 might clue in to the fact that 'attire' doesn't make much sense
 in the story. They could confirm this fact by first clicking on
-the characters themselves: 
+the characters themselves:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badselected.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badselected.png"/>
 
 After clicking the characters, then you would click 'Instant' at 
 the top of the page and wait for the online translation to complete:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instantclick.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instantclick.png"/>
 
 MICA will then do an instant translation online by translating
 the individual characters in pieces and return an instant result:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instant.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instant.png"/>
 
 As you can see, the individual characters for (穿着) actually
 translate roughly to: "wear a" [beautiful flower dress] as 
 opposed to "attire" [beautiful flower dress].
 
-Solution: To solve this problem, you would click on the "Edit"
-button at the top of the page and again select the individual characters
+Solution: To solve this problem, you would click on the "Split"
+button at the top of the page selecting only the individual characters
 for "attire" as their are currently listed.
 
-Then at the top of the page, select "Re-group" =&gt; "Split Word Apart":
-
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitselect.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitselect.png"/>
 
 A dialog will appear confirming that you indeed want to split this
 word apart into its constituent characters:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitconfirm.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitconfirm.png"/>
 
 Which then results in reloading the story with the correct elements:
 
-<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitfinish.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitfinish.png"/>
 
 A similar problem happens in MICA when an already-separated group of
 characters were not correctly merged into a single word, as in the
 following example:
 
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergebad.png"/>
+<img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergebad.png"/>
 
 In the above examples, the two characters at the end of the sentence
 "shí hòu" (时候) should in fact be merged into a single word
@@ -352,7 +367,7 @@ which instantly translates as "when" (an extension of the word 'time'):
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergeinstant.png"/>
 
 This can easily be fixed in edit mode by, again selecting on the
-individual characters and then selecting: "Re-Group" =&gt; "Merge Characters":
+individual words and then selecting the "Merge" icon buttom: 
 
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergetry.png"/>
 
@@ -364,8 +379,8 @@ The characters in the story will then read as:
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergecomplete.png"/>
 
-(NOTE: A merge will not occur if MICA cannot find an English definition
-for a merged group of characters - the result is that the characters will
+(NOTE: A merge will not occur if MICA cannot find a definition
+for a merged group of words - the result is that the characters will
 continue to remain separated).
 
 Finally, MICA is also smart enough to know the history of various
@@ -387,6 +402,14 @@ as accurate as possible and as the language learner gets better and
 better, they will need to rely less and less on others to correct
 the story for them and more on themselves.
 
+Notice there is a "Try Recommendations" in both Review Mode and Edit modes.
+This option will "Bulk" edit or "Bulk" review any words recommended by MICA
+that were found to need review or editing based on your previous usage history.
+
+This is very useful in large books, like PDFs, where lots of content has
+a similar, highly-repetitive review/edit history. MICAs analytics can automatically
+recognized when these kinds of changes need to be repeated.
+
 <h3 id='reading'>Reading Mode:</h3>
 
 Here's where the real fun begins and the full benefit of
@@ -394,7 +417,7 @@ MICA comes in to play:
 
 Once you (or your friend) have completed an initial review of
 the story, you can go back to the side-panel and click the 'Up Arrow'
-on to "promote" the story to reading mode.
+to "promote" the story to reading mode.
 
 Once a story is promoted to reading mode,
 it will appear in the "Reading" section:
@@ -404,12 +427,24 @@ it will appear in the "Reading" section:
 Click on the 'book' icon to begin reading the story.
 You will now see a complete view of the reviewed story.
 
-<img width='90%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading.png"/>
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading1.png"/>
 
 In this mode, you will see a slightly different structure:
-All the original Chinese words and corrected pinyin are black,
-but their English translations are automatically expanded by
-default.
+All the original words and corrected meanings are black,
+but their translations are not automatically expanded by default.
+This is to challenge the learner to try to remember words in
+context before indicating to MICA which ones you have memorized.
+
+By click the 'reveal' button icon at the top: 
+
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reveal.png"/>
+
+We can automatically reveal all the meanings. (Or you can just click the individual
+blue icons to reveal individual means, which is more common while
+using the software over time.)
+
+<img width='70%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading.png"/>
 
 What does this mean? If a word is automatically expanded upon
 first loading the page, it means that you have not yet memorized
@@ -417,20 +452,17 @@ the word.
 
 Let's start by interacting with MICA: Let's click on some of
 the translations to indicate that we have memorized a couple of
-the most commonly early-learned words in Chinese: 
+the most commonly early-learned words:
+
+We have clicked on the translations of the words "yī" (一), and 'zhī' (只):
 
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing.png"/>
 
-We have clicked on the English translations of the words "yī" (一),
-and 'zhī' (只):
-
-MICA will process the request and then hide the English translations
+MICA will process the request and then hide the translations
 from you, indicating that you have memorized those words. In both cases,
-MICA will memorize and record memorizations for all 
-occurrences of those character groupings.
+MICA will memorize and record memorizations for all occurrences of those words. 
 
-The resulting page will look like this with the memorized words
-hidden:
+The resulting page will look like this with the memorized words hidden:
 
 <img width='50%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized.png"/>
 
@@ -452,7 +484,7 @@ will record that the word has been forgotten (or un-memorized).
 
 Even if you forget the word, but don't want to remove it from the
 memorization list, you can just click on the 'black' pinyin readings
-of the words to expose the original English translation without
+of the words to expose the original translation without
 telling MICA to track anything additionally.
 
 Furthermore: Just as in the 'Review' and 'Edit' modes, newly translated
@@ -464,7 +496,7 @@ software helps you out.
 This where the real power comes from: 
 You can now spend much finer granularities of time using the 
 'Reading' mode of the software as well as having conversations 
-with native Chinese speakers to help you navigate the stories you 
+with native speakers to help you navigate the stories you 
 are reading while you read more and more complicated texts. 
 The more you read, the more you are forced to speak in your mind, 
 and the better you become!
