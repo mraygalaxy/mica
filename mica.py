@@ -1261,6 +1261,10 @@ class MICA(object):
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
         output = [output]
         gp = self.processors[story["source_language"]]
+
+        if mobile and req.session.value["username"] == "demo" and gp.already_romanized :
+            chars_per_line = 10 
+
         mdebug("View Page " + str(page) + " story " + name + " start...")
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         mdebug("View Page " + str(page) + " story " + name + " fetched...")

@@ -441,7 +441,11 @@ class StaticViewElement(Element) :
             assert("password" in self.req.session.value)
             assert("username" in self.req.session.value)
 
-            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + self.req.remote_server + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
+            if "language" not in self.req.session.value :
+                onclick = ""
+                mwarn("Strang missing language key error.")
+            else :
+                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + self.req.remote_server + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
         else :
             onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '', false, false)"
 
@@ -612,12 +616,16 @@ class HeadElement(Element):
             row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-download"})))
             row(tags.td(style='width: 2px')())
             pull = self.req.db.pull_percent() if self.req.db else ""
+            if pull == "100.0" :
+                pull = "100"
             row(tags.td(style='width: 2px')())
             row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pullstat"})(pull)))
             row(tags.td(style='width: 2px')())
             row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-upload"})))
             row(tags.td(style='width: 2px')())
             push = self.req.db.push_percent() if self.req.db else ""
+            if push == "100.0" :
+                push = "100"
             row(tags.td(style='width: 2px')())
             row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pushstat"})(push)))
             row(tags.td(style='width: 2px')())
@@ -625,11 +633,15 @@ class HeadElement(Element):
         if "connected" in self.req.session.value and self.req.session.value["connected"] :
             rowcell = tags.td()
             rowcell(tags.a(href=''))
-            rowcell(tags.span(**{"class" : "badge pull-right", "id" : "viewstat"})(self.req.view_percent))
+            viewstat = self.req.view_percent
+            if viewstat == "100.0" :
+                viewstat = "100"
+            rowcell(tags.span(**{"class" : "badge pull-right", "id" : "viewstat"})(viewstat))
             row(rowcell)
             row(tags.td(style='width: 2px')())
 
-            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-eye-open"})))
+            if not mobile :
+                row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-eye-open"})))
 
             row(tags.td(style='width: 10px')())
         else :

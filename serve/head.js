@@ -3,12 +3,18 @@
  * seem to be visible from Android. No idea why.
  */
 function pushstat(info) {
+    if (info == "100.0")
+        info = "100";
     $("#pushstat").html(info);
 }
 function pullstat(info) {
+    if (info == "100.0")
+        info = "100";
     $("#pullstat").html(info);
 }
 function viewstat(info) {
+    if (info == "100.0")
+        info = "100";
     $("#viewstat").html(info);
 }
 
