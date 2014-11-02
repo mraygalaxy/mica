@@ -56,10 +56,8 @@ def gettext(message):
     global global_language
     try :
         result = texts[catalogs.language].ugettext(message)
-        print "Returning preferred result"
         return result
     except AttributeError, e :
-        print "Returning global result: " + global_language
         return texts[global_language].ugettext(message)
 
 def pre_init_localization(language, log = False) :
@@ -96,8 +94,8 @@ def pre_init_localization(language, log = False) :
         log.debug(String(test2))
     else :
         print("Language set to: " + global_language)
-        print(test)
-        print(test2)
+        #print(test)
+        #print(test2)
 
 lang = {
          u"zh-CHS" : _(u"Chinese Simplified"),
