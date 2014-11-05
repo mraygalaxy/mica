@@ -12,7 +12,7 @@ from traceback import format_exc
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from shutil import rmtree as shutil_rmtree
-from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError
+from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
 from codecs import open as codecs_open
 from uuid import uuid4 as uuid_uuid4
 from hashlib import md5 as hashlib_md5
@@ -203,7 +203,6 @@ class Params(object) :
 
 
 class MICA(object):
-
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         try :
             mdebug("Authenticating to: " + str(auth_url))
@@ -224,10 +223,16 @@ class MICA(object):
             req.add_header('Authorization', userData)
             res = urllib2_urlopen(req)
             mdebug("Authentication success with username: " + username)
-            return json_loads(res.read())
+            return json_loads(res.read()), False
+        except urllib2_HTTPError, e : 
+            mdebug("HTTP Invalid username or password: " + username + " " + str(e))
+            return False, "HTTP code: " + str(e.code)
         except urllib2_URLError, e :
-            mdebug("Invalid username or password: " + username + " " + str(e))
-            return False
+            mdebug("URL Invalid username or password: " + username + " " + str(e))
+            return False, "URL error: " + str(e.reason)
+        except Exception, e :
+            mdebug("Unkonw error Invalid username or password: " + username + " " + str(e))
+            return False, "Unknown error: " + str(e)
 
     def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
         username = req.session.value["username"]
@@ -2425,9 +2430,9 @@ class MICA(object):
                     else :
                         username = req.http.params.get("username")
                         password = req.http.params.get("password")
-                        auth_user = self.authenticate(username, password, self.credentials())
+                        auth_user, reason = self.authenticate(username, password, self.credentials())
                         if not auth_user :
-                            return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": invalid credentials</div>", now = True)
+                            return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": " + str(reason) + ".</div>", now = True)
                             
                 target_language = req.http.params.get("target_language")
                 source_language = req.http.params.get("source_language")
@@ -2684,12 +2689,12 @@ class MICA(object):
 
                 mdebug("authenticating...")
 
-                auth_user = self.authenticate(username, password, address, from_third_party = from_third_party)
+                auth_user, reason = self.authenticate(username, password, address, from_third_party = from_third_party)
 
                 if not auth_user :
                     # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
                     req.skip_show = True
-                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ".</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ": " + str(reason) + "</h4></div>")
 
                 req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
                 req.session.value["database"] = auth_user["mica_database"] 
@@ -3528,9 +3533,9 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
                     if newpassword != newpasswordconfirm :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-                    auth_user = self.authenticate(username, oldpassword, req.session.value["address"])
+                    auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
                     if not auth_user :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ".</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
                     try :
                         auth_user['password'] = newpassword
                         del self.dbs[username]
@@ -3549,9 +3554,9 @@ class MICA(object):
 
                     newpassword = binascii_hexlify(os_urandom(4))
 
-                    auth_user = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
+                    auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
                     if not auth_user :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ".</h4></div>")
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
 
                     try :
                         auth_user['password'] = newpassword
