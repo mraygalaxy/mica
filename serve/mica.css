@@ -60,8 +60,8 @@ div.transroman {
     cursor: pointer;
 }
 
-div.romanlightgrey {
-    background: lightgrey;
+div.romangrey {
+    background: grey;
 }
 
 div.romanblue {
@@ -137,8 +137,8 @@ div.romanblack {
   height: 10px;
   margin: 5px auto;
 }
-.lightgraysquare {
-  background: lightgray;
+.graysquare {
+  background: gray;
   width: 10px;
   height: 10px;
   margin: 5px auto;
@@ -173,7 +173,7 @@ td.splitright { border-right: solid blue  }
 }
 
 div.reveal {
-   background: lightgrey;
+   background: grey;
 }
 a.reveal {
    cursor: pointer;
@@ -206,4 +206,15 @@ a.reveal {
     -o-transform: rotate(90deg);
     -webkit-transform: rotate(90deg);
     transform: rotate(90deg);
+}
+
+ul.pagination {
+    margin: 0px;
+    padding: 0px;
+}
+
+.jumbotron {
+    font-weight:bold;
+    color: black; 
+    background: #ced6fb;
 }

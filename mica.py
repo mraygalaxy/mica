@@ -298,7 +298,7 @@ class MICA(object):
         self.client = Translator(params["trans_id"], params["trans_secret"])
         self.mutex = Lock()
         self.transmutex = Lock()
-        self.heromsg = "<div class='jumbotron' style='padding: 5px'>"
+        self.heromsg = "<div class='img-rounded jumbotron' style='padding: 5px'>"
         self.pid = "none"
         self.dbs = {}
         self.userdb = False
@@ -573,7 +573,7 @@ class MICA(object):
         req.dest = ""#prefix(req.unparsed_uri)
         req.front_ads = False
 
-        if not mobile and not params["couch_server"].count("localhost") :
+        if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
             req.front_ads = True
 
         if params["serialize_couch_on_mobile"] :
@@ -1518,7 +1518,7 @@ class MICA(object):
                         add_count = ""
 
                         if action == "home" :
-                            color = "lightgrey" if not unit["punctuation"] else "white"
+                            color = "grey" if not unit["punctuation"] else "white"
                             if py and len(unit["multiple_target"]) :
                                 color = "green"
 
@@ -1556,7 +1556,7 @@ class MICA(object):
                                 line_out.append(" style='color: " + color + "' ")
                         elif py :
                             line_out.append(" style='color: black' ")
-                            color = "lightgrey" if not unit["punctuation"] else "white"
+                            color = "grey" if not unit["punctuation"] else "white"
 
                         line_out.append(" id='ttip" + trans_id + "'")
 
@@ -1587,7 +1587,7 @@ class MICA(object):
                             line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'style='text-decoration: underline'>")
                         
                         if gp.already_romanized :
-                            if color not in [ "lightgrey", "white" ] :
+                            if color not in [ "grey", "white" ] :
                                 line_out.append(target)
                             else :
                                 line_out.append(self.roman_holder(source, color))
@@ -1800,7 +1800,7 @@ class MICA(object):
         items.sort(key = itemhelp, reverse = True)
 
         for name, story in items :
-            gp = self.processors[story["source_language"]]
+            gp = self.processors[story["source_language"] if "source_language" in story else "zh-CHS"]
 
             reviewed = not ("reviewed" not in story or not story["reviewed"])
             finished = not ("finished" not in story or not story["finished"])
@@ -2687,7 +2687,7 @@ class MICA(object):
                 auth_user = self.authenticate(username, password, address, from_third_party = from_third_party)
 
                 if not auth_user :
-                    # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists or not.
+                    # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
                     req.skip_show = True
                     return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ".</h4></div>")
 
