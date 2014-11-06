@@ -1211,3 +1211,10 @@ msgstr "Tǒngjì shùjù yǐncáng de"
 
 msgid "Stats Shown"
 msgstr "Tǒngjì chūxiàn le"
+
+msgid ""
+"Your device either does not have adequate signal strength or your connection "
+"does not have adequate connectivity. While you do have a connection (3G or "
+"Wifi), we were not able to reach the server. Please try again later when you "
+"have better internet access by tapping the 'M' at the top to login."
+msgstr ""
