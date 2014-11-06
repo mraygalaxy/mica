@@ -225,14 +225,18 @@ class MICA(object):
             mdebug("Authentication success with username: " + username)
             return json_loads(res.read()), False
         except urllib2_HTTPError, e : 
-            mdebug("HTTP Invalid username or password: " + username + " " + str(e))
-            return False, "HTTP code: " + str(e.code)
+            if e.code == 401 :
+                return False, _("Invalid credentials. Please try again") + "."
+            mdebug("HTTP error: " + username + " " + str(e))
+            error = "(HTTP code: " + str(e.code) + ")"
         except urllib2_URLError, e :
-            mdebug("URL Invalid username or password: " + username + " " + str(e))
-            return False, "URL error: " + str(e.reason)
+            mdebug("URL Error: " + username + " " + str(e))
+            error = "(URL error: " + str(e.reason) + ")"
         except Exception, e :
-            mdebug("Unkonw error Invalid username or password: " + username + " " + str(e))
-            return False, "Unknown error: " + str(e)
+            mdebug("Unkonw error: " + username + " " + str(e))
+            error = "(Unknown error: " + str(e) + ")"
+
+        return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
 
     def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
         username = req.session.value["username"]
@@ -2694,7 +2698,7 @@ class MICA(object):
                 if not auth_user :
                     # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
                     req.skip_show = True
-                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Invalid credentials. Please try again") + ": " + str(reason) + "</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
 
                 req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
                 req.session.value["database"] = auth_user["mica_database"] 
