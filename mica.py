@@ -203,6 +203,9 @@ class Params(object) :
 
 
 class MICA(object):
+    def tofrom(self, story) :
+        return story["source_language"] + "," + story["target_language"]
+
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         try :
             mdebug("Authenticating to: " + str(auth_url))
@@ -342,9 +345,9 @@ class MICA(object):
 
         self.processors = {}
 
-        for l, processor_name in lang.iteritems() :
-            if processor_map[l] :
-                self.processors[l] = getattr(processors, processor_map[l])(self, params)
+        for tofrom, readable in processor_map.iteritems() :
+            if processor_map[tofrom] :
+                self.processors[tofrom] = getattr(processors, processor_map[tofrom])(self, params)
 
         try :
             mdebug("Checking database access")
@@ -434,7 +437,9 @@ class MICA(object):
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
                                            "source" : source, 
-                                           'email' : email } 
+                                           'email' : email,
+                                           'filters' : {'files' : [], 'stories' : [] },
+                                         } 
         savedb = req.db 
         req.db = newdb 
         self.check_all_views(req)
@@ -496,6 +501,20 @@ class MICA(object):
             mdebug("View runner complete. Waiting until next time...")
             sleep(1800)
 
+    def get_filter_params(self, req) :
+        filterparams = {"name" : "download/mobile"}
+        filterparams["stories"] = ",".join(["none"] + (req.session.value["filters"]["stories"] if "filters" in req.session.value else []))
+        files = ["none"]
+
+        if "filters" in req.session.value : 
+            for tofrom in req.session.value["filters"]["files"] :
+                gp = self.processors[tofrom]
+                for f in gp.get_dictionaries() :
+                    files.append(f)
+
+        filterparams["files"] = ",".join(files)
+        return json_dumps(filterparams)
+
     def run_common(self, req) :
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
@@ -508,7 +527,8 @@ class MICA(object):
                         # password in the session file
                         # This is OK for now since we're running on a phone....
                         mdebug("Trying to restart replication...")
-                        if not self.db.replicate(req.session.value["address"], urllib2_quote(username), urllib2_quote(req.session.value["password"]), req.session.value["database"], params["local_database"]) :
+
+                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                     else :
                         # On the server, use cookies to talk to CouchDB
@@ -622,6 +642,9 @@ class MICA(object):
             sideout.append("\">")
             sideout.append(rname)
             sideout.append("</a>")
+
+        if "source_language" in story :
+            sideout.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
         
         if (finished or reviewed or story["translated"]) and "pr" in story :
             pr = story["pr"]
@@ -786,7 +809,7 @@ class MICA(object):
 
         assert("source_language" in story)
 
-        processor = getattr(processors, processor_map[story["source_language"]])(self, params)
+        processor = getattr(processors, processor_map[self.tofrom(story)])(self, params)
     
         page_inputs = 0
         if "filetype" not in story or story["filetype"] == "txt" :
@@ -933,8 +956,8 @@ class MICA(object):
         minfo("Translation complete.")
         processor.parse_page_stop(opaque)
 
-    def get_parts(self, unit, source_language) :
-        gp = self.processors[source_language]
+    def get_parts(self, unit, tofrom) :
+        gp = self.processors[tofrom]
         py = ""
         target = ""
         if unit["multiple_correct"] == -1 :
@@ -985,7 +1008,7 @@ class MICA(object):
         return percent
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
-        gp = self.processors[story["source_language"]]
+        gp = self.processors[self.tofrom(story)]
         out = ""
         # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
         if gp.already_romanized :
@@ -1087,7 +1110,7 @@ class MICA(object):
         return keys
         
     def history(self, req, story, uuid, page) :
-        gp = self.processors[story["source_language"]]
+        gp = self.processors[self.tofrom(story)]
         history = []
         found = {}
         tid = 0
@@ -1150,7 +1173,7 @@ class MICA(object):
                 
             for unit in units :
                 char = "".join(unit["source"])
-                if char in self.processors[story["source_language"]].punctuation_without_letters or len(char.strip()) == 0:
+                if char in self.processors[self.tofrom(story)].punctuation_without_letters or len(char.strip()) == 0:
                     continue
                 if char in found :
                     continue
@@ -1237,7 +1260,7 @@ class MICA(object):
             out += "</h4></div>"
             return out
 
-        req.gp = self.processors[story["source_language"]]
+        req.gp = self.processors[self.tofrom(story)]
         req.story_name = story["name"]
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         req.source_language = story["source_language"]
@@ -1269,7 +1292,7 @@ class MICA(object):
     
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
         output = [output]
-        gp = self.processors[story["source_language"]]
+        gp = self.processors[self.tofrom(story)]
 
         if mobile and req.session.value["username"] == "demo" and gp.already_romanized :
             chars_per_line = 10 
@@ -1306,7 +1329,7 @@ class MICA(object):
 
             source = "".join(unit["source"])
 
-            ret = self.get_parts(unit, story["source_language"])
+            ret = self.get_parts(unit, self.tofrom(story))
 
             if ret == False :
                 continue
@@ -1809,7 +1832,7 @@ class MICA(object):
         items.sort(key = itemhelp, reverse = True)
 
         for name, story in items :
-            gp = self.processors[story["source_language"] if "source_language" in story else "zh-CHS"]
+            gp = self.processors[self.tofrom(story) if "source_language" in story else "zh-CHS,en"]
 
             reviewed = not ("reviewed" not in story or not story["reviewed"])
             finished = not ("finished" not in story or not story["finished"])
@@ -1890,7 +1913,7 @@ class MICA(object):
             if "hash" not in unit :
                 trans_id += 1
                 continue
-            ret = self.get_parts(unit, story["source_language"])
+            ret = self.get_parts(unit, self.tofrom(story))
             if not ret :
                 trans_id += 1
                 continue
@@ -1901,7 +1924,7 @@ class MICA(object):
                     progress.append([py, target, unit, x, trans_id, page])
                     total_memorized += 1
 
-            if py and py not in self.processors[story["source_language"]].punctuation :
+            if py and py not in self.processors[self.tofrom(story)].punctuation :
                 unique[unit["hash"]] = True
 
             trans_id += 1
@@ -1951,7 +1974,7 @@ class MICA(object):
     def operation(self, req, story, edit, offset):
         operation = edit["operation"]
 
-        processor = getattr(processors, processor_map[story["source_language"]])(self, params)
+        processor = getattr(processors, processor_map[self.tofrom(story)])(self, params)
 
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
@@ -2053,7 +2076,7 @@ class MICA(object):
         
         mdebug("Received new story name: " + filename)
 
-        gp = self.processors[source_lang]
+        gp = self.processors[source_lang + "," + target_lang]
 
         removespaces = False if gp.already_romanized else (True if filetype == "txt" else False)
 
@@ -2209,6 +2232,9 @@ class MICA(object):
             return msg
 
     def disconnect(self, req, session) :
+        if mobile :
+            req.db.stop_replication()
+
         session.value['connected'] = False
         username = session.value['username']
         if username in self.dbs :
@@ -2225,6 +2251,7 @@ class MICA(object):
         self.view_check(req, "mergegroups")
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
+        self.view_check(req, "download")
 
     '''
     All stories up to and including mica version 0.4.x only supported
@@ -2448,7 +2475,7 @@ class MICA(object):
                 out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
                 final = { }
                 requests = [source]
-                gp = self.processors[source_language]
+                gp = self.processors[source_language + "," + target_language]
 
                 breakout = source.decode("utf-8") if isinstance(source, str) else source
                 if gp.already_romanized :
@@ -2726,7 +2753,12 @@ class MICA(object):
                        appuser = {"username" : username}
                        req.db["MICA:appuser"] = appuser
                            
-                    if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
+                    tmpuser = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+                    if tmpuser and "filters" in tmpuser :
+                        mdebug("Found old filters.")
+                        req.session.value["filters"] = tmpuser["filters"]
+                        req.session.save()
+                    if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                         # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
                         req.skip_show = True
                         return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
@@ -2775,10 +2807,14 @@ class MICA(object):
                 if "default_web_zoom" not in user :
                     user["default_web_zoom"] = 1.0
 
+                if "filters" not in user :
+                   user["filters"] = {'files' : [], 'stories' : [] }
+
                 req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
                 req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
                 req.session.value["default_app_zoom"] = user["default_app_zoom"]
                 req.session.value["default_web_zoom"] = user["default_web_zoom"]
+                req.session.value["filters"] = user["filters"]
 
                 if req.session.value["username"] == "demo" :
                     req.session.value["language"] = get_global_language()
@@ -2837,7 +2873,6 @@ class MICA(object):
                 
             username = req.session.value['username']
 
-
             if "app_chars_per_line" not in req.session.value :
                 user = req.db[self.acct(username)]
                 if user :
@@ -2845,6 +2880,7 @@ class MICA(object):
                     req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
                     req.session.value["default_app_zoom"] = user["default_app_zoom"]
                     req.session.value["default_web_zoom"] = user["default_web_zoom"]
+                    req.session.value["filters"] = user["filters"]
                     req.session.save()
 
             if username not in self.first_request :
@@ -3376,7 +3412,7 @@ class MICA(object):
                     # Reload just in case the translation changed anything
                     name = req.db[self.index(req, uuid)]["value"]
                     story = req.db[self.story(req, name)]
-                    gp = self.processors[story["source_language"]]
+                    gp = self.processors[self.tofrom(story)]
                     
                     if req.action == "edit" and gp.already_romanized :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
@@ -3514,7 +3550,7 @@ class MICA(object):
                     req.db.compact()
                     req.db.cleanup()
                     design_docs = ["memorized", "stories", "mergegroups",
-                                   "tonechanges", "accounts", "splits" ]
+                                   "tonechanges", "accounts", "splits", "download" ]
 
                     for name in design_docs :
                         if req.db.doc_exist("_design/" + name) :
@@ -3674,6 +3710,45 @@ class MICA(object):
                     req.session.save()
                     # Same as before, but specifically for a mobile device
                     out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
+                elif req.http.params.get("tofrom") :
+                    tofrom = req.http.params.get("tofrom")
+                    remove = int(req.http.params.get("remove"))
+
+                    if tofrom not in processor_map :
+                        # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+
+                    if "filters" not in user :
+                       user["filters"] = {'files' : [], 'stories' : [] }
+
+                    if remove == 0 :
+                        if tofrom not in user["filters"]['files'] :
+                            user["filters"]['files'].append(tofrom)
+                    else :
+                        if tofrom in user["filters"]['files'] :
+                            user["filters"]['files'].remove(tofrom)
+
+                    req.session.value["filters"] = user["filters"]
+
+                    req.db.stop_replication()
+
+                    if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+
+                    req.db[self.acct(username)] = user
+                    req.session.save()
+
+                    if mobile :
+                        if remove == 0 :
+                            out += self.heromsg + "\n<h4>" + _("Success! We will start downloading that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
+                        else :
+                            out += self.heromsg + "\n<h4>" + _("Success! We will no longer download that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
+                    else :
+                        if remove == 0 :
+                            out += self.heromsg + "\n<h4>" + _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
+                        else :
+                            out += self.heromsg + "\n<h4>" + _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
+
                 elif req.http.params.get("setwebchars") :
                     chars_per_line = int(req.http.params.get("setwebchars"))
                     if chars_per_line > 1000 or chars_per_line < 5:
@@ -3708,6 +3783,63 @@ class MICA(object):
                     out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
 
                 out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
+
+                if mobile :
+                    out += "<h4><b>" + _("Dictionaries") + "?</b></h4>"
+                else :
+                    # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
+                    out += "<h4><b>" + _("Send Dictionaries to your devices?") + "</b></h4>"
+                out += "<h5>(" + _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each") + ".)</h5>"
+
+                out += "<table>"
+                for pair, readable in supported.iteritems() :
+                    out += "<tr><td>"
+                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
+                    dname = "dict" + pair.replace("-", "")
+                    out += "<input type='hidden' name='tofrom' value='" + pair + "'/>\n"
+
+                    out += "<button id='" + dname + "' name='downloaddictionary' type='submit' class='btn btn-default btn-primary"
+
+                    downloaded = False 
+
+                    if "filters" in user and pair in user["filters"]["files"] :
+                        downloaded = True
+
+                    remove = False
+                    if not downloaded :
+                        out += "'>" + _("Download")
+                    else :
+                        all_found = True
+
+                        for pair, lgp in self.processors.iteritems() :
+                            for f in lgp.get_dictionaries() :
+                                fname = params["scratch"] + f
+
+                                if not os_path.isfile(fname) :
+                                    all_found = False
+                                    break
+
+                        remove = True
+                        if all_found :
+                            out += "'>" + _("Remove")
+                        else :
+                            #out += " btn-disabled' disabled"
+                            out += "'"
+                            out += ">" + _("Downloading") + "..."
+
+                    out += "</button>"
+
+                    if remove :
+                        out += "<input type='hidden' name='remove' value='1'/>\n"
+                    else :
+                        out += "<input type='hidden' name='remove' value='0'/>\n"
+
+                    out += "</form>"
+                    out += "</td><td>"
+                    out += "&#160;" + _(readable) + "<br/>"
+                    lgp = self.processors[pair]
+                    out += "</td></tr>"
+                out += "</table>"
 
                 out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
                 if not mobile :

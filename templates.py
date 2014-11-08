@@ -511,8 +511,7 @@ class HeadElement(Element):
     def languages(self, request, tag) :
         tag(tags.option(value='', selected='selected')(_("None Selected")))
         for l, readable in supported.iteritems() :
-            src, dest = l.split(",")
-            if processor_map[src] and processor_map[dest] :
+            if l in processor_map and processor_map[l] :
                 option = tags.option(value=l)
                 tag(option(_(readable)))
         return tag

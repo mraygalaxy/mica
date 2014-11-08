@@ -121,8 +121,8 @@ romanization = {
         }
 
 processor_map = {
-        u"zh-CHS" : u"ChineseSimplified", 
-        u"en" : u"English", 
+        u"zh-CHS,en" : u"ChineseSimplifiedToEnglish", 
+        u"en,zh-CHS" : u"EnglishToChineseSimplified", 
         u"py": False,
 }
 
