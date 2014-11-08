@@ -264,9 +264,9 @@ def get_cjk_handle(params) :
 
     return (cjk, d)
 
-class English(Processor) :
+class EnglishToChineseSimplified(Processor) :
     def __init__(self, mica, params) :
-        super(English, self).__init__(mica, params)
+        super(EnglishToChineseSimplified, self).__init__(mica, params)
         #self.files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
         #self.files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
         self.files = dict(dict_file = "lazyworm-ec.dict", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
@@ -547,9 +547,9 @@ class English(Processor) :
     def parse_page_stop(self, opaque) :
         d = opaque
 
-class ChineseSimplified(Processor) :
+class ChineseSimplifiedToEnglish(Processor) :
     def __init__(self, mica, params) :
-        super(ChineseSimplified, self).__init__(mica, params)
+        super(ChineseSimplifiedToEnglish, self).__init__(mica, params)
         self.already_romanized = False 
 
         self.punctuation_letters = {}

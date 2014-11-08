@@ -440,12 +440,15 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
     def push_percent(self) :
         return self.db.get_push_percent()
 
-    def replicate(self, url, user, pw, dbname, localdbname) :
+    def stop_replication(self) :
+        self.db.stop_replication(self.dbname)
+
+    def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
         username_unquoted = quote(user)
         password_unquoted = quote(pw)
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
-        if self.db.replicate(localdbname, String(full_url), False) == -1 :
+        if self.db.replicate(localdbname, String(full_url), False, String(filterparams)) == -1 :
             mdebug("Replication failed. Boo. =(")
             return False
         else :
@@ -634,12 +637,15 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         if attach != "" :
             raise ResourceNotFound("Could write attachment to path for document: " + name + ": " + attach)
 
-    def replicate(self, url, user, pw, dbname, localdbname) :
+    def stop_replication(self) :
+        self.db.stop_replication_(self.dbname)
+
+    def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
         username_unquoted = quote(user)
         password_unquoted = quote(pw)
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
-        if self.db.replicate__(String(localdbname), String(full_url)) == -1 :
+        if self.db.replicate___(String(localdbname), String(full_url), String(filterparams)) == -1 :
             mdebug("Replication failed. Boo. =(")
             return False
         else :
