@@ -1031,28 +1031,28 @@ function installreading() {
 }
 
 function syncstory(name, uuid) {
-    document.getElementById(name).innerHTML = 'Requesting...';
+    document.getElementById(name).innerHTML = local('requesting') + "...";
     go('#' + name, 
         '/storylist?uuid=' + uuid + "&sync=1",
         '', 
         'sync error', 
         false,
         function(unused) { 
-         document.getElementById(name).innerHTML = 'Started (stop?)';
+         document.getElementById(name).innerHTML = local('started');
          document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
         },
         false);
 }
 
 function unsyncstory(name, uuid) {
-    document.getElementById(name).innerHTML = 'Stopping...';
+    document.getElementById(name).innerHTML = local('stopping') + "...";
     go('#' + name, 
         '/storylist?uuid=' + uuid + "&sync=0",
         '', 
         'sync error', 
         false,
         function(unused) { 
-         document.getElementById(name).innerHTML = 'Stopped (start?)';
+         document.getElementById(name).innerHTML = local('stopped');
          document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
         },
         false);

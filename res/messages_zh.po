@@ -1179,3 +1179,74 @@ msgstr ""
 "您的设备要么没有足够的信号强度或者连接不具有足够的连接。当你有一个连接(3G或"
 "WIFI),我们无法到达服务器。请稍后再试，当你必须通过点击“M”在登陆前更好的网络连"
 "接。"
+
+msgid "Syncing"
+msgstr ""
+
+msgid "Start Syncing"
+msgstr ""
+
+msgid "Stop Syncing"
+msgstr ""
+
+msgid "Failed to change synchronization. Please try again"
+msgstr ""
+
+#. Someone supplied invalid input to the server indicating a dictionary that does not exist.
+msgid "No such dictionary. Please try again"
+msgstr ""
+
+msgid "Failed to intiate download of this dictionary. Please try again"
+msgstr ""
+
+msgid "Success! We will start downloading that dictionary"
+msgstr ""
+
+msgid "Success! We will no longer download that dictionary"
+msgstr ""
+
+msgid "Success! We will start distributing that dictionary to your devices"
+msgstr ""
+
+msgid "Success! We will no longer distribute that dictionary to your devices"
+msgstr ""
+
+msgid "Dictionaries"
+msgstr ""
+
+#. This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
+msgid "Send Dictionaries to your devices?"
+msgstr ""
+
+msgid ""
+"Offline dictionaries are required for using 'Edit' mode of some character-"
+"based languages and for re-translating individual pages in Review mode. "
+"Instant translations require internet access, so you can skip these "
+"downloads if your stories have already been edited/reviewed and you are "
+"mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 "
+"MB each"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+msgid "For assistance, Contact:"
+msgstr ""
+
+msgid "Requesting"
+msgstr ""
+
+msgid "Started (stop?)"
+msgstr ""
+
+msgid "Stopping"
+msgstr ""
+
+msgid "Stopped (start?)"
+msgstr ""
