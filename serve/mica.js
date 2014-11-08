@@ -1030,6 +1030,34 @@ function installreading() {
     });
 }
 
+function syncstory(name, uuid) {
+    document.getElementById(name).innerHTML = 'Requesting...';
+    go('#' + name, 
+        '/storylist?uuid=' + uuid + "&sync=1",
+        '', 
+        'sync error', 
+        false,
+        function(unused) { 
+         document.getElementById(name).innerHTML = 'Started (stop?)';
+         document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
+        },
+        false);
+}
+
+function unsyncstory(name, uuid) {
+    document.getElementById(name).innerHTML = 'Stopping...';
+    go('#' + name, 
+        '/storylist?uuid=' + uuid + "&sync=0",
+        '', 
+        'sync error', 
+        false,
+        function(unused) { 
+         document.getElementById(name).innerHTML = 'Stopped (start?)';
+         document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
+        },
+        false);
+}
+
 function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
