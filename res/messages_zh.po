@@ -1230,9 +1230,6 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
-msgid "Remove"
-msgstr ""
-
 msgid "Downloading"
 msgstr ""
 
@@ -1249,4 +1246,7 @@ msgid "Stopping"
 msgstr ""
 
 msgid "Stopped (start?)"
+msgstr ""
+
+msgid "Stop downloading"
 msgstr ""

@@ -3575,9 +3575,6 @@ class MICA(object):
             elif req.action == "account" :
                 out = ""
 
-                if username == "demo" :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Demo account is read-only") + ".</h4></div>")
-                 
                 user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
                 if not user :
@@ -3859,7 +3856,7 @@ class MICA(object):
 
                         remove = True
                         if all_found :
-                            out += "'>" + _("Remove")
+                            out += "'>" + _("Stop downloading")
                         else :
                             #out += " btn-disabled' disabled"
                             out += "'"
@@ -3877,17 +3874,6 @@ class MICA(object):
                     out += "&#160;" + _(readable) + "<br/>"
                     out += "</td></tr>"
                 out += "</table>"
-
-                out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
-                if not mobile :
-                    out += run_template(req, PasswordElement)
-                else :
-                    out += _("Please change your password on the website. Will support mobile in a future version.")
-
-                out += """
-                        <a onclick="$('#compactModal').modal('show');"
-                        """
-                out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
 
                 try :
                     # the zoom level or characters-per-line limit
@@ -3913,30 +3899,6 @@ class MICA(object):
                 except KeyError, e :
                     merr("Keep having this problem: " + str(user) + " " + str(e))
                     raise e
-                
-                # Security breach, switch to user db
-                if self.userdb :
-                    if not mobile and req.session.value["isadmin"] :
-                        out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
-                        out += "<table>"
-                        for result in self.userdb.view('accounts/all') :
-                            tmp_doc = result["key"]
-                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
-                            out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
-                            out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
-                            out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
-                            out += "</tr>"
-                        out += "</table>"
-
-                if not mobile :
-                    out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
-                    out += """
-                        <form action='/account' method='post' enctype='multipart/form-data'>
-                    """
-                    out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
-                    out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
-                else :
-                    out += _("Please change your email address on the website. Will support mobile in a future version.")
 
                 out += "<h4><b>" + _("Language") + "</b>?</h4>"
                 out += """
@@ -3960,6 +3922,45 @@ class MICA(object):
                     <br/>
                 """
                 out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
+
+                out += """
+                        <a onclick="$('#compactModal').modal('show');"
+                        """
+
+                out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
+
+                if username == "demo" :
+                    return self.bootstrap(req, out)
+                 
+                out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
+                if not mobile :
+                    out += run_template(req, PasswordElement)
+                else :
+                    out += _("Please change your password on the website. Will support mobile in a future version.")
+
+                if self.userdb :
+                    if not mobile and req.session.value["isadmin"] :
+                        out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
+                        out += "<table>"
+                        for result in self.userdb.view('accounts/all') :
+                            tmp_doc = result["key"]
+                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
+                            out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
+                            out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
+                            out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
+                            out += "</tr>"
+                        out += "</table>"
+
+                if not mobile :
+                    out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
+                    out += """
+                        <form action='/account' method='post' enctype='multipart/form-data'>
+                    """
+                    out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
+                    out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
+                else :
+                    out += _("Please change your email address on the website. Will support mobile in a future version.")
+
                 out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
                 if not mobile :
                     out += run_template(req, DeleteAccountElement)
