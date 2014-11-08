@@ -651,7 +651,14 @@ class MICA(object):
             sideout.append("<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
             sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
+        # add if mobile here
+        if "download" not in story or not story["download"] :
+            syncing = _("Syncing")
+            sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
+        else :
+            sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
         sideout.append("</td><td>")
+
         if not mobile and not gp.already_romanized :
             if finished or reviewed :
                 # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
@@ -1865,7 +1872,7 @@ class MICA(object):
                     untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
                 untrans.append("</td>")
                 untrans.append("</tr>")
-            else :
+            else : 
                 notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
                 notsure.append("")
                 if not mobile :
@@ -2929,11 +2936,11 @@ class MICA(object):
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_"), source, filetype, source_lang, target_lang)
+                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_").replace(",","_"), source, filetype, source_lang, target_lang)
 
             if req.http.params.get("uploadtext") :
                 source = req.http.params.get("storytext") + "\n"
-                filename = req.http.params.get("storyname").lower().replace(" ","_")
+                filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
                 return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
@@ -3492,6 +3499,36 @@ class MICA(object):
                         return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
                     
             elif req.action == "storylist" :
+                if req.http.params.get("sync") :
+                    sync = int(req.http.params.get("sync"))
+                    tmpuuid = req.http.params.get("uuid")
+                    tmpname = req.db[self.index(req, tmpuuid)]["value"]
+                    tmpstory = req.db[self.story(req, tmpname)]
+                    tmpuser = req.db[self.acct(req.session.value["username"])]
+
+                    if sync == 1 :
+                        tmpstory["download"] = True
+                        if name not in tmpuser["filters"]["stories"] :
+                            tmpuser["filters"]["stories"].append(name)
+                    else :
+                        tmpstory["download"] = False
+                        if name in tmpuser["filters"]["stories"] :
+                            tmpuser["filters"]["stories"].remove(name)
+                        
+                    req.session.value["filters"] = tmpuser["filters"]
+
+                    if mobile :
+                        req.db.stop_replication()
+                        if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to change synchronization. Please try again") + ": " + tofrom + ".</h4></div>")
+
+                    req.db[self.story(req, tmpname)] = tmpstory
+                    req.db[self.acct(req.session.value["username"])] = tmpuser
+                    req.session.save()
+
+                    #mdebug("Want to perform: user " + str(tmpuser) + " story " + str(tmpstory))
+                    return self.bootstrap(req, "changed", now = True)
+
                 storylist = [self.template("storylist")]
 
                 result = repeat(self.makestorylist, args = [req], kwargs = {})
@@ -3730,10 +3767,11 @@ class MICA(object):
 
                     req.session.value["filters"] = user["filters"]
 
-                    req.db.stop_replication()
+                    if mobile :
+                        req.db.stop_replication()
 
-                    if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
 
                     req.db[self.acct(username)] = user
                     req.session.save()
