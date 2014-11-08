@@ -3849,13 +3849,13 @@ class MICA(object):
                     else :
                         all_found = True
 
-                        for pair, lgp in self.processors.iteritems() :
-                            for f in lgp.get_dictionaries() :
-                                fname = params["scratch"] + f
+                        lgp = self.processors[pair]
+                        for f in lgp.get_dictionaries() :
+                            fname = params["scratch"] + f
 
-                                if not os_path.isfile(fname) :
-                                    all_found = False
-                                    break
+                            if not os_path.isfile(fname) :
+                                all_found = False
+                                break
 
                         remove = True
                         if all_found :
@@ -3875,7 +3875,6 @@ class MICA(object):
                     out += "</form>"
                     out += "</td><td>"
                     out += "&#160;" + _(readable) + "<br/>"
-                    lgp = self.processors[pair]
                     out += "</td></tr>"
                 out += "</table>"
 

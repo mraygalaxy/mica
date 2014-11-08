@@ -228,6 +228,7 @@ class ServerAdvertElement(Element) :
 
     @renderer
     def server(self, request, tag) :
+        tag.fillSlots(contact = _("For assistance, Contact:"))
         return tag
 
 class LinkAdvertElement(Element) :
@@ -837,6 +838,10 @@ class HeadElement(Element):
                      # These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
                      statshide = _("Stats Hidden"),
                      statsshown = _("Stats Shown"),
+                     requesting = _("Requesting"),
+                     started = _("Started (stop?)"),
+                     stopping = _("Stopping"),
+                     stopped = _("Stopped (start?)"),
                      )
        return tag
 
