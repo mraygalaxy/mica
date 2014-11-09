@@ -1181,42 +1181,42 @@ msgstr ""
 "接。"
 
 msgid "Syncing"
-msgstr ""
+msgstr "正在同步"
 
 msgid "Start Syncing"
-msgstr ""
+msgstr "开始同步"
 
 msgid "Stop Syncing"
-msgstr ""
+msgstr "停止同步"
 
 msgid "Failed to change synchronization. Please try again"
-msgstr ""
+msgstr "未能改变同步的状态。请重试"
 
 #. Someone supplied invalid input to the server indicating a dictionary that does not exist.
 msgid "No such dictionary. Please try again"
-msgstr ""
+msgstr "没有这样的字典。请重试"
 
 msgid "Failed to intiate download of this dictionary. Please try again"
-msgstr ""
+msgstr "无法开始下载词典。请重试"
 
 msgid "Success! We will start downloading that dictionary"
-msgstr ""
+msgstr "成功了！我们将开始下载词典"
 
 msgid "Success! We will no longer download that dictionary"
-msgstr ""
+msgstr "成功了！我们将不再下载词典"
 
 msgid "Success! We will start distributing that dictionary to your devices"
-msgstr ""
+msgstr "成功了！我们将开始分发该词典在您的设备"
 
 msgid "Success! We will no longer distribute that dictionary to your devices"
-msgstr ""
+msgstr "成功了！我们将那本字典不再分发给您的设备"
 
 msgid "Dictionaries"
-msgstr ""
+msgstr "字典"
 
 #. This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
 msgid "Send Dictionaries to your devices?"
-msgstr ""
+msgstr "字典发送到您的设备？"
 
 msgid ""
 "Offline dictionaries are required for using 'Edit' mode of some character-"
@@ -1226,30 +1226,33 @@ msgid ""
 "mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 "
 "MB each"
 msgstr ""
+"在以文字为基础的语言的编辑模式和检查模式的重新翻译单独页中需要离线字典。在线"
+"翻译则需要联网，如果你的故事已经被编辑，检查过而且你可以开始使用阅读模式，你"
+"可以不用下载字典。每个词典大概有30M到50M大小"
 
 msgid "Download"
-msgstr ""
+msgstr "下载"
 
 msgid "Downloading"
-msgstr ""
+msgstr "正在下载"
 
 msgid "For assistance, Contact:"
-msgstr ""
+msgstr "如需帮助，请联系："
 
 msgid "Requesting"
-msgstr ""
+msgstr "正在请求"
 
 msgid "Started (stop?)"
-msgstr ""
+msgstr "开始了 (停?)"
 
 msgid "Stopping"
-msgstr ""
+msgstr "是停"
 
 msgid "Stopped (start?)"
-msgstr ""
+msgstr "停止了 (开始?)"
 
 msgid "Stop downloading"
-msgstr ""
+msgstr "停止下载"
 
 msgid ""
 "If you have re-installed or this is your first time logging in on this "
@@ -1257,3 +1260,5 @@ msgid ""
 "this can take a while, because we need to calculate some information to "
 "organize things on your device. Be patient."
 msgstr ""
+"如果你重装了或者这是你第一次在这个设备上登陆，你可能在同一时间需要同步许多故"
+"事，这可能会需要一点时间，因为我们需要在你的设备上整理一些信息。请耐心等待。"
