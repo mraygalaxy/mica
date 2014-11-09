@@ -397,7 +397,7 @@ msgid ""
 "to the device for regular use."
 msgstr ""
 "新故事仅支持在网站加载。（因为加载新故事需要强大的计算支持，所以在此设备只能"
-"同步。）"
+"同步。"
 
 #. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
 msgid "Story is a"
