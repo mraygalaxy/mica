@@ -528,6 +528,7 @@ class SpanishToEnglish(RomanizedSource) :
 
         self.matches.update({
                         u"s" : False,
+                        u"r" : False,
                         u"a" : False,
                         u"te" : False,
                         u"ta" : False,
@@ -538,6 +539,7 @@ class SpanishToEnglish(RomanizedSource) :
                         u"les" : False,
                         u"do" : u"r",
                         u"o" : u"ar",
+                        u"ar" : False,
                         })
 
 class EnglishSource(RomanizedSource) :
