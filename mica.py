@@ -2848,12 +2848,15 @@ class MICA(object):
                                 fname = params["scratch"] + f 
 
                                 if '_attachments' not in listing or f not in listing['_attachments'] :
-                                    minfo("Opening dict file: " + f)
-                                    fh = open(fname, 'r')
-                                    minfo("Uploading " + f + " to file listing...")
-                                    req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
-                                    fh.close()
-                                    minfo("Uploaded.")
+                                    if os_path.isfile(fname) :
+                                        minfo("Opening dict file: " + f)
+                                        fh = open(fname, 'r')
+                                        minfo("Uploading " + f + " to file listing...")
+                                        req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
+                                        fh.close()
+                                        minfo("Uploaded.")
+                                    else :
+                                        minfo("Cannot Upload " + f + ", not generated yet.")
                                 else :
                                     mdebug("File " + f + " already exists.")
                                     handle = lgp.parse_page_start()

@@ -154,7 +154,7 @@ class IdxFileReader(object):
                 #self.db["_index_idx"][self._index - 1] = (word_str, word_data_offset, word_data_size)
 
                 i = self.db["_index_idx"].insert().values(idx = self._index - 1,
-                          word_str = word_str,
+                          word_str = word_str.decode("utf-8"),
                           word_data_offset = word_data_offset,
                           word_data_size = word_data_size)
 
@@ -162,19 +162,19 @@ class IdxFileReader(object):
                 #if word_str not in self.db["_word_idx"]:
                 #    self.db["_word_idx"][word_str] = []
                 #self.db["_word_idx"][word_str].append(self._index - 1)
-                s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str)
+                s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str.decode("utf-8"))
                 rs = s.execute()
                 result = rs.fetchone()
                 t = time()
                 if result is None :
-                    i = self.db["_word_idx"].insert().values(word_str = word_str, idx = str([]))
+                    i = self.db["_word_idx"].insert().values(word_str = word_str.decode("utf-8"), idx = str([]))
                     self.db["conn"].execute(i)
                     rs = s.execute()
                     result = rs.fetchone()
 
                 newlist = eval(result[1])
                 newlist.append(self._index - 1)
-                j = self.db["_word_idx"].update().values(idx = str(newlist)).where(self.db["_word_idx"].c.word_str == word_str)
+                j = self.db["_word_idx"].update().values(idx = str(newlist)).where(self.db["_word_idx"].c.word_str == word_str.decode("utf-8"))
 
                 self.db["conn"].execute(j)
 
@@ -240,7 +240,7 @@ class IdxFileReader(object):
         Index infomation corresponding to the specified word if exists, otherwise False.
         The index infomation returned is a list of tuples, in form of [(word_data_offset, word_data_size) ...]
         """
-        s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str)
+        s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str.decode("utf-8"))
         rs = s.execute()
         result = rs.fetchone()
         mdebug("Result for " + word_str + ": " + str(result))

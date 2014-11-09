@@ -1,4 +1,4 @@
-# English => Chinese Simplified Localizations for MICA
+# English => Pinyin Simplified Localizations for MICA
 msgid ""
 msgstr ""
 "Project-Id-Version: beta\n"
@@ -14,381 +14,381 @@ msgstr ""
 
 #. 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
 msgid "Review"
-msgstr "检查"
+msgstr ""
 
 #. 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
 msgid "Edit"
-msgstr "编辑"
+msgstr ""
 
 #. 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
 msgid "Read"
-msgstr "阅读"
+msgstr ""
 
 #. Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account.
 msgid "Account"
-msgstr "帐户"
+msgstr ""
 
 #. Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
 msgid "Preferences"
-msgstr "设置"
+msgstr ""
 
 #. Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
 msgid "Upload New Story"
-msgstr "上传新故事"
+msgstr ""
 
 #. Make a new account, a button inside the 'Account' section of the top-most navigation panel
 msgid "New Account"
-msgstr "新账户"
+msgstr ""
 
 #. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
 msgid "Disconnect"
-msgstr "退出"
+msgstr ""
 
 #. About is a traditional description of the software package itself that you might find in other help menus of other programs.
 msgid "About"
-msgstr "关于"
+msgstr ""
 
 #. Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
 msgid "Help"
-msgstr "帮助"
+msgstr ""
 
 #. The software's privacy policy, such as what user information we keep and do not keep.
 msgid "Privacy"
-msgstr "隐私政策"
+msgstr ""
 
 msgid "Chinese Simplified"
-msgstr "简体中文"
+msgstr ""
 
 msgid "English"
-msgstr "英语"
+msgstr ""
 
 #. 'Go' or 'Skip' ahead to a specific page in a book/story.
 msgid "Go"
-msgstr "到"
+msgstr ""
 
 #. 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
 msgid "Legend"
-msgstr "图例"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
 msgid "Correct for tone and meaning"
-msgstr "读音和意思正确"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
 msgid "(No review necessary)"
-msgstr "（不需要检查）"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed.
 msgid "Possibly wrong meaning"
-msgstr "意义可能错的"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate.
 msgid "(but tone is correct)"
-msgstr "（但是音调对的）"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
 msgid "Possibly wrong tone"
-msgstr "音调可能错的"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
 msgid "(as well as meaning)"
-msgstr "（意思也是错的）"
+msgstr ""
 
 #. This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
 msgid "Definitely wrong previously"
-msgstr "以前错过"
+msgstr ""
 
 #. This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
 msgid "Change History"
-msgstr "多音修改历史"
+msgstr ""
 
 #. This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
 msgid "Breakdown"
-msgstr "分解"
+msgstr ""
 
 #. Online indicates a count of how many words were translated over the internet
 msgid "Online"
-msgstr "线上翻译"
+msgstr ""
 
 #. Offline indicates a count of how many words were translated using an offline dictionary
 msgid "Offline"
-msgstr "线下翻译"
+msgstr ""
 
 #. SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "SPLIT"
-msgstr "分开过的"
+msgstr ""
 
 #. MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "MERGE"
-msgstr "合并过的"
+msgstr ""
 
 #. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "No edit history available."
-msgstr "不存在修改历史。"
+msgstr ""
 
 msgid "These characters were previously merged into a word"
-msgstr "这些字以前合并成一个词"
+msgstr ""
 
 msgid "This word was previously split into characters"
-msgstr "这个词以前分解成单个字"
+msgstr ""
 
 #. These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
 msgid "Try Recommendations"
-msgstr "试试推荐"
+msgstr ""
 
 #. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
-msgstr "重新翻译本页"
+msgstr ""
 
 #. The user has completed logging out / signing out already - then this message appears.
 msgid "Disconnected from MICA"
-msgstr "推出完成"
+msgstr ""
 
 #. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
 msgid "Exception"
-msgstr "报错"
+msgstr ""
 
 msgid "Please report the exception above to the author. Thank you."
-msgstr "请通知程序员报错信息，谢谢。"
+msgstr ""
 
 msgid "Please report the above exception to the author. Thank you"
-msgstr "请通知程序员报错信息，谢谢。"
+msgstr ""
 
 msgid "Error: Something bad happened"
-msgstr "报错！"
+msgstr ""
 
 #. 'original' refers to the original text of the story that the user provided for language learning.
 msgid "Download Original"
-msgstr "下载原文"
+msgstr ""
 
 #. The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.
 msgid "Download Romanization"
-msgstr "下载拼音"
+msgstr ""
 
 msgid ""
 "Demo Account is readonly. You must install the mobile application for "
 "interactive use of the demo account."
-msgstr "演示账户只能阅读。你必须下载安装app才能互动使用演示账户."
+msgstr ""
 
 msgid "Demo account is read-only"
-msgstr "演示账户只能阅读"
+msgstr ""
 
 msgid "This character"
-msgstr "这个字"
+msgstr ""
 
 msgid "is polyphonic: (has more than one pronunciation"
-msgstr "是多音字：（有多个发音）"
+msgstr ""
 
 #. Pinyin means the romanization of a character-based word, such as Chinese
 msgid "Pinyin"
-msgstr "拼音"
+msgstr ""
 
 msgid "pīnyīn"
-msgstr "拼音"
+msgstr ""
 
 msgid "Definition"
-msgstr "翻译"
+msgstr ""
 
 #. This appears in a list of items and indicates which is the default item
 msgid "Default"
-msgstr "默认"
+msgstr ""
 
 #. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
 msgid "Select"
-msgstr "选择"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
 msgid "Delete"
-msgstr "删除"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
 msgid "Translate"
-msgstr "翻译"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it.
 msgid "Forget"
-msgstr "复原"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section.
 msgid "Not finished"
-msgstr "没读完"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section.
 msgid "Review not complete"
-msgstr "检查未完成"
+msgstr ""
 
 msgid "Not Reviewed"
-msgstr "未检查"
+msgstr ""
 
 #. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
 msgid "Untranslated"
-msgstr "未翻译"
+msgstr ""
 
 msgid "Untranslated story!"
-msgstr "未翻译的故事！"
+msgstr ""
 
 msgid "Stories"
-msgstr "故事"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section.
 msgid "Finished reading"
-msgstr "已读完"
+msgstr ""
 
 msgid "Reading"
-msgstr "阅读"
+msgstr ""
 
 #. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section.
 msgid "Review Complete"
-msgstr "检查完成"
+msgstr ""
 
 msgid "Upload Failed! Story already exists"
-msgstr "上传失败！故事已存在"
+msgstr ""
 
 msgid "Upload Complete! Story ready for translation"
-msgstr "上传完成！准备翻译"
+msgstr ""
 
 msgid ""
 "This account is not fully synchronized. You can follow the progress at the "
 "top of the screen until the 'download' arrow reaches 100."
-msgstr "同步没有完成。在进度条到达100之前请关注屏幕上方。"
+msgstr ""
 
 #. Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
 msgid "Synchronization error. Please report this to the author. Thank you."
-msgstr "同步没有完成。请通知程序员，谢谢。"
+msgstr ""
 
 msgid ""
 "To login for the first time and begin synchronization with the website, you "
 "must activate internet access."
-msgstr "链接互联网以与网站同步"
+msgstr ""
 
 msgid "Invalid credentials. Please try again"
-msgstr "输入信息错误。请再试一次"
+msgstr ""
 
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
-msgstr "抱歉，这个设备上的MICA数据库属于用户"
+msgstr ""
 
 #. next part of the same message
 msgid "and is configured to stay in synchronization with the server"
-msgstr "。另一个账户已经在这个设备上使用MICA啦。"
+msgstr ""
 
 #. next part of the same message
 msgid ""
 "If you want to change users, you will need to clear this application's data "
 "or reinstall it and re-synchronize the app with"
-msgstr "因为MICA数据库在使用过程中会变大，所以MICA不支持同一设备上多用户使用。"
+msgstr ""
 
 #. end of the message
 msgid ""
 "a new account. This requirement is because MICA databases can become large "
 "over time, so we want you to be aware of that. Thanks."
-msgstr "如果需要使用新用户，请清空MICA数据库或者重新安装。"
+msgstr ""
 
 msgid ""
 "Although you have authenticated successfully, we could not start "
 "synchronization successfully. Please try again."
-msgstr "输入信息正确，但是同步不成功，请重试一次"
+msgstr ""
 
 #. The user has deleted a story from the system.
 msgid "Deleted"
-msgstr "已删除"
+msgstr ""
 
 #. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
 msgid "Invalid story uuid"
-msgstr "无效的故事uuid"
+msgstr ""
 
 #. Finished reviewing a story in review mode.
 msgid "Finished"
-msgstr "阅读完成"
+msgstr ""
 
 msgid "Reviewed"
-msgstr "检查完成"
+msgstr ""
 
 #. 'Forgot' a story using the button in the side-panel.
 msgid "Forgotten"
-msgstr "忘记"
+msgstr ""
 
 #. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
 msgid "Mode changed"
-msgstr "模式转换改变"
+msgstr ""
 
 msgid "show text only"
-msgstr "仅显示文字"
+msgstr ""
 
 msgid "side-by-side text and image"
-msgstr "并列文字和图片"
+msgstr ""
 
 msgid "show image only"
-msgstr "只显示图片"
+msgstr ""
 
 #. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
 msgid "List statistics mode changed"
-msgstr "统计列单模式改变"
+msgstr ""
 
 #. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "Edit history Disabled."
-msgstr "隐藏修改清单"
+msgstr ""
 
 #. statistics in review mode are disabled
 msgid "Review History List Disabled"
-msgstr "隐藏检查历史清单"
+msgstr ""
 
 #. statistics in reading mode are disabled
 msgid "Memorization History List Disabled"
-msgstr "隐藏记忆历史清单"
+msgstr ""
 
 msgid "Story already translated. To re-translate, please select 'Forget'."
-msgstr "故事已翻译完成。重新翻译，请选择‘复原’。"
+msgstr ""
 
 msgid "Translation complete!"
-msgstr "翻译完成！"
+msgstr ""
 
 msgid "Failed to translate story"
-msgstr "翻译失败"
+msgstr ""
 
 msgid "Memorized!"
-msgstr "记得啦！"
+msgstr ""
 
 #. This occurs in Edit mode when a merge/split request failed.
 msgid "Invalid Operation"
-msgstr "操作无效"
+msgstr ""
 
 #. In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
 msgid "Memorized all stories"
-msgstr "所有记得的单词"
+msgstr ""
 
 #. Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
 msgid "Unique memorized page"
-msgstr "本页记得的单词"
+msgstr ""
 
 #. A count of all the unique words on this page, not just the ones the user has memorized.
 msgid "Unique words this page"
-msgstr "本页所有单词"
+msgstr ""
 
 msgid "No words memorized. Get to work!"
-msgstr "不记得一个。加油！"
+msgstr ""
 
 msgid "Edit mode is only supported for learning character-based languages"
-msgstr "编辑模式仅支持图形文字学习"
+msgstr ""
 
 #. Beginning of a sentence: Original source image of the current page from which the text comes
 msgid "Image"
-msgstr "图片"
+msgstr ""
 
 #. end of thes sentence, indicating that a particular image number doesn't exist.
 msgid "not available on this page"
-msgstr "本页不存在"
+msgstr ""
 
 #. Beginning of a message.
 msgid ""
 "No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
 "at the top."
-msgstr "没有加载故事。请点击在侧边上方的'M'选择故事阅读"
+msgstr ""
 
 #. end of a message
 msgid "or create one by clicking on Account icon at the top"
-msgstr "或者点击上方账户按键加载新故事"
+msgstr ""
 
 msgid ""
 "Brand new stories cannot (yet) be created/uploaded yet on the device. You "
@@ -396,152 +396,150 @@ msgid ""
 "amount of computer resources to prepare. Thus, they can only be synchronized "
 "to the device for regular use."
 msgstr ""
-"新故事仅支持在网站加载。（因为加载新故事需要强大的计算支持，所以在此设备只能"
-"同步。"
 
 #. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
 msgid "Story is a"
-msgstr "故事是"
+msgstr ""
 
 #. Tho original story format as it was imported, that is
 msgid "Viewing original not yet implemented"
-msgstr "原文阅读正在建设中"
+msgstr ""
 
 #. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
 msgid "Database compaction complete for your account"
-msgstr "数据库已清空"
+msgstr ""
 
 msgid "Compact databases"
-msgstr "清空数据库"
+msgstr ""
 
 #. Compacting can also be translated as "cleaning" database.
 msgid "Compacting database, Please wait"
-msgstr "请压缩数据库"
+msgstr ""
 
 #. The next handful of mundane phrases are associated with the creation
 #. and management of user accounts in the software program and the relevant
 #. errors that can occur while performing operations on a user's account.
 msgid "Please change your password on the website, first"
-msgstr "请在网站修改你的密码"
+msgstr ""
 
 msgid "Password must be at least 8 characters! Try again"
-msgstr "密码必须有8位！请再试一次"
+msgstr ""
 
 msgid "Passwords don't match! Try again"
-msgstr "两次密码不一致！请再试一次"
+msgstr ""
 
 msgid "Old passwords don't match! Try again"
-msgstr "旧的密码不对！请再试一次"
+msgstr ""
 
 msgid "Password change failed"
-msgstr "密码修改失败"
+msgstr ""
 
 msgid "Success!"
-msgstr "成功"
+msgstr ""
 
 msgid "User"
-msgstr "用户"
+msgstr ""
 
 msgid "password changed"
-msgstr "密码修改成功"
+msgstr ""
 
 msgid "Change"
-msgstr "修改"
+msgstr ""
 
 msgid "Accounts"
-msgstr "账户"
+msgstr ""
 
 msgid "Server is misconfigured. Cannot list accounts."
-msgstr "服务配置错误，不能显示账户"
+msgstr ""
 
 msgid "Language"
-msgstr "语言"
+msgstr ""
 
 msgid "Change Language"
-msgstr "改变语言"
+msgstr ""
 
 msgid "Old Password"
-msgstr "旧密码"
+msgstr ""
 
 msgid "New Password"
-msgstr "新密码"
+msgstr ""
 
 msgid "Confirm Password"
-msgstr "确认密码"
+msgstr ""
 
 msgid "Change Password"
-msgstr "修改密码"
+msgstr ""
 
 msgid ""
 "Please change your password on the website. Will support mobile in a future "
 "version."
-msgstr "请在网站修改你的密码。将在以后的版本中支持移动设别修改。"
+msgstr ""
 
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't make accounts"
-msgstr "服务器设置不正确。不能开设账户"
+msgstr ""
 
 msgid "Invalid account name! Try again"
-msgstr "无效账户名！请再试一次"
+msgstr ""
 
 msgid "Non-admin users can't create admin accounts. What are you doing?!"
-msgstr "非管理者账户不能设立管理账户。你在干什么？！"
+msgstr ""
 
 msgid "Account already exists! Try again"
-msgstr "账户已存在！请再试一次"
+msgstr ""
 
 msgid "Success! New user was created"
-msgstr "成功！新用户创建成功"
+msgstr ""
 
 msgid "Success! Language changed"
-msgstr "成功！语言改变成功"
+msgstr ""
 
 #. This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
 msgid "Number of characters can't be greater than 1000 or less than 5"
-msgstr "单词数量不能超过1000个并且大于5个"
+msgstr ""
 
 #. Same as before, but specifically for a mobile device
 msgid "Success! Mobile Characters-per-line in a story set to:"
-msgstr "成功！移动设备每行词汇数设置为："
+msgstr ""
 
 msgid "Characters per line"
-msgstr "每行词汇量"
+msgstr ""
 
 #. Same as before, but specifically for a website
 msgid "Success! Web Characters-per-line in a story set to:"
-msgstr "成功！网络每行词汇数量设置为："
+msgstr ""
 
 #. The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
 msgid ""
 "App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
-msgstr "APP放大仿小度数必须是大于0.5小于3.0的"
+msgstr ""
 
 #. Same as before, but specifically for an application running on a mobile device
 msgid "Success! App zoom level set to:"
-msgstr "成功！APP放大仿小度数设置为："
+msgstr ""
 
 #. the zoom level or characters-per-line limit
 msgid "Change Viewing configuration"
-msgstr "改变视图配置"
+msgstr ""
 
 #. Same as before, but specifically for an application running on the website
 msgid ""
 "Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
-msgstr "网络放大放小度数必须大于0.5小于3.0的"
+msgstr ""
 
 #. Same as before, but specifically for an application running on the website
 msgid "Success! Web zoom level set to:"
-msgstr "成功！网络放大放小度数设置为："
+msgstr ""
 
 msgid "Default zoom level"
-msgstr "默认放大放小值"
+msgstr ""
 
 #. This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
 msgid "Read, Review, or Edit, my friend?"
-msgstr "阅读，检查或者编辑，我的朋友"
+msgstr ""
 
 msgid "Please wait..."
-msgstr "请等待"
+msgstr ""
 
 msgid ""
 "To get a \"feel\" for how MICA works, you can use the DEMO account with the "
@@ -549,361 +547,346 @@ msgid ""
 "stories from the online demo account, but all changes you make will not be "
 "synchronized."
 msgstr ""
-"为了体验MICA是怎么工作的，你可以使用演示账号，用户名’demo’密码’micademo’。这"
-"个账号里已从在线演示账户里下载了故事，但是你所做的所有改变不会同步。"
 
 msgid "Please Donate To Bitcoin Address"
-msgstr "请捐款到bitcoin地址"
+msgstr ""
 
 msgid "<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."
-msgstr "<b>MICA</b>是一种<b>新的</b>学习语言的方法。"
+msgstr ""
 
 msgid ""
 "It knows how to track <b>polymphones and tones</b> in a Character-based "
 "language."
-msgstr "它知道在基于字符的语言里怎么跟踪<b>多音字和声调</b>。 "
+msgstr ""
 
 msgid "Instead of hiring folks to <b>slave over</b> databases of translations,"
-msgstr "预期雇佣别人来翻译"
+msgstr ""
 
 msgid "Why can't we use the <b>existing content</b> that's already out there?"
-msgstr "为什么我们不能使用<b>已存的内容</b>?"
+msgstr ""
 
 msgid ""
 "Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."
-msgstr "像<b>书</b>，博客，新文章甚至<b>社交媒体</b>。"
+msgstr ""
 
 msgid ""
 "MICA works by <b>analytics</b>: You read <b>existing</b> books or stories "
 "and it <b>tracks your brain</b>."
 msgstr ""
-"MICA是用<b>分析</b>来工作：你月的<b>已存在</b>的书或者故事，它可以<b>跟踪你的"
-"大脑</b>。"
 
 msgid "When you read a new story, it <b>hides the words</b> you already know."
-msgstr "当你阅读一个新故事的时候，它<b>会隐藏</b>你已经记得的单词。"
+msgstr ""
 
 msgid ""
 "MICA is not a translator. It makes you <b>learn by reading</b> in context."
-msgstr "MICA不是翻译器。它是让你在有上下文中<b> 边阅读边学习</b> 。"
+msgstr ""
 
 msgid "Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."
-msgstr "抽认卡很怂。<br/><b>试试MICA！</b>学习一种新语言。"
+msgstr ""
 
 msgid "Learning a language should be just like reading a book"
-msgstr "学习语言应该就像阅读一本书一样。"
+msgstr ""
 
 msgid ""
 "MICA also works offline on mobile devices and automatically stays in sync "
 "with both iOS and Android"
-msgstr "在IOS和Android设备上MICA同样可以在没有网络的情况下运行，而且保证同步。"
+msgstr ""
 
 msgid "Read about how it works"
-msgstr "请阅读这个是怎么工作的。"
+msgstr ""
 
 msgid ""
 "Running the website on a cloud server is not free, so account signups are "
 "not open. If you'd like an account, please consider donating to make the "
 "server bigger."
 msgstr ""
-"在云服务上运行这个网站不是免费的，所以申请账户暂时没有开放。如果你想拥有一个"
-"账户，请考虑捐赠使服务变大。谢谢。"
 
 #. Beginning of a sentence
 msgid "Join the mailing list"
-msgstr "申请邮件列表"
+msgstr ""
 
 #. end of sentence.
 msgid "for additional help"
-msgstr "额外帮助"
+msgstr ""
 
 #. i.e. signin or login
 msgid "You need to connect, first"
-msgstr "你需要先链接"
+msgstr ""
 
 msgid "Click the little 'M' at the top"
-msgstr "点击在上方的小’M’"
+msgstr ""
 
 msgid "This is experimental language-learning software"
-msgstr "这是个正在实验中的语言学习软件"
+msgstr ""
 
 #. Admin account, that is
 msgid "Admin"
-msgstr "管理"
+msgstr ""
 
 #. The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
 msgid "The database for this story"
-msgstr "这个故事的数据库"
+msgstr ""
 
 msgid "needs to be upgraded to version 2"
-msgstr "需要升级到版本2"
+msgstr ""
 
 msgid ""
 "Unfortunately, this can only be performed with the online version. Please "
 "login to your account online to perform the upgrade. The changes will then "
 "be synchronized to all your devices. Thank you."
 msgstr ""
-"对不起，这个只能在线使用。请在线登陆你的账户然后升级。修改将同步到你所有的设"
-"备。谢谢。"
 
 msgid "Start Upgrade"
-msgstr "开始升级"
+msgstr ""
 
 msgid "Story upgrades not allowed on mobile devices."
-msgstr "移动设备不能上传故事"
+msgstr ""
 
 msgid "Invalid upgrade parameters 1"
 msgstr ""
 
 msgid "Upgrade complete"
-msgstr "升级完成"
+msgstr ""
 
 msgid "Invalid request."
 msgstr ""
 
 #. 'format' referring to the database format the we are upgrading to
 msgid "No such story format"
-msgstr "这个故事格式不存在"
+msgstr ""
 
 msgid "Story upgrade status"
-msgstr "故事升级状态"
+msgstr ""
 
 #. This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Page"
-msgstr "页"
+msgstr ""
 
 msgid "Last upgrade Exception"
 msgstr ""
 
 msgid "Story upgrade started. You may refresh to follow its status."
-msgstr "故事升级已开始，你可以刷新来跟踪状态。"
+msgstr ""
 
 #. The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
 msgid "Preferred Language"
-msgstr "首选的语言"
+msgstr ""
 
 msgid "Which languages"
-msgstr "哪个语言"
+msgstr ""
 
 #. Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
 msgid "Remove Spaces?"
-msgstr "删除空格"
+msgstr ""
 
 msgid "NOTE: Story *must* be UTF-8 encoded"
-msgstr "注意：故事*必须*是UTF-8代码的"
+msgstr ""
 
 msgid "not implemented"
-msgstr "没有被执行"
+msgstr ""
 
 #. Source story consists of multiple pages, like a PDF
 msgid "multi-page"
-msgstr "多页"
+msgstr ""
 
 #. Story is just a blob of TXT, such as copy/paste.
 msgid "single-page"
-msgstr "单页"
+msgstr ""
 
 #. i.e. PDF or TXT
 msgid "What kind of file is this?"
-msgstr "这是什么类型的文件？"
+msgstr ""
 
 msgid "Select File"
-msgstr "选择文件"
+msgstr ""
 
 msgid "Upload File"
-msgstr "上传文件"
+msgstr ""
 
 msgid "Or Upload a File Instead"
-msgstr "或者上传一个文件"
+msgstr ""
 
 #. Unique name to identify this story in the system
 msgid "Unique Name"
-msgstr "单一独特的名字"
+msgstr ""
 
 msgid "Upload Text"
-msgstr "上传文本"
+msgstr ""
 
 msgid "Copy/Paste a Story"
-msgstr "复制/粘贴故事"
+msgstr ""
 
 msgid "Upload Story"
-msgstr "上传故事"
+msgstr ""
 
 msgid "Split/Merge Words"
-msgstr "分开/合并词语"
+msgstr ""
 
 #. Create account button
 msgid "Create"
-msgstr "创建"
+msgstr ""
 
 #. confirm password
 msgid "Confirm"
-msgstr "确认"
+msgstr ""
 
 msgid "Password"
-msgstr "密码"
+msgstr ""
 
 msgid "Username"
-msgstr "用户名"
+msgstr ""
 
 msgid "Create New Account"
-msgstr "创建新账户"
+msgstr ""
 
 #. This is one of the 'Account' menu items that describes the author of the software.
 msgid "About this software"
-msgstr "软件简介"
+msgstr ""
 
 msgid "Login"
-msgstr "登陆"
+msgstr ""
 
 #. This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
 msgid "Remember Me"
-msgstr "记住我"
+msgstr ""
 
 #. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Address"
-msgstr "地址"
+msgstr ""
 
 msgid "Split this word into multiple characters"
-msgstr "把这个词分解成多个字"
+msgstr ""
 
 msgid "Merge these characters into a single word"
-msgstr "合并这些字变成一个词"
+msgstr ""
 
 #. This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
 msgid "Doing instant translation..."
-msgstr "进行在线翻译"
+msgstr ""
 
 msgid "Instant Translation"
-msgstr "在线翻译"
+msgstr ""
 
 msgid "instant translation of one or more words"
-msgstr "一个词或者多个次的在线翻译"
+msgstr ""
 
 msgid "No instant translation available."
-msgstr "翻译不存在"
+msgstr ""
 
 msgid "Selected instant translation"
-msgstr "整体翻译"
+msgstr ""
 
 msgid "Piecemeal instant translation"
-msgstr "单个翻译"
+msgstr ""
 
 msgid "No internet access. Offline instant translation only."
-msgstr "无网络链接。离线使用。"
+msgstr ""
 
 msgid "Online instant translation"
-msgstr "在线翻译"
+msgstr ""
 
 msgid "Offline instant translation"
-msgstr "离线翻译"
+msgstr ""
 
 msgid "No instant translation found."
-msgstr "找不到"
+msgstr ""
 
 msgid ""
 "Please wait until this account is fully synchronized for an offline instant "
 "translation."
-msgstr "请等待同步完成进行翻译。"
+msgstr ""
 
 #. Skip ahead to a specific page in a book/story.
 msgid "Skip to page"
-msgstr "跳到"
+msgstr ""
 
 msgid "show/hide translations"
-msgstr "显示/隐藏翻译"
+msgstr ""
 
 msgid "Internet access error. Try again later: "
-msgstr "网络连接错误，请稍后再试："
+msgstr ""
 
 msgid "Email address change failed"
-msgstr "更换邮箱失败"
+msgstr ""
 
 msgid "Success! Email changed"
-msgstr "成功！邮件修改成功"
+msgstr ""
 
 msgid "Email Address"
-msgstr "邮箱地址"
+msgstr ""
 
 msgid "Please Provide"
-msgstr "请提供"
+msgstr ""
 
 msgid "Change Email"
-msgstr "修改邮箱"
+msgstr ""
 
 msgid ""
 "Please change your email address on the website. Will support mobile in a "
 "future version."
-msgstr "请在网站里修改你的邮件地址，将在以后的版本中支持移动设备修改。"
+msgstr ""
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
 "your devices with your web account, you must first request a web account "
 "online first by contacting the author"
 msgstr ""
-"用普通账户登陆使用这个应用然后开始让你的设备与在线网站账户同步，你必须联系作"
-"者申请一个在线账户。"
 
 msgid "Signing you in, Please wait"
-msgstr "正在登陆，请稍后"
+msgstr ""
 
 msgid "Loading story, Please wait"
-msgstr "加载故事，请稍后"
+msgstr ""
 
 msgid "English to Chinese"
-msgstr "英语到中文"
+msgstr ""
 
 msgid "Chinese to English"
-msgstr "中文到英语"
+msgstr ""
 
 msgid "This word"
-msgstr "这个词"
+msgstr ""
 
 msgid "has more than one meaning"
-msgstr "拥有多个意思"
+msgstr ""
 
 #. Beginning of a message
 msgid "If this is your first time here"
-msgstr "如果这是你第一次到这里来"
+msgstr ""
 
 #. end of a message
 msgid "please read the tutorial"
-msgstr "请阅读使用教程"
+msgstr ""
 
 msgid ""
 "We're sorry you feel that way, but we need your authorization to use this "
 "service. You're welcome to try again later. Thanks."
 msgstr ""
-"非常抱歉你这样觉得，但是我需要你的许可来使用这个服务。欢迎你以后再试谢谢。"
 
 msgid "Our service could not create an account from you"
-msgstr "我们的服务不能为你创建一个账户"
+msgstr ""
 
 msgid ""
 "There was an unknown error trying to authenticate you before creating an "
 "account. Please try again later"
-msgstr "在你准备创建账户之前有一个认证错误。请稍后再试"
+msgstr ""
 
 msgid ""
 "You have successfully signed in with the 3rd party, but they cannot confirm "
 "that your account has been validated (that you are a real person). Please "
 "try again later."
 msgstr ""
-"你已成功利用第三方信息登录，但是他们不能确认你的账户已经被认证（他们不确定你"
-"是一个真人）。请稍后再试。"
 
 msgid ""
 "We're sorry. You have declined to share your email address, but we need a "
 "valid email address in order to create an account for you"
 msgstr ""
-"非常对不起，你不愿意分享你的邮箱地址，但是我们需要一个有效的邮箱地址来创立你"
-"的账户"
 
 msgid "You're welcome to try again"
-msgstr "欢迎你再试一次"
+msgstr ""
 
 msgid "Congratulations. Your account is created"
-msgstr "恭喜你。你的账户已经建立成功。"
+msgstr ""
 
 msgid ""
 "We have created a default password to be used with your mobile device(s). "
@@ -914,49 +897,45 @@ msgid ""
 "before trying to login to the mobile application. You are welcome to go to "
 "your preferences now and change this password."
 msgstr ""
-"我们创建了一个在你移动设备上使用的默认密码。请把这个密码记下来。如果你想和你"
-"的移动设备和网页同步你将需要它。如果你不想使用移动软件请忽略它。如果你不想写"
-"这个密码，你可以以后在账户偏好重置。在登陆移动设备前，欢迎你去账户偏好里修改"
-"你的密码。"
 
 msgid ""
 "We're sorry, but someone has already created an account with your credentials"
-msgstr "对不起，但是已经有人用你的凭证建立账户啦"
+msgstr ""
 
 msgid "Original login service"
-msgstr "原始登陆服务"
+msgstr ""
 
 msgid "Please choose a different service and try again"
-msgstr "请选择另外一个服务然后重试"
+msgstr ""
 
 msgid ""
 "Here is the original story. Choose from one of the options in the above "
 "navigation bar to begin learning with this story."
-msgstr "这是原有故事，请从上面导航区选择一个选项来开始学习"
+msgstr ""
 
 msgid "Could not lookup your account! Try again"
-msgstr "找不到你的账户，请重试"
+msgstr ""
 
 msgid "Please write (or change) it"
-msgstr "请书写或者修改"
+msgstr ""
 
 msgid "You will need it to login to your mobile device"
-msgstr "你需要登陆你的移动设备"
+msgstr ""
 
 msgid "Old Password / Token"
-msgstr "老的密码"
+msgstr ""
 
 msgid "New Password / Token"
-msgstr "新密码"
+msgstr ""
 
 msgid "Confirm Password / Token"
-msgstr "确认密码"
+msgstr ""
 
 msgid "Change Password / Token"
-msgstr "修改密码"
+msgstr ""
 
 msgid "Reset Password / Token"
-msgstr "重置密码"
+msgstr ""
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -965,45 +944,41 @@ msgid ""
 "your email and password from your online account using any device that you "
 "like."
 msgstr ""
-"用普通账户登陆这个应用然后让你的设备开始与你的网络账户同步，你必须先申请一个"
-"网络账户。当你创建了一个网络账户，你可以用你的邮箱和密码来登陆任意一个你喜欢"
-"的设备。"
 
 msgid "None Selected"
-msgstr "没有选择任何一个"
+msgstr ""
 
 msgid "Sign in with"
-msgstr "登陆"
+msgstr ""
 
 #. Which language to learn, that is.
 msgid "Which language"
-msgstr "那种语言"
+msgstr ""
 
 msgid "Choose one"
-msgstr "选择一个"
+msgstr ""
 
 msgid "* Please fill in required fields"
-msgstr "请填写所要求的地方"
+msgstr ""
 
 msgid "Password / Token"
-msgstr "密码"
+msgstr ""
 
 #. Begin long explanation
 msgid "This story has not yet been converted to reading format."
-msgstr "这个故事还没有被转化成可阅读格式。"
+msgstr ""
 
 msgid ""
 "Translation requires significant computer power, so you must convert "
 "(translate) it online first, and then it will be synchronized with this "
 "device."
 msgstr ""
-"翻译需要巨大的计算能力，所以你必须先在线转化（翻译）然后再与这个设备同步。"
 
 msgid "Please click 'Translate' in the side panel to proceed."
-msgstr "请点击侧边的‘翻译’"
+msgstr ""
 
 msgid "Translation access denied"
-msgstr "翻译权限拒绝"
+msgstr ""
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -1012,163 +987,159 @@ msgid ""
 "account, you can then login with your email and password from your online "
 "account using any device that you like."
 msgstr ""
-"用普通账户登陆然后开始让你的所有的设备同步网络账户，你必须在http://mica."
-"hinespot.com申请一个免费的在线网络账户。当你创建了在线账户，你可以用你的在线"
-"账户邮箱和密码使用任何你喜欢的设备。"
 
 #. The name of the software
 msgid "MICA Language Learning"
-msgstr "MICA语言学习"
+msgstr ""
 
 msgid ""
 "Please delete your account on the website and then uninstall the "
 "application. Will support mobile in a future version."
 msgstr ""
-"请在网页上删除你的帐户，然后卸载这个应用。会在将来的版本里面支持移动设备。"
 
 msgid "No such account. Cannot delete it."
-msgstr "没有这个帐户。不能删除。"
+msgstr ""
 
 #. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
-msgstr "快滚然后去死吧！"
+msgstr ""
 
 msgid ""
 "Admin accounts can't be deleted by other people. The admin must delete their "
 "own account."
-msgstr "管理帐户不能被其他人删除。管理帐户必须自己删除自己的帐户。"
+msgstr ""
 
 msgid "Success! Account was deleted"
-msgstr "成功！帐户已删除。"
+msgstr ""
 
 msgid "Your account has been permanently deleted."
-msgstr "你帐户被永久删除了。"
+msgstr ""
 
 msgid "Delete Account?"
-msgstr "确定删除帐户吗？"
+msgstr ""
 
 msgid "Yes, delete my account."
-msgstr "确定，删除我的帐户。"
+msgstr ""
 
 msgid "Are you sure you want to delete your account? This is IRREVERSIBLE."
-msgstr "确定要删除你的帐户吗？这是不可逆转的。"
+msgstr ""
 
 #. This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
 msgid "Bulk Review Words"
-msgstr "批量检查单词"
+msgstr ""
 
 #. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
 msgid "No review recommendations available."
-msgstr "可检查的建议不存在"
+msgstr ""
 
 #. This appears as a pop-up when we are loading the text content of a story.
 msgid "Loading Text"
-msgstr "加载文字"
+msgstr ""
 
 #. This appears as a pop-up when we are image content of a PDF-based story.
 msgid "Loading Image"
-msgstr "加载图片"
+msgstr ""
 
 #. This appears when you first click on a story to be loaded
 msgid "Loading Stories"
-msgstr "加载故事"
+msgstr ""
 
 #. This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
 msgid "Loading Statistics"
-msgstr "加载统计数据"
+msgstr ""
 
 #. This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
 msgid "This account is not fully synchronized"
-msgstr "这个帐户没有完全同步"
+msgstr ""
 
 #. This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
 msgid "If you are offline, please go online for an instant translation."
-msgstr "如果你现在离线，请上线进行即时翻译"
+msgstr ""
 
 #. This appears when you attempt to perform an instant translation without clicking on any words to translate.
 msgid "You have not selected any words for instant translation!"
-msgstr "你没有选择任何单词进行即时翻译"
+msgstr ""
 
 #. This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors.
 msgid "See above for problems with your edit requests."
-msgstr "对于你的编辑请求，请看上面来查错。"
+msgstr ""
 
 #. just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
 msgid "Submit"
-msgstr "提交"
+msgstr ""
 
 #. This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
 msgid "Reason"
-msgstr "原因"
+msgstr ""
 
 #. Merge as in merge/split in edit mode.
 msgid "Merge"
-msgstr "合并"
+msgstr ""
 
 #. This appears next to the words that have errors for which you were trying to merge or split.
 msgid "INVALID"
-msgstr "无效"
+msgstr ""
 
 #. Split as in merge/split in edit mode.
 msgid "Split"
-msgstr "分开"
+msgstr ""
 
 #. This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
 msgid "Are you sure you want to perform these edits?"
-msgstr "你确定你要进行这些编辑吗？"
+msgstr ""
 
 #. Also a message in edit mode.
 msgid ""
 "The selected characters are not consecutive (including punctuation). You "
 "cannot merge them."
-msgstr "所选的字不是连着的（包括标点符号）。你不能合并它们。"
+msgstr ""
 
 #. Also a message in edit mode.
 msgid ""
 "You need at least two character groups selected before you can merge them "
 "into a word!"
-msgstr "你需要选者至少两个字才能合并成一个词!"
+msgstr ""
 
 #. Also a message in edit mode.
 msgid "This word only has one character. It cannot be split!"
-msgstr "这个词只有一个字，不能分开！"
+msgstr ""
 
 #. Also a message in edit mode.
 msgid "You cannot split more than one word at a time!"
-msgstr "你一次只能分解一个词！"
+msgstr ""
 
 #. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
-msgstr "正在翻译"
+msgstr ""
 
 #. This on the main page when a story is being actively translated.
 msgid "Stories in translation"
-msgstr "故事正在翻译"
+msgstr ""
 
 #. This appears after a story has just finished being translated to indicate that you can start using it.
 msgid "Done! Please reload."
-msgstr "完成！请重载。"
+msgstr ""
 
 #. This appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Working"
-msgstr "正在工作中"
+msgstr ""
 
 msgid "Start learning!"
-msgstr "开始学习！"
+msgstr ""
 
 #. This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
 msgid "Found Recommendations"
-msgstr "MICA建议"
+msgstr ""
 
 msgid "Redirecting"
-msgstr "重定向"
+msgstr ""
 
 #. These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
 msgid "Stats Hidden"
-msgstr "统计数据隐藏的"
+msgstr ""
 
 msgid "Stats Shown"
-msgstr "统计出现了"
+msgstr ""
 
 msgid ""
 "Your device either does not have adequate signal strength or your connection "
@@ -1176,47 +1147,44 @@ msgid ""
 "Wifi), we were not able to reach the server. Please try again later when you "
 "have better internet access by tapping the 'M' at the top to login."
 msgstr ""
-"您的设备要么没有足够的信号强度或者连接不具有足够的连接。当你有一个连接(3G或"
-"WIFI),我们无法到达服务器。请稍后再试，当你必须通过点击“M”在登陆前更好的网络连"
-"接。"
 
 msgid "Syncing"
-msgstr "正在同步"
+msgstr ""
 
 msgid "Start Syncing"
-msgstr "开始同步"
+msgstr ""
 
 msgid "Stop Syncing"
-msgstr "停止同步"
+msgstr ""
 
 msgid "Failed to change synchronization. Please try again"
-msgstr "未能改变同步的状态。请重试"
+msgstr ""
 
 #. Someone supplied invalid input to the server indicating a dictionary that does not exist.
 msgid "No such dictionary. Please try again"
-msgstr "没有这样的字典。请重试"
+msgstr ""
 
 msgid "Failed to intiate download of this dictionary. Please try again"
-msgstr "无法开始下载词典。请重试"
+msgstr ""
 
 msgid "Success! We will start downloading that dictionary"
-msgstr "成功了！我们将开始下载词典"
+msgstr ""
 
 msgid "Success! We will no longer download that dictionary"
-msgstr "成功了！我们将不再下载词典"
+msgstr ""
 
 msgid "Success! We will start distributing that dictionary to your devices"
-msgstr "成功了！我们将开始分发该词典在您的设备"
+msgstr ""
 
 msgid "Success! We will no longer distribute that dictionary to your devices"
-msgstr "成功了！我们将那本字典不再分发给您的设备"
+msgstr ""
 
 msgid "Dictionaries"
-msgstr "字典"
+msgstr ""
 
 #. This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
 msgid "Send Dictionaries to your devices?"
-msgstr "字典发送到您的设备？"
+msgstr ""
 
 msgid ""
 "Offline dictionaries are required for using 'Edit' mode of some character-"
@@ -1226,33 +1194,30 @@ msgid ""
 "mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 "
 "MB each"
 msgstr ""
-"在以文字为基础的语言的编辑模式和检查模式的重新翻译单独页中需要离线字典。在线"
-"翻译则需要联网，如果你的故事已经被编辑，检查过而且你可以开始使用阅读模式，你"
-"可以不用下载字典。每个词典大概有30M到50M大小"
 
 msgid "Download"
-msgstr "下载"
+msgstr ""
 
 msgid "Downloading"
-msgstr "正在下载"
+msgstr ""
 
 msgid "For assistance, Contact:"
-msgstr "如需帮助，请联系："
+msgstr ""
 
 msgid "Requesting"
-msgstr "正在请求"
+msgstr ""
 
 msgid "Started (stop?)"
-msgstr "开始了 (停?)"
+msgstr ""
 
 msgid "Stopping"
-msgstr "是停"
+msgstr ""
 
 msgid "Stopped (start?)"
-msgstr "停止了 (开始?)"
+msgstr ""
 
 msgid "Stop downloading"
-msgstr "停止下载"
+msgstr ""
 
 msgid ""
 "If you have re-installed or this is your first time logging in on this "
@@ -1260,8 +1225,6 @@ msgid ""
 "this can take a while, because we need to calculate some information to "
 "organize things on your device. Be patient."
 msgstr ""
-"如果你重装了或者这是你第一次在这个设备上登陆，你可能在同一时间需要同步许多故"
-"事，这可能会需要一点时间，因为我们需要在你的设备上整理一些信息。请耐心等待。"
 
 msgid "Spanish"
 msgstr ""

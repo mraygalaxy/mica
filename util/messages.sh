@@ -13,7 +13,7 @@ fi
 
 pushd $dir/../res
 
-for lang in zh py ; do
+for lang in zh py es ; do
     echo "want to regenerate messages for language: $lang file $file"
 
     if [ ! -e messages_${lang}.po ] ; then

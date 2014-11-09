@@ -1309,3 +1309,9 @@ msgstr ""
 "dēnglù, nǐ kěnéng zài tóngyī shíjiān xūyào tóngbù xǔduō gùshì, zhè kěnéng "
 "huì xūyào yīdiǎn shíjiān, yīnwèi wǒmen xūyào zài nǐ de shèbèi shàng zhěnglǐ "
 "yīxiē xìnxī. Qǐng nàixīn děngdài."
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Spanish to English"
+msgstr ""
