@@ -1311,7 +1311,10 @@ msgstr ""
 "yīxiē xìnxī. Qǐng nàixīn děngdài."
 
 msgid "Spanish"
-msgstr ""
+msgstr "Xībānyá yǔ"
 
 msgid "Spanish to English"
-msgstr ""
+msgstr "Xībānyá yǔ yì chéng yīngyǔ"
+
+msgid "English to Spanish"
+msgstr "Yīngyǔ dào xībānyá yǔ"

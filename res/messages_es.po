@@ -14,381 +14,407 @@ msgstr ""
 
 #. 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
 msgid "Review"
-msgstr ""
+msgstr "Revisar"
 
 #. 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
 msgid "Edit"
-msgstr ""
+msgstr "Editar"
 
 #. 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
 msgid "Read"
-msgstr ""
+msgstr "Leer"
 
 #. Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account.
 msgid "Account"
-msgstr ""
+msgstr "Cuenta"
 
 #. Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
 msgid "Preferences"
-msgstr ""
+msgstr "Preferencias"
 
 #. Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
 msgid "Upload New Story"
-msgstr ""
+msgstr "Subir nueva historia"
 
 #. Make a new account, a button inside the 'Account' section of the top-most navigation panel
 msgid "New Account"
-msgstr ""
+msgstr "Nueva Cuenta"
 
 #. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
 msgid "Disconnect"
-msgstr ""
+msgstr "Desconectar"
 
 #. About is a traditional description of the software package itself that you might find in other help menus of other programs.
 msgid "About"
-msgstr ""
+msgstr "Acerca de"
 
 #. Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
 msgid "Help"
-msgstr ""
+msgstr "Ayuda"
 
 #. The software's privacy policy, such as what user information we keep and do not keep.
 msgid "Privacy"
-msgstr ""
+msgstr "Privacidad"
 
 msgid "Chinese Simplified"
-msgstr ""
+msgstr "Chino simplificado"
 
 msgid "English"
-msgstr ""
+msgstr "Inglés"
 
 #. 'Go' or 'Skip' ahead to a specific page in a book/story.
 msgid "Go"
-msgstr ""
+msgstr "Ir"
 
 #. 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
 msgid "Legend"
-msgstr ""
+msgstr "Leyenda"
 
 #. This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
 msgid "Correct for tone and meaning"
-msgstr ""
+msgstr "correcta para el tono y el significado"
 
 #. This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
 msgid "(No review necessary)"
-msgstr ""
+msgstr "(Ninguna revisión necesaria)"
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed.
 msgid "Possibly wrong meaning"
-msgstr ""
+msgstr "Posiblemente sentido equivocado"
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate.
 msgid "(but tone is correct)"
-msgstr ""
+msgstr "(pero el tono es correcto)"
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
 msgid "Possibly wrong tone"
-msgstr ""
+msgstr "tono Posiblemente mal"
 
 #. This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
 msgid "(as well as meaning)"
-msgstr ""
+msgstr "(así como significado)"
 
 #. This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
 msgid "Definitely wrong previously"
-msgstr ""
+msgstr "Definitivamente equivocado anteriormente"
 
 #. This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
 msgid "Change History"
-msgstr ""
+msgstr "Cambiar la Historia"
 
 #. This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
 msgid "Breakdown"
-msgstr ""
+msgstr "Desglose"
 
 #. Online indicates a count of how many words were translated over the internet
 msgid "Online"
-msgstr ""
+msgstr "en línea"
 
 #. Offline indicates a count of how many words were translated using an offline dictionary
 msgid "Offline"
-msgstr ""
+msgstr "Desconectado"
 
 #. SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "SPLIT"
-msgstr ""
+msgstr "SEPARACIÓN"
 
 #. MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "MERGE"
-msgstr ""
+msgstr "FUNDIRSE"
 
 #. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "No edit history available."
-msgstr ""
+msgstr "No hay historial de edición disponibles."
 
 msgid "These characters were previously merged into a word"
-msgstr ""
+msgstr "Estos personajes eran anteriormente se fusionaron en una sola palabra"
 
 msgid "This word was previously split into characters"
-msgstr ""
+msgstr "Esta palabra se divide previamente en personajes"
 
 #. These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
 msgid "Try Recommendations"
-msgstr ""
+msgstr "Pruebe Recomendaciones"
 
 #. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
-msgstr ""
+msgstr "Volver a traducir la página"
 
 #. The user has completed logging out / signing out already - then this message appears.
 msgid "Disconnected from MICA"
-msgstr ""
+msgstr "Desconectado del MICA"
 
 #. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
 msgid "Exception"
-msgstr ""
+msgstr "Excepción"
 
 msgid "Please report the exception above to the author. Thank you."
 msgstr ""
+"Por favor, informe la excepción antes mencionada para el autor. Gracias."
 
 msgid "Please report the above exception to the author. Thank you"
 msgstr ""
+"Por favor, informe la excepción antes mencionada para el autor. Gracias"
 
 msgid "Error: Something bad happened"
-msgstr ""
+msgstr "Error: Algo malo sucedió"
 
 #. 'original' refers to the original text of the story that the user provided for language learning.
 msgid "Download Original"
-msgstr ""
+msgstr "Descargar Original"
 
 #. The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.
 msgid "Download Romanization"
-msgstr ""
+msgstr "Descargar romanización"
 
 msgid ""
 "Demo Account is readonly. You must install the mobile application for "
 "interactive use of the demo account."
 msgstr ""
+"Cuenta Demo es de solo lectura. Es necesario instalar la aplicación móvil "
+"para el uso interactivo de la cuenta de demostración."
 
 msgid "Demo account is read-only"
-msgstr ""
+msgstr "cuenta demo es de sólo lectura"
 
 msgid "This character"
-msgstr ""
+msgstr "Este personaje"
 
 msgid "is polyphonic: (has more than one pronunciation"
-msgstr ""
+msgstr "es polifónico: (tiene más de una pronunciación"
 
 #. Pinyin means the romanization of a character-based word, such as Chinese
 msgid "Pinyin"
-msgstr ""
+msgstr "Pinyin"
 
 msgid "pīnyīn"
-msgstr ""
+msgstr "pīnyīn"
 
 msgid "Definition"
-msgstr ""
+msgstr "Definición"
 
 #. This appears in a list of items and indicates which is the default item
 msgid "Default"
-msgstr ""
+msgstr "Por defecto"
 
 #. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
 msgid "Select"
-msgstr ""
+msgstr "Seleccione"
 
 #. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
 msgid "Delete"
-msgstr ""
+msgstr "Borrar"
 
 #. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
 msgid "Translate"
-msgstr ""
+msgstr "Traducir"
 
 #. This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it.
 msgid "Forget"
-msgstr ""
+msgstr "Olvidar"
 
 #. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section.
 msgid "Not finished"
-msgstr ""
+msgstr "No terminado"
 
 #. This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section.
 msgid "Review not complete"
-msgstr ""
+msgstr "Revisión no completar"
 
 msgid "Not Reviewed"
-msgstr ""
+msgstr "No es una opinión"
 
 #. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
 msgid "Untranslated"
-msgstr ""
+msgstr "No traducida"
 
 msgid "Untranslated story!"
-msgstr ""
+msgstr "Uistoria sin traducir!"
 
 msgid "Stories"
-msgstr ""
+msgstr "Historias"
 
 #. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section.
 msgid "Finished reading"
-msgstr ""
+msgstr "Ferminé de leer"
 
 msgid "Reading"
-msgstr ""
+msgstr "Leer"
 
 #. This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section.
 msgid "Review Complete"
-msgstr ""
+msgstr "Revisión Completa"
 
 msgid "Upload Failed! Story already exists"
-msgstr ""
+msgstr "Subir Error! La Historia ya existe"
 
 msgid "Upload Complete! Story ready for translation"
-msgstr ""
+msgstr "Carga Completa la historia! listo para la traducción"
 
 msgid ""
 "This account is not fully synchronized. You can follow the progress at the "
 "top of the screen until the 'download' arrow reaches 100."
 msgstr ""
+"Esta cuenta no está completamente sincronizado. Usted puede seguir el "
+"progreso en el la parte superior de la pantalla hasta que el 'Descargar' "
+"flecha llega a 100."
 
 #. Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
 msgid "Synchronization error. Please report this to the author. Thank you."
 msgstr ""
+"Error de sincronización. Por favor, informa de esto a la autora. Gracias."
 
 msgid ""
 "To login for the first time and begin synchronization with the website, you "
 "must activate internet access."
 msgstr ""
+"Para iniciar sesión por primera vez y comenzar la sincronización con la "
+"página web, usted debe activar el acceso a Internet."
 
 msgid "Invalid credentials. Please try again"
-msgstr ""
+msgstr "Credenciales no válidas. Por favor, inténtelo de nuevo"
 
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
 msgstr ""
+"Lo sentimos. La base de datos MICA Reader en este dispositivo ya pertenece a "
+"la usuario"
 
 #. next part of the same message
 msgid "and is configured to stay in synchronization with the server"
-msgstr ""
+msgstr "y está configurado para estar en sincronización con el servidor"
 
 #. next part of the same message
 msgid ""
 "If you want to change users, you will need to clear this application's data "
 "or reinstall it and re-synchronize the app with"
 msgstr ""
+"Si usted quiere cambiar los usuarios, tendrá que borrar los datos de esta "
+"aplicación o vuelva a instalarlo y volver a sincronizar la aplicación con"
 
 #. end of the message
 msgid ""
 "a new account. This requirement is because MICA databases can become large "
 "over time, so we want you to be aware of that. Thanks."
 msgstr ""
+"una nueva cuenta. Este requisito se debe a que las bases de datos pueden "
+"llegar a ser grandes MICA con el tiempo, por lo que queremos que usted sea "
+"consciente de ello. Gracias."
 
 msgid ""
 "Although you have authenticated successfully, we could not start "
 "synchronization successfully. Please try again."
 msgstr ""
+"A pesar de que usted ha autenticado correctamente, no pudimos empezar "
+"sincronización con éxito. Por favor, inténtelo de nuevo."
 
 #. The user has deleted a story from the system.
 msgid "Deleted"
-msgstr ""
+msgstr "Eliminado"
 
 #. The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history.
 msgid "Invalid story uuid"
-msgstr ""
+msgstr "uuid historia no válido"
 
 #. Finished reviewing a story in review mode.
 msgid "Finished"
-msgstr ""
+msgstr "Terminado"
 
 msgid "Reviewed"
-msgstr ""
+msgstr "Reseña"
 
 #. 'Forgot' a story using the button in the side-panel.
 msgid "Forgotten"
-msgstr ""
+msgstr "Olvidada"
 
 #. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
 msgid "Mode changed"
-msgstr ""
+msgstr "Modo cambió"
 
 msgid "show text only"
-msgstr ""
+msgstr "sólo muestran texto"
 
 msgid "side-by-side text and image"
-msgstr ""
+msgstr "texto de lado a lado y de la imagen"
 
 msgid "show image only"
-msgstr ""
+msgstr "sólo imagen espectáculo"
 
 #. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
 msgid "List statistics mode changed"
-msgstr ""
+msgstr "Modo de estadísticas lista cambió"
 
 #. This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
 msgid "Edit history Disabled."
-msgstr ""
+msgstr "Editar la historia de movilidad reducida."
 
 #. statistics in review mode are disabled
 msgid "Review History List Disabled"
-msgstr ""
+msgstr "Historia de Revisión lista de lesionados"
 
 #. statistics in reading mode are disabled
 msgid "Memorization History List Disabled"
-msgstr ""
+msgstr "La memorización Historia Lista de movilidad reducida"
 
 msgid "Story already translated. To re-translate, please select 'Forget'."
 msgstr ""
+"La Historia ya traducido. Para volver a traducir, por favor seleccione "
+"'olvidar'."
 
 msgid "Translation complete!"
-msgstr ""
+msgstr "La traducción completa!"
 
 msgid "Failed to translate story"
-msgstr ""
+msgstr "No se ha podido traducir la historia"
 
 msgid "Memorized!"
-msgstr ""
+msgstr "Memorización!"
 
 #. This occurs in Edit mode when a merge/split request failed.
 msgid "Invalid Operation"
-msgstr ""
+msgstr "Operación no válida"
 
 #. In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
 msgid "Memorized all stories"
-msgstr ""
+msgstr "Memorizadas todas las historias"
 
 #. Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
 msgid "Unique memorized page"
-msgstr ""
+msgstr "página Único memorizado"
 
 #. A count of all the unique words on this page, not just the ones the user has memorized.
 msgid "Unique words this page"
-msgstr ""
+msgstr "palabras únicas esta página"
 
 msgid "No words memorized. Get to work!"
-msgstr ""
+msgstr "No hay palabras memorizadas. ¡A trabajar!"
 
 msgid "Edit mode is only supported for learning character-based languages"
 msgstr ""
+"Modo de edición sólo se admite para el aprendizaje de idiomas basados en "
+"caracteres"
 
 #. Beginning of a sentence: Original source image of the current page from which the text comes
 msgid "Image"
-msgstr ""
+msgstr "Imagen"
 
 #. end of thes sentence, indicating that a particular image number doesn't exist.
 msgid "not available on this page"
-msgstr ""
+msgstr "no está disponible en esta página"
 
 #. Beginning of a message.
 msgid ""
 "No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
 "at the top."
 msgstr ""
+"Ninguna historia cargada. Elige un cuento para leer desde la barra lateral, "
+"haga clic en la 'M' en la parte superior."
 
 #. end of a message
 msgid "or create one by clicking on Account icon at the top"
 msgstr ""
+"o crear uno haciendo clic en el icono de la cuenta en la parte superior"
 
 msgid ""
 "Brand new stories cannot (yet) be created/uploaded yet on the device. You "
@@ -396,150 +422,163 @@ msgid ""
 "amount of computer resources to prepare. Thus, they can only be synchronized "
 "to the device for regular use."
 msgstr ""
+"Brand nuevas historias pueden (todavía) no pueden crear / cargar todavía en "
+"el dispositivo. Youprimero debe crear en el sitio web. (Nuevas historias "
+"requieren un significativocantidad de recursos informáticos para prepararse. "
+"Por lo tanto, sólo pueden ser sincronizadosen el dispositivo para el uso "
+"regular."
 
 #. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
 msgid "Story is a"
-msgstr ""
+msgstr "La Historia es un"
 
 #. Tho original story format as it was imported, that is
 msgid "Viewing original not yet implemented"
-msgstr ""
+msgstr "Visualización original, aún no implementado"
 
 #. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
 msgid "Database compaction complete for your account"
-msgstr ""
+msgstr "Compactación completa de la cuenta de base de datos"
 
 msgid "Compact databases"
-msgstr ""
+msgstr "Bases de datos compactos"
 
 #. Compacting can also be translated as "cleaning" database.
 msgid "Compacting database, Please wait"
-msgstr ""
+msgstr "La base de datos de compactación, espere por favor"
 
 #. The next handful of mundane phrases are associated with the creation
 #. and management of user accounts in the software program and the relevant
 #. errors that can occur while performing operations on a user's account.
 msgid "Please change your password on the website, first"
-msgstr ""
+msgstr "Por favor, cambie su contraseña en el sitio web, en primer lugar"
 
 msgid "Password must be at least 8 characters! Try again"
-msgstr ""
+msgstr "La contraseña debe tener al menos 8 caracteres! Intenta de nuevo"
 
 msgid "Passwords don't match! Try again"
-msgstr ""
+msgstr "Las contraseñas no coinciden! Intenta de nuevo"
 
 msgid "Old passwords don't match! Try again"
-msgstr ""
+msgstr "Contraseñas antiguas no coinciden! Intenta de nuevo"
 
 msgid "Password change failed"
-msgstr ""
+msgstr "Cambio de contraseña no se pudo"
 
 msgid "Success!"
-msgstr ""
+msgstr "¡Éxito!"
 
 msgid "User"
-msgstr ""
+msgstr "Usuario"
 
 msgid "password changed"
-msgstr ""
+msgstr "contraseña cambiada"
 
 msgid "Change"
-msgstr ""
+msgstr "Cambio"
 
 msgid "Accounts"
-msgstr ""
+msgstr "Cuentas"
 
 msgid "Server is misconfigured. Cannot list accounts."
-msgstr ""
+msgstr "El servidor está mal configurado. No se puede enumerar las cuentas."
 
 msgid "Language"
-msgstr ""
+msgstr "Idioma"
 
 msgid "Change Language"
-msgstr ""
+msgstr "Cambiar idioma"
 
 msgid "Old Password"
-msgstr ""
+msgstr "Contraseña anterior"
 
 msgid "New Password"
-msgstr ""
+msgstr "Nueva contraseña"
 
 msgid "Confirm Password"
-msgstr ""
+msgstr "Confirmar Contraseña"
 
 msgid "Change Password"
-msgstr ""
+msgstr "Cambiar contraseña"
 
 msgid ""
 "Please change your password on the website. Will support mobile in a future "
 "version."
 msgstr ""
+"Por favor, cambie su contraseña en el sitio web. Apoyará móvil en un "
+"futuroversión."
 
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't make accounts"
 msgstr ""
+"El servidor no está configurado correctamente. No se pueden hacer las cuentas"
 
 msgid "Invalid account name! Try again"
-msgstr ""
+msgstr "Nombre de cuenta no válido! Intenta de nuevo"
 
 msgid "Non-admin users can't create admin accounts. What are you doing?!"
 msgstr ""
+"Los usuarios que no sean administradores no pueden crear cuentas de "
+"administrador. ¿Qué estás haciendo ?!"
 
 msgid "Account already exists! Try again"
-msgstr ""
+msgstr "Cuenta ya existe! Intenta de nuevo"
 
 msgid "Success! New user was created"
-msgstr ""
+msgstr "¡Éxito! Nuevo usuario fue creado"
 
 msgid "Success! Language changed"
-msgstr ""
+msgstr "¡Éxito! Idioma cambiado"
 
 #. This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
 msgid "Number of characters can't be greater than 1000 or less than 5"
-msgstr ""
+msgstr "Número de caracteres no puede ser superior a 1000 o menos de 5"
 
 #. Same as before, but specifically for a mobile device
 msgid "Success! Mobile Characters-per-line in a story set to:"
-msgstr ""
+msgstr "!Éxito! Mobile caracteres por línea en una historia ambientada a:"
 
 msgid "Characters per line"
-msgstr ""
+msgstr "Caracteres por línea"
 
 #. Same as before, but specifically for a website
 msgid "Success! Web Characters-per-line in a story set to:"
-msgstr ""
+msgstr "!Éxito! Web caracteres por línea en una historia ambientada a:"
 
 #. The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
 msgid ""
 "App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
 msgstr ""
+"Nivel App zoom debe ser un decimal no superior a 3,0 y no más pequeño que 0.5"
 
 #. Same as before, but specifically for an application running on a mobile device
 msgid "Success! App zoom level set to:"
-msgstr ""
+msgstr "!Éxito! nivel de zoom Éxito App ajustado en:"
 
 #. the zoom level or characters-per-line limit
 msgid "Change Viewing configuration"
-msgstr ""
+msgstr "Cambiar la configuración de visualización"
 
 #. Same as before, but specifically for an application running on the website
 msgid ""
 "Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5"
 msgstr ""
+"El nivel de zoom Web debe ser un decimal no superior a 3,0 y no más pequeño "
+"que 0.5"
 
 #. Same as before, but specifically for an application running on the website
 msgid "Success! Web zoom level set to:"
-msgstr ""
+msgstr "!Éxito! nivel de zoom Web se establece en:"
 
 msgid "Default zoom level"
-msgstr ""
+msgstr "nivel de zoom por defecto"
 
 #. This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
 msgid "Read, Review, or Edit, my friend?"
-msgstr ""
+msgstr "leer, revisar, o Editar, mi amigo?"
 
 msgid "Please wait..."
-msgstr ""
+msgstr "Por favor espere ..."
 
 msgid ""
 "To get a \"feel\" for how MICA works, you can use the DEMO account with the "
@@ -547,346 +586,393 @@ msgid ""
 "stories from the online demo account, but all changes you make will not be "
 "synchronized."
 msgstr ""
+"Para obtener una \"sentir\" de cómo funciona MICA, puede utilizar la cuenta "
+"de demostración con elnombre de usuario 'demo' y la contraseña 'micademo'. "
+"Esta cuenta se cargará preexistente historias de la cuenta de demostración "
+"en línea, pero todos los cambios que realice no será sincronizado."
 
 msgid "Please Donate To Bitcoin Address"
-msgstr ""
+msgstr "Por favor, donar a Bitcoin Dirección"
 
 msgid "<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."
 msgstr ""
+"<b>MICA</b> es una <b>nueva forma</b> para aprender un idioma, como el chino."
 
 msgid ""
 "It knows how to track <b>polymphones and tones</b> in a Character-based "
 "language."
 msgstr ""
+"Se sabe cómo realizar el seguimiento <b>polymphones y tonos</b> en una "
+"basada en caracteresidioma."
 
 msgid "Instead of hiring folks to <b>slave over</b> databases of translations,"
 msgstr ""
+"En lugar de contratar a la gente a <b>esclavo más de</b> las bases de datos "
+"de traducciones"
 
 msgid "Why can't we use the <b>existing content</b> that's already out there?"
 msgstr ""
+"Por qué no podemos utilizar el contenido <b>existente</b> que ya es por ahí?"
 
 msgid ""
 "Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."
 msgstr ""
+"Al igual que <b>libros</b>, blogs, nuevos artículos, y, finalmente, "
+"<b>medios sociales</b>."
 
 msgid ""
 "MICA works by <b>analytics</b>: You read <b>existing</b> books or stories "
 "and it <b>tracks your brain</b>."
 msgstr ""
+"MICA funciona por <b>análisis</b>: Usted lee <b>existente</b> libros o "
+"historiasy <b>un seguimiento de su cerebro</b>."
 
 msgid "When you read a new story, it <b>hides the words</b> you already know."
 msgstr ""
+"Cuando se lee una nueva historia, que <b>esconde las palabras</b> que ya "
+"sabes."
 
 msgid ""
 "MICA is not a translator. It makes you <b>learn by reading</b> in context."
 msgstr ""
+"MICA no es un traductor. Te hace <b>aprender mediante la lectura de</b> en "
+"su contexto."
 
 msgid "Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."
 msgstr ""
+"Relámpagos son estúpidos. <br/><b>Trate MICA!</b> y aprender un nuevo idioma."
 
 msgid "Learning a language should be just like reading a book"
-msgstr ""
+msgstr "El aprendizaje de un idioma debe ser igual que la lectura de un libro"
 
 msgid ""
 "MICA also works offline on mobile devices and automatically stays in sync "
 "with both iOS and Android"
 msgstr ""
+"MICA también trabaja fuera de línea en los dispositivos móviles y se "
+"mantiene automáticamente en sincroníatanto con iOS y Android"
 
 msgid "Read about how it works"
-msgstr ""
+msgstr "Lea acerca de cómo funciona"
 
 msgid ""
 "Running the website on a cloud server is not free, so account signups are "
 "not open. If you'd like an account, please consider donating to make the "
 "server bigger."
 msgstr ""
+"Ejecución de la página web en un servidor de la nube no es libre, por lo que "
+"cuenta son las suscripcionesNo abra. Si desea una cuenta, por favor, "
+"considere donar para hacer laservidor más grande."
 
 #. Beginning of a sentence
 msgid "Join the mailing list"
-msgstr ""
+msgstr "¡Únete a la lista de correo"
 
 #. end of sentence.
 msgid "for additional help"
-msgstr ""
+msgstr "ayuda adicional"
 
 #. i.e. signin or login
 msgid "You need to connect, first"
-msgstr ""
+msgstr "Es necesario conectar, en primer lugar"
 
 msgid "Click the little 'M' at the top"
-msgstr ""
+msgstr "Haga clic en la pequeña 'M' en la parte superior"
 
 msgid "This is experimental language-learning software"
-msgstr ""
+msgstr "Este es un software de aprendizaje de idiomas experimental"
 
 #. Admin account, that is
 msgid "Admin"
-msgstr ""
+msgstr "Admin"
 
 #. The next series of messages occur when the software releases a new version that uses a database/file format that is not backwards-compatible with a previous version. In these cases, the database needs to be "upgraded". The software directs the users through a procedure to perform this upgrade, as well as any error messages associated with completing the upgrade process.
 msgid "The database for this story"
-msgstr ""
+msgstr "La base de datos para esta historia"
 
 msgid "needs to be upgraded to version 2"
-msgstr ""
+msgstr "debe ser actualizado a la versión 2"
 
 msgid ""
 "Unfortunately, this can only be performed with the online version. Please "
 "login to your account online to perform the upgrade. The changes will then "
 "be synchronized to all your devices. Thank you."
 msgstr ""
+"Por desgracia, esto sólo puede ser realizada con la versión en línea. Por "
+"favoracceder a su cuenta en línea para realizar la actualización. Los "
+"cambios serán entoncesestar sincronizados en todos tus dispositivos. Gracias."
 
 msgid "Start Upgrade"
-msgstr ""
+msgstr "Iniciar Actualización"
 
 msgid "Story upgrades not allowed on mobile devices."
-msgstr ""
+msgstr "Mejoras historia no permitidos en los dispositivos móviles."
 
 msgid "Invalid upgrade parameters 1"
-msgstr ""
+msgstr "Parámetros de actualización no válido 1"
 
 msgid "Upgrade complete"
-msgstr ""
+msgstr "Actualización completa"
 
 msgid "Invalid request."
-msgstr ""
+msgstr "Solicitud no válida."
 
 #. 'format' referring to the database format the we are upgrading to
 msgid "No such story format"
-msgstr ""
+msgstr "No existe el formato de la historia"
 
 msgid "Story upgrade status"
-msgstr ""
+msgstr "Estado de actualización Story"
 
 #. This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Page"
-msgstr ""
+msgstr "Página"
 
 msgid "Last upgrade Exception"
-msgstr ""
+msgstr "Última actualización Excepción"
 
 msgid "Story upgrade started. You may refresh to follow its status."
 msgstr ""
+"La Historia de mejor categoría comenzó. Es posible actualizar a seguir su "
+"estado."
 
 #. The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
 msgid "Preferred Language"
-msgstr ""
+msgstr "Idioma preferido"
 
 msgid "Which languages"
-msgstr ""
+msgstr "¿Qué idiomas"
 
 #. Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
 msgid "Remove Spaces?"
-msgstr ""
+msgstr "Eliminar los espacios?"
 
 msgid "NOTE: Story *must* be UTF-8 encoded"
-msgstr ""
+msgstr "NOTA: La historia *debe* ser UTF-8 codificado"
 
 msgid "not implemented"
-msgstr ""
+msgstr "no implementado"
 
 #. Source story consists of multiple pages, like a PDF
 msgid "multi-page"
-msgstr ""
+msgstr "multi-página"
 
 #. Story is just a blob of TXT, such as copy/paste.
 msgid "single-page"
-msgstr ""
+msgstr "páginas solo"
 
 #. i.e. PDF or TXT
 msgid "What kind of file is this?"
-msgstr ""
+msgstr "¿Qué tipo de archivo es este?"
 
 msgid "Select File"
-msgstr ""
+msgstr "Seleccionar archivo"
 
 msgid "Upload File"
-msgstr ""
+msgstr "Cargar archivo"
 
 msgid "Or Upload a File Instead"
-msgstr ""
+msgstr "o cargar un archivo en lugar"
 
 #. Unique name to identify this story in the system
 msgid "Unique Name"
-msgstr ""
+msgstr "Nombre único"
 
 msgid "Upload Text"
-msgstr ""
+msgstr "Carga de texto"
 
 msgid "Copy/Paste a Story"
-msgstr ""
+msgstr "Copiar / Pegar una historia"
 
 msgid "Upload Story"
-msgstr ""
+msgstr "Subir Story"
 
 msgid "Split/Merge Words"
-msgstr ""
+msgstr "Dividir / fusionar Palabras"
 
 #. Create account button
 msgid "Create"
-msgstr ""
+msgstr "Crear"
 
 #. confirm password
 msgid "Confirm"
-msgstr ""
+msgstr "Confirmar"
 
 msgid "Password"
-msgstr ""
+msgstr "Contraseña"
 
 msgid "Username"
-msgstr ""
+msgstr "Nombre de usuario"
 
 msgid "Create New Account"
-msgstr ""
+msgstr "Crear Cuenta Nueva"
 
 #. This is one of the 'Account' menu items that describes the author of the software.
 msgid "About this software"
-msgstr ""
+msgstr "Acerca de este software"
 
 msgid "Login"
-msgstr ""
+msgstr "Entrar"
 
 #. This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
 msgid "Remember Me"
-msgstr ""
+msgstr "Acuérdate de mí"
 
 #. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Address"
-msgstr ""
+msgstr "Dirección"
 
 msgid "Split this word into multiple characters"
-msgstr ""
+msgstr "Dividir esta palabra en múltiples personajes"
 
 msgid "Merge these characters into a single word"
-msgstr ""
+msgstr "Combinar estos caracteres en una sola palabra"
 
 #. This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
 msgid "Doing instant translation..."
-msgstr ""
+msgstr "Hacer traducción instantánea..."
 
 msgid "Instant Translation"
-msgstr ""
+msgstr "Traducción Instantánea"
 
 msgid "instant translation of one or more words"
-msgstr ""
+msgstr "traducción instantánea de una o más palabras"
 
 msgid "No instant translation available."
-msgstr ""
+msgstr "No hay traducción instantánea disponible."
 
 msgid "Selected instant translation"
-msgstr ""
+msgstr "Traducción instantánea seleccionada"
 
 msgid "Piecemeal instant translation"
-msgstr ""
+msgstr "Traducción instantánea por etapas"
 
 msgid "No internet access. Offline instant translation only."
-msgstr ""
+msgstr "No hay acceso a internet. Fuera de línea única traducción instantánea."
 
 msgid "Online instant translation"
-msgstr ""
+msgstr "Traducción en línea instantáneo"
 
 msgid "Offline instant translation"
-msgstr ""
+msgstr "Desconectado traducción instantánea"
 
 msgid "No instant translation found."
-msgstr ""
+msgstr "No se encontró la traducción instantánea."
 
 msgid ""
 "Please wait until this account is fully synchronized for an offline instant "
 "translation."
 msgstr ""
+"Por favor, espere a que esta cuenta está totalmente sincronizado por un "
+"instante fuera de líneatraducción."
 
 #. Skip ahead to a specific page in a book/story.
 msgid "Skip to page"
-msgstr ""
+msgstr "Ir a la página"
 
 msgid "show/hide translations"
-msgstr ""
+msgstr "mostrar/ocultar las traducciones"
 
 msgid "Internet access error. Try again later: "
-msgstr ""
+msgstr "Error de acceso a Internet Inténtalo de nuevo más tarde:"
 
 msgid "Email address change failed"
-msgstr ""
+msgstr "Cambio de dirección de correo electrónico no se pudo"
 
 msgid "Success! Email changed"
-msgstr ""
+msgstr "El éxito! Email cambió"
 
 msgid "Email Address"
-msgstr ""
+msgstr "Dirección de correo electrónico"
 
 msgid "Please Provide"
-msgstr ""
+msgstr "Por favor Proporcionar"
 
 msgid "Change Email"
-msgstr ""
+msgstr "Cambiar correo electrónico"
 
 msgid ""
 "Please change your email address on the website. Will support mobile in a "
 "future version."
 msgstr ""
+"Por favor, cambie su dirección de correo electrónico en el sitio web. "
+"Apoyará móvil en unaversión futura."
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
 "your devices with your web account, you must first request a web account "
 "online first by contacting the author"
 msgstr ""
+"Para acceder a esta aplicación con una cuenta normal y comienzan la "
+"sincronización de todossus dispositivos con su cuenta de Web, debe solicitar "
+"primero una cuenta weblínea en primer lugar poniéndose en contacto con el "
+"autor"
 
 msgid "Signing you in, Please wait"
-msgstr ""
+msgstr "La firma de usted, espere por favor"
 
 msgid "Loading story, Please wait"
-msgstr ""
+msgstr "Historia Cargando, espere por favor"
 
 msgid "English to Chinese"
-msgstr ""
+msgstr "Inglés a chino"
 
 msgid "Chinese to English"
-msgstr ""
+msgstr "Chino a Inglés"
 
 msgid "This word"
-msgstr ""
+msgstr "Esta palabra"
 
 msgid "has more than one meaning"
-msgstr ""
+msgstr "tiene más de un significado"
 
 #. Beginning of a message
 msgid "If this is your first time here"
-msgstr ""
+msgstr "Si esta es tu primera vez aquí"
 
 #. end of a message
 msgid "please read the tutorial"
-msgstr ""
+msgstr "Por favor, lea el tutorial"
 
 msgid ""
 "We're sorry you feel that way, but we need your authorization to use this "
 "service. You're welcome to try again later. Thanks."
 msgstr ""
+"Lo sentimos que te sientas así, pero necesitamos su autorización para "
+"utilizar esteel servicio. Le invitamos a intentarlo más tarde. Gracias."
 
 msgid "Our service could not create an account from you"
-msgstr ""
+msgstr "Nuestro servicio no pudo crear una cuenta de usted"
 
 msgid ""
 "There was an unknown error trying to authenticate you before creating an "
 "account. Please try again later"
 msgstr ""
+"No estaba tratando de un error desconocido al que autenticarse antes de "
+"crear unacuenta. Por favor, inténtelo de nuevo más tarde"
 
 msgid ""
 "You have successfully signed in with the 3rd party, but they cannot confirm "
 "that your account has been validated (that you are a real person). Please "
 "try again later."
 msgstr ""
+"Usted ha firmado con éxito en la tercera parte, pero no puede confirmarque "
+"su cuenta ha sido validado (que usted es una persona real). Por "
+"favorintentarlo más tarde."
 
 msgid ""
 "We're sorry. You have declined to share your email address, but we need a "
 "valid email address in order to create an account for you"
 msgstr ""
+"Lo sentimos. Se ha negado a compartir su dirección de correo electrónico, "
+"pero necesitamos undirección de correo electrónico válida con el fin de "
+"crear una cuenta para usted"
 
 msgid "You're welcome to try again"
-msgstr ""
+msgstr "Usted es bienvenido a intentarlo de nuevo"
 
 msgid "Congratulations. Your account is created"
-msgstr ""
+msgstr "Felicitaciones. Se crea tu cuenta"
 
 msgid ""
 "We have created a default password to be used with your mobile device(s). "
@@ -897,45 +983,54 @@ msgid ""
 "before trying to login to the mobile application. You are welcome to go to "
 "your preferences now and change this password."
 msgstr ""
+"Hemos creado una contraseña predeterminada para su uso con el dispositivo "
+"(s) móvil.Por favor, escríbalo en algún lugar. Lo necesitará si usted "
+"quieresincronizar sus dispositivos móviles con el sitio web. Si usted no "
+"desea utilizarla aplicación móvil, usted puede ignorarlo. Si usted no quiere "
+"escribirloabajo, usted tendrá que volver a preferencias de su cuenta y "
+"restablecerlaantes de tratar de iniciar sesión en la aplicación móvil. Le "
+"invitamos a ir asus preferencias ahora y cambiar esta contraseña."
 
 msgid ""
 "We're sorry, but someone has already created an account with your credentials"
-msgstr ""
+msgstr "Lo sentimos, pero alguien ya ha creado una cuenta con sus credenciales"
 
 msgid "Original login service"
-msgstr ""
+msgstr "Original servicio de inicio de sesión"
 
 msgid "Please choose a different service and try again"
-msgstr ""
+msgstr "Por favor, elija un servicio diferente y vuelva a intentarlo"
 
 msgid ""
 "Here is the original story. Choose from one of the options in the above "
 "navigation bar to begin learning with this story."
 msgstr ""
+"Aquí está la historia original. Elija entre una de las opciones en las "
+"anterioresbarra de navegación para empezar a aprender con esta historia."
 
 msgid "Could not lookup your account! Try again"
-msgstr ""
+msgstr "No se pudo operaciones de búsqueda de su cuenta! Intenta de nuevo"
 
 msgid "Please write (or change) it"
-msgstr ""
+msgstr "Por favor, escriba (o cambio) que"
 
 msgid "You will need it to login to your mobile device"
-msgstr ""
+msgstr "Usted lo necesitará para acceder a su dispositivo móvil"
 
 msgid "Old Password / Token"
-msgstr ""
+msgstr "Contraseña anterior / Token"
 
 msgid "New Password / Token"
-msgstr ""
+msgstr "Nueva contraseña / Token"
 
 msgid "Confirm Password / Token"
-msgstr ""
+msgstr "Confirmar Contraseña / Token"
 
 msgid "Change Password / Token"
-msgstr ""
+msgstr "Cambiar contraseña / Token"
 
 msgid "Reset Password / Token"
-msgstr ""
+msgstr "Restablecer contraseña / Token"
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -944,41 +1039,50 @@ msgid ""
 "your email and password from your online account using any device that you "
 "like."
 msgstr ""
+"Para acceder a esta aplicación con una cuenta normal y comienzan la "
+"sincronización de todossus dispositivos con su cuenta de Web, debe solicitar "
+"primero una cuenta weben línea. Una vez que haya creado una cuenta en línea, "
+"a continuación, puede iniciar sesión con elsu dirección de correo "
+"electrónico y la contraseña de su cuenta en línea usando cualquier "
+"dispositivo que ustedgusta."
 
 msgid "None Selected"
-msgstr ""
+msgstr "No seleccionó nada"
 
 msgid "Sign in with"
-msgstr ""
+msgstr "Conéctate con"
 
 #. Which language to learn, that is.
 msgid "Which language"
-msgstr ""
+msgstr "¿Qué idioma"
 
 msgid "Choose one"
-msgstr ""
+msgstr "Elija uno"
 
 msgid "* Please fill in required fields"
-msgstr ""
+msgstr "* Por favor rellene los campos obligatorios"
 
 msgid "Password / Token"
-msgstr ""
+msgstr "Contraseña / Token"
 
 #. Begin long explanation
 msgid "This story has not yet been converted to reading format."
-msgstr ""
+msgstr "Esta historia aún no se ha convertido al formato de lectura."
 
 msgid ""
 "Translation requires significant computer power, so you must convert "
 "(translate) it online first, and then it will be synchronized with this "
 "device."
 msgstr ""
+"La traducción requiere de alimentación del ordenador significativa, por lo "
+"que debe convertir(traducir) en línea primero, y entonces se sincronizará "
+"con estadispositivo."
 
 msgid "Please click 'Translate' in the side panel to proceed."
-msgstr ""
+msgstr "Por favor, haga clic en 'Traducir' en el panel lateral para continuar."
 
 msgid "Translation access denied"
-msgstr ""
+msgstr "Traducción acceso denegado"
 
 msgid ""
 "To login to this application with a regular account and begin syncing all of "
@@ -987,159 +1091,175 @@ msgid ""
 "account, you can then login with your email and password from your online "
 "account using any device that you like."
 msgstr ""
+"Para acceder a esta aplicación con una cuenta normal y comienzan la "
+"sincronización de todossus dispositivos con su cuenta de Web, debe solicitar "
+"primero una red librecuenta en línea @ http://mica.hinespot.com. Después de "
+"haber creado una líneacuenta, a continuación, puede iniciar sesión con tu "
+"correo electrónico y contraseña de su líneacuenta utilizando cualquier "
+"dispositivo que te gusta."
 
 #. The name of the software
 msgid "MICA Language Learning"
-msgstr ""
+msgstr "MICA aprendizaje de idiomas"
 
 msgid ""
 "Please delete your account on the website and then uninstall the "
 "application. Will support mobile in a future version."
 msgstr ""
+"Por favor, borrar su cuenta en el sitio web y luego desinstalar "
+"elaplicación. Apoyará móvil en una versión futura."
 
 msgid "No such account. Cannot delete it."
-msgstr ""
+msgstr "No hay tal cuenta. No se puede eliminar la misma."
 
 #. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
-msgstr ""
+msgstr "Vete y morir."
 
 msgid ""
 "Admin accounts can't be deleted by other people. The admin must delete their "
 "own account."
 msgstr ""
+"Las cuentas de administrador no se pueden eliminar por otras personas. El "
+"administrador debe eliminar sucuenta propia."
 
 msgid "Success! Account was deleted"
-msgstr ""
+msgstr "¡Éxito! Cuenta fue suprimido"
 
 msgid "Your account has been permanently deleted."
-msgstr ""
+msgstr "Tu cuenta ha sido eliminada de forma permanente."
 
 msgid "Delete Account?"
-msgstr ""
+msgstr "Eliminar cuenta?"
 
 msgid "Yes, delete my account."
-msgstr ""
+msgstr "Sí, eliminar mi cuenta."
 
 msgid "Are you sure you want to delete your account? This is IRREVERSIBLE."
-msgstr ""
+msgstr "¿Está seguro que desea eliminar su cuenta? Esto es IRREVERSIBLE."
 
 #. This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
 msgid "Bulk Review Words"
-msgstr ""
+msgstr "Palabras de revisión a granel"
 
 #. This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
 msgid "No review recommendations available."
-msgstr ""
+msgstr "No hay recomendaciones de revisión disponibles."
 
 #. This appears as a pop-up when we are loading the text content of a story.
 msgid "Loading Text"
-msgstr ""
+msgstr "Carga de texto"
 
 #. This appears as a pop-up when we are image content of a PDF-based story.
 msgid "Loading Image"
-msgstr ""
+msgstr "Cargando Imagen"
 
 #. This appears when you first click on a story to be loaded
 msgid "Loading Stories"
-msgstr ""
+msgstr "Carga de Historias"
 
 #. This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
 msgid "Loading Statistics"
-msgstr ""
+msgstr "Carga de Estadística"
 
 #. This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
 msgid "This account is not fully synchronized"
-msgstr ""
+msgstr "Esta cuenta no está completamente sincronizado"
 
 #. This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
 msgid "If you are offline, please go online for an instant translation."
 msgstr ""
+"Si está desconectado, por favor, ir en línea para obtener una traducción "
+"instantánea."
 
 #. This appears when you attempt to perform an instant translation without clicking on any words to translate.
 msgid "You have not selected any words for instant translation!"
-msgstr ""
+msgstr "No ha seleccionado ninguna palabra para la traducción instantánea!"
 
 #. This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors.
 msgid "See above for problems with your edit requests."
-msgstr ""
+msgstr "Ver arriba para los problemas con sus peticiones de edición."
 
 #. just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
 msgid "Submit"
-msgstr ""
+msgstr "Enviar"
 
 #. This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
 msgid "Reason"
-msgstr ""
+msgstr "Razón"
 
 #. Merge as in merge/split in edit mode.
 msgid "Merge"
-msgstr ""
+msgstr "Combinar"
 
 #. This appears next to the words that have errors for which you were trying to merge or split.
 msgid "INVALID"
-msgstr ""
+msgstr "NO VÁLIDO"
 
 #. Split as in merge/split in edit mode.
 msgid "Split"
-msgstr ""
+msgstr "División"
 
 #. This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
 msgid "Are you sure you want to perform these edits?"
-msgstr ""
+msgstr "¿Está seguro que desea realizar estos cambios?"
 
 #. Also a message in edit mode.
 msgid ""
 "The selected characters are not consecutive (including punctuation). You "
 "cannot merge them."
 msgstr ""
+"Los caracteres seleccionados no son consecutivos (incluyendo puntuacion). "
+"Ustedno se puede combinarlos."
 
 #. Also a message in edit mode.
 msgid ""
 "You need at least two character groups selected before you can merge them "
 "into a word!"
 msgstr ""
+"Usted necesita por lo menos dos grupos de caracteres seleccionados antes de "
+"poder fusionarlasen una palabra!"
 
 #. Also a message in edit mode.
 msgid "This word only has one character. It cannot be split!"
-msgstr ""
+msgstr "Esta palabra sólo tiene un carácter. No se puede dividir!"
 
 #. Also a message in edit mode.
 msgid "You cannot split more than one word at a time!"
-msgstr ""
+msgstr "No se puede separar más de una palabra a la vez!"
 
 #. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
-msgstr ""
+msgstr "Traducir"
 
 #. This on the main page when a story is being actively translated.
 msgid "Stories in translation"
-msgstr ""
+msgstr "Historias de la traducción"
 
 #. This appears after a story has just finished being translated to indicate that you can start using it.
 msgid "Done! Please reload."
-msgstr ""
+msgstr "Done! Por favor, vuelva a cargar."
 
 #. This appears during the translation of a story to indicate how many pages have been completed in the translation
 msgid "Working"
-msgstr ""
+msgstr "Trabajo"
 
 msgid "Start learning!"
-msgstr ""
+msgstr "Empieza a aprender!"
 
 #. This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
 msgid "Found Recommendations"
-msgstr ""
+msgstr "Recomendaciones encontrados"
 
 msgid "Redirecting"
-msgstr ""
+msgstr "Redirigir"
 
 #. These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
 msgid "Stats Hidden"
-msgstr ""
+msgstr "Estadísticas Oculto"
 
 msgid "Stats Shown"
-msgstr ""
+msgstr "Estadísticas muestran"
 
 msgid ""
 "Your device either does not have adequate signal strength or your connection "
@@ -1147,44 +1267,51 @@ msgid ""
 "Wifi), we were not able to reach the server. Please try again later when you "
 "have better internet access by tapping the 'M' at the top to login."
 msgstr ""
+"El dispositivo ya sea no tiene potencia de señal adecuada o la conexiónno "
+"tiene la conectividad adecuada. Mientras que usted no tiene una conexión (3G "
+"oWi-fi), que no fueron capaces de alcanzar el servidor. Por favor, inténtelo "
+"de nuevo más tarde cuandotener un mejor acceso a internet tocando la 'M' en "
+"la parte superior para iniciar sesión."
 
 msgid "Syncing"
-msgstr ""
+msgstr "Sincronización"
 
 msgid "Start Syncing"
-msgstr ""
+msgstr "Iniciar sincronización"
 
 msgid "Stop Syncing"
-msgstr ""
+msgstr "Detener sincronización"
 
 msgid "Failed to change synchronization. Please try again"
-msgstr ""
+msgstr "No se pudo cambiar la sincronización. Por favor, inténtelo de nuevo"
 
 #. Someone supplied invalid input to the server indicating a dictionary that does not exist.
 msgid "No such dictionary. Please try again"
-msgstr ""
+msgstr "No existe el diccionario. Por favor, inténtelo de nuevo"
 
 msgid "Failed to intiate download of this dictionary. Please try again"
 msgstr ""
+"Error al descargar el diccionario para intiate. Por favor, inténtelo de nuevo"
 
 msgid "Success! We will start downloading that dictionary"
-msgstr ""
+msgstr "El éxito! Vamos a empezar a descargar ese diccionario"
 
 msgid "Success! We will no longer download that dictionary"
-msgstr ""
+msgstr "¡Éxito! Ya no vamos a descargar ese diccionario"
 
 msgid "Success! We will start distributing that dictionary to your devices"
 msgstr ""
+"El éxito! Vamos a empezar a distribuir ese diccionario a sus dispositivos"
 
 msgid "Success! We will no longer distribute that dictionary to your devices"
-msgstr ""
+msgstr "¡Éxito! Ya no vamos a distribuir ese diccionario a sus dispositivos"
 
 msgid "Dictionaries"
-msgstr ""
+msgstr "Diccionarios"
 
 #. This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
 msgid "Send Dictionaries to your devices?"
-msgstr ""
+msgstr "Enviar Diccionarios para sus dispositivos?"
 
 msgid ""
 "Offline dictionaries are required for using 'Edit' mode of some character-"
@@ -1194,30 +1321,37 @@ msgid ""
 "mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 "
 "MB each"
 msgstr ""
+"Se requieren los diccionarios sin conexión para usar el modo 'Editar' de "
+"cierta caracterizaciónlenguajes basados y para volver a la traducción de "
+"páginas individuales en el modo de revisión.Traducciones instantáneas "
+"requieren acceso a Internet, por lo que puede omitir estosdescargas si sus "
+"historias ya se han editado / revisado y usted esen su mayoría utiliza el "
+"modo 'lectura'. Cada diccionario está en algún lugar entre el 30 y el 50MB "
+"cada uno"
 
 msgid "Download"
-msgstr ""
+msgstr "Descargar"
 
 msgid "Downloading"
-msgstr ""
+msgstr "Descarga"
 
 msgid "For assistance, Contact:"
-msgstr ""
+msgstr "Si necesita ayuda, comuníquese con:"
 
 msgid "Requesting"
-msgstr ""
+msgstr "Solicitud"
 
 msgid "Started (stop?)"
-msgstr ""
+msgstr "Started (detener?)"
 
 msgid "Stopping"
-msgstr ""
+msgstr "Detener"
 
 msgid "Stopped (start?)"
-msgstr ""
+msgstr "Detenido (empezar?)"
 
 msgid "Stop downloading"
-msgstr ""
+msgstr "Detener la descarga"
 
 msgid ""
 "If you have re-installed or this is your first time logging in on this "
@@ -1225,9 +1359,16 @@ msgid ""
 "this can take a while, because we need to calculate some information to "
 "organize things on your device. Be patient."
 msgstr ""
+"Si ha vuelto a instalar o es tu primera vez que inicia sesión en el "
+"presentedispositivo y ha elegido para sincronizar muchas historias al mismo "
+"tiempoesto puede tomar un tiempo, porque tenemos que calcular un poco de "
+"información paraorganizar las cosas en su dispositivo. Tenga paciencia."
 
 msgid "Spanish"
-msgstr ""
+msgstr "Español"
 
 msgid "Spanish to English"
-msgstr ""
+msgstr "Español a Inglés"
+
+msgid "English to Spanish"
+msgstr "Inglés a Español"

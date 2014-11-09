@@ -1264,7 +1264,10 @@ msgstr ""
 "事，这可能会需要一点时间，因为我们需要在你的设备上整理一些信息。请耐心等待。"
 
 msgid "Spanish"
-msgstr ""
+msgstr "西班牙语"
 
 msgid "Spanish to English"
-msgstr ""
+msgstr "西班牙语译成英语"
+
+msgid "English to Spanish"
+msgstr "英语到西班牙语"
