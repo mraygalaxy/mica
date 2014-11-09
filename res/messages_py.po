@@ -1293,3 +1293,10 @@ msgstr ""
 
 msgid "Stop downloading"
 msgstr ""
+
+msgid ""
+"If you have re-installed or this is your first time logging in on this "
+"device and you have chosen to synchronize many stories at the same time, "
+"this can take a while, because we need to calculate some information to "
+"organize things on your device. Be patient."
+msgstr ""

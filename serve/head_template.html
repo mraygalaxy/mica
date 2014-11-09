@@ -74,7 +74,7 @@
 	</td></tr><tr><td>
         <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
 	</td></tr><tr><td>
-        <button onclick="$('#loginModal').modal('show');" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+        <button onclick="$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
 	</td></tr><tr><td>
         <div t:render="thirdparty" style='display: inline'/>
 	</td></tr>
@@ -185,6 +185,7 @@
                     <div class='modal-content'>
                         <div style="font-size: large" class="modal-body">
                             <t:slot name="spinner"/>&#160;<t:slot name="loading"/>...
+                            <br/><h5>(<t:slot name='loadingwait'/>)</h5>
                         </div>
                     </div>
                 </div>

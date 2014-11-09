@@ -637,7 +637,7 @@ class MICA(object):
             sideout.append("<b>" + rname + "</b>")
         else :
             # 'original' refers to the original text of the story that the user provided for language learning.
-            sideout.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
+            sideout.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
             sideout.append(story["uuid"])
             sideout.append("\">")
             sideout.append(rname)
@@ -662,7 +662,7 @@ class MICA(object):
         if not mobile and not gp.already_romanized :
             if finished or reviewed :
                 # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
-                sideout.append("\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal('show');\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
+                sideout.append("\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
                 sideout.append("<i class='glyphicon glyphicon-download-alt'></i></a>")
     
         return sideout
@@ -1878,9 +1878,9 @@ class MICA(object):
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
                     notsure.append("\n<a title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal('show');\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
+                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
 
                 if finished :
                    finish += notsure
@@ -3924,7 +3924,7 @@ class MICA(object):
                 out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
 
                 out += """
-                        <a onclick="$('#compactModal').modal('show');"
+                        <a onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});;"
                         """
 
                 out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
