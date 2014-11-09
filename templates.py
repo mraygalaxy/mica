@@ -549,14 +549,14 @@ class HeadElement(Element):
             itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
             if navactive == key :
                 if mobile :
-                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
+                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});")(itag, " ", display)
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
                 itemtag = tags.li(**{"class":"active"})
                 tag(itemtag(atag))
             else :
                 if mobile :
-                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal('show');")(itag, " ", display)
+                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});")(itag, " ", display)
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
                 tag(tags.li(atag))
@@ -569,13 +569,13 @@ class HeadElement(Element):
             utag = tags.ul(**{"class" : "dropdown-menu"})
 
             if not mobile :
-                ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal"})
+                ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
                 # Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
                 ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
                 utag(tags.li(ttag))
 
                 if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-                    ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal"})
+                    ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
                     # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                     ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
                     utag(tags.li(ttag))
@@ -725,7 +725,7 @@ class HeadElement(Element):
 
                authorization_url, state = service.authorization_url(creds["authorization_base_url"])
 
-               servicetag = tags.a(onclick = "$('#loginModal').modal('show');", href = authorization_url)
+               servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url)
                servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
                tr(tags.td(servicetag))
 
@@ -787,6 +787,7 @@ class HeadElement(Element):
                      signing = _("Signing you in, Please wait"),
                      
                      loading = _("Loading story, Please wait"),
+                     loadingwait = _("If you have re-installed or this is your first time logging in on this device and you have chosen to synchronize many stories at the same time, this can take a while, because we need to calculate some information to organize things on your device. Be patient."),
                      # Compacting can also be translated as "cleaning" database.
                      compacting = _("Compacting database, Please wait"),
                      # This appears as a pop-up when we are loading the text content of a story.
