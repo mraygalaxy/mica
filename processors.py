@@ -10,6 +10,7 @@ from sqlalchemy.interfaces import PoolListener
 from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
 from re import compile as re_compile, IGNORECASE
+from unicodedata import normalize, category
 
 story_format = 2
 
@@ -39,6 +40,7 @@ class Processor(object) :
         self.already_romanized = True
         self.params = params
         self.mica = mica
+        self.accented_source = False
 
         self.punctuation = {}
         self.punctuation_without_newlines = {}
@@ -264,94 +266,52 @@ def get_cjk_handle(params) :
 
     return (cjk, d)
 
-class EnglishToChineseSimplified(Processor) :
+
+class RomanizedSource(Processor) :
     def __init__(self, mica, params) :
-        super(EnglishToChineseSimplified, self).__init__(mica, params)
-        #self.files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
-        #self.files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
-        self.files = dict(dict_file = "lazyworm-ec.dict", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
-        self.engdb = False
-
-        self.structs = {
-                        "abbr." : True,
-                        "adj." : True,
-                        "adv." : True,
-                        "art." : True,
-                        "aux." : True,
-                        "conj." : True,
-                        "int." : True,
-                        "n." : True,
-                        "num." : True,
-                        "prep." : True,
-                        "pron." : True,
-                        "v." : True,
-                        "vbl." : True,
-                        "vi." : True,
-                        "vt." : True,
-                }
-
-        self.matches = {        
-                         u"ing" : False, 
-                         u"’s" : False,
-                         u"'s" : False,
-                         u"s" : False,
-                         u"ies" : u"y",
-                         u"ied" : u"d",
-                         u"er" : False,
-                         u"d" : False,
-                         u"ed" : False,
-                         u"ers" : False,
-                         u"’ve" : False,
-                         u"'ve" : False,
-                         u"’d" : False,
-                         u"'d" : False,
-                         u"’re" : False,
-                         u"'re" : False,
-                         u"’ll" : False,
-                         u"'ll" : False,
-                         #u"’" : False,
-                         #u"'" : False,
-                        }
+        super(RomanizedSource, self).__init__(mica, params)
+        self.srcdb = False
+        self.structs = {}
+        self.matches = {}
 
     def get_dictionaries(self) :
         flist = deepcopy(self.files)
         del flist["idx_file"]
         flistvalues = flist.values()
-        flistvalues.append("eng.db")
+        flistvalues.append(self.dbname)
         return flistvalues
 
     def test_dictionaries(self, opaque) :
-        if not self.engdb :
-
-            self.engdb = {}
-            db = create_engine('sqlite:///' + self.params["scratch"] + 'eng.db', listeners= [MyListener()])
+        if not self.srcdb :
+            self.srcdb = {}
+            db = create_engine('sqlite:///' + self.params["scratch"] + self.dbname, listeners= [MyListener()])
             db.echo = False
             metadata = MetaData(db)
-            self.engdb["conn"] = db.connect()
+            self.srcdb["conn"] = db.connect()
 
-            self.engdb["_index_idx"] = Table('_index_idx', metadata,
+            self.srcdb["_index_idx"] = Table('_index_idx', metadata,
                 Column('idx', Integer, primary_key=True),
                 Column('word_str', String),
                 Column('word_data_offset', Integer),
                 Column('word_data_size', Integer),
             )
-            self.engdb["_index_idx"].create(checkfirst=True)
+            self.srcdb["_index_idx"].create(checkfirst=True)
 
-            self.engdb["_word_idx"] = Table('_word_idx', metadata,
+            self.srcdb["_word_idx"] = Table('_word_idx', metadata,
                 Column('word_str', String, primary_key=True),
                 Column('idx', String),
             )
 
-            self.engdb["_word_idx"].create(checkfirst=True)
+            self.srcdb["_word_idx"].create(checkfirst=True)
 
             full_files = {}
             for name, f in self.files.iteritems() :
                 full_files[name] = self.params["scratch"] + f
-            self.dictionary = load_dictionary(self.engdb, full_files)
+            self.dictionary = load_dictionary(self.srcdb, full_files)
 
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
-        #opaque is not yet used for English
+        #opaque is not yet used for Romanized sources 
         uuid = story['uuid']
         name = story['name']
 
@@ -374,6 +334,12 @@ class EnglishToChineseSimplified(Processor) :
         unit["punctuation"] = False 
         unit["match_romanization"] = []
         return [unit]
+
+    def parse_page_start(self) : 
+        return False
+
+    def parse_page_stop(self, opaque) :
+        d = opaque
 
     def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         units = []
@@ -461,8 +427,20 @@ class EnglishToChineseSimplified(Processor) :
                     search += replacement
                 targ = self.get_first_translation(opaque, search, False, none_if_not_found = False)
 
+                # Try lowercase
                 if not targ :
                     targ = self.get_first_translation(opaque, search.lower(), False, none_if_not_found = False)
+
+                # Try repeating without accented characters
+                if not targ and self.accented_source :
+                    unsource = ''.join((c for c in normalize('NFD', search) if category(c) != 'Mn'))
+
+                    targ = self.get_first_translation(opaque, unsource, False, none_if_not_found = False)
+
+                    # And again, unaccented lowercase
+                    if not targ :
+                        targ = self.get_first_translation(opaque, unsource.lower(), False, none_if_not_found = False)
+
                 if targ :
                     break
 
@@ -541,11 +519,85 @@ class EnglishToChineseSimplified(Processor) :
 
         return False 
 
-    def parse_page_start(self) : 
-        return False
+class SpanishToEnglish(RomanizedSource) :
+    def __init__(self, mica, params) :
+        super(SpanishToEnglish, self).__init__(mica, params)
+        self.files = dict(dict_file = "dictd_www.freedict.de_spa-eng.dict", idx_file = "dictd_www.freedict.de_spa-eng.idx", ifo_file = "dictd_www.freedict.de_spa-eng.ifo")
+        self.dbname = "span2eng.db"
+        self.accented_source = True
 
-    def parse_page_stop(self, opaque) :
-        d = opaque
+        self.matches.update({
+                        u"s" : False,
+                        u"a" : False,
+                        u"te" : False,
+                        u"ta" : False,
+                        u"os" : False,
+                        u"es" : False,
+                        u"on" : False,
+                        u"l" : False,
+                        u"les" : False,
+                        u"do" : u"r",
+                        u"o" : u"ar",
+                        })
+
+class EnglishSource(RomanizedSource) :
+    def __init__(self, mica, params) :
+        super(EnglishSource, self).__init__(mica, params)
+
+        self.structs.update({
+                        "abbr." : True,
+                        "adj." : True,
+                        "adv." : True,
+                        "art." : True,
+                        "aux." : True,
+                        "conj." : True,
+                        "int." : True,
+                        "n." : True,
+                        "num." : True,
+                        "prep." : True,
+                        "pron." : True,
+                        "v." : True,
+                        "vbl." : True,
+                        "vi." : True,
+                        "vt." : True,
+                })
+
+        self.matches.update({
+                         u"ing" : False, 
+                         u"’s" : False,
+                         u"'s" : False,
+                         u"s" : False,
+                         u"ies" : u"y",
+                         u"ied" : u"d",
+                         u"er" : False,
+                         u"d" : False,
+                         u"ed" : False,
+                         u"ers" : False,
+                         u"’ve" : False,
+                         u"'ve" : False,
+                         u"’d" : False,
+                         u"'d" : False,
+                         u"’re" : False,
+                         u"'re" : False,
+                         u"’ll" : False,
+                         u"'ll" : False,
+                         #u"’" : False,
+                         #u"'" : False,
+                })
+
+class EnglishToChineseSimplified(EnglishSource) :
+    def __init__(self, mica, params) :
+        super(EnglishToChineseSimplified, self).__init__(mica, params)
+        #self.files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
+        #self.files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
+        self.files = dict(dict_file = "lazyworm-ec.dict", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
+        self.dbname = "eng.db"
+
+class EnglishToSpanish(EnglishSource) :
+    def __init__(self, mica, params) :
+        super(EnglishToSpanish, self).__init__(mica, params)
+        self.files = dict(dict_file = "dictd_www.freedict.de_eng-spa.dict", idx_file = "dictd_www.freedict.de_eng-spa.idx", ifo_file = "dictd_www.freedict.de_eng-spa.ifo")
+        self.dbname = "eng2span.db"
 
 class ChineseSimplifiedToEnglish(Processor) :
     def __init__(self, mica, params) :

@@ -101,34 +101,28 @@ lang = {
          u"zh-CHS" : _(u"Chinese Simplified"),
          u"en" : _(u"English"),
          u"py" : _(u"Pinyin"),
+         u"es" : _(u"Spanish"),
        }
 
 supported = {
           u"en,zh-CHS" : _(u"English to Chinese"),
           u"zh-CHS,en" : _(u"Chinese to English"),
-        }
-
-samples = {
-         u"zh-CHS" : [u"开源"],
-         u"en" : [u"test"],
-         u"py" : _(u"pīnyīn"),
-       }
-
-romanization = {
-        u"zh-CHS" : True,
-        u"en" : False,
-        u"py" : True,
+          u"es,en" : _(u"Spanish to English"),
+          u"en,es" : _(u"English to Spanish"),
         }
 
 processor_map = {
         u"zh-CHS,en" : u"ChineseSimplifiedToEnglish", 
         u"en,zh-CHS" : u"EnglishToChineseSimplified", 
+        u"es,en" : u"SpanishToEnglish",
+        u"en,es" : u"EnglishToSpanish",
         u"py": False,
 }
 
 tutorials = {
         u"zh" : "info_template.html", 
         u"en" : "info_template.html", 
+        u"es" : "info_template.html", 
         u"py": "info_template.html",
 }
 
