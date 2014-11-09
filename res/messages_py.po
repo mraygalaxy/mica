@@ -407,7 +407,7 @@ msgid ""
 "to the device for regular use."
 msgstr ""
 "Xīn gùshì jǐn zhīchí zài wǎngzhàn jiāzài.(Yīnwèi jiāzài xīn gùshì xūyào "
-"qiángdà de jìsuàn zhīchí, suǒyǐ zài cǐ shèbèi zhǐ néngtóngbù。）"
+"qiángdà de jìsuàn zhīchí, suǒyǐ zài cǐ shèbèi zhǐ néngtóngbù。"
 
 #. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
 msgid "Story is a"
@@ -1224,42 +1224,42 @@ msgstr ""
 "qián gèng hǎo de wǎngluò liánjiē."
 
 msgid "Syncing"
-msgstr ""
+msgstr "Zhèngzài tóngbù"
 
 msgid "Start Syncing"
-msgstr ""
+msgstr "Kāishǐ tóngbù"
 
 msgid "Stop Syncing"
-msgstr ""
+msgstr "Tíngzhǐ tóngbù"
 
 msgid "Failed to change synchronization. Please try again"
-msgstr ""
+msgstr "Wèi néng gǎibiàn tóngbù de zhuàngtài. Qǐng chóng shì"
 
 #. Someone supplied invalid input to the server indicating a dictionary that does not exist.
 msgid "No such dictionary. Please try again"
-msgstr ""
+msgstr "Méiyǒu zhèyàng de zìdiǎn. Qǐng chóng shì"
 
 msgid "Failed to intiate download of this dictionary. Please try again"
-msgstr ""
+msgstr "Wúfǎ kāishǐ xiàzài cídiǎn. Qǐng chóng shì"
 
 msgid "Success! We will start downloading that dictionary"
-msgstr ""
+msgstr "Chénggōngle! Wǒmen jiāng kāishǐ xiàzài cídiǎn"
 
 msgid "Success! We will no longer download that dictionary"
-msgstr ""
+msgstr "Chénggōngle! Wǒmen jiāng bù zài xiàzài cídiǎn"
 
 msgid "Success! We will start distributing that dictionary to your devices"
-msgstr ""
+msgstr "Chénggōngle! Wǒmen jiāng kāishǐ fēnfā gāi cídiǎn zài nín de shèbèi"
 
 msgid "Success! We will no longer distribute that dictionary to your devices"
-msgstr ""
+msgstr "Chénggōngle! Wǒmen jiāng nà běn zìdiǎn bù zài fēnfā gěi nín de shèbèi"
 
 msgid "Dictionaries"
-msgstr ""
+msgstr "Zìdiǎn"
 
 #. This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
 msgid "Send Dictionaries to your devices?"
-msgstr ""
+msgstr "Zìdiǎn fāsòng dào nín de shèbèi?"
 
 msgid ""
 "Offline dictionaries are required for using 'Edit' mode of some character-"
@@ -1269,30 +1269,35 @@ msgid ""
 "mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 "
 "MB each"
 msgstr ""
+"Zài yǐ wénzì wèi jīchǔ de yǔyán de biānjí móshì hé jiǎnchá móshì de chóngxīn "
+"fānyì dāndú yè zhōng xūyào líxiàn zìdiǎn. Zàixiàn fānyì zé xūyào liánwǎng, "
+"rúguǒ nǐ de gùshì yǐjīng bèi biānjí, jiǎncháguò érqiě nǐ kěyǐ kāishǐ shǐyòng "
+"yuèdú móshì, nǐ kěyǐ bùyòng xiàzài zìdiǎn. Měi gè cídiǎn dàgài yǒu 30M dào "
+"50M dàxiǎo"
 
 msgid "Download"
-msgstr ""
+msgstr "Xiàzài"
 
 msgid "Downloading"
-msgstr ""
+msgstr "Zhèngzài xiàzài"
 
 msgid "For assistance, Contact:"
-msgstr ""
+msgstr "Rú xū bāngzhù, qǐng liánxì:"
 
 msgid "Requesting"
-msgstr ""
+msgstr "Zhèngzài qǐngqiú"
 
 msgid "Started (stop?)"
-msgstr ""
+msgstr "Kāishǐ le (tíng?)"
 
 msgid "Stopping"
-msgstr ""
+msgstr "Shì tíng"
 
 msgid "Stopped (start?)"
-msgstr ""
+msgstr "Tíngzhǐ le (kāishǐ?)"
 
 msgid "Stop downloading"
-msgstr ""
+msgstr "Tíngzhǐ xiàzài"
 
 msgid ""
 "If you have re-installed or this is your first time logging in on this "
@@ -1300,3 +1305,7 @@ msgid ""
 "this can take a while, because we need to calculate some information to "
 "organize things on your device. Be patient."
 msgstr ""
+"Rúguǒ nǐ zhòng zhuāngle huòzhě zhè shì nǐ dì yī cì zài zhège shèbèi shàng "
+"dēnglù, nǐ kěnéng zài tóngyī shíjiān xūyào tóngbù xǔduō gùshì, zhè kěnéng "
+"huì xūyào yīdiǎn shíjiān, yīnwèi wǒmen xūyào zài nǐ de shèbèi shàng zhěnglǐ "
+"yīxiē xìnxī. Qǐng nàixīn děngdài."
