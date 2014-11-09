@@ -2882,6 +2882,11 @@ class MICA(object):
 
             if "app_chars_per_line" not in req.session.value :
                 user = req.db[self.acct(username)]
+                if "filters" not in user :
+                    user["filters"] = {'files' : [], 'stories' : [] }
+                    req.db[self.acct(username)] = user
+                    user = req.db[self.acct(username)]
+
                 if user :
                     req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
                     req.session.value["web_chars_per_line"] = user["web_chars_per_line"]

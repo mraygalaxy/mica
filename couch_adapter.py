@@ -226,9 +226,6 @@ class MicaDatabaseCouchDB(object) :
     def runloop(self) :
         mdebug("Server runloop - nothing to do.")
 
-    def updateView(self, js) :
-        self.db.updateView(String(js))
-
     def pull_percent(self) :
         return "100.0"
 
@@ -364,7 +361,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         err_msg = False
         e = False
 
-        self.db.updateView(String("$('#viewstat').addClass('alert-danger');"))
+        self.updateView("$('#viewstat').addClass('alert-danger');")
         try :
             parts = name.split("/")
             assert(len(parts) == 2)
@@ -411,7 +408,7 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         except CommunicationError, e :
             err_msg = str(err) 
         finally :
-            self.db.updateView(String("$('#viewstat').removeClass('alert-danger');"))
+            self.updateView("$('#viewstat').removeClass('alert-danger');")
             if seed and uuid:
                 self.db.view_seed_cleanup(String(uuid))
             if err_msg :
@@ -459,6 +456,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         else :
             mdebug("Replication started. Yay.")
             return True
+
+    def updateView(self, js) :
+        self.db.updateView(String(js))
 
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
@@ -546,7 +546,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         err_msg = False
         e = False
 
-        self.db.updateView(String("$('#viewstat').addClass('alert-danger');"))
+        self.updateView("$('#viewstat').addClass('alert-danger');")
         try :
             parts = name.split("/")
             assert(len(parts) == 2)
@@ -602,7 +602,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         except CommunicationError, e :
             err_msg = str(err) 
         finally :
-            self.db.updateView(String("$('#viewstat').removeClass('alert-danger');"))
+            self.updateView("$('#viewstat').removeClass('alert-danger');")
             if seed and uuid:
                 self.db.view_seed_cleanup_(String(uuid))
             if err_msg :
@@ -631,7 +631,7 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         self.db.runloop()
 
     def updateView(self, js) :
-        self.db.updateView(String(js))
+        self.db.updateView_(String(js))
 
     def pull_percent(self) :
         return self.db.get_pull_percent().UTF8String()
