@@ -861,6 +861,7 @@ def run_template(req, which, content = False) :
         else :
             obj = which(req)
     except Exception, e :
+        return str(e)
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
 
     io = StringIO()

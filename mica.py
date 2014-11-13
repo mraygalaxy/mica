@@ -598,6 +598,7 @@ class MICA(object):
         setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
 
         req = Params(environ, start_response.im_self.request.session)
+
         req.db = False
         req.dest = ""#prefix(req.unparsed_uri)
         req.front_ads = False
@@ -4127,6 +4128,8 @@ class NONSSLRedirect(object) :
         req = Params(environ, start_response.im_self.request.session)
         (req.dest, req.path) = prefix(req.unparsed_uri)
         address = req.dest.split(":", 1)[0]
+        if address == "mica.hinespot.com" :
+            address = "readline.com"
         tossl = "https://" + address + ":" + str(params["sslport"]) + "/" + req.path 
         mdebug("Redirecting non-ssl request to: " + tossl)
         resp = exc.HTTPTemporaryRedirect(location = tossl)
