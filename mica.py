@@ -207,37 +207,40 @@ class MICA(object):
         return story["source_language"] + "," + story["target_language"]
 
     def authenticate(self, username, password, auth_url, from_third_party = False) :
-        try :
-            mdebug("Authenticating to: " + str(auth_url))
+        mdebug("Authenticating to: " + str(auth_url))
 
-            lookup_username = username
+        lookup_username = username
 
-            if from_third_party :
-                lookup_username = from_third_party["username"]
-                password = params["admin_pass"]
-                username = params["admin_user"]
+        if from_third_party :
+            lookup_username = from_third_party["username"]
+            password = params["admin_pass"]
+            username = params["admin_user"]
 
-            lookup_username_unquoted = urllib2_quote(str(lookup_username))
-            username_unquoted = urllib2_quote(str(username))
-            userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
-            req = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
-            req.add_header('Accept', 'application/json')
-            req.add_header("Content-type", "application/x-www-form-urlencoded")
-            req.add_header('Authorization', userData)
-            res = urllib2_urlopen(req)
-            mdebug("Authentication success with username: " + username)
-            return json_loads(res.read()), False
-        except urllib2_HTTPError, e : 
-            if e.code == 401 :
-                return False, _("Invalid credentials. Please try again") + "."
-            mdebug("HTTP error: " + username + " " + str(e))
-            error = "(HTTP code: " + str(e.code) + ")"
-        except urllib2_URLError, e :
-            mdebug("URL Error: " + username + " " + str(e))
-            error = "(URL error: " + str(e.reason) + ")"
-        except Exception, e :
-            mdebug("Unkonw error: " + username + " " + str(e))
-            error = "(Unknown error: " + str(e) + ")"
+        lookup_username_unquoted = urllib2_quote(str(lookup_username))
+        username_unquoted = urllib2_quote(str(username))
+        userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
+
+        for attempt in range(0, 4) :
+            try :
+                mdebug("Authentication attempt #" + str(attempt))
+                req = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
+                req.add_header('Accept', 'application/json')
+                req.add_header("Content-type", "application/x-www-form-urlencoded")
+                req.add_header('Authorization', userData)
+                res = urllib2_urlopen(req, timeout = 20 if attempt == 0 else 10)
+                mdebug("Authentication success with username: " + username)
+                return json_loads(res.read()), False
+            except urllib2_HTTPError, e : 
+                if e.code == 401 :
+                    return False, _("Invalid credentials. Please try again") + "."
+                mdebug("HTTP error: " + username + " " + str(e))
+                error = "(HTTP code: " + str(e.code) + ")"
+            except urllib2_URLError, e :
+                mdebug("URL Error: " + username + " " + str(e))
+                error = "(URL error: " + str(e.reason) + ")"
+            except Exception, e :
+                mdebug("Unknown error: " + username + " " + str(e))
+                error = "(Unknown error: " + str(e) + ")"
 
         return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
 
@@ -599,6 +602,7 @@ class MICA(object):
 
         req = Params(environ, start_response.im_self.request.session)
 
+        req.source = environ["REMOTE_ADDR"]
         req.db = False
         req.dest = ""#prefix(req.unparsed_uri)
         req.front_ads = False
@@ -1276,6 +1280,11 @@ class MICA(object):
 
         if mobile :
             req.remote_server = "https://" + params["couch_server"]
+        else :
+            req.remote_server = ""
+
+        if mobile :
+            req.main_server = "https://" + params["main_server"]
         else :
             req.remote_server = ""
             
@@ -2462,6 +2471,24 @@ class MICA(object):
                 self.install_local_language(req)
                 return self.bootstrap(req, run_template(req, FrontPageElement))
 
+            if not mobile and req.action == "auth" :
+                # We only allow jabber to do this from the localhost. Nowhere else.
+                if req.source != "127.0.0.1" :
+                    return self.bootstrap(req, 'error', now = True)
+
+                if not req.http.params.get("username") or not req.http.params.get("password") :
+                    return self.bootstrap(req, 'error', now = True)
+
+                username = req.http.params.get("username")
+                password = req.http.params.get("password")
+
+                auth_user, reason = self.authenticate(username, password, self.credentials())
+
+                if not auth_user :
+                    return self.bootstrap(req, 'bad', now = True)
+
+                return self.bootstrap(req, 'good', now = True)
+                 
             if req.action == "instant" :
                 if "connected" not in req.session.value or not req.session.value["connected"] :
                     if not req.http.params.get("username") or not req.http.params.get("password") :
@@ -4093,7 +4120,6 @@ class GUIDispatcher(Resource) :
     def getChild(self, name, request) :
         # Hack to make WebOb work with Twisted
         request.content.seek(0,0)
-        request.setHeader('Access-Control-Allow-Origin', '*')
         request.setHeader('Access-Control-Allow-Origin', '*')
         request.setHeader('Access-Control-Allow-Methods', 'GET')
         request.setHeader('Access-Control-Allow-Headers', 'x-prototype-version,x-requested-with')
