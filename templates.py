@@ -446,9 +446,9 @@ class StaticViewElement(Element) :
                 onclick = ""
                 mwarn("Strang missing language key error.")
             else :
-                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + self.req.main_server + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
+                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
         else :
-            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '', false, false)"
+            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', false, false)"
 
         tag.fillSlots(textclass = tclasses["text"],
                       imageclass = tclasses["images"],

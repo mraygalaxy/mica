@@ -223,11 +223,11 @@ class MICA(object):
         for attempt in range(0, 4) :
             try :
                 mdebug("Authentication attempt #" + str(attempt))
-                req = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
-                req.add_header('Accept', 'application/json')
-                req.add_header("Content-type", "application/x-www-form-urlencoded")
-                req.add_header('Authorization', userData)
-                res = urllib2_urlopen(req, timeout = 20 if attempt == 0 else 10)
+                ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
+                ureq.add_header('Accept', 'application/json')
+                ureq.add_header("Content-type", "application/x-www-form-urlencoded")
+                ureq.add_header('Authorization', userData)
+                res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
                 mdebug("Authentication success with username: " + username)
                 return json_loads(res.read()), False
             except urllib2_HTTPError, e : 
@@ -1278,16 +1278,6 @@ class MICA(object):
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
 
-        if mobile :
-            req.remote_server = "https://" + params["couch_server"]
-        else :
-            req.remote_server = ""
-
-        if mobile :
-            req.main_server = "https://" + params["main_server"]
-        else :
-            req.remote_server = ""
-            
         req.process_reviews = "process_reviews('" + uuid + "', true)"
         output = run_template(req, ViewElement)
 
@@ -2499,6 +2489,28 @@ class MICA(object):
                         auth_user, reason = self.authenticate(username, password, self.credentials())
                         if not auth_user :
                             return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": " + str(reason) + ".</div>", now = True)
+
+                if mobile and req.http.params.get("username") :
+                    mdebug("Preparing translation relay...")
+                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
+                        instant_dest = "https://" + params["main_server"]
+                        newdict = {}
+
+                        for k in req.http.params :
+                            newdict[k] = req.http.params.get(k) 
+
+                        par = "&".join("{}={}".format(key, val) for key, val in newdict.items())
+                        try :
+                            mdebug("Ready to relay.")
+                            ureq = urllib2_Request(instant_dest + "/instant?" + par)
+                            mdebug("Returning result from relay.")
+                            return self.bootstrap(req, urllib2_urlopen(ureq).read(), now = True)
+                        except Exception, e :
+                            mdebug("Failed to request translation by relay: " + str(e))
+                            iout = _("Internet access error. Try again later: ") + str(e)
+                    else :
+                        iout = _("No internet access. Offline instant translation only.")
+                    return self.bootstrap(req, "<div id='instantresult'>" + iout + "</div>", now = True)
                             
                 target_language = req.http.params.get("target_language")
                 source_language = req.http.params.get("source_language")
