@@ -436,7 +436,7 @@ class MICA(object):
             newdb[self.acct(username)] = { 
                                            'app_chars_per_line' : 70,
                                            'web_chars_per_line' : 70,
-                                           'default_app_zoom' : 1.2,
+                                           'default_app_zoom' : 1.15,
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
                                            "source" : source, 
@@ -767,7 +767,7 @@ class MICA(object):
                             else :
                                 self.test_dicts_handle_common(f)
 
-                            sleep(5)
+                            sleep(30)
                             break
 
         for name, lgp in self.processors.iteritems() :
@@ -1128,7 +1128,10 @@ class MICA(object):
         tid = 0
         online = 0
         offline = 0
-        page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+        try :
+            page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+        except couch_adapter.ResourceNotFound, e :
+            return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
         units = page_dict["units"]
 
         tone_keys = self.view_keys(req, "tonechanges", units) 
@@ -1177,7 +1180,10 @@ class MICA(object):
             history = []
             found = {}
             tid = 0
-            page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            try :
+                page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            except couch_adapter.ResourceNotFound, e :
+                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
             units = page_dict["units"]
 
             merge_keys = self.view_keys(req, "mergegroups", units) 
@@ -1305,7 +1311,10 @@ class MICA(object):
             chars_per_line = 10 
 
         mdebug("View Page " + str(page) + " story " + name + " start...")
-        page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+        try :
+            page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+        except couch_adapter.ResourceNotFound, e :
+            return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
         mdebug("View Page " + str(page) + " story " + name + " fetched...")
         units = page_dict["units"]
         words = len(units)
@@ -1910,7 +1919,10 @@ class MICA(object):
         total_memorized = 0
         total_unique = 0
         trans_id = 0
-        page_dict = req.db[self.story(req, story["name"]) + ":pages:" + str(page)]
+        try :
+            page_dict = req.db[self.story(req, story["name"]) + ":pages:" + str(page)]
+        except couch_adapter.ResourceNotFound, e :
+            return False
         units = page_dict["units"]
         
         memorized = self.view_keys(req, "memorized", units) 
@@ -2855,7 +2867,7 @@ class MICA(object):
                 if "web_chars_per_line" not in user :
                     user["web_chars_per_line"] = 70
                 if "default_app_zoom" not in user :
-                    user["default_app_zoom"] = 1.2
+                    user["default_app_zoom"] = 1.15
                 if "default_web_zoom" not in user :
                     user["default_web_zoom"] = 1.0
 
@@ -3395,50 +3407,53 @@ class MICA(object):
                 output = []
                         
                 result = self.memocount(req, story, page)
-                
-                total_memorized, total_unique, unique, progress = result
 
-                pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
-                for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                    # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
-                    output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
-                # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
-                output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
-                # A count of all the unique words on this page, not just the ones the user has memorized.
-                output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
-                if list_mode :
-                    output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-                    output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
+                if result :
+                    total_memorized, total_unique, unique, progress = result
 
-                    if total_memorized :
-                        output.append("<div class='panel-group' id='panelMemorized'>\n")
-                        for p in progress :
-                            output.append("""
-                                    <div class='panel panel-default'>
-                                      <div class="panel-heading">
-                                      """)
-                            py, target, unit, nb_unit, trans_id, page_idx = p
-                            if len(target) and target[0] == '/' :
-                                target = target[1:-1]
-                            tid = unit["hash"] if py else trans_id 
+                    pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
+                    for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                        # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
+                        output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
+                    # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
+                    output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
+                    # A count of all the unique words on this page, not just the ones the user has memorized.
+                    output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
+                    if list_mode :
+                        output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+                        output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
 
-                            output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
-                                    str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
-                                    "<i class='glyphicon glyphicon-remove'></i></a>")
+                        if total_memorized :
+                            output.append("<div class='panel-group' id='panelMemorized'>\n")
+                            for p in progress :
+                                output.append("""
+                                        <div class='panel panel-default'>
+                                          <div class="panel-heading">
+                                          """)
+                                py, target, unit, nb_unit, trans_id, page_idx = p
+                                if len(target) and target[0] == '/' :
+                                    target = target[1:-1]
+                                tid = unit["hash"] if py else trans_id 
 
-                            output.append("&#160; " + "".join(unit["source"]) + ": ")
-                            output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
+                                output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
+                                        str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
+                                        "<i class='glyphicon glyphicon-remove'></i></a>")
 
-                            output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
-                            output.append("</a>")
+                                output.append("&#160; " + "".join(unit["source"]) + ": ")
+                                output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
+
+                                output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
+                                output.append("</a>")
+                                output.append("</div>")
+                                output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
+                                output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
+                                output.append("</div>")
+                                output.append("</div>")
                             output.append("</div>")
-                            output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
-                            output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
-                            output.append("</div>")
-                            output.append("</div>")
-                        output.append("</div>")
+                        else :
+                            output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
                     else :
-                        output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
+                        output.append(_("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device."))
                 else :
                     # statistics in reading mode are disabled
                     output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
