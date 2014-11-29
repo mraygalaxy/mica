@@ -467,7 +467,7 @@ function make_child(node) {
       $('#regroupModal').modal('show');
   }
 
-  function process_instant(with_spaces, lang, source, target, dest, username, password) {
+  function process_instant(with_spaces, lang, source, target, username, password) {
 
       var chars = [];
       var allchars = "";
@@ -497,7 +497,7 @@ function make_child(node) {
        $('#instantspin').attr('style', 'display: inline');
        $('#instantdestination').html("");
 
-       var url = dest + '/instant?source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
+       var url = '/instant?source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
        if (username)
            url += "&username=" + username
