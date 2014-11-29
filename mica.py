@@ -2521,7 +2521,7 @@ class MICA(object):
                             mdebug("Ready to relay: " + iurl)
                             ureq = urllib2_Request(iurl)
                             mdebug("Returning result from relay.")
-                            return self.bootstrap(req, urllib2_urlopen(ureq).read(), now = True)
+                            return self.bootstrap(req, urllib2_urlopen(ureq, timeout = 20).read(), now = True)
                         except Exception, e :
                             mdebug("Failed to request translation by relay: " + str(e))
                             iout = _("Internet access error. Try again later: ") + str(e)
