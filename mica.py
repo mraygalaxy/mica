@@ -2497,12 +2497,17 @@ class MICA(object):
                         newdict = {}
 
                         for k in req.http.params :
-                            newdict[k] = req.http.params.get(k) 
+                            v = req.http.params.get(k)
+                            # urllib doesn't like spaces, or you get 400 Bad Request
+                            if k == "source" :
+                                v = urllib2_quote(v)
+                            newdict[k] = v 
 
                         par = "&".join("{}={}".format(key, val) for key, val in newdict.items())
                         try :
-                            mdebug("Ready to relay.")
-                            ureq = urllib2_Request(instant_dest + "/instant?" + par)
+                            iurl = instant_dest + "/instant?" + par
+                            mdebug("Ready to relay: " + iurl)
+                            ureq = urllib2_Request(iurl)
                             mdebug("Returning result from relay.")
                             return self.bootstrap(req, urllib2_urlopen(ureq).read(), now = True)
                         except Exception, e :
