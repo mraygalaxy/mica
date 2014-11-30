@@ -1271,3 +1271,9 @@ msgstr "西班牙语译成英语"
 
 msgid "English to Spanish"
 msgstr "英语到西班牙语"
+
+msgid ""
+"If you would like to read this story, please select 'Start Syncing' from the "
+"side panel first and wait for it to replicate to your device."
+msgstr ""
+"如果你想阅读这个故事，请点击侧边的‘开始同步’按钮然后等你的设别完成同步。"
