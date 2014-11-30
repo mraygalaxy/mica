@@ -1318,3 +1318,10 @@ msgstr "Xībānyá yǔ yì chéng yīngyǔ"
 
 msgid "English to Spanish"
 msgstr "Yīngyǔ dào xībānyá yǔ"
+
+msgid ""
+"If you would like to read this story, please select 'Start Syncing' from the "
+"side panel first and wait for it to replicate to your device."
+msgstr ""
+"Rúguǒ nǐ xiǎng yuèdú zhège gùshì, qǐng diǎnjī cè biān de ‘kāishǐ tóngbù’ "
+"ànniǔ ránhòu děng nǐ de shè bié wánchéng tóngbù."
