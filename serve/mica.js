@@ -1146,3 +1146,73 @@ function validatefile() {
     }
     $("#fileform").submit();
 }
+
+var connection = null;
+
+function log(msg) 
+{
+    $('#log').append('<div></div>').append(document.createTextNode(msg));
+}
+
+function onConnect(status)
+{
+    if (status == Strophe.Status.CONNECTING) {
+	log('Strophe is connecting.');
+    } else if (status == Strophe.Status.CONNFAIL) {
+	log('Strophe failed to connect.');
+	$('#connect').get(0).value = 'connect';
+    } else if (status == Strophe.Status.DISCONNECTING) {
+	log('Strophe is disconnecting.');
+    } else if (status == Strophe.Status.DISCONNECTED) {
+	log('Strophe is disconnected.');
+	$('#connect').get(0).value = 'connect';
+    } else if (status == Strophe.Status.CONNECTED) {
+	log('MICA: Send a message to ' + connection.jid + 
+	    ' to talk to me.');
+
+	connection.addHandler(onMessage, null, 'message', null, null,  null); 
+	connection.send($pres().tree());
+    } else {
+        log('There was an error.');
+        connection.disconnect();
+    }
+}
+
+function onMessage(msg) {
+    var to = msg.getAttribute('to');
+    var from = msg.getAttribute('from');
+    var type = msg.getAttribute('type');
+    var elems = msg.getElementsByTagName('body');
+    log('onMessage called.');
+
+    if (type == "chat" && elems.length > 0) {
+	var body = elems[0];
+
+	log('ECHOBOT: I got a message from ' + from + ': ' + 
+	    Strophe.getText(body));
+    
+	var reply = $msg({to: from, from: to, type: 'chat'})
+            .cnode(Strophe.copyElement(body));
+	connection.send(reply.tree());
+
+	log('ECHOBOT: I sent ' + from + ': ' + Strophe.getText(body));
+    }
+
+    // we must return true to keep the handler alive.  
+    // returning false would remove it after it finishes.
+    return true;
+}
+
+function chatstart(username, password, scheme, server, path, debug) {
+    connection = new Strophe.Connection(scheme + "://" + server + "/" + path);
+
+    if (debug) {
+        connection.rawInput = function (data) { log('RECV: ' + data); };
+        connection.rawOutput = function (data) { log('SEND: ' + data); };
+
+        Strophe.log = function (level, msg) { log('LOG: ' + msg); };
+    }
+
+    connection.connect(Strophe.escapeNode(username) + "@" + server, password, onConnect);
+    //connection.disconnect();
+}

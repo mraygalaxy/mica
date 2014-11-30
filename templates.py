@@ -298,6 +298,16 @@ class MobileFrontElement(Element) :
 
         return tag
 
+class ChatElement(Element) :
+    def __init__(self, req) :
+        super(ChatElement, self).__init__() 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/chat_template.html').path)
+
+    @renderer
+    def chat(self, request, tag) :
+        return tag
+
 class FrontPageElement(Element) :
     def __init__(self, req) :
         super(FrontPageElement, self).__init__() 
@@ -541,7 +551,9 @@ class HeadElement(Element):
                  # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
                  ("edit" , ("/edit", "pencil", _("Edit"))), 
                  # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
-                 ("read" , ("/read", "book", _("Read"))), 
+                 ("read" , ("/read", "book", _("Read"))),
+                 # 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
+                 ("chat" , ("/chat", "comment", _("Chat"))),
             ]
 
         for (key, value) in menu :
