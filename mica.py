@@ -4037,6 +4037,10 @@ class MICA(object):
 
                 return self.bootstrap(req, out)
                     
+            elif req.action == "chat" :
+                out = run_template(req, ChatElement)
+                return self.bootstrap(req, out)
+
             elif req.action == "disconnect" :
                 self.disconnect(req, req.session)
                 self.install_local_language(req)
