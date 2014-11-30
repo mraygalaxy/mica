@@ -547,7 +547,7 @@ function make_child(node) {
         },
         success: function (response) {
             var data = "none";
-            if(response.indexOf("This account is not fully synchronized") != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+            if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
