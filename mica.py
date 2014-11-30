@@ -2511,8 +2511,8 @@ class MICA(object):
                         for k in req.http.params :
                             v = req.http.params.get(k)
                             # urllib doesn't like spaces, or you get 400 Bad Request
-                            if k == "source" :
-                                v = urllib2_quote(v)
+                            if k == u"source" :
+                                v = urllib2_quote(v.encode('utf-8'))
                             newdict[k] = v 
 
                         par = "&".join("{}={}".format(key, val) for key, val in newdict.items())
