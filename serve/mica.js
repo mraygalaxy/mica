@@ -1147,72 +1147,175 @@ function validatefile() {
     $("#fileform").submit();
 }
 
-var connection = null;
+var oDbg, con;
 
-function log(msg) 
-{
-    $('#log').append('<div></div>').append(document.createTextNode(msg));
+function handleIQ(oIQ) {
+    document.getElementById('iResp').innerHTML += "<div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div>';
+    document.getElementById('iResp').lastChild.scrollIntoView();
+    con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
 
-function onConnect(status)
-{
-    if (status == Strophe.Status.CONNECTING) {
-	log('Strophe is connecting.');
-    } else if (status == Strophe.Status.CONNFAIL) {
-	log('Strophe failed to connect.');
-	$('#connect').get(0).value = 'connect';
-    } else if (status == Strophe.Status.DISCONNECTING) {
-	log('Strophe is disconnecting.');
-    } else if (status == Strophe.Status.DISCONNECTED) {
-	log('Strophe is disconnected.');
-	$('#connect').get(0).value = 'connect';
-    } else if (status == Strophe.Status.CONNECTED) {
-	log('MICA: Send a message to ' + connection.jid + 
-	    ' to talk to me.');
-
-	connection.addHandler(onMessage, null, 'message', null, null,  null); 
-	connection.send($pres().tree());
-    } else {
-        log('There was an error.');
-        connection.disconnect();
-    }
+function handleMessage(oJSJaCPacket) {
+    var html = '';
+    html += '<div class="msg"><b>Received Message from ' + oJSJaCPacket.getFromJID() + ':</b><br/>';
+    html += oJSJaCPacket.getBody().htmlEnc() + '</div>';
+    document.getElementById('iResp').innerHTML += html;
+    document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
-function onMessage(msg) {
-    var to = msg.getAttribute('to');
-    var from = msg.getAttribute('from');
-    var type = msg.getAttribute('type');
-    var elems = msg.getElementsByTagName('body');
-    log('onMessage called.');
-
-    if (type == "chat" && elems.length > 0) {
-	var body = elems[0];
-
-	log('ECHOBOT: I got a message from ' + from + ': ' + 
-	    Strophe.getText(body));
-    
-	var reply = $msg({to: from, from: to, type: 'chat'})
-            .cnode(Strophe.copyElement(body));
-	connection.send(reply.tree());
-
-	log('ECHOBOT: I sent ' + from + ': ' + Strophe.getText(body));
+function handlePresence(oJSJaCPacket) {
+    var html = '<div class="msg">';
+    if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow())
+        html += '<b>' + oJSJaCPacket.getFromJID() + ' has become available.</b>';
+    else {
+        html += '<b>' + oJSJaCPacket.getFromJID() + ' has set his presence to ';
+        if (oJSJaCPacket.getType())
+            html += oJSJaCPacket.getType() + '.</b>';
+        else
+            html += oJSJaCPacket.getShow() + '.</b>';
+        if (oJSJaCPacket.getStatus())
+            html += ' (' + oJSJaCPacket.getStatus().htmlEnc() + ')';
     }
+    html += '</div>';
 
-    // we must return true to keep the handler alive.  
-    // returning false would remove it after it finishes.
+    document.getElementById('iResp').innerHTML += html;
+    document.getElementById('iResp').lastChild.scrollIntoView();
+}
+
+function handleError(e) {
+    document.getElementById('err').innerHTML = "An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName).htmlEnc();
+    document.getElementById('login_pane').style.display = '';
+    document.getElementById('sendmsg_pane').style.display = 'none';
+
+    if (con.connected())
+        con.disconnect();
+}
+
+function handleStatusChanged(status) {
+    oDbg.log("status changed: " + status);
+}
+
+function handleConnected() {
+    document.getElementById('login_pane').style.display = 'none';
+    document.getElementById('sendmsg_pane').style.display = '';
+    document.getElementById('err').innerHTML = '';
+
+    con.send(new JSJaCPresence());
+}
+
+function handleDisconnected() {
+    document.getElementById('login_pane').style.display = '';
+    document.getElementById('sendmsg_pane').style.display = 'none';
+}
+
+function handleIqVersion(iq) {
+    con.send(iq.reply([iq.buildNode('name', 'jsjac simpleclient'), iq.buildNode('version', JSJaC.Version), iq.buildNode('os', navigator.userAgent)]));
     return true;
 }
 
-function chatstart(username, password, scheme, server, path, debug) {
-    connection = new Strophe.Connection(scheme + "://" + server + "/" + path);
-
-    if (debug) {
-        connection.rawInput = function (data) { log('RECV: ' + data); };
-        connection.rawOutput = function (data) { log('SEND: ' + data); };
-
-        Strophe.log = function (level, msg) { log('LOG: ' + msg); };
-    }
-
-    connection.connect(Strophe.escapeNode(username) + "@" + server, password, onConnect);
-    //connection.disconnect();
+function handleIqTime(iq) {
+    var now = new Date();
+    con.send(iq.reply([iq.buildNode('display', now.toLocaleString()), iq.buildNode('utc', now.jabberDate()), iq.buildNode('tz', now.toLocaleString().substring(now.toLocaleString().lastIndexOf(' ') + 1))]));
+    return true;
 }
+
+function doLogin(oForm) {
+    var server = oForm.server.value,
+        oArgs = new Object();
+        
+    oDbg = new JSJaCConsoleLogger(3);
+    document.getElementById('err').innerHTML = '';
+    // reset
+
+    try {
+        
+        if (window.location.protocol !== "https:"){
+            httpbase = 'http://' + server + ':5280/http-bind/';
+        } else {
+            httpbase = 'https://' + server + ':5281/http-bind/';
+        }
+        
+        // set up the connection
+        con = new JSJaCHttpBindingConnection({
+            oDbg: oDbg,
+            httpbase: httpbase,
+            timerval: 500
+        });
+
+        setupCon(con);
+
+        // setup args for connect method
+        oArgs.domain = oForm.domain.value;
+        oArgs.username = oForm.username.value;
+        oArgs.resource = 'jsjac_simpleclient';
+        oArgs.pass = oForm.password.value;
+        oArgs.register = oForm.register.checked;
+        con.connect(oArgs);
+    } catch (e) {
+        document.getElementById('err').innerHTML = e.toString();
+    } finally {
+        return false;
+    }
+}
+
+function setupCon(oCon) {
+    oCon.registerHandler('message', handleMessage);
+    oCon.registerHandler('presence', handlePresence);
+    oCon.registerHandler('iq', handleIQ);
+    oCon.registerHandler('onconnect', handleConnected);
+    oCon.registerHandler('onerror', handleError);
+    oCon.registerHandler('status_changed', handleStatusChanged);
+    oCon.registerHandler('ondisconnect', handleDisconnected);
+
+    oCon.registerIQGet('query', NS_VERSION, handleIqVersion);
+    oCon.registerIQGet('query', NS_TIME, handleIqTime);
+}
+
+function sendMsg(oForm) {
+    if (oForm.msg.value == '' || oForm.sendTo.value == '')
+        return false;
+
+    if (oForm.sendTo.value.indexOf('@') == -1)
+        oForm.sendTo.value += '@' + con.domain;
+
+    try {
+        var oMsg = new JSJaCMessage();
+        oMsg.setTo(new JSJaCJID(oForm.sendTo.value));
+        oMsg.setBody(oForm.msg.value);
+        con.send(oMsg);
+
+        oForm.msg.value = '';
+
+        return false;
+    } catch (e) {
+        html = "<div class='msg error''>Error: " + e.message + "</div>";
+        document.getElementById('iResp').innerHTML += html;
+        document.getElementById('iResp').lastChild.scrollIntoView();
+        return false;
+    }
+}
+
+function quit() {
+    var p = new JSJaCPresence();
+    p.setType("unavailable");
+    con.send(p);
+    con.disconnect();
+
+    document.getElementById('login_pane').style.display = '';
+    document.getElementById('sendmsg_pane').style.display = 'none';
+}
+
+
+onunload = function() {
+    if ( typeof con != 'undefined' && con && con.connected()) {
+        // save backend type
+        if (con._hold)// must be binding
+            (new JSJaCCookie('btype', 'binding')).write();
+        else
+            (new JSJaCCookie('btype', 'polling')).write();
+        if (con.suspend) {
+            con.suspend();
+        }
+    }
+};
+
