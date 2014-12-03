@@ -306,6 +306,7 @@ class ChatElement(Element) :
 
     @renderer
     def chat(self, request, tag) :
+        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"])
         return tag
 
 class FrontPageElement(Element) :

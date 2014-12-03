@@ -2489,10 +2489,17 @@ class MICA(object):
                 username = req.http.params.get("username")
                 password = req.http.params.get("password")
 
-                auth_user, reason = self.authenticate(username, password, self.credentials())
+                auth_user = self.userdb.__getitem__("org.couchdb.user:" + username, false_if_not_found = True)
 
-                if not auth_user :
-                    return self.bootstrap(req, 'bad', now = True)
+                if not auth_user or "temp_jabber_pw" not in auth_user or password != auth_user["temp_jabber_pw"] :
+                    auth_user, reason = self.authenticate(username, password, self.credentials())
+
+                    if not auth_user :
+                        return self.bootstrap(req, 'bad', now = True)
+                    else :
+                        mdebug("Success jabber auth w/ password: " + username)
+                else :
+                    mdebug("Success jabber auth w/ token: " + username)
 
                 return self.bootstrap(req, 'good', now = True)
                  
@@ -2782,6 +2789,10 @@ class MICA(object):
                 req.session.value["username"] = username
                 req.session.value["address"] = address
 
+                # Make a temporary jabber secret that is safe to store in a session
+                # so the BOSH javascript client can authenticate
+                req.session.value["temp_jabber_pw"] = binascii_hexlify(os_urandom(4))
+
                 if mobile :
                     req.session.value["password"] = password
 
@@ -2802,6 +2813,9 @@ class MICA(object):
 
                 mdebug("verifying...")
                 self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
+
+                auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
+                self.userdb["org.couchdb.user:" + username] = auth_user
 
                 if mobile :
                     if req.db.doc_exist("MICA:appuser") :

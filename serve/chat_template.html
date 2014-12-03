@@ -8,37 +8,13 @@
     <form name="loginForm" onSubmit="return doLogin(this);" action="#">
         <table>
             <tr>
-                <th><label for="server">Jabber Server</label></th><td>
-                <input type="text" name="server" id="server" tabindex="3" value="jabber-example.org"/>
+                <td>
+                <input type="hidden" name="server" id="server" tabindex="3" value="localhost"/>
+                <input type="hidden" name="domain" id="domain" tabindex="4" value="localhost"/>
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" tabindex="5" value="family%40hinespot.com"/>
+                <input type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
                 </td>
-            </tr>
-            <tr>
-                <td colspan="2"><small>(this probably won't be user editable in your real world application)</small></td>
-            </tr>
-            <tr>
-                <th colspan="2">
-                <hr noshade="1" size="1"/>
-                </th>
-            </tr>
-            <tr>
-                <th><label for="domain">Jabber Server Domain Name</label></th><td>
-                <input type="text" name="domain" id="domain" tabindex="4" value="jabber-example.org"/>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="username">Username</label></th><td>
-                <input type="text" name="username" id="username" tabindex="5"/>
-                </td>
-            </tr>
-            <tr>
-                <th><label for="password">Password</label></th><td>
-                <input type="password" name="password" id="password" tabindex="6" />
-                </td>
-            </tr>
-            <tr>
-                <th></th><td>
-                <input type="checkbox" name="register" id="register_checkbox" />
-                <label for="register_checkbox">Register new account</label></td>
             </tr>
             <tr>
                 <td>&#160;</td>
