@@ -1247,9 +1247,9 @@ function doLogin(oForm) {
         // setup args for connect method
         oArgs.domain = oForm.domain.value;
         oArgs.username = oForm.username.value;
-        oArgs.resource = 'jsjac_simpleclient';
+        oArgs.resource = 'mica';
         oArgs.pass = oForm.password.value;
-        oArgs.register = oForm.register.checked;
+        oArgs.register = false;
         con.connect(oArgs);
     } catch (e) {
         document.getElementById('err').innerHTML = e.toString();

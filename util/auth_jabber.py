@@ -46,14 +46,20 @@ while True:
     request = from_ejabberd()
     size = pack('>h', len(request))
 
-    #log.write("Request: ")
-    #log.write(request)
-    #log.write('\n')
+    values = request.split(":")
+    action = values[0]
 
-    auth, user, domain, pw = request.split(":")
+    if action == "auth" :
+        user = values[1]
+        domain = values[2]
+ 	pw = values[3]
+        log.write("Request: " + action + " user " + user + " domain " + domain + "\n")
+        result, reason = authenticate(user, pw, "http://localhost:20000")
+        log.write("Authenticate: " + user + " result: " + str(result) + " reason: " + str(reason) + "\n")
+    elif action == "isuser" :
+        log.write("Request: " + request + "\n")
+        result = 1
+    else :
+        result = 0
 
-    result, reason = authenticate(user, pw, "http://localhost:20000")
-
-    log.write("Authenticate: " + user + " result: " + str(result) + " reason: " + str(reason) + "\n")
-    
     to_ejabberd(result)
