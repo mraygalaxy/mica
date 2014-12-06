@@ -1157,7 +1157,8 @@ function handleIQ(oIQ) {
 
 function handleMessage(oJSJaCPacket) {
     var html = '';
-    html += '<div class="msg"><b>Received Message from ' + oJSJaCPacket.getFromJID() + ':</b><br/>';
+    var id = ("" + oJSJaCPacket.getFromJID()).split("@");
+    html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
     html += oJSJaCPacket.getBody().htmlEnc() + '</div>';
     document.getElementById('iResp').innerHTML += html;
     document.getElementById('iResp').lastChild.scrollIntoView();
@@ -1165,10 +1166,11 @@ function handleMessage(oJSJaCPacket) {
 
 function handlePresence(oJSJaCPacket) {
     var html = '<div class="msg">';
-    if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow())
-        html += '<b>' + oJSJaCPacket.getFromJID() + ' has become available.</b>';
-    else {
-        html += '<b>' + oJSJaCPacket.getFromJID() + ' has set his presence to ';
+    var id = ("" + oJSJaCPacket.getFromJID()).split("@");
+    if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
+        html += '<b>' + decodeURIComponent(id[0]) + ' has become available.</b>';
+    } else {
+        html += '<b>' + decodeURIComponent(id[0]) + ' has set his presence to ';
         if (oJSJaCPacket.getType())
             html += oJSJaCPacket.getType() + '.</b>';
         else

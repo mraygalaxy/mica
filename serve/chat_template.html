@@ -1,28 +1,15 @@
 <html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="chat">
-<script type="text/javascript" src="serve/JSJaC/src/JSJaC.js"></script>
+<script><t:attr name='src'><t:slot name='xmpp'/></t:attr></script>
 
 <div id="err"></div>
 
 <div id="login_pane">
-    <h2>Login</h2>
-    <form name="loginForm" onSubmit="return doLogin(this);" action="#">
-        <table>
-            <tr>
-                <td>
-                <input type="hidden" name="server" id="server" tabindex="3" value="localhost"/>
-                <input type="hidden" name="domain" id="domain" tabindex="4" value="localhost"/>
-                <label for="username">Username</label>
-                <input type="text" name="username" id="username" tabindex="5" value="family%40hinespot.com"/>
-                <input type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
-                </td>
-            </tr>
-            <tr>
-                <td>&#160;</td>
-                <td>
-                <input type="submit" value="Login" tabindex="7"/>
-                </td>
-            </tr>
-        </table>
+    <form name="loginForm" id="loginForm">
+        <input type="hidden" name="server" id="server" tabindex="3" value="localhost"/>
+        <input type="hidden" name="domain" id="domain" tabindex="4" value="localhost"/>
+        <input type="hidden" name="username" id="username" tabindex="5"><t:attr name='value'><t:slot name='username'/></t:attr></input>
+        <input type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
+      <h4><t:slot name="spinner"/>&#160;<t:slot name='loading'/>...</h4>
     </form>
 </div>
 
@@ -44,5 +31,5 @@
         </div>
     </form>
 </div>
-<!--  <script>chatstart("family%40hinespot.com", "Iamtwo34", "http", "localhost", "http-bind/", false);</script>-->
+<script>doLogin(document.getElementById('loginForm'));</script>
 </html>

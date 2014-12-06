@@ -306,7 +306,12 @@ class ChatElement(Element) :
 
     @renderer
     def chat(self, request, tag) :
-        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"])
+        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"],
+                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                      loading = _("Loading Chat"),
+                      xmpp = self.req.mpath + "/JSJaC-dec-2014/JSJaC.js",
+                      username = urllib2_quote(self.req.session.value["username"]),
+                     )
         return tag
 
 class FrontPageElement(Element) :
