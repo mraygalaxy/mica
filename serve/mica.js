@@ -1156,12 +1156,29 @@ function handleIQ(oIQ) {
 }
 
 function handleMessage(oJSJaCPacket) {
+    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + oJSJaCPacket.getBody().htmlEnc();
+
+    $.get(micaurl, "", $.proxy(function(response, success){
+        var html = '';
+        var id = ("" + oJSJaCPacket.getFromJID()).split("@");
+        html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
+        html += response;
+        html += '</div>';
+        document.getElementById('iResp').innerHTML += html;
+        document.getElementById('iResp').lastChild.scrollIntoView();
+
+    }, {}), 'html');
+
+    /*
     var html = '';
     var id = ("" + oJSJaCPacket.getFromJID()).split("@");
     html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
-    html += oJSJaCPacket.getBody().htmlEnc() + '</div>';
+    html += oJSJaCPacket.getBody().htmlEnc();
+
+    html += '</div>';
     document.getElementById('iResp').innerHTML += html;
     document.getElementById('iResp').lastChild.scrollIntoView();
+    */
 }
 
 function handlePresence(oJSJaCPacket) {
@@ -1222,6 +1239,16 @@ function handleIqTime(iq) {
 }
 
 function doLogin(oForm) {
+    $("#msgArea").chineseInput({
+        debug: true,
+        input: {
+        initial: 'simplified',//'traditional', // or 'simplified'
+        allowChange: true
+        },
+        allowHide: true,
+        active: true
+    });
+
     var server = oForm.server.value,
         oArgs = new Object();
         
@@ -1258,6 +1285,7 @@ function doLogin(oForm) {
     } finally {
         return false;
     }
+
 }
 
 function setupCon(oCon) {
