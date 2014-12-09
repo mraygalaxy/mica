@@ -820,7 +820,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    def parse(self, req, story, page = False) :
+    def parse(self, req, story, page = False, live = False) :
         name = story['name']
         mdebug("Ready to translate: " + name + ". Counting pages...")
 
@@ -829,7 +829,7 @@ class MICA(object):
         processor = getattr(processors, processor_map[self.tofrom(story)])(self, params)
     
         page_inputs = 0
-        if "filetype" not in story or story["filetype"] == "txt" :
+        if live or ("filetype" not in story or story["filetype"] == "txt") :
             page_inputs = 1
         else :
             mdebug("Counting now...")
@@ -847,23 +847,24 @@ class MICA(object):
         else :  
             page_start = 0
         
-        self.transmutex.acquire()
-        try :
-            tmpstory = req.db[self.story(req, name)]
-            if "last_error" in tmpstory :
-                del tmpstory["last_error"]
+        if not live :
+            self.transmutex.acquire()
+            try :
+                tmpstory = req.db[self.story(req, name)]
+                if "last_error" in tmpstory :
+                    del tmpstory["last_error"]
 
-            tmpstory["translating"] = True 
-            if not page :
-                tmpstory["translated"] = False
-                tmpstory["translating_pages"] = page_inputs
-            tmpstory["translating_current"] = 0
-            tmpstory["translating_total"] = 100
-            req.db[self.story(req, name)] = tmpstory
-        except Exception, e :
-            mdebug("Failure to sync: " + str(e))
-        finally :
-            self.transmutex.release()
+                tmpstory["translating"] = True 
+                if not page :
+                    tmpstory["translated"] = False
+                    tmpstory["translating_pages"] = page_inputs
+                tmpstory["translating_current"] = 0
+                tmpstory["translating_total"] = 100
+                req.db[self.story(req, name)] = tmpstory
+            except Exception, e :
+                mdebug("Failure to sync: " + str(e))
+            finally :
+                self.transmutex.release()
 
         opaque = processor.parse_page_start() 
         processor.test_dictionaries(opaque)
@@ -871,18 +872,21 @@ class MICA(object):
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
 
-            if req.db.doc_exist(page_key) :
-                if page :
-                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting for re-translation.")
-                    del req.db[page_key]
-                else :
-                    mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Not going to re-create.")
-                    continue
-
-            if "filetype" not in story or story["filetype"] == "txt" :
-                page_input = req.db[self.story(req, name) + ":original"]["value"]
+            if live :
+                page_input = story["source"]
             else :
-                page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
+                if req.db.doc_exist(page_key) :
+                    if page :
+                        mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Deleting for re-translation.")
+                        del req.db[page_key]
+                    else :
+                        mwarn("WARNING: page " + str(iidx) + " of story " + name + " already exists. Not going to re-create.")
+                        continue
+
+                if "filetype" not in story or story["filetype"] == "txt" :
+                    page_input = req.db[self.story(req, name) + ":original"]["value"]
+                else :
+                    page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
             mdebug("Parsing...")
 
@@ -910,21 +914,22 @@ class MICA(object):
                     
                 groups.append("\n")
             
-            self.transmutex.acquire()
-            try :
-                tmpstory = req.db[self.story(req, name)]
-                tmpstory["translating_total"] = len(groups)
-                tmpstory["translating_current"] = 1
-                tmpstory["translating_page"] = iidx 
-                req.db[self.story(req, name)] = tmpstory
-            except Exception, e :
-                self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
-                raise e
-            finally :
-                self.transmutex.release()
+            if not live :
+                self.transmutex.acquire()
+                try :
+                    tmpstory = req.db[self.story(req, name)]
+                    tmpstory["translating_total"] = len(groups)
+                    tmpstory["translating_current"] = 1
+                    tmpstory["translating_page"] = iidx 
+                    req.db[self.story(req, name)] = tmpstory
+                except Exception, e :
+                    self.store_error(req, name, "Failure to initiate translation variables on page: " + str(iidx) + " " + str(e))
+                    raise e
+                finally :
+                    self.transmutex.release()
 
             try :
-                processor.parse_page(opaque, req, story, groups, str(iidx), progress = self.progress)
+                processor.parse_page(opaque, req, story, groups, str(iidx), progress = self.progress if not live else False)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -933,42 +938,50 @@ class MICA(object):
                             online += 1
                         else :
                             offline += 1 
+
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
-                req.db[page_key] = story["pages"][str(iidx)]
-                del story["pages"][str(iidx)]
+                if not live :
+                    req.db[page_key] = story["pages"][str(iidx)]
+                    del story["pages"][str(iidx)]
+
             except Exception, e :
                 msg = ""
                 for line in format_exc().splitlines() :
                     msg += line + "\n"
+
                 merr(msg)
-                tmpstory = req.db[self.story(req, name)]
-                tmpstory["translating"] = False 
-                req.db[self.story(req, name)] = tmpstory
-                self.store_error(req, name, msg)
+
+                if not live :
+                    tmpstory = req.db[self.story(req, name)]
+                    tmpstory["translating"] = False 
+                    req.db[self.story(req, name)] = tmpstory
+                    self.store_error(req, name, msg)
+
                 processor.parse_page_stop(opaque)
                 raise e
 
-        self.transmutex.acquire()
-        try :
-            tmpstory = req.db[self.story(req, name)]
-            tmpstory["translating"] = False 
-            tmpstory["translated"] = True 
-            req.db[self.story(req, name)] = tmpstory
-        except Exception, e :
-            mdebug("Failure to sync: " + str(e))
-        finally :
-            self.transmutex.release()
+        if not live :
+            self.transmutex.acquire()
+            try :
+                tmpstory = req.db[self.story(req, name)]
+                tmpstory["translating"] = False 
+                tmpstory["translated"] = True 
+                req.db[self.story(req, name)] = tmpstory
+            except Exception, e :
+                mdebug("Failure to sync: " + str(e))
+            finally :
+                self.transmutex.release()
 
-        self.transmutex.acquire()
-        try :
-            tmpstory = req.db[self.story(req, name)]
-            if "translated" not in tmpstory or not tmpstory["translated"] :
-                self.flush_pages(req, name)
-                    
-        except Exception, e :
-            mdebug("Failure to sync: " + str(e))
-        finally :
-            self.transmutex.release()
+            self.transmutex.acquire()
+            try :
+                tmpstory = req.db[self.story(req, name)]
+                if "translated" not in tmpstory or not tmpstory["translated"] :
+                    self.flush_pages(req, name)
+                        
+            except Exception, e :
+                mdebug("Failure to sync: " + str(e))
+            finally :
+                self.transmutex.release()
 
         minfo("Translation complete.")
         processor.parse_page_stop(opaque)
@@ -1315,12 +1328,18 @@ class MICA(object):
         if mobile and req.session.value["username"] == "demo" and gp.already_romanized :
             chars_per_line = 10 
 
-        mdebug("View Page " + str(page) + " story " + name + " start...")
-        try :
-            page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
-        except couch_adapter.ResourceNotFound, e :
-            return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
-        mdebug("View Page " + str(page) + " story " + name + " fetched...")
+        mdebug("View Page " + str(page) + " story " + str(name) + " start...")
+
+        if name :
+            try :
+                page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+            except couch_adapter.ResourceNotFound, e :
+                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
+        else :
+            page_dict = story["pages"]["0"]
+
+        mdebug("View Page " + str(page) + " story " + str(name) + " fetched...")
+
         units = page_dict["units"]
         words = len(units)
         lines = [] 
@@ -1330,7 +1349,7 @@ class MICA(object):
         chars = 0
         batch = -1
 
-        mdebug("View Page " + str(page) + " story " + name + " building...")
+        mdebug("View Page " + str(page) + " story " + str(name) + " building...")
             
         sources = {}
 
@@ -1343,7 +1362,7 @@ class MICA(object):
         if action == "read" :
             sources['memorized'] = self.view_keys(req, "memorized", units) 
         
-        mdebug("View Page " + str(page) + " story " + name + " querying...")
+        mdebug("View Page " + str(page) + " story " + str(name) + " querying...")
 
         for x in range(0, len(units)) :
             unit = units[x]
@@ -1380,7 +1399,7 @@ class MICA(object):
         if len(line) :
             lines.append(line)
 
-        mdebug("View Page " + str(page) + " story " + name + " grouped...")
+        mdebug("View Page " + str(page) + " story " + str(name) + " grouped...")
         
         # TODO: The rest of the code involed in viewing a page is just a bunch of
         # loops. We have already finished querying the database and are simply
@@ -1737,7 +1756,7 @@ class MICA(object):
                             else :
                                 line_out.append("<a class='trans' ")
                             line_out.append("onclick=\"memorize('" + \
-                                        tid + "', '" + uuid + "', '" + str(nb_unit) + "', '" + page + "')\">")
+                                        tid + "', '" + str(uuid) + "', '" + str(nb_unit) + "', '" + page + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
 
@@ -1775,7 +1794,7 @@ class MICA(object):
             # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
             output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output 
 
-        mdebug("View Page " + str(page) + " story " + name + " complete.")
+        mdebug("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
@@ -3014,6 +3033,38 @@ class MICA(object):
 
                 self.first_request[username] = True 
                     
+            if req.action == "chat" and req.http.params.get("ime") :
+                self.install_local_language(req, req.http.params.get("lang"))
+
+                output = False
+                imes = int(req.http.params.get("ime"))
+                story = {
+                   "name" : "ime",
+                   "target_language" : req.http.params.get("target_language"),
+                   "source_language" : req.http.params.get("source_language"),
+                }
+
+                source = ""
+
+                for imex in range(1, imes + 1) :
+                    if imes > 1 :
+                        source += " " + str(imex) + ". "
+                    source += req.http.params.get("ime" + str(imex)).decode("utf-8")
+
+                story["source"] = source
+
+                try :
+                    self.parse(req, story, live = True)
+                except OSError, e :
+                    output = self.warn_not_replicated(req, bootstrap = False)
+                except Exception, e :
+                    output = _("Failed to translate story") + ": " + str(e)
+
+                if not output :
+                    output = self.view_page(req, False, False, story, "read", "", "0", "100", "false", disk = False)
+
+                return self.bootstrap(req, output, now = True)
+
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")

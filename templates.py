@@ -311,6 +311,9 @@ class ChatElement(Element) :
                       loading = _("Loading Chat"),
                       xmpp = self.req.mpath + "/JSJaC-dec-2014/JSJaC.js",
                       username = urllib2_quote(self.req.session.value["username"]),
+                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
+                      caret = self.req.mpath + "/chinese-ime/caret.js",
+                      imecss = self.req.mpath + "/chinese-ime/ime.css",
                      )
         return tag
 

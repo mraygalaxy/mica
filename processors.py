@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Make this an abstract base class the python way - forgot how
-
 from common import *
 from stardict import load_dictionary
 from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column
@@ -312,7 +310,6 @@ class RomanizedSource(Processor) :
     def online_cross_reference_lang(self, req, story, all_source, opaque) :
         mdebug("Going online...")
         #opaque is not yet used for Romanized sources 
-        uuid = story['uuid']
         name = story['name']
 
         minfo("translating source to target....")
@@ -754,7 +751,6 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         mdebug("Going online...")
         (cjk, d) = opaque 
-        uuid = story['uuid']
         name = story['name']
         ms = []
         targ = []

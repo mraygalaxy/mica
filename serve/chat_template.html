@@ -1,5 +1,8 @@
 <html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="chat">
 <script><t:attr name='src'><t:slot name='xmpp'/></t:attr></script>
+<script><t:attr name='src'><t:slot name='ime'/></t:attr></script>
+<script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
+<link rel="stylesheet"><t:attr name='href'><t:slot name='imecss'/></t:attr></link>
 
 <div id="err"></div>
 
@@ -14,17 +17,19 @@
 </div>
 
 <div id="sendmsg_pane" style="display:none;">
-    <h2>Incoming:</h2>
-    <div id="iResp"></div>
-    <h2>Send Message</h2>
+    <b>Incoming:</b>
+    <div style='height: 150px; overflow-y: auto' id="iResp"></div>
+    <h4>Send Message</h4>
     <form name="sendForm" onSubmit="return sendMsg(this);" action="#">
         <div class="spaced">
             <b>To:</b>
             <input type="text" name="sendTo" tabindex="1"/>
         </div>
         <div class="spaced">
-            <textarea name="msg" id='msgArea' rows="3" cols="80" tabindex="2"></textarea>
-</div>                <div class="spaced">
+            <textarea style='margin-bottom: 150px' name="msg" id='msgArea' rows="1" cols="80" tabindex="2"></textarea>
+        </div>
+        <br/><br/>
+        <div class="spaced">
             <input type="submit" value="Send" tabindex="3"/>
             *
             <input type="button" value="Quit" tabindex="4" onclick="return quit();"/>
