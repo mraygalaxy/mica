@@ -708,6 +708,7 @@ class MICA(object):
 
             if not mobile :
                 req.oauth = params["oauth"]
+            req.mica = self
             contents = run_template(req, HeadElement)
 
         if not nodecode :
