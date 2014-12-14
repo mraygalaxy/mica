@@ -74,7 +74,7 @@ if not mobile :
     try :
         from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
         from pdfminer.converter import PDFPageAggregator
-        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage, LTRect
+        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage, LTRect, LTCurve
         from pdfminer.pdfpage import PDFPage
     except ImportError, e :
         mdebug("Could not import pdfminer. Full translation will not work.")
@@ -97,7 +97,9 @@ def parse_lt_objs (lt_objs, page_number):
 
     if lt_objs :
         if isinstance(lt_objs, LTRect) :
-            mdebug("Ignoring rectable. Not sure what to do with it.")
+            mdebug("Ignoring rectangle on page " + str(page_number) + ". Not sure what to do with it.")
+        elif isinstance(lt_objs, LTCurve) :
+            mdebug("Ignoring curve on page " + str(page_number) + ". Not sure what to do with it.")
         else :
             for lt_obj in lt_objs:
                 if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
