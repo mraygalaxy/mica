@@ -246,22 +246,33 @@ class MicaServerCouchDB(object) :
             mdebug("No cookie for user: " + username)
             
             if isinstance(username, unicode) :
-                mdebug("Re-encoding username: " + username)
-                username = username.encode("utf-8")
+                username_unquoted = quote(username.encode("utf-8"))
+            else :
+                username_unquoted = quote(username)
 
-            if isinstance(password, str) :
-                mdebug("Re-encoding password.")
-                password = password.encode("utf-8")
+            if isinstance(password, unicode) :
+                password_unquoted = quote(password.encode("utf-8"))
+            else :
+                password_unquoted = quote(password)
 
-            username_unquoted = quote(username)
-            password_unquoted = quote(password)
+            if isinstance(password_unquoted, str) :
+                password_unquoted = password_unquoted.decode("utf-8")
+            if isinstance(username_unquoted, str) :
+                username_unquoted = username_unquoted.decode("utf-8")
 
             full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
             tmp_server = Server(full_url)
 
             mdebug("Requesting cookie.")
-            code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+            try :
+                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+            except UnicodeDecodeError :
+                # CouchDB folks messed up badly. This is ridiculous that I have
+                # to do this
+                username_unquoted = username_unquoted.encode("latin1").decode("latin1")
+                password_unquoted = password_unquoted.encode("latin1").decode("latin1")
+                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
 
             if (code != 200) :
                 raise CommunicationError("MICA Unauthorized: " + username)
