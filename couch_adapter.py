@@ -244,6 +244,15 @@ class MicaServerCouchDB(object) :
 
         if not self.cookie :
             mdebug("No cookie for user: " + username)
+            
+            if isinstance(username, unicode) :
+                mdebug("Re-encoding username: " + username)
+                username = username.encode("utf-8")
+
+            if isinstance(password, unicode) :
+                mdebug("Re-encoding password.")
+                password = password.encode("utf-8")
+
             username_unquoted = quote(username)
             password_unquoted = quote(password)
 

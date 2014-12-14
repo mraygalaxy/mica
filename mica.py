@@ -3707,14 +3707,24 @@ class MICA(object):
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
 
                     try :
+                        mdebug("Setting pass")
                         auth_user['password'] = newpassword
+                        mdebug("delete old cache user")
                         del self.dbs[username]
+                        mdebug("verify db")
                         self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                        mdebug("set new password")
                         req.db["org.couchdb.user:" + username] = auth_user
+                        mdebug("delete old cache user again")
                         del self.dbs[username]
+                        mdebug("re-verify")
                         self.verify_db(req, req.session.value["database"], newpassword)
                     except Exception, e :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                        out = self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>"
+                        for line in format_exc().splitlines() :
+                            out += line + "\n"
+                        mdebug(out)
+                        return self.bootstrap(req, out)
                         
                     out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
 
