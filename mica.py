@@ -239,8 +239,9 @@ class MICA(object):
                 ureq.add_header("Content-type", "application/x-www-form-urlencoded")
                 ureq.add_header('Authorization', userData)
                 res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
-                mdebug("Authentication success with username: " + username)
-                return json_loads(res.read()), False
+                rr = res.read()
+                mdebug("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
+                return json_loads(rr), False
             except urllib2_HTTPError, e : 
                 if e.code == 401 :
                     return False, _("Invalid credentials. Please try again") + "."
