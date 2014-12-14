@@ -221,8 +221,8 @@ class MICA(object):
             password = params["admin_pass"]
             username = params["admin_user"]
 
-        lookup_username_unquoted = urllib2_quote(str(lookup_username))
-        username_unquoted = urllib2_quote(str(username))
+        lookup_username_unquoted = myquote(str(lookup_username))
+        username_unquoted = myquote(str(username))
         userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
 
         for attempt in range(0, 4) :
@@ -2518,7 +2518,7 @@ class MICA(object):
                             v = req.http.params.get(k)
                             # urllib doesn't like spaces, or you get 400 Bad Request
                             if k == u"source" :
-                                v = urllib2_quote(v.encode('utf-8'))
+                                v = myquote(v.encode('utf-8'))
                             newdict[k] = v 
 
                         par = "&".join("{}={}".format(key, val) for key, val in newdict.items())

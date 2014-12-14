@@ -10,6 +10,7 @@ from os import path as os_path
 from sys import getdefaultencoding
 from locale import setlocale, LC_ALL, getlocale
 from gettext import install as gettext_install, GNUTranslations, NullTranslations
+from urllib2 import quote
 
 import __builtin__
 import xmlrpclib
@@ -313,3 +314,13 @@ class MICASlaveClient(Server):
         self.print_message = print_message
         self.last_refresh = datetime_datetime.now()
 
+def myquote(val):
+    if isinstance(val, unicode) :
+        val_unquoted = quote(val.encode("utf-8"))
+    else :
+        val_unquoted = quote(val)
+
+    if isinstance(val_unquoted, str) :
+        val_unquoted = val_unquoted.decode("utf-8")
+
+    return val_unquoted
