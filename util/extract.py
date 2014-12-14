@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+from pdfminer.layout import LAParams, LTPage, LTTextBox, LTText, LTContainer, LTTextLine, LTImage, LTRect, LTCurve
 from pdfminer.pdfpage import PDFPage
 from cStringIO import StringIO
 from fpdf import FPDF
@@ -58,15 +58,16 @@ def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
     images = []
 
-    for lt_obj in lt_objs:
-        if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-            text_content.append(lt_obj.get_text().strip())
-        elif isinstance(lt_obj, LTImage):
-            images.append(lt_obj.stream.get_data())
-        elif isinstance(lt_obj, LTFigure):
-            sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
-            text_content.append(sub_text)
-            images.append(sub_images)
+    if lt_objs :
+        if isinstance(lt_objs, LTTextBox) or isinstance(lt_objs, LTText):
+            text_content.append(lt_objs.get_text().strip())
+        elif isinstance(lt_objs, LTImage):
+            images.append(lt_objs.stream.get_data())
+        elif isinstance(lt_objs, LTContainer):
+            for lt_obj in lt_objs:
+                sub_text, sub_images = parse_lt_objs(lt_obj, page_number)
+                text_content = text_content + sub_text
+                images.append(sub_images)
 
     return (text_content, images)
 
@@ -122,13 +123,13 @@ for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_e
 
 
     print "Page " + str(page_count) + ", images: " + str(len(images))
-    #print " got return: \n" + "\n".join(data2)
+    print " got return: \n" + "\n".join(data2)
 
     pdf.add_page()
     pdf.write(14, "PAGE: " + str(page_count))
-    pdf.ln(14)
+    pdf.ln(2)
 
-    new_page = filter_lines(data2)
+    new_page = data2#filter_lines(data2)
 
     #print "Page " + str(page_count)
     #print "Result: " + "\n".join(new_page)
@@ -136,8 +137,8 @@ for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_e
         pdf.write(font_size,line)
         pdf.ln(font_size / 2)
     page_count += 1
-#    if page_count == 3 :
-#        break
+    if page_count == 3 :
+        break
 
 device.close()
 
