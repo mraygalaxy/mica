@@ -74,7 +74,7 @@ if not mobile :
     try :
         from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
         from pdfminer.converter import PDFPageAggregator
-        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTText, LTContainer, LTTextLine, LTImage, LTRect, LTCurve
         from pdfminer.pdfpage import PDFPage
     except ImportError, e :
         mdebug("Could not import pdfminer. Full translation will not work.")
@@ -93,17 +93,18 @@ mdebug("Punctuation complete.")
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
-    images = [] 
+    images = []
 
-    for lt_obj in lt_objs:
-        if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-            text_content.append(lt_obj.get_text().strip())
-        elif isinstance(lt_obj, LTImage):
-            images.append(lt_obj.stream.get_data())
-        elif isinstance(lt_obj, LTFigure):
-            sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
-            text_content.append(sub_text)
-            images.append(sub_images)
+    if lt_objs :
+        if isinstance(lt_objs, LTTextBox) or isinstance(lt_objs, LTText):
+            text_content.append(lt_objs.get_text().strip())
+        elif isinstance(lt_objs, LTImage):
+            images.append(lt_objs.stream.get_data())
+        elif isinstance(lt_objs, LTContainer):
+            for lt_obj in lt_objs:
+                sub_text, sub_images = parse_lt_objs(lt_obj, page_number)
+                text_content = text_content + sub_text
+                images.append(sub_images)
 
     return (text_content, images)
 
@@ -1382,23 +1383,23 @@ class MICA(object):
 
             py, target = ret
 
-            if py not in gp.punctuation_without_letters and chars >= chars_per_line :
-               lines.append(line)
-               line = []
-               chars = 0
-
-            if py in gp.punctuation_without_letters and py not in ['\n', u'\n'] :
-                if py != u'\n' and py != "\n":
-                    line.append([py, False, trans_id, [], x, source])
-                    chars += 1
-                else :
-                    lines.append(line)
-                    line = []
-                    chars = 0
+            if py in ['\n', u'\n'] :
+               if len(line) > 0 :
+                   lines.append(line)
+                   line = []
+                   chars = 0
             else :
-                chars += len(py)
-                p = [target, py, trans_id, unit, x, source]
-                line.append(p)
+                if py not in gp.punctuation_without_letters and chars >= chars_per_line :
+                   lines.append(line)
+                   line = []
+                   chars = 0
+
+                if py in gp.punctuation_without_letters :
+                    line.append([py, False, trans_id, [], x, source])
+                else :
+                    chars += len(py)
+                    p = [target, py, trans_id, unit, x, source]
+                    line.append(p)
 
             trans_id += 1
 
@@ -2172,7 +2173,10 @@ class MICA(object):
                     data2 += sub_data
                     images += sub_images
 
-                new_page = filter_lines(data2)
+                if gp.already_romanized :
+                    new_page = data2
+                else :
+                    new_page = filter_lines(data2)
 
                 data = "\n".join(new_page)
                 mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
