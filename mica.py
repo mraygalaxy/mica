@@ -185,6 +185,11 @@ class Params(object) :
         
         if 'connected' not in self.session.value :
             self.session.value['connected'] = False
+
+        if "language" not in self.session.value and "HTTP_ACCEPT_LANGUAGE" in environ:
+            self.session.value["language"] = environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
+            mdebug("Setting session language to browser language: " + self.session.value["language"])
+            self.session.save()
                 
         if "language" not in self.session.value :
             self.session.value["language"] = environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
@@ -221,8 +226,8 @@ class MICA(object):
             password = params["admin_pass"]
             username = params["admin_user"]
 
-        lookup_username_unquoted = urllib2_quote(str(lookup_username))
-        username_unquoted = urllib2_quote(str(username))
+        lookup_username_unquoted = myquote(str(lookup_username))
+        username_unquoted = myquote(str(username))
         userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
 
         for attempt in range(0, 4) :
@@ -2543,8 +2548,8 @@ class MICA(object):
                         for k in req.http.params :
                             v = req.http.params.get(k)
                             # urllib doesn't like spaces, or you get 400 Bad Request
-                            if k == u"source" :
-                                v = urllib2_quote(v.encode('utf-8'))
+                            if k in [ u"source", u"username", u"password"] :
+                                v = myquote(v.encode('utf-8'))
                             newdict[k] = v 
 
                         par = "&".join("{}={}".format(key, val) for key, val in newdict.items())
@@ -3779,6 +3784,10 @@ class MICA(object):
                         del self.dbs[username]
                         self.verify_db(req, req.session.value["database"], newpassword)
                     except Exception, e :
+                        out = ""
+                        for line in format_exc().splitlines() :
+                            out += line + "\n"
+                        mdebug(out)
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                         
                     out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"

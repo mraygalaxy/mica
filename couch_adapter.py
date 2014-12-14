@@ -2,7 +2,6 @@
 from common import *
 from json import loads, dumps
 from uuid import uuid4
-from urllib2 import quote
 
 try :
     from couchdb import Server
@@ -18,6 +17,8 @@ except ImportError, e :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
     except ImportError, e :
         mdebug("pyjnius and pyobjus not available. Probably on a server.")
+
+
 
 def couchdb_pager(db, view_name='_all_docs',
                   startkey=None, startkey_docid=None,
@@ -244,15 +245,23 @@ class MicaServerCouchDB(object) :
 
         if not self.cookie :
             mdebug("No cookie for user: " + username)
-            username_unquoted = quote(username)
-            password_unquoted = quote(password)
+            
+            username_unquoted = myquote(username)
+            password_unquoted = myquote(password)
 
             full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
             tmp_server = Server(full_url)
 
             mdebug("Requesting cookie.")
-            code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+            try :
+                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+            except UnicodeDecodeError :
+                # CouchDB folks messed up badly. This is ridiculous that I have
+                # to do this
+                username_unquoted = username_unquoted.encode("latin1").decode("latin1")
+                password_unquoted = password_unquoted.encode("latin1").decode("latin1")
+                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
 
             if (code != 200) :
                 raise CommunicationError("MICA Unauthorized: " + username)
@@ -446,8 +455,9 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         self.db.stop_replication(self.dbname)
 
     def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
-        username_unquoted = quote(user)
-        password_unquoted = quote(pw)
+        username_unquoted = myquote(user)
+        password_unquoted = myquote(pw)
+
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
         if self.db.replicate(localdbname, String(full_url), False, String(filterparams)) == -1 :
@@ -651,8 +661,9 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         self.db.stop_replication_(self.dbname)
 
     def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
-        username_unquoted = quote(user)
-        password_unquoted = quote(pw)
+        username_unquoted = myquote(user)
+        password_unquoted = myquote(pw)
+
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
         if self.db.replicate___(String(localdbname), String(full_url), String(filterparams)) == -1 :
