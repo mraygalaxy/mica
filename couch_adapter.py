@@ -249,7 +249,7 @@ class MicaServerCouchDB(object) :
                 mdebug("Re-encoding username: " + username)
                 username = username.encode("utf-8")
 
-            if isinstance(password, unicode) :
+            if isinstance(password, str) :
                 mdebug("Re-encoding password.")
                 password = password.encode("utf-8")
 
