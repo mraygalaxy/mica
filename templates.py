@@ -660,15 +660,20 @@ class HeadElement(Element):
                        
                 first = True
 
+                original_language = catalogs.language
+
                 for l, readable in softlangs :
                     if not first :
                         rowcell(" | ")
                     else :
                         first = False
 
-                    rowcell(tags.a(href='/switchlang?lang=' + l)(readable))
+                    self.req.mica.install_local_language(self.req, l)
+                    rowcell(tags.a(href='/switchlang?lang=' + l)(_(readable)))
 
                 row(rowcell)
+
+                self.req.mica.install_local_language(self.req, original_language)
 
         tag(row)
 
