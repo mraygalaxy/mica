@@ -186,7 +186,7 @@ class Params(object) :
         if 'connected' not in self.session.value :
             self.session.value['connected'] = False
 
-        if "language" not in self.session.value :
+        if "language" not in self.session.value and "HTTP_ACCEPT_LANGUAGE" in environ:
             self.session.value["language"] = environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
             mdebug("Setting session language to browser language: " + self.session.value["language"])
             self.session.save()
