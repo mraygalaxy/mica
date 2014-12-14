@@ -8,7 +8,6 @@ from cStringIO import StringIO
 from common import *
 from os import path as os_path
 from re import compile as re_compile
-from urllib2 import quote as urllib2_quote
 
 softlangs = []
 for l, readable in lang.iteritems() :
@@ -465,7 +464,7 @@ class StaticViewElement(Element) :
                 onclick = ""
                 mwarn("Strang missing language key error.")
             else :
-                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + urllib2_quote(self.req.session.value["username"]) + "', '" + urllib2_quote(self.req.session.value["password"]) + "')"
+                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + myquote(self.req.session.value["username"]) + "', '" + myquote(self.req.session.value["password"]) + "')"
         else :
             onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', false, false)"
 
