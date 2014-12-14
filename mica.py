@@ -74,7 +74,7 @@ if not mobile :
     try :
         from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
         from pdfminer.converter import PDFPageAggregator
-        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage
+        from pdfminer.layout import LAParams, LTPage, LTTextBox, LTTextLine, LTImage, LTRect
         from pdfminer.pdfpage import PDFPage
     except ImportError, e :
         mdebug("Could not import pdfminer. Full translation will not work.")
@@ -95,17 +95,19 @@ def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
     images = [] 
 
-    mdebug("Type of lt_objs: " + str(type(lt_objs)))
     if lt_objs :
-        for lt_obj in lt_objs:
-            if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-                text_content.append(lt_obj.get_text().strip())
-            elif isinstance(lt_obj, LTImage):
-                images.append(lt_obj.stream.get_data())
-            elif isinstance(lt_obj, LTFigure):
-                sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
-                text_content.append(sub_text)
-                images.append(sub_images)
+        if isinstance(lt_objs, LTRect) :
+            mdebug("Ignoring rectable. Not sure what to do with it.")
+        else :
+            for lt_obj in lt_objs:
+                if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
+                    text_content.append(lt_obj.get_text().strip())
+                elif isinstance(lt_obj, LTImage):
+                    images.append(lt_obj.stream.get_data())
+                elif isinstance(lt_obj, LTFigure):
+                    sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
+                    text_content.append(sub_text)
+                    images.append(sub_images)
 
     return (text_content, images)
 
