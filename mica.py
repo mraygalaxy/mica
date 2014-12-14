@@ -95,15 +95,17 @@ def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
     images = [] 
 
-    for lt_obj in lt_objs:
-        if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
-            text_content.append(lt_obj.get_text().strip())
-        elif isinstance(lt_obj, LTImage):
-            images.append(lt_obj.stream.get_data())
-        elif isinstance(lt_obj, LTFigure):
-            sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
-            text_content.append(sub_text)
-            images.append(sub_images)
+    mdebug("Type of lt_objs: " + str(type(lt_objs)))
+    if lt_objs :
+        for lt_obj in lt_objs:
+            if isinstance(lt_obj, LTTextBox) or isinstance(lt_obj, LTTextLine):
+                text_content.append(lt_obj.get_text().strip())
+            elif isinstance(lt_obj, LTImage):
+                images.append(lt_obj.stream.get_data())
+            elif isinstance(lt_obj, LTFigure):
+                sub_text, sub_images = parse_lt_objs(lt_obj._objs(), page_number)
+                text_content.append(sub_text)
+                images.append(sub_images)
 
     return (text_content, images)
 
