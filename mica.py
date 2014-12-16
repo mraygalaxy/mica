@@ -2454,6 +2454,16 @@ class MICA(object):
             self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
+    def new_job(req, func, description, obj, args = [], kwargs = {}) :
+        job = {"func" = func, 
+               "uuid" : str(uuid_uuid4()),
+               "description" : description, 
+               "object" : obj,
+               "date" : timest(),
+               "args" : args,
+               "kwargs" : kwargs,
+        }
+
     def common(self, req) :
         try :
             if req.action == "privacy" :
@@ -2857,6 +2867,11 @@ class MICA(object):
                 user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
                 if not user :
                     return self.warn_not_replicated(req)
+
+                if not mobile :
+                    jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+                    if not jobs :
+                        req.db["MICA:jobs"] = {"list" : []}
                     
                 if "language" not in user :
                     user["language"] = get_global_language()
@@ -3004,21 +3019,23 @@ class MICA(object):
                             mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
                 self.first_request[username] = True 
-                    
+
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
                 source = fh.file.read()
-                return self.add_story_from_source(req, fh.filename.lower().replace(" ","_").replace(",","_"), source, filetype, source_lang, target_lang)
+                return self.new_job(req, self.add_story_from_source, _("Processing New PDF Story"), fh.filename,
+                     args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), source, filetype, source_lang, target_lang])
 
             if req.http.params.get("uploadtext") :
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
-                return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
+                return self.new_job(req, self.add_story_from_source, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang])
+                #return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
             start_page = "0"
             view_mode = "text"
@@ -3219,6 +3236,17 @@ class MICA(object):
             # Functions only go here if they are actions against the currently reading story
             # Functions above here can happen on any story
             
+            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+
+            if jobs and len(jobs["list"]) > 0 :
+                out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n")
+                out += "<table class='table'>"
+                for idx in range(0, len(jobs["list"])) :
+                    job = jobs["list"][idx]
+                    out += "<tr><td>" + _(job["description"]) + "</td><td>#&160;#&160;<td>" + job["object"] + "</td></tr>"
+                out += "</table>"
+                return self.bootstrap(req, out)
+
             if "current_story" in req.session.value :
                 if uuid :
                     if req.session.value["current_story"] != uuid :
