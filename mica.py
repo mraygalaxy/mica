@@ -48,6 +48,7 @@ if not mobile :
     from oauthlib.common import to_unicode
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+    import PythonMagick
 
 mdebug("Initial imports complete")
 
@@ -2099,7 +2100,13 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
-    def add_story_from_source(self, req, filename, source, filetype, source_lang, target_lang) :
+    def add_story_from_source(self, req, filename, source, filetype, source_lang, target_lang, sourcepath) :
+        if sourcepath :
+            assert(source == False)
+
+            # Do a test that we can read it back in.
+            fp = open(sourcepath, 'rb')
+                    
         if req.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
         
@@ -2130,72 +2137,100 @@ class MICA(object):
             'date' : timest(),
         }
         
-        if filetype == "pdf" :
-            new_source = {}
-            fp = StringIO(source)
-            pagenos = set()
+        try :
+            if filetype == "pdf" :
+                pagenos = set()
+                pagecount = 0
+                rsrcmgr = PDFResourceManager()
+                device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+                interpreter = PDFPageInterpreter(rsrcmgr, device)
 
-            pagecount = 0
+                for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
+                    interpreter.process_page(page)
+                    layout = device.get_result()
 
-            rsrcmgr = PDFResourceManager()
-            device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
-            interpreter = PDFPageInterpreter(rsrcmgr, device)
+                    data2 = []
+                    images = []
+                    for obj in layout :
+                        sub_data, sub_images = parse_lt_objs(obj, pagecount)
+                        data2 += sub_data
+                        images += sub_images
 
-            for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
-                interpreter.process_page(page)
-                layout = device.get_result()
+                    # I'm keeping the code here to parse the image in case
+                    # we want them in the future. Even though we're still 
+                    # going to render the whole page anyway.
 
-                data2 = []
-                images = []
-                for obj in layout :
-                    sub_data, sub_images = parse_lt_objs(obj, pagecount)
-                    data2 += sub_data
-                    images += sub_images
+                    density = "300"
+                    bgColor = PythonMagick.Color("#ffffff")
+                    im = PythonMagick.Image()
+                    im.density(density)
+                    im.read((sourcepath + "[" + str(pagecount) + "]").encode("utf-8"))
+                    size = "%sx%s" % (im.columns(), im.rows())
+                    flattened = PythonMagick.Image(size, bgColor)
+                    flattened.type = im.type
+                    flattened.composite(im, 0, 0, PythonMagick.CompositeOperator.SrcOverCompositeOp)
+                    flattened.density(density)
+                    flattened.quality(100)
+                    blob = PythonMagick.Blob()
+                    flattened.write(blob, "png")
+                    images = [blob.data] + images
 
-                if gp.already_romanized :
-                    new_page = data2
-                else :
-                    new_page = filter_lines(data2)
+                    if gp.already_romanized :
+                        new_page = data2
+                    else :
+                        new_page = filter_lines(data2)
 
-                data = "\n".join(new_page)
-                mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
+                    data = "\n".join(new_page)
+                    mdebug("Page input:\n " + data + " \nfor page: " + str(pagecount))
 
-                de_data = data.decode("utf-8") if isinstance(data, str) else data
+                    de_data = data.decode("utf-8") if isinstance(data, str) else data
 
+                    if removespaces :
+                        de_data = de_data.replace(u' ', u'')
+                        mdebug("After remove spaces:\n " + de_data + " \nfor page: " + str(pagecount))
+
+                    '''
+                    FIXME: We're not deleting the attachments here properly upon failure.
+                    '''
+                    
+                    req.db.put_attachment(self.story(req, filename) + ":original:" + str(pagecount),
+                                            "attach",
+                                            str({ "images" : images, "contents" : de_data }), 
+                                           )
+
+                    pagecount += 1
+
+                    if (pagecount % 10) == 0 :
+                       jobs = req.db["MICA:jobs"]
+                       jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
+                       req.db["MICA:jobs"] = jobs
+
+                device.close()
+                fp.close()
+            elif filetype == "txt" :
+                de_source = source.decode("utf-8") if isinstance(source, str) else source
+                mdebug("Page input:\n " + source)
                 if removespaces :
-                    de_data = de_data.replace(u' ', u'')
-                    mdebug("After remove spaces:\n " + de_data + " \nfor page: " + str(pagecount))
+                    de_source = de_source.replace(u' ', u'')
+                    mdebug("After remove spaces:\n " + de_source)
+                req.db[self.story(req, filename) + ":original"] = { "value" : de_source }
+            
+            req.db[self.story(req, filename)] = story
+            req.db[self.index(req, story["uuid"])] = { "value" : filename }
 
-                '''
-                FIXME: We're not deleting the attachments here properly upon failure.
-                '''
-                
-                req.db.put_attachment(self.story(req, filename) + ":original:" + str(pagecount),
-                                        "attach",
-                                        str({ "images" : images, "contents" : de_data }), 
-                                       )
+            self.clear_story(req)
+        except Exception, e :
+            # Need to make sure we clear the uploaded file before releasing the exception.
+            for line in format_exc().splitlines() :
+                merr(line)
+            if sourcepath :
+                fp.close()
+                os_remove(sourcepath)
+            raise e
 
-                pagecount += 1
-
-                if (pagecount % 10) == 0 :
-                   jobs = req.db["MICA:jobs"]
-                   jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
-                   req.db["MICA:jobs"] = jobs
-
-            device.close()
+        if sourcepath :
             fp.close()
-        elif filetype == "txt" :
-            de_source = source.decode("utf-8") if isinstance(source, str) else source
-            mdebug("Page input:\n " + source)
-            if removespaces :
-                de_source = de_source.replace(u' ', u'')
-                mdebug("After remove spaces:\n " + de_source)
-            req.db[self.story(req, filename) + ":original"] = { "value" : de_source }
-        
-        req.db[self.story(req, filename)] = story
-        req.db[self.index(req, story["uuid"])] = { "value" : filename }
-
-        self.clear_story(req)
+            os_remove(sourcepath)
 
         return _("Upload Complete! Story ready for translation") + ": " + filename
         
@@ -3120,16 +3155,45 @@ class MICA(object):
                 filetype = req.http.params.get("filetype")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
-                source = fh.file.read()
+                # Stream the file contents directly to disk, first
+                # Make sure it's not too big while we're doing it...
+                sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
+                mdebug("Will stream upload to " + sourcepath)
+                sourcefh = open(sourcepath, 'wb')
+
+                sourcebytes = 0
+                maxbytes = 30*1024*1024
+                sourcefailed = False
+                while True :
+                    data = fh.file.read(1)
+                    if data == '' :
+                        break
+                    sourcebytes += 1
+                    if sourcebytes > maxbytes :
+                        sourcefailed = True
+                        break 
+
+                    sourcefh.write(data)
+
+                sourcefh.close()
+                fh.file.close()
+
+                if sourcefailed :
+                    mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
+                    os_remove(sourcepath)
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes / 1024 / 1024) + " MB.</h4></div>")
+
+                mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
+
                 return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename,
-                     args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), source, filetype, source_lang, target_lang])
+                     args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
 
             if req.http.params.get("uploadtext") :
                 source = req.http.params.get("storytext") + "\n"
                 filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
-                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang])
+                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang, False])
                 #return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
             start_page = "0"
@@ -4468,6 +4532,12 @@ def go(p) :
     if not os_path.isdir(params["session_dir"]) :
         mdebug("Making new session folder.")
         os_makedirs(params["session_dir"])
+
+    if not mobile :
+        if os_path.isdir("/tmp/mica_uploads") :
+            mdebug("Deleting old uploaded files.")
+            shutil_rmtree("/tmp/mica_uploads")
+        os_makedirs("/tmp/mica_uploads")
 
     mdebug("Registering session adapter.")
     registerAdapter(CDict, Session, IDict)
