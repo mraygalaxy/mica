@@ -104,7 +104,8 @@ def parse_lt_objs (lt_objs, page_number):
             for lt_obj in lt_objs:
                 sub_text, sub_images = parse_lt_objs(lt_obj, page_number)
                 text_content = text_content + sub_text
-                images.append(sub_images)
+                for image in sub_images :
+                    images.append(image)
 
     return (text_content, images)
 
@@ -1873,7 +1874,8 @@ class MICA(object):
                 if not mobile :
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
-                    untrans.append("\n<a title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trashstory('" + story['uuid'] + "', '" + story["name"] + "')\"><i class='glyphicon glyphicon-trash'></i></a>&#160;")
+                    
+                    untrans.append("<a href='/home?delete=1&#38;uuid=" + story['uuid'] + "&#38;name=" + myquote(story["name"]) + "' title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-trash'></i></a>")
 
                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
                     untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
@@ -2175,6 +2177,11 @@ class MICA(object):
 
                 pagecount += 1
 
+                if (pagecount % 10) == 0 :
+                   jobs = req.db["MICA:jobs"]
+                   jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
+                   req.db["MICA:jobs"] = jobs
+
             device.close()
             fp.close()
         elif filetype == "txt" :
@@ -2190,9 +2197,7 @@ class MICA(object):
 
         self.clear_story(req)
 
-        uc = self.heromsg + "\n" + _("Upload Complete! Story ready for translation") + ": " + filename + "</div>"
-        return self.bootstrap(req, uc)
-        
+        return _("Upload Complete! Story ready for translation") + ": " + filename
         
     def flush_pages(self, req, name):
         mdebug("Ready to flush translated pages.")
@@ -2455,15 +2460,104 @@ class MICA(object):
             self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
-    def new_job(req, func, description, obj, args = [], kwargs = {}) :
-        job = {"func" = func, 
-               "uuid" : str(uuid_uuid4()),
+    def run_job(self, req, func, cleanup, job, args, kwargs) :
+        self.install_local_language(req)
+
+        try :
+            mdebug("Running job: " + str(job))
+            req.job_uuid = job["uuid"]
+            job["result"] = func(*args, **kwargs)
+            job["success"] = True
+            mdebug("Complete job: " + str(job))
+        except Exception, e :
+            mdebug("Error job: " + str(job) + " " + str(e))
+            if cleanup :
+                cleanup(*args, **kwargs)
+            job["success"] = False
+            job["result"] = str(e)
+
+        job["finished"] = True
+        jobs = req.db["MICA:jobs"]
+        jobs["list"][job["uuid"]] = job
+        req.db["MICA:jobs"] = jobs
+
+    def new_job(self, req, func, cleanup, description, obj, args = [], kwargs = {}) :
+        out = ""
+        job = { "uuid" : str(uuid_uuid4()),
                "description" : description, 
                "object" : obj,
                "date" : timest(),
-               "args" : args,
-               "kwargs" : kwargs,
+               "finished" : False,
+               "success" : False,
+               "result" : False,
         }
+
+        mdebug("Submitting job: " + str(job))
+
+        try :
+            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            if not jobs :
+                jobs = {"list" : {}}
+
+            vt = Thread(target=self.run_job, args = [req, func, cleanup, job, args, kwargs])
+            vt.daemon = True
+            jobs["list"][job["uuid"]] = job
+            req.db["MICA:jobs"] = jobs
+
+            mdebug("Starting job: " + str(job))
+
+            vt.start()
+
+            out = self.heromsg + "\n<h4>" + _("Request submitted. Please refresh later. Thank You.") + "<script>window.location.href='/home';</script></h4></div>"
+                
+        except Exception, e :
+            out = self.heromsg + "\n<h4>Error: " + _("Please try your request again.") + ": " + _(description) + "</h4></div>"
+            out += str(e)
+
+        mdebug("Submitted: " + str(job))
+        return self.bootstrap(req, out)
+            
+    def deletestory(self, req, uuid, name) : 
+        story_found = False if not name else req.db.doc_exist(self.story(req, name))
+        if name and not story_found :
+            mdebug(name + " does not exist. =(")
+        else :
+            if name :
+                tmp_story = req.db[self.story(req, name)]
+                self.flush_pages(req, name)
+                if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
+                    mdebug("Deleting txt original contents.")
+                    del req.db[self.story(req, name) + ":original"]
+                else :
+                    mdebug("Deleting original pages")
+                    allorig = []
+                    for result in req.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
+                        allorig.append(result["key"][2])
+                    mdebug("List built.")
+                    pagecount = 0
+                    for tmppage in allorig :
+                        mdebug("Deleting original " + str(tmppage) + " from story " + name)
+                        del req.db[self.story(req, name) + ":original:" + str(tmppage)]
+                        pagecount += 1
+                        if (pagecount % 10) == 0 :
+                           jobs = req.db["MICA:jobs"]
+                           jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
+                           req.db["MICA:jobs"] = jobs
+                    mdebug("Deleted.")
+
+                
+            if name and story_found :
+                del req.db[self.story(req, name)]
+            
+            if req.db.doc_exist(self.index(req, uuid)) :
+                del req.db[self.index(req, uuid)]
+                
+        if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
+            self.clear_story(req)
+            uuid = False
+        # The user has deleted a story from the system.
+        return _("Deleted")
+
 
     def common(self, req) :
         try :
@@ -2872,7 +2966,7 @@ class MICA(object):
                 if not mobile :
                     jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
                     if not jobs :
-                        req.db["MICA:jobs"] = {"list" : []}
+                        req.db["MICA:jobs"] = {"list" : {}}
                     
                 if "language" not in user :
                     user["language"] = get_global_language()
@@ -3027,7 +3121,7 @@ class MICA(object):
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
                 source = fh.file.read()
-                return self.new_job(req, self.add_story_from_source, _("Processing New PDF Story"), fh.filename,
+                return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename,
                      args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), source, filetype, source_lang, target_lang])
 
             if req.http.params.get("uploadtext") :
@@ -3035,7 +3129,7 @@ class MICA(object):
                 filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
-                return self.new_job(req, self.add_story_from_source, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang])
+                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang])
                 #return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
             start_page = "0"
@@ -3088,40 +3182,7 @@ class MICA(object):
 
 
             if req.http.params.get("delete") :
-                story_found = False if not name else req.db.doc_exist(self.story(req, name))
-                if name and not story_found :
-                    mdebug(name + " does not exist. =(")
-                else :
-                    if name :
-                        tmp_story = req.db[self.story(req, name)]
-                        self.flush_pages(req, name)
-                        if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
-                            mdebug("Deleting txt original contents.")
-                            del req.db[self.story(req, name) + ":original"]
-                        else :
-                            mdebug("Deleting original pages")
-                            allorig = []
-                            for result in req.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
-                                allorig.append(result["key"][2])
-                            mdebug("List built.")
-                            for tmppage in allorig :
-                                mdebug("Deleting original " + str(tmppage) + " from story " + name)
-                                del req.db[self.story(req, name) + ":original:" + str(tmppage)]
-                            mdebug("Deleted.")
-
-                        
-                    if name and story_found :
-                        del req.db[self.story(req, name)]
-                    
-                    if req.db.doc_exist(self.index(req, uuid)) :
-                        del req.db[self.index(req, uuid)]
-                
-                        
-                if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    self.clear_story(req)
-                    uuid = False
-                # The user has deleted a story from the system.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Deleted") + ".</h4></div>", now = True)
+                return self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, args = [req, uuid, name])
 
             if uuid :
                 if not req.db.doc_exist(self.index(req, uuid)) :
@@ -3234,20 +3295,50 @@ class MICA(object):
                 output += "</div></div>"
                 return self.bootstrap(req, output, now = True)
 
-            # Functions only go here if they are actions against the currently reading story
-            # Functions above here can happen on any story
-            
+            # We want the job list to appear before using any story-related functions
+            # User must wait.
             jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
 
             if jobs and len(jobs["list"]) > 0 :
-                out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n")
+                out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n"
                 out += "<table class='table'>"
-                for idx in range(0, len(jobs["list"])) :
-                    job = jobs["list"][idx]
-                    out += "<tr><td>" + _(job["description"]) + "</td><td>#&160;#&160;<td>" + job["object"] + "</td></tr>"
+
+                finished = []
+
+                for jkey in jobs["list"] :
+                    job = jobs["list"][jkey]
+                    out += "<tr>"
+                    if job["finished"] :
+                        finished.append(job)
+                        out += "<td>" + _("Finished") + ": </td>"
+                    else :
+                        out += "<td>" + _("Running") + ": </td>"
+
+                    out += "<td>" + _(job["description"]) + "</td><td>&#160;&#160;</td><td>" + job["object"] + "</td><td>&#160;&#160;</td>" 
+                
+                    out += "<td>"
+
+                    if job["result"] :
+                        out += job["result"]
+                    elif not job["finished"] :
+                        out += _("Please wait")
+
+                    out += "</td>"
+
+                    out += "</tr>"
+
                 out += "</table>"
+
+                if len(finished) > 0 :
+                    for job in finished :
+                        del jobs["list"][job["uuid"]]
+                    req.db["MICA:jobs"] = jobs
+
                 return self.bootstrap(req, out)
 
+            # Functions only go here if they are actions against the currently reading story
+            # Functions above here can happen on any story
+            
             if "current_story" in req.session.value :
                 if uuid :
                     if req.session.value["current_story"] != uuid :

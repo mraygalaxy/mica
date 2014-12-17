@@ -111,9 +111,11 @@ def filter_lines(data2) :
     return new_page
 
 for page in PDFPage.get_pages(fp, pagenos, 0, password='', caching=True, check_extractable=True):
+    print str(type(page))
     interpreter.process_page(page)
     layout = device.get_result()
 
+    print str(page.doc._cached_objs)
     data2 = []
     images = []
     for obj in layout :
