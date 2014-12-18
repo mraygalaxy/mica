@@ -2284,6 +2284,8 @@ class MICA(object):
 
 
     def warn_not_replicated(self, req, bootstrap = True, now = False) :
+        self.clear_story(req)
+
         if mobile :
             msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
