@@ -665,12 +665,13 @@ class MICA(object):
             sideout.append("<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
             sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
-        # add if mobile here
-        if "download" not in story or not story["download"] :
-            syncing = _("Syncing")
-            sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
-        else :
-            sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
+        if mobile :
+            if "download" not in story or not story["download"] :
+                syncing = _("Syncing")
+                sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
+            else :
+                sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
+
         sideout.append("</td><td>")
 
         if not mobile and not gp.already_romanized :
@@ -2323,7 +2324,8 @@ class MICA(object):
         self.view_check(req, "mergegroups")
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
-        self.view_check(req, "download")
+        if not mobile :
+            self.view_check(req, "download")
 
     '''
     All stories up to and including mica version 0.4.x only supported
@@ -3851,7 +3853,10 @@ class MICA(object):
                     req.db.compact()
                     req.db.cleanup()
                     design_docs = ["memorized", "stories", "mergegroups",
-                                   "tonechanges", "accounts", "splits", "download" ]
+                                   "tonechanges", "accounts", "splits" ]
+
+                    if not mobile :
+                        design_docs.append("download")
 
                     for name in design_docs :
                         if req.db.doc_exist("_design/" + name) :
