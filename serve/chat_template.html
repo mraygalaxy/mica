@@ -17,12 +17,12 @@
 </div>
 
 <div id="sendmsg_pane" style="display:none;">
-    <b>Incoming:</b>
+    <b><t:slot name="incoming"/>:</b>
     <div style='height: 150px; overflow-y: auto' id="iResp"></div>
-    <h4>Send Message</h4>
+    <h4><t:slot name="sendmsg"/></h4>
     <form name="sendForm" onSubmit="return sendMsg(this);" action="#">
         <div class="spaced">
-            <b>To:</b>
+            <b><t:slot name='to'/>:</b>
             <input type="text" name="sendTo" tabindex="1"/>
         </div>
         <div class="spaced">

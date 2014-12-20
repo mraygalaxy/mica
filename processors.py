@@ -120,7 +120,7 @@ class Processor(object) :
             unigroups.append(uni)
 
         tone_keys = self.mica.view_keys(req, "tonechanges", False, source_queries = unikeys) 
-        mdebug("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
+        mverbose("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
 
         for idx in range(0, len(unigroups)) :
             self.recursive_translate(req, story, opaque, unigroups[idx], temp_units, page, tone_keys)
@@ -182,7 +182,7 @@ class Processor(object) :
 
         if highest != -1 :
             selector = highest
-            mdebug("HISTORY Multiple for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
+            mverbose("HISTORY Multiple for source: " + source + " defaulting to idx " + str(selector) + " using HISTORY.")
         else :
             longest = -1
             longest_length = -1
@@ -199,7 +199,7 @@ class Processor(object) :
                         longest = idx
 
             selector = longest
-            mdebug("LONGEST Multiple for source: " + source + " defaulting to idx " + str(selector))
+            mverbose("LONGEST Multiple for source: " + source + " defaulting to idx " + str(selector))
 
         if selector != -1 :
             if len(unit["multiple_sromanization"]) :
@@ -208,7 +208,7 @@ class Processor(object) :
             unit["multiple_correct"] = selector 
 
     def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
-        mdebug("Requested: " + uni)
+        mverbose("Requested: " + uni)
 
         if self.all_punct(uni) :
             units = []
@@ -222,7 +222,7 @@ class Processor(object) :
 
             self.mica.rehash_correct_polyphome(unit)
             
-            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            mverbose(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
@@ -252,13 +252,13 @@ def get_cjk_handle(params) :
         from cjklib.dbconnector import getDBConnector
         cjkurl = 'sqlite:///' + params["scratch"] + "cjklib.db"
         cedicturl = 'sqlite:///' + params["scratch"] + "cedict.db"
-        mdebug("Opening CJK from: " + cedicturl + " and " + cjkurl)
+        mverbose("Opening CJK from: " + cedicturl + " and " + cjkurl)
         cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
-        mdebug("MICA cjklib success!")
+        mverbose("MICA cjklib success!")
         # CEDICT must use a connector, just a url which includes both dictionaries.
         # CEDICT internally references pinyin syllables from the main dictionary or crash.
         d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
-        mdebug("MICA cedict success!")
+        mverbose("MICA cedict success!")
     except Exception, e :
         merr("MICA offline open failed: " + str(e))
 
@@ -775,21 +775,21 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         mdebug(msg.replace("\n",""))
 
-        minfo("translating source to target....")
+        mverbose("translating source to target....")
         result = self.mica.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
-        mdebug("target translation finished." + str(result))
+        mverbose("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
             return []
         
         mstarget = result[0]["TranslatedText"]
 
-        mdebug("target is: " + str(mstarget))
+        mverbose("target is: " + str(mstarget))
         mstarget = mstarget.split(" ")
 
-        mdebug("Translating target pieces back to source")
+        mverbose("Translating target pieces back to source")
         result = self.mica.translate_and_check_array(req, name, mstarget, story["source_language"], story["target_language"])
-        mdebug("Translation finished. Writing in json.")
+        mverbose("Translation finished. Writing in json.")
 
         for idx in range(0, len(result)) :
             ms.append((mstarget[idx], result[idx]["TranslatedText"]))

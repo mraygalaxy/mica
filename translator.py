@@ -40,7 +40,6 @@ class Translator(object):
             'grant_type': self.grant_type
         })
         
-        mdebug("Authenticating...")
         response = False
         try :
             response = loads(urllib2_urlopen(
@@ -56,7 +55,6 @@ class Translator(object):
                 raise TranslateApiException("Translation Service Authentication failed", str(e))
         
 
-        mdebug("Authenticated")
         mdebug(str(response))
 
         if response and "error" in response:
@@ -65,27 +63,21 @@ class Translator(object):
                 response.get('error_description', 'No Error Description'),
                 response.get('error', 'Unknown Error')
             )
-        mdebug("Authentication returning")
         return response['access_token']
 
     def call(self, url, p):
         """Calls the given url with the params urlencoded
         """
-        mdebug("Translator ready for call.")
         if not self.access_token:
             self.access_token = self.get_access_token()
-
-        mdebug("urllib request start.")
 
         request = urllib2_Request(
             "%s?%s" % (url, urllib_urlencode(p)),
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
 
-        mdebug("urllib get response")
         response = urllib2_urlopen(request, timeout=30).read()
 
-        mdebug("json load")
         rv =  loads(response.decode("utf-8-sig"))
 
         if isinstance(rv, basestring) and \
@@ -149,7 +141,6 @@ class Translator(object):
                 State: User state to help correlate request and response. The 
                     same contents will be returned in the response.
         """
-        mdebug("Translator preparing options.")
         options = {
             'Category': u"general",
             'Contenttype': u"text/plain",
@@ -162,7 +153,6 @@ class Translator(object):
             'to': to_lang,
             'options': dumps(options),
             }
-        mdebug("Translator options set.")
         if from_lang is not None:
             p['from'] = from_lang
 

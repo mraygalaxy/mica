@@ -369,7 +369,7 @@ var _callbacks_ = {
                 choice = choices[selectionIndex];
                 len = $.wordDatabase.getLength(self.currentText, selectionIndex);
                 self.addText(choice);
-                self.currentText = '' + self.currentText.substring(len);
+                self.currentText = '';//+ self.currentText.substring(len);
                 self.currentPage = 0;
                 self.currentSelection = 1;
                 self.lastPage = false;
