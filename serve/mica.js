@@ -1070,26 +1070,6 @@ function loadstories(unused) {
     true);
 }
 
-function dropstory(uuid) {
-    go('#sidebarcontents', 
-    '/home?forget=1&uuid=' + uuid,
-    '', 
-    unavailable, 
-    false, 
-    loadstories,
-    false);
-}
-
-function trashstory(uuid, name) {
-    go('#sidebarcontents', 
-    '/home?delete=1&uuid=' + uuid + "&name=" + name,
-    '', 
-    unavailable, 
-    false, 
-    loadstories,
-    false);
-}
-
 function reviewstory(uuid, which) {
     go('#sidebarcontents', 
     '/home?reviewed=' + which + '&uuid=' + uuid,

@@ -1916,7 +1916,7 @@ class MICA(object):
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure.append("\n<a title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"dropstory('" + story['uuid'] + "')\"><i class='glyphicon glyphicon-remove'></i></a>")
+                    notsure.append("\n<a href='/home?forget=1&#38;uuid=" + story['uuid'] + "' title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-remove'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
                 notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
@@ -2573,6 +2573,26 @@ class MICA(object):
         mdebug("Submitted: " + str(job))
         return self.bootstrap(req, out)
             
+    def forgetstory(self, req, uuid, name) :
+        tmp_story = req.db[self.story(req, name)]
+        tmp_story["translated"] = False
+        tmp_story["reviewed"] = False
+        tmp_story["finished"] = False
+
+        if "last_error" in tmp_story :
+            del tmp_story["last_error"]
+
+        req.db[self.story(req, name)] = tmp_story 
+        self.flush_pages(req, name)
+
+        story = tmp_story
+        
+        if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
+            self.clear_story(req)
+            uuid = False
+        # 'Forgot' a story using the button in the side-panel.
+        return _("Forgotten")
+
     def deletestory(self, req, uuid, name) : 
         story_found = False if not name else req.db.doc_exist(self.story(req, name))
         if name and not story_found :
@@ -3375,24 +3395,7 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
 
             if req.http.params.get("forget") :
-                tmp_story = req.db[self.story(req, name)]
-                tmp_story["translated"] = False
-                tmp_story["reviewed"] = False
-                tmp_story["finished"] = False
-
-                if "last_error" in tmp_story :
-                    del tmp_story["last_error"]
-
-                req.db[self.story(req, name)] = tmp_story 
-                self.flush_pages(req, name)
-
-                story = tmp_story
-                
-                if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
-                    self.clear_story(req)
-                    uuid = False
-                # 'Forgot' a story using the button in the side-panel.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Forgotten") + ".</h4></div>", now = True)
+                return self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, args = [req, uuid, name])
 
             if req.http.params.get("switchmode") :
                 req.session.value["view_mode"] = req.http.params.get("switchmode")
