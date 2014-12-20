@@ -847,7 +847,7 @@ class MICA(object):
                 mdebug("Got count.")
                 page_inputs = result['value']
        
-        mdebug("Page inputs: " + str(page_inputs))
+        mverbose("Page inputs: " + str(page_inputs))
         assert(int(page_inputs) != 0) 
              
         if page :
@@ -877,7 +877,9 @@ class MICA(object):
                 self.transmutex.release()
 
         opaque = processor.parse_page_start() 
-        processor.test_dictionaries(opaque)
+
+        if not live :
+            processor.test_dictionaries(opaque)
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -898,11 +900,9 @@ class MICA(object):
                 else :
                     page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
-            mdebug("Parsing...")
-
             parsed = processor.pre_parse_page(opaque, page_input)
 
-            mdebug("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
+            mverbose("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
 
             lines = parsed.split("\n")
             groups = []
@@ -993,7 +993,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-        minfo("Translation complete.")
+        mverbose("Translation complete.")
         processor.parse_page_stop(opaque)
 
     def get_parts(self, unit, tofrom) :
@@ -1112,7 +1112,7 @@ class MICA(object):
             sources = source_queries
 
         if _units :
-            mdebug("Input units: " + str(len(_units)))
+            mverbose("Input units: " + str(len(_units)))
             for unit in _units :
                 if name == "memorized" :
                     if "hash" in unit :
@@ -1124,7 +1124,7 @@ class MICA(object):
             return {} 
 
         keys = {}
-        mdebug("Generating query for view: " + name + " with " + str(len(sources)) + " keys.")
+        mverbose("Generating query for view: " + name + " with " + str(len(sources)) + " keys.")
         
         # android sqllite has a query limit of 1000 values in a prepared sql statement,
         # so let's do 500 at a time.
@@ -1139,7 +1139,7 @@ class MICA(object):
                 stop = total 
                 finished = True
 
-            mdebug("Issuing query for indexes: start " + str(start) + " stop " + str(stop) + " total " + str(total) )
+            mverbose("Issuing query for indexes: start " + str(start) + " stop " + str(stop) + " total " + str(total) )
             for result in req.db.view(name + "/all", keys = sources[start:(stop)], username = req.session.value['username']) :
                 keys[result['key'][1]] = result['value']
 
@@ -1808,9 +1808,7 @@ class MICA(object):
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
-        mdebug("Acquiring mutex?")
         self.mutex.acquire()
-        mdebug("Acquired.")
 
         attempts = 15
         finished = False
@@ -1823,13 +1821,12 @@ class MICA(object):
                     mdebug("Previous attempt failed. Re-authenticating")
                     self.client.access_token = self.client.get_access_token()
 
-                mdebug("Entering online translation.")
+                mverbose("Entering online translation.")
                 result = self.client.translate_array(requests, lang, from_lang = from_lang)
 
                 if not len(result) or "TranslatedText" not in result[0] :
                     mdebug("Probably key expired: " + str(result))
                 else :
-                    mdebug("Translation complete on attempt: " + str(attempt))
                     finished = True
 
             except ArgumentOutOfRangeException, e :
@@ -1846,14 +1843,13 @@ class MICA(object):
                 error = "Unknown fatal translation error: " + str(e)
                 stop = True
             finally :
-                mdebug("Attempt: " + str(attempt) + " finally.")
+                mverbose("Attempt: " + str(attempt) + " finally.")
                 if not finished and not error :
                     error = "Translation API not available for some reason. =("
                 if error :
                     self.store_error(req, name, error)
 
             if finished or stop :
-                mdebug("Breaking attempt loop.")
                 break
 
         self.mutex.release()
@@ -1862,7 +1858,6 @@ class MICA(object):
             mdebug("Raising fatal error.")
             raise OnlineTranslateException(error)
 
-        mdebug("Yay, finished.")
         return result
     
     def makestorylist(self, req):

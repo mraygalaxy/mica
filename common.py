@@ -127,6 +127,8 @@ tutorials = {
         u"py": "info_template.html",
 }
 
+verbose = False
+
 def minfo(msg) :
    if micalogger :
        micalogger.info(msg)
@@ -134,6 +136,10 @@ def minfo(msg) :
        print msg
    if duplicate_logger and String :
       duplicate_logger.info(String(msg))
+
+def mverbose(msg) :
+    if verbose :
+        mdebug(msg)
 
 def mdebug(msg) :
    if micalogger :
