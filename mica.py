@@ -44,11 +44,18 @@ from common import *
 from translator import *
 from templates import *
 
+uploads_enabled = True
+
 if not mobile :
     from oauthlib.common import to_unicode
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
-    import PythonMagick
+    try :
+        import PythonMagick
+    except ImportError, e :
+        # TODO: not using this boolean anywhere yet....
+        uploads_enabled = False
+        mdebug("Cannot find PythonMagick: uploads will be disabled on this server.")
 
 mdebug("Initial imports complete")
 
@@ -670,12 +677,13 @@ class MICA(object):
             sideout.append("<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
             sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
-        # add if mobile here
-        if "download" not in story or not story["download"] :
-            syncing = _("Syncing")
-            sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
-        else :
-            sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
+        if mobile :
+            if "download" not in story or not story["download"] :
+                syncing = _("Syncing")
+                sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
+            else :
+                sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
+
         sideout.append("</td><td>")
 
         if not mobile and not gp.already_romanized :
@@ -1308,7 +1316,7 @@ class MICA(object):
 
         req.gp = self.processors[self.tofrom(story)]
         req.story_name = story["name"]
-        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, name)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
+        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, story)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
 
@@ -1317,10 +1325,19 @@ class MICA(object):
 
         return output
 
-    def nb_pages(self, req, name):
-        for result in req.db.view('stories/pages', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
-            return result['value']
-        return 0
+    def nb_pages(self, req, story):
+        if "nb_pages" in story :
+            mdebug("Using cached value for nb_pages")
+            nb_pages = story["nb_pages"]
+        else :
+            mdebug("Generating cached value for nb_pages")
+            for result in req.db.view('stories/pages', startkey=[req.session.value['username'], story["name"]], endkey=[req.session.value['username'], story["name"], {}]) :
+                nb_pages = result['value']
+                break
+            story["nb_pages"] = nb_pages
+            req.db[self.story(req, story["name"])] = story
+
+        return nb_pages 
     
     def roman_holder(self, source, color) :
         holder = "<div class='roman" + color + "'>"
@@ -2342,7 +2359,8 @@ class MICA(object):
         self.view_check(req, "mergegroups")
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
-        self.view_check(req, "download")
+        if not mobile :
+            self.view_check(req, "download")
 
     '''
     All stories up to and including mica version 0.4.x only supported
@@ -3237,6 +3255,13 @@ class MICA(object):
 
                 return self.bootstrap(req, output, now = True)
 
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
+            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
@@ -3375,7 +3400,7 @@ class MICA(object):
                     if "finished" not in tmp_story or tmp_story["finished"] :
                         tmp_story["finished"] = False
 
-                    pages = self.nb_pages(req, tmp_story["name"])
+                    pages = self.nb_pages(req, tmp_story)
                     if pages == 1 :
                         final = {}
 
@@ -3603,7 +3628,7 @@ class MICA(object):
 
                 if "upgrading" in story and story["upgrading"] :
                     curr_page = story["upgrade_page"] if "upgrade_page" in story else 0
-                    nbpages = self.nb_pages(req, story["name"])
+                    nbpages = self.nb_pages(req, story)
                     assert(nbpages > 0)
                     percent = float(curr_page) / float(nbpages) * 100
                     out = self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>"
@@ -3916,7 +3941,10 @@ class MICA(object):
                     req.db.compact()
                     req.db.cleanup()
                     design_docs = ["memorized", "stories", "mergegroups",
-                                   "tonechanges", "accounts", "splits", "download" ]
+                                   "tonechanges", "accounts", "splits" ]
+
+                    if not mobile :
+                        design_docs.append("download")
 
                     for name in design_docs :
                         if req.db.doc_exist("_design/" + name) :
