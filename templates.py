@@ -771,6 +771,7 @@ class HeadElement(Element):
                      uploadtext = _("Upload Text"),
                      copypaste = _("Copy/Paste a Story"),
                      missing = _("* Please fill in required fields"),
+                     nocolons = _("* File/Story name cannot have colons ':' characters in it. Please fix."),
                      uploadstory = _("Upload Story"),
                      instant = _("Instant Translation"),
                      # Create account button
