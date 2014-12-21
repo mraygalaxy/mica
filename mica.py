@@ -23,7 +23,7 @@ from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
-
+#border: 2px solid black; padding: 1px
 '''
 def tracefunc(frame, event, arg, indent=[0]):
     if event == "call":
@@ -1379,7 +1379,7 @@ class MICA(object):
 
             py, target = ret
 
-            if py in ['\n', u'\n'] :
+            if py in ['\n', u'\n'] or target in ['\n', u'\n']:
                if len(line) > 0 :
                    lines.append(line)
                    line = []
