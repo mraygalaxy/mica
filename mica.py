@@ -3238,7 +3238,7 @@ class MICA(object):
                         except couch_adapter.ResourceConflict, e :
                             mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
-                    tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+                tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
 
                 if tmpjobs and len(tmpjobs["list"]) > 0 :
                     mdebug("Resettings jobs for user.")
