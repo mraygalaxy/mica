@@ -343,8 +343,6 @@ class MICA(object):
 
         self.first_request = {}
 
-        # Replacements must be in this order
-        
         self.views_ready = {}
         self.view_runs = [ #name , #startend key or regular keys
                 ('accounts/all', True),
@@ -2154,6 +2152,8 @@ class MICA(object):
             mdebug("Remove spaces not requested.")
         
         if filetype == "txt" :
+            if not source :
+                source = fp.read()
             mdebug("Source: " + source)
 
         new_uuid = str(uuid_uuid4())
@@ -3247,14 +3247,14 @@ class MICA(object):
                 sourcefh = open(sourcepath, 'wb')
 
                 sourcebytes = 0
-                maxbytes = 30*1024*1024
+                maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
                 sourcefailed = False
                 while True :
                     data = fh.file.read(1)
                     if data == '' :
                         break
                     sourcebytes += 1
-                    if sourcebytes > maxbytes :
+                    if sourcebytes > maxbytes[filetype] :
                         sourcefailed = True
                         break 
 
@@ -3269,7 +3269,7 @@ class MICA(object):
                     # This appears when the user tries to upload a story document that is too large.
                     # At the end of the message will appear something like '30 MB', or whatever is
                     # the current maximum file size allowed by the system.
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes / 1024 / 1024) + " MB.</h4></div>")
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB.</h4></div>")
 
                 mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
