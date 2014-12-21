@@ -23,7 +23,7 @@ from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
-
+#border: 2px solid black; padding: 1px
 '''
 def tracefunc(frame, event, arg, indent=[0]):
     if event == "call":
@@ -993,6 +993,7 @@ class MICA(object):
             self.transmutex.acquire()
             try :
                 tmpstory = req.db[self.story(req, name)]
+                mdebug("Caching nb_pages: " + str(self.nb_pages(req, tmpstory)))
                 if "translated" not in tmpstory or not tmpstory["translated"] :
                     self.flush_pages(req, name)
                         
@@ -1325,17 +1326,22 @@ class MICA(object):
 
         return output
 
-    def nb_pages(self, req, story):
-        if "nb_pages" in story :
+    def nb_pages(self, req, story, cached = True):
+        if cached and "nb_pages" in story :
             mdebug("Using cached value for nb_pages")
             nb_pages = story["nb_pages"]
         else :
             mdebug("Generating cached value for nb_pages")
+            nb_pages = 0
             for result in req.db.view('stories/pages', startkey=[req.session.value['username'], story["name"]], endkey=[req.session.value['username'], story["name"], {}]) :
                 nb_pages = result['value']
                 break
-            story["nb_pages"] = nb_pages
-            req.db[self.story(req, story["name"])] = story
+
+            assert(nb_pages != 0)
+
+            if cached :
+                story["nb_pages"] = nb_pages
+                req.db[self.story(req, story["name"])] = story
 
         return nb_pages 
     
@@ -1403,7 +1409,7 @@ class MICA(object):
 
             py, target = ret
 
-            if py in ['\n', u'\n'] :
+            if py in ['\n', u'\n'] or target in ['\n', u'\n']:
                if len(line) > 0 :
                    lines.append(line)
                    line = []
@@ -2243,13 +2249,28 @@ class MICA(object):
 
                 device.close()
                 fp.close()
-            elif filetype == "txt" :
+            else : # TXT format
                 de_source = source.decode("utf-8") if isinstance(source, str) else source
                 mdebug("Page input:\n " + source)
                 if removespaces :
                     de_source = de_source.replace(u' ', u'')
                     mdebug("After remove spaces:\n " + de_source)
-                req.db[self.story(req, filename) + ":original"] = { "value" : de_source }
+
+                origkey = self.story(req, filename) + ":original"
+
+                if req.db.doc_exist(origkey) :
+                    # Sometimes we code in errors. Until we have a proper cleanup function,
+                    # just overwrite the original and lose a little disk space if the story
+                    # is not re-uploaded.
+                    # The same problem is already handled for non-TXT stories, like PDFs
+                    # because the original goes into put_attachment, which deletes the original
+                    # attachment if it already exists.
+                    orig = req.db[origkey]
+                    orig["value"] = de_source
+                else :
+                    orig = { "value" : de_source }
+
+                req.db[origkey] = orig
             
             req.db[self.story(req, filename)] = story
             req.db[self.index(req, story["uuid"])] = { "value" : filename }
