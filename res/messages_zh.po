@@ -1277,3 +1277,36 @@ msgid ""
 "side panel first and wait for it to replicate to your device."
 msgstr ""
 "如果你想阅读这个故事，请点击侧边的‘开始同步’按钮然后等你的设别完成同步。"
+
+msgid "Request submitted. Please refresh later. Thank You."
+msgstr ""
+
+msgid "Please try your request again."
+msgstr ""
+
+msgid "Deleted Page"
+msgstr ""
+
+msgid "File is too big. Maximum file size:"
+msgstr ""
+
+msgid "Processing New PDF Story"
+msgstr ""
+
+msgid "Processing New TXT Story"
+msgstr ""
+
+msgid "Deleting Story From Database"
+msgstr ""
+
+msgid "Resetting Story In Database"
+msgstr ""
+
+msgid "MICA is busy processing the following. Please wait"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Please wait"
+msgstr ""

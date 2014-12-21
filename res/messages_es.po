@@ -1380,3 +1380,36 @@ msgstr ""
 "Si usted desea leer esta historia, por favor seleccione 'Start "
 "Sincronización' desde el panel lateral primero y esperar a que se replique "
 "en el dispositivo."
+
+msgid "Request submitted. Please refresh later. Thank You."
+msgstr ""
+
+msgid "Please try your request again."
+msgstr ""
+
+msgid "Deleted Page"
+msgstr ""
+
+msgid "File is too big. Maximum file size:"
+msgstr ""
+
+msgid "Processing New PDF Story"
+msgstr ""
+
+msgid "Processing New TXT Story"
+msgstr ""
+
+msgid "Deleting Story From Database"
+msgstr ""
+
+msgid "Resetting Story In Database"
+msgstr ""
+
+msgid "MICA is busy processing the following. Please wait"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Please wait"
+msgstr ""
