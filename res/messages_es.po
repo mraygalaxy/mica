@@ -1329,6 +1329,10 @@ msgstr ""
 "modo 'lectura'. Cada diccionario está en algún lugar entre el 30 y el 50MB "
 "cada uno"
 
+#. The next few messages appear on mobile devices and allow the user to control the synchronization status
+#. of the story they want to use. For example, if a story (or a dictionary) is on the website,
+#. but not yet synchronized with the device, we show a series of messages as the user indicates
+#. which ones to download/synchronize and which ones not to.
 msgid "Download"
 msgstr "Descargar"
 
@@ -1381,35 +1385,52 @@ msgstr ""
 "Sincronización' desde el panel lateral primero y esperar a que se replique "
 "en el dispositivo."
 
+#. This happens when a user uploads a new story, or performs other long-running actions that
+#. cannot be completed in a single click. The request goes into a background job and is
+#. processed in the background.
 msgid "Request submitted. Please refresh later. Thank You."
-msgstr ""
+msgstr "Solicitud presentada. Por favor, actualice después. Gracias."
 
+#. If a background request that was submitted (like uploading a new story) fails to complete,
+#. this message will appear to instruct them to try again.
 msgid "Please try your request again."
-msgstr ""
+msgstr "Intente su solicitud nuevamente."
 
+#. This appears when a story is being deleted from the database. The page
+#. number will appear at the end of 'Deleted Page' to indicate how many
+#. pages of the story have been deleted.
 msgid "Deleted Page"
-msgstr ""
+msgstr "Eliminar página"
 
+#. This appears when the user tries to upload a story document that is too large.
+#. At the end of the message will appear something like '30 MB', or whatever is
+#. the current maximum file size allowed by the system.
 msgid "File is too big. Maximum file size:"
-msgstr ""
+msgstr "El archivo es demasiado grande. Tamaño máximo del archivo:"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New PDF Story"
-msgstr ""
+msgstr "Procesamiento Nueva PDF Historia"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New TXT Story"
-msgstr ""
+msgstr "Procesamiento Historia Nueva TXT"
 
 msgid "Deleting Story From Database"
-msgstr ""
+msgstr "Eliminación de historia desde la Base de datos"
 
+#. Resetting means that we are dropping the translate contents of the original story. We are
+#. not deleteing the story itself, nor the user's memorization data, only the translated
+#. version of the story itself.
 msgid "Resetting Story In Database"
-msgstr ""
+msgstr "Restablecimiento de historia en la Base de datos"
 
 msgid "MICA is busy processing the following. Please wait"
-msgstr ""
+msgstr "MICA está ocupado procesando la siguiente. por favor espera"
 
+#. Same as 'processing', when a background job is running like uploading/deleting stories.
 msgid "Running"
-msgstr ""
+msgstr "Tratamiento"
 
 msgid "Please wait"
-msgstr ""
+msgstr "Por favor espera"
