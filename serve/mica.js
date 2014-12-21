@@ -1140,8 +1140,8 @@ function validatefile() {
     }
 
     if ($("#uploadfile").val().indexOf(':') != -1) {
-            document.getElementById("colonerror").style.display = 'block';
-            return;
+        document.getElementById("colonerror").style.display = 'block';
+        return;
     }
 
     $("#fileform").submit();
