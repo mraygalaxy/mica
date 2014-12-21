@@ -2960,6 +2960,9 @@ class MICA(object):
                 #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
 
                 if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
+                    if values["email"].count(":") :
+                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
+
                     self.make_account(req, values["email"], password, values["email"], who, language = language)
                     mdebug("Language: " + language)
 
@@ -4016,6 +4019,9 @@ class MICA(object):
 
                     if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
                         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
+
+                    if newusername.count(":") :
+                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
 
                     self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
 
