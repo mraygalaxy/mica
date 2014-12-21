@@ -1379,3 +1379,11 @@ msgstr "Chǔlǐ zhōng"
 
 msgid "Please wait"
 msgstr "Qǐng děngdài"
+
+msgid ""
+"We're sorry, but you cannot have colon ':' characters in your account name "
+"or email address."
+msgstr ""
+
+msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
+msgstr ""

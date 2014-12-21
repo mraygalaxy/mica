@@ -1434,3 +1434,11 @@ msgstr "Tratamiento"
 
 msgid "Please wait"
 msgstr "Por favor espera"
+
+msgid ""
+"We're sorry, but you cannot have colon ':' characters in your account name "
+"or email address."
+msgstr ""
+
+msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
+msgstr ""
