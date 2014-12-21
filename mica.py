@@ -23,7 +23,7 @@ from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
-#border: 2px solid black; padding: 1px
+
 '''
 def tracefunc(frame, event, arg, indent=[0]):
     if event == "call":
@@ -1605,36 +1605,17 @@ class MICA(object):
                 tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
-                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: small; ")
-                if "punctuation" not in unit or not unit["punctuation"] :
-                    line_out.append("cursor: pointer")
+                largest_hcode = False 
+                largest_index = -1
+                largest = -1
 
-                line_out.append("'>")
                 if py and (py not in gp.punctuation) :
                     if not disk :
-                        if gp.already_romanized :
-                            line_out.append("<a class='transroman' ")
-                        else :
-                            line_out.append("<a class='trans' ")
-
-                        largest_hcode = False 
-                        largest_index = -1
-                        largest = -1
-                        add_count = ""
-
                         if action == "home" :
-                            color = "grey" if not unit["punctuation"] else "white"
-                            if py and len(unit["multiple_target"]) :
-                                color = "green"
+                            home_changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
 
-                            changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
-
-                            if changes :
-                                if unit["hash"] in changes["record"] :
-                                    color = "black"
-                                    add_count = " (" + str(int(changes["total"])) + ")"
-
-                                for hcode, record in changes["record"].iteritems() :
+                            if home_changes :
+                                for hcode, record in home_changes["record"].iteritems() :
                                     curr = record["total_selected"]
                                     if largest < curr :
                                         largest_hcode = hcode
@@ -1648,6 +1629,34 @@ class MICA(object):
                                 if largest_hcode == unit["hash"] :
                                     largest_hcode = False
                                     largest = -1
+
+                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: small")
+                if "punctuation" not in unit or not unit["punctuation"] :
+                    line_out.append("; cursor: pointer")
+
+                if largest_hcode :
+                    line_out.append("; border: 2px solid black")
+
+                line_out.append("'>")
+
+                if py and (py not in gp.punctuation) :
+                    if not disk :
+                        if gp.already_romanized :
+                            line_out.append("<a class='transroman' ")
+                        else :
+                            line_out.append("<a class='trans' ")
+
+                        add_count = ""
+
+                        if action == "home" :
+                            color = "grey" if not unit["punctuation"] else "white"
+                            if py and len(unit["multiple_target"]) :
+                                color = "green"
+
+                            if home_changes :
+                                if unit["hash"] in home_changes["record"] :
+                                    color = "black"
+                                    add_count = " (" + str(int(home_changes["total"])) + ")"
 
                             if color != "black" and py and len(unit["multiple_sromanization"]) :
                                 fpy = " ".join(unit["multiple_sromanization"][0])
@@ -1689,7 +1698,7 @@ class MICA(object):
                                 largest_target = " ".join(unit["multiple_sromanization"][largest_index])
                             else :
                                 largest_target = " ".join(unit["multiple_target"][largest_index])
-                            line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'style='text-decoration: underline'>")
+                            line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
                         
                         if gp.already_romanized :
                             if color not in [ "grey", "white" ] :

@@ -1325,3 +1325,36 @@ msgid ""
 msgstr ""
 "Rúguǒ nǐ xiǎng yuèdú zhège gùshì, qǐng diǎnjī cè biān de ‘kāishǐ tóngbù’ "
 "ànniǔ ránhòu děng nǐ de shè bié wánchéng tóngbù."
+
+msgid "Request submitted. Please refresh later. Thank You."
+msgstr ""
+
+msgid "Please try your request again."
+msgstr ""
+
+msgid "Deleted Page"
+msgstr ""
+
+msgid "File is too big. Maximum file size:"
+msgstr ""
+
+msgid "Processing New PDF Story"
+msgstr ""
+
+msgid "Processing New TXT Story"
+msgstr ""
+
+msgid "Deleting Story From Database"
+msgstr ""
+
+msgid "Resetting Story In Database"
+msgstr ""
+
+msgid "MICA is busy processing the following. Please wait"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Please wait"
+msgstr ""
