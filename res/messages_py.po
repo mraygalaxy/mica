@@ -1275,6 +1275,10 @@ msgstr ""
 "yuèdú móshì, nǐ kěyǐ bùyòng xiàzài zìdiǎn. Měi gè cídiǎn dàgài yǒu 30M dào "
 "50M dàxiǎo"
 
+#. The next few messages appear on mobile devices and allow the user to control the synchronization status
+#. of the story they want to use. For example, if a story (or a dictionary) is on the website,
+#. but not yet synchronized with the device, we show a series of messages as the user indicates
+#. which ones to download/synchronize and which ones not to.
 msgid "Download"
 msgstr "Xiàzài"
 
@@ -1326,35 +1330,52 @@ msgstr ""
 "Rúguǒ nǐ xiǎng yuèdú zhège gùshì, qǐng diǎnjī cè biān de ‘kāishǐ tóngbù’ "
 "ànniǔ ránhòu děng nǐ de shè bié wánchéng tóngbù."
 
+#. This happens when a user uploads a new story, or performs other long-running actions that
+#. cannot be completed in a single click. The request goes into a background job and is
+#. processed in the background.
 msgid "Request submitted. Please refresh later. Thank You."
-msgstr ""
+msgstr "Zhǐlìng yǐ shōu dào, qǐng shāo hòu shuāxīn, xièxiè."
 
+#. If a background request that was submitted (like uploading a new story) fails to complete,
+#. this message will appear to instruct them to try again.
 msgid "Please try your request again."
-msgstr ""
+msgstr "Qǐng zàicì xiàdá zhǐlìng."
 
+#. This appears when a story is being deleted from the database. The page
+#. number will appear at the end of 'Deleted Page' to indicate how many
+#. pages of the story have been deleted.
 msgid "Deleted Page"
-msgstr ""
+msgstr "Shānchú yèmiàn"
 
+#. This appears when the user tries to upload a story document that is too large.
+#. At the end of the message will appear something like '30 MB', or whatever is
+#. the current maximum file size allowed by the system.
 msgid "File is too big. Maximum file size:"
-msgstr ""
+msgstr "Wénjiàn tài dà. Zuìdà wénjiàn dàxiǎo shì:"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New PDF Story"
-msgstr ""
+msgstr "Chǔlǐ xīn de PDF gùshì"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New TXT Story"
-msgstr ""
+msgstr "Chǔlǐ xīn de TXT gùshì"
 
 msgid "Deleting Story From Database"
-msgstr ""
+msgstr "Cóng shùjùkù shānchú gùshì"
 
+#. Resetting means that we are dropping the translate contents of the original story. We are
+#. not deleteing the story itself, nor the user's memorization data, only the translated
+#. version of the story itself.
 msgid "Resetting Story In Database"
-msgstr ""
+msgstr "Shùjùkù gùshì chóng zhì"
 
 msgid "MICA is busy processing the following. Please wait"
-msgstr ""
+msgstr "MICA zhèngzài chǔlǐ zhōng, qǐng shāo hòu"
 
+#. Same as 'processing', when a background job is running like uploading/deleting stories.
 msgid "Running"
-msgstr ""
+msgstr "Chǔlǐ zhōng"
 
 msgid "Please wait"
-msgstr ""
+msgstr "Qǐng děngdài"

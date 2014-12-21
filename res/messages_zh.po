@@ -1230,6 +1230,10 @@ msgstr ""
 "翻译则需要联网，如果你的故事已经被编辑，检查过而且你可以开始使用阅读模式，你"
 "可以不用下载字典。每个词典大概有30M到50M大小"
 
+#. The next few messages appear on mobile devices and allow the user to control the synchronization status
+#. of the story they want to use. For example, if a story (or a dictionary) is on the website,
+#. but not yet synchronized with the device, we show a series of messages as the user indicates
+#. which ones to download/synchronize and which ones not to.
 msgid "Download"
 msgstr "下载"
 
@@ -1278,35 +1282,52 @@ msgid ""
 msgstr ""
 "如果你想阅读这个故事，请点击侧边的‘开始同步’按钮然后等你的设别完成同步。"
 
+#. This happens when a user uploads a new story, or performs other long-running actions that
+#. cannot be completed in a single click. The request goes into a background job and is
+#. processed in the background.
 msgid "Request submitted. Please refresh later. Thank You."
-msgstr ""
+msgstr "指令已收到，请稍候刷新，谢谢."
 
+#. If a background request that was submitted (like uploading a new story) fails to complete,
+#. this message will appear to instruct them to try again.
 msgid "Please try your request again."
-msgstr ""
+msgstr "请再次下达指令."
 
+#. This appears when a story is being deleted from the database. The page
+#. number will appear at the end of 'Deleted Page' to indicate how many
+#. pages of the story have been deleted.
 msgid "Deleted Page"
-msgstr ""
+msgstr "删除页面"
 
+#. This appears when the user tries to upload a story document that is too large.
+#. At the end of the message will appear something like '30 MB', or whatever is
+#. the current maximum file size allowed by the system.
 msgid "File is too big. Maximum file size:"
-msgstr ""
+msgstr "文件太大.最大文件大小是:"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New PDF Story"
-msgstr ""
+msgstr "处理新的PDF故事"
 
+#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New TXT Story"
-msgstr ""
+msgstr "处理新的TXT故事"
 
 msgid "Deleting Story From Database"
-msgstr ""
+msgstr "从数据库删除故事"
 
+#. Resetting means that we are dropping the translate contents of the original story. We are
+#. not deleteing the story itself, nor the user's memorization data, only the translated
+#. version of the story itself.
 msgid "Resetting Story In Database"
-msgstr ""
+msgstr "数据库故事重置"
 
 msgid "MICA is busy processing the following. Please wait"
-msgstr ""
+msgstr "MICA正在处理中,请稍候"
 
+#. Same as 'processing', when a background job is running like uploading/deleting stories.
 msgid "Running"
-msgstr ""
+msgstr "处理中"
 
 msgid "Please wait"
-msgstr ""
+msgstr "请等待"

@@ -2612,9 +2612,14 @@ class MICA(object):
 
             vt.start()
 
+            # This happens when a user uploads a new story, or performs other long-running actions that
+            # cannot be completed in a single click. The request goes into a background job and is
+            # processed in the background.
             out = self.heromsg + "\n<h4>" + _("Request submitted. Please refresh later. Thank You.") + "<script>window.location.href='/home';</script></h4></div>"
                 
         except Exception, e :
+            # If a background request that was submitted (like uploading a new story) fails to complete,
+            # this message will appear to instruct them to try again.
             out = self.heromsg + "\n<h4>Error: " + _("Please try your request again.") + ": " + _(description) + "</h4></div>"
             out += str(e)
 
@@ -2665,6 +2670,9 @@ class MICA(object):
                         pagecount += 1
                         if (pagecount % 10) == 0 :
                            jobs = req.db["MICA:jobs"]
+                           # This appears when a story is being deleted from the database. The page
+                           # number will appear at the end of 'Deleted Page' to indicate how many
+                           # pages of the story have been deleted.
                            jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
                            req.db["MICA:jobs"] = jobs
                     mdebug("Deleted.")
@@ -3323,10 +3331,14 @@ class MICA(object):
                 if sourcefailed :
                     mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
                     os_remove(sourcepath)
+                    # This appears when the user tries to upload a story document that is too large.
+                    # At the end of the message will appear something like '30 MB', or whatever is
+                    # the current maximum file size allowed by the system.
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes / 1024 / 1024) + " MB.</h4></div>")
 
                 mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
+                # A new story has been uploaded and is being processed in the background.
                 return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename,
                      args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
 
@@ -3335,6 +3347,8 @@ class MICA(object):
                 filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
                 langtype = req.http.params.get("languagetype")
                 source_lang, target_lang = langtype.split(",")
+
+                # A new story has been uploaded and is being processed in the background.
                 return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang, False])
                 #return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
@@ -3450,6 +3464,9 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
 
             if req.http.params.get("forget") :
+                # Resetting means that we are dropping the translate contents of the original story. We are
+                # not deleteing the story itself, nor the user's memorization data, only the translated
+                # version of the story itself.
                 return self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, args = [req, uuid, name])
 
             if req.http.params.get("switchmode") :
@@ -3501,6 +3518,7 @@ class MICA(object):
                         finished.append(job)
                         out += "<td>" + _("Finished") + ": </td>"
                     else :
+                        # Same as 'processing', when a background job is running like uploading/deleting stories.
                         out += "<td>" + _("Running") + ": </td>"
 
                     out += "<td>" + _(job["description"]) + "</td><td>&#160;&#160;</td><td>" + job["object"] + "</td><td>&#160;&#160;</td>" 
@@ -4236,6 +4254,10 @@ class MICA(object):
 
                     remove = False
                     if not downloaded :
+                        # The next few messages appear on mobile devices and allow the user to control the synchronization status
+                        # of the story they want to use. For example, if a story (or a dictionary) is on the website,
+                        # but not yet synchronized with the device, we show a series of messages as the user indicates
+                        # which ones to download/synchronize and which ones not to.
                         out += "'>" + _("Download")
                     else :
                         all_found = True
