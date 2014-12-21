@@ -993,7 +993,8 @@ class MICA(object):
             self.transmutex.acquire()
             try :
                 tmpstory = req.db[self.story(req, name)]
-                mdebug("Caching nb_pages: " + str(self.nb_pages(req, tmpstory)))
+                if not live :
+                    mdebug("Caching nb_pages: " + str(self.nb_pages(req, tmpstory)))
                 if "translated" not in tmpstory or not tmpstory["translated"] :
                     self.flush_pages(req, name)
                         
