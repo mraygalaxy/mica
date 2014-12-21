@@ -3302,7 +3302,9 @@ class MICA(object):
                 story["source"] = source
 
                 try :
+                    start = timest()
                     self.parse(req, story, live = True)
+                    mdebug("Parse time: " + str(timest() - start))
                 except OSError, e :
                     output = self.warn_not_replicated(req, bootstrap = False)
                 except Exception, e :
@@ -3313,13 +3315,6 @@ class MICA(object):
 
                 return self.bootstrap(req, output, now = True)
 
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
-            #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")
                 filetype = req.http.params.get("filetype")
