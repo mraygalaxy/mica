@@ -2351,18 +2351,20 @@ class MICA(object):
             return msg
 
     def disconnect(self, req, session) :
-        if mobile :
-            req.db.stop_replication()
-
         session.value['connected'] = False
-        username = session.value['username']
-        if username in self.dbs :
-            del self.dbs[username]
 
-        if username in self.view_runs :
-            del self.view_runs[username]
+        if 'username' in session.value :
+            if mobile :
+                req.db.stop_replication()
 
-        session.save()
+            username = session.value['username']
+            if username in self.dbs :
+                del self.dbs[username]
+
+            if username in self.view_runs :
+                del self.view_runs[username]
+
+            session.save()
 
     def check_all_views(self, req) :
         self.view_check(req, "stories")
@@ -2674,6 +2676,13 @@ class MICA(object):
 
     def common(self, req) :
         try :
+            if req.action == "disconnect" :
+                self.disconnect(req, req.session)
+                self.install_local_language(req)
+                req.skip_show = True
+                return self.bootstrap(req, run_template(req, FrontPageElement))
+                #return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
+
             if req.action == "privacy" :
                 self.install_local_language(req)
                 output = ""
@@ -3229,6 +3238,13 @@ class MICA(object):
                         except couch_adapter.ResourceConflict, e :
                             mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
+                    tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+
+                    if tmpjobs and len(tmpjobs["list"]) > 0 :
+                        mdebug("Resettings jobs for user.")
+                        tmpjobs["list"] = {} 
+                        req.db["MICA:jobs"] = tmpjobs 
+
                 self.first_request[username] = True 
 
             #TODO! MAKE SURE STORY DOES NAME AND USERNAMES DO NOT HAVE COLONS
@@ -3288,7 +3304,6 @@ class MICA(object):
 
                 # A new story has been uploaded and is being processed in the background.
                 return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang, False])
-                #return self.add_story_from_source(req, filename, source, "txt", source_lang, target_lang) 
 
             start_page = "0"
             view_mode = "text"
@@ -4326,13 +4341,6 @@ class MICA(object):
 
                 return self.bootstrap(req, out)
                     
-            elif req.action == "disconnect" :
-                self.disconnect(req, req.session)
-                self.install_local_language(req)
-                req.skip_show = True
-                return self.bootstrap(req, run_template(req, FrontPageElement))
-                #return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
-
             else :
                 if from_third_party and "output" in from_third_party :
                     return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
