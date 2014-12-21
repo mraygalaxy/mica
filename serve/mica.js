@@ -1107,23 +1107,43 @@ $.fn.goDeep = function(levels, func){
 
 function validatetext() {
     var ids = [ 'textname', 'textvalue', 'textlanguage' ];
+
+    document.getElementById("colonerror").style.display = 'none';
+    document.getElementById("uploaderror").style.display = 'none';
+
     for (var i = 0; i < ids.length; i++) {
          if ($("#" + ids[i]).val() == '') {
             document.getElementById("uploaderror").style.display = 'block';
             return;
          }
     }
+
+    if ($("#textname").val().indexOf(':') != -1) {
+            document.getElementById("colonerror").style.display = 'block';
+            return;
+    }
+
     $("#textform").submit();
 }
 
 function validatefile() {
     var ids = [ 'uploadfile', 'uploadtype', 'uploadlanguage' ];
+
+    document.getElementById("colonerror").style.display = 'none';
+    document.getElementById("uploaderror").style.display = 'none';
+
     for (var i = 0; i < ids.length; i++) {
          if ($("#" + ids[i]).val() == '') {
             document.getElementById("uploaderror").style.display = 'block';
             return;
          }
     }
+
+    if ($("#uploadfile").val().indexOf(':') != -1) {
+            document.getElementById("colonerror").style.display = 'block';
+            return;
+    }
+
     $("#fileform").submit();
 }
 
