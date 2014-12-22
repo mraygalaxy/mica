@@ -1470,7 +1470,12 @@ class MICA(object):
                     use_batch = False
                     skip_prev_merge = False
 
-                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: small' ")
+                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: ")
+                    if not mobile :
+                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                    else :
+                        line_out.append("100")
+                    line_out.append("%' ")
 
                     if action == "edit" :
                         if py :
@@ -1604,7 +1609,13 @@ class MICA(object):
                                     largest_hcode = False
                                     largest = -1
 
-                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: small")
+                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: ")
+                if not mobile :
+                    line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                else :
+                    line_out.append("100")
+                line_out.append("%")
+
                 if "punctuation" not in unit or not unit["punctuation"] :
                     line_out.append("; cursor: pointer")
 
@@ -1754,6 +1765,13 @@ class MICA(object):
                         
                     line_out.append(" trans" + tid + "' style='display: ")
                     line_out.append("block" if (action == "read" and not memorized) else "none")
+                    line_out.append("; font-size: ")
+                    if not mobile :
+                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                    else :
+                        line_out.append("100")
+                    line_out.append("%")
+
                     line_out.append("' id='trans" + tid + "'>")
                     if py and not unit["punctuation"] :
                         if not memorized :
