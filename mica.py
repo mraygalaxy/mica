@@ -1609,6 +1609,17 @@ class MICA(object):
                                     largest_hcode = False
                                     largest = -1
 
+                                if largest_hcode :
+                                    for idx in range(0, len(unit["multiple_target"])) :
+                                        hcode = self.get_polyphome_hash(idx, source)
+                                        if hcode == largest_hcode :
+                                            largest_index = idx
+                                            break
+
+                                    if largest_index == -1 :
+                                        mdebug("Problem with logic: " + str(unit) + " largest_hcode: " + str(hcode) + " changes: " + str(home_changes))
+                                        largest_hcode = False
+
                 line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: ")
                 if not mobile :
                     line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
@@ -1665,25 +1676,18 @@ class MICA(object):
 
                         line_out.append(">")
                         
-                        if largest_hcode :
-                            if not recommendations :
-                                recommendations = 0
+                        if action == "home" :
+                            if largest_hcode :
+                                if not recommendations :
+                                    recommendations = 0
 
-                            recommendations += 1
+                                recommendations += 1
 
-                            for idx in range(0, len(unit["multiple_target"])) :
-                                hcode = self.get_polyphome_hash(idx, source)
-                                if hcode == largest_hcode :
-                                    largest_index = idx
-                                    break
-
-                            assert(largest_index != -1)
-
-                            if len(unit["multiple_sromanization"]) :
-                                largest_target = " ".join(unit["multiple_sromanization"][largest_index])
-                            else :
-                                largest_target = " ".join(unit["multiple_target"][largest_index])
-                            line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
+                                if len(unit["multiple_sromanization"]) :
+                                    largest_target = " ".join(unit["multiple_sromanization"][largest_index])
+                                else :
+                                    largest_target = " ".join(unit["multiple_target"][largest_index])
+                                line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
                         
                         if gp.already_romanized :
                             if color not in [ "grey", "white" ] :
