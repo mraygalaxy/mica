@@ -1290,7 +1290,7 @@ class MICA(object):
             if "last_error" in story and not isinstance(story["last_error"], str) :
                 out + "Last upgrade Exception:<br/>"
                 for err in story["last_error"] :
-                    out += "<br/>" + err.replace("\n", "<br/>")
+                    out += "<br/>" + myquote(err.replace("\n", "<br/>"))
 
             out += "</h4></div>"
             return out
@@ -1934,7 +1934,7 @@ class MICA(object):
                     untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
-                            untrans.append("<br/>" + err.replace("\n", "<br/>"))
+                            untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
 
                     untrans.append("</div>&#160;")
 
