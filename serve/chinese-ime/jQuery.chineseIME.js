@@ -303,6 +303,13 @@ var _callbacks_ = {
                         self.currentSelection = 1;
                         self.lastPage = false;
                     }
+	        } else if (event.which == 13) {
+			// send text in MICA chat system
+		        var tval = sendMsg(document.getElementById('sendForm'));
+		        if (tval) 
+				appendChat('me', tval);
+			else
+				appendChat('me', "error");
                 } else {
                     if (key == '.') { // pressed period
                         self.addText('\u3002');
