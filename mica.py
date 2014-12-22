@@ -1309,7 +1309,7 @@ class MICA(object):
             if "last_error" in story and not isinstance(story["last_error"], str) :
                 out + "Last upgrade Exception:<br/>"
                 for err in story["last_error"] :
-                    out += "<br/>" + err.replace("\n", "<br/>")
+                    out += "<br/>" + myquote(err.replace("\n", "<br/>"))
 
             out += "</h4></div>"
             return out
@@ -1495,7 +1495,12 @@ class MICA(object):
                     use_batch = False
                     skip_prev_merge = False
 
-                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: small' ")
+                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: ")
+                    if not mobile :
+                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                    else :
+                        line_out.append("100")
+                    line_out.append("%' ")
 
                     if action == "edit" :
                         if py :
@@ -1629,7 +1634,24 @@ class MICA(object):
                                     largest_hcode = False
                                     largest = -1
 
-                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: small")
+                                if largest_hcode :
+                                    for idx in range(0, len(unit["multiple_target"])) :
+                                        hcode = self.get_polyphome_hash(idx, source)
+                                        if hcode == largest_hcode :
+                                            largest_index = idx
+                                            break
+
+                                    if largest_index == -1 :
+                                        mdebug("Problem with logic: " + str(unit) + " largest_hcode: " + str(hcode) + " changes: " + str(home_changes))
+                                        largest_hcode = False
+
+                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: ")
+                if not mobile :
+                    line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                else :
+                    line_out.append("100")
+                line_out.append("%")
+
                 if "punctuation" not in unit or not unit["punctuation"] :
                     line_out.append("; cursor: pointer")
 
@@ -1679,25 +1701,18 @@ class MICA(object):
 
                         line_out.append(">")
                         
-                        if largest_hcode :
-                            if not recommendations :
-                                recommendations = 0
+                        if action == "home" :
+                            if largest_hcode :
+                                if not recommendations :
+                                    recommendations = 0
 
-                            recommendations += 1
+                                recommendations += 1
 
-                            for idx in range(0, len(unit["multiple_target"])) :
-                                hcode = self.get_polyphome_hash(idx, source)
-                                if hcode == largest_hcode :
-                                    largest_index = idx
-                                    break
-
-                            assert(largest_index != -1)
-
-                            if len(unit["multiple_sromanization"]) :
-                                largest_target = " ".join(unit["multiple_sromanization"][largest_index])
-                            else :
-                                largest_target = " ".join(unit["multiple_target"][largest_index])
-                            line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
+                                if len(unit["multiple_sromanization"]) :
+                                    largest_target = " ".join(unit["multiple_sromanization"][largest_index])
+                                else :
+                                    largest_target = " ".join(unit["multiple_target"][largest_index])
+                                line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
                         
                         if gp.already_romanized :
                             if color not in [ "grey", "white" ] :
@@ -1779,6 +1794,13 @@ class MICA(object):
                         
                     line_out.append(" trans" + tid + "' style='display: ")
                     line_out.append("block" if (action == "read" and not memorized) else "none")
+                    line_out.append("; font-size: ")
+                    if not mobile :
+                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
+                    else :
+                        line_out.append("100")
+                    line_out.append("%")
+
                     line_out.append("' id='trans" + tid + "'>")
                     if py and not unit["punctuation"] :
                         if not memorized :
@@ -1932,7 +1954,7 @@ class MICA(object):
                     untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
-                            untrans.append("<br/>" + err.replace("\n", "<br/>"))
+                            untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
 
                     untrans.append("</div>&#160;")
 
@@ -4761,7 +4783,7 @@ def go(p) :
             from OpenSSL import SSL
 
             class ChainedOpenSSLContextFactory(ssl.DefaultOpenSSLContextFactory):
-                def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.SSLv23_METHOD):
+                def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.TLSv1_METHOD):
                     """
                     @param privateKeyFileName: Name of a file containing a private key
                     @param certificateChainFileName: Name of a file containing a certificate chain
@@ -4779,7 +4801,7 @@ def go(p) :
                     self._context = ctx
 
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
+            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.TLSv1_METHOD), interface = params["host"])
             minfo("Point your browser at port: " + str(sslport) + ". (Bound to interface: " + params["host"] + ")")
         else :
             mwarn("Disabling SSL access. Be careful =)")
