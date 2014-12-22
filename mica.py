@@ -4696,7 +4696,7 @@ def go(p) :
             from OpenSSL import SSL
 
             class ChainedOpenSSLContextFactory(ssl.DefaultOpenSSLContextFactory):
-                def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.SSLv23_METHOD):
+                def __init__(self, privateKeyFileName, certificateChainFileName, sslmethod=SSL.TLSv1_METHOD):
                     """
                     @param privateKeyFileName: Name of a file containing a private key
                     @param certificateChainFileName: Name of a file containing a certificate chain
@@ -4714,7 +4714,7 @@ def go(p) :
                     self._context = ctx
 
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.SSLv3_METHOD), interface = params["host"])
+            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.TLSv1_METHOD), interface = params["host"])
             minfo("Point your browser at port: " + str(sslport) + ". (Bound to interface: " + params["host"] + ")")
         else :
             mwarn("Disabling SSL access. Be careful =)")
