@@ -17,23 +17,25 @@
 </div>
 
 <div id="sendmsg_pane" style="display:none;">
-    <b><t:slot name="incoming"/>:</b>
-    <div style='height: 150px; overflow-y: auto' id="iResp"></div>
+    <t:slot name="incoming"/>:
+    <div style='height: 250px; overflow-y: auto; border: 1px solid black' id="iResp"></div>
     <h4><t:slot name="sendmsg"/></h4>
-    <form name="sendForm" onSubmit="return sendMsg(this);" action="#">
+    <form id='sendForm' name="sendForm" onSubmit="return sendMsg(this);" action="#">
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
-            <input type="text" name="sendTo" tabindex="1"/>
+            <input type="text" name="sendTo" tabindex="1" value='mica_admin@beethoven.local'/>
         </div>
         <div class="spaced">
-            <textarea style='margin-bottom: 150px' name="msg" id='msgArea' rows="1" cols="80" tabindex="2"></textarea>
+            <textarea style='margin-bottom: 120px' name="msg" id='msgArea' rows="1" cols="80" tabindex="2"></textarea>
         </div>
         <br/><br/>
+	<!--
         <div class="spaced">
-            <input type="submit" value="Send" tabindex="3"/>
+            <input type="submit" value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"/>
             *
             <input type="button" value="Quit" tabindex="4" onclick="return quit();"/>
         </div>
+	-->
     </form>
 </div>
 <script>doLogin(document.getElementById('loginForm'));</script>

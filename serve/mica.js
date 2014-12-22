@@ -1155,12 +1155,12 @@ function handleIQ(oIQ) {
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
 
-function handleMessage(oJSJaCPacket) {
-    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + oJSJaCPacket.getBody().htmlEnc();
+function appendChat(who, msg) {
+    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + msg;
 
     $.get(micaurl, "", $.proxy(function(response, success){
         var html = '';
-        var id = ("" + oJSJaCPacket.getFromJID()).split("@");
+        var id = ("" + who).split("@");
         html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
         html += response;
         html += '</div>';
@@ -1168,6 +1168,14 @@ function handleMessage(oJSJaCPacket) {
         document.getElementById('iResp').lastChild.scrollIntoView();
 
     }, {}), 'html');
+
+}
+
+function handleMessage(oJSJaCPacket) {
+    var who = oJSJaCPacket.getFromJID();
+    var msg = oJSJaCPacket.getBody().htmlEnc();
+
+    appendChat(who, msg);
 
     /*
     var html = '';
@@ -1310,13 +1318,14 @@ function sendMsg(oForm) {
 
     try {
         var oMsg = new JSJaCMessage();
+	var val = oForm.msg.value;
         oMsg.setTo(new JSJaCJID(oForm.sendTo.value));
         oMsg.setBody(oForm.msg.value);
         con.send(oMsg);
 
         oForm.msg.value = '';
 
-        return false;
+        return val;
     } catch (e) {
         html = "<div class='msg error''>Error: " + e.message + "</div>";
         document.getElementById('iResp').innerHTML += html;
