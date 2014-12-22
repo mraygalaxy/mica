@@ -1118,7 +1118,7 @@ function validatetext() {
          }
     }
 
-    if ($("#textname").val().indexOf(':') != -1) {
+    if ($("#textname").val().replace("C:\\", "").indexOf(':') != -1) {
             document.getElementById("colonerror").style.display = 'block';
             return;
     }
@@ -1139,7 +1139,7 @@ function validatefile() {
          }
     }
 
-    if ($("#uploadfile").val().indexOf(':') != -1) {
+    if ($("#uploadfile").val().replace("C:\\", "").indexOf(':') != -1) {
         document.getElementById("colonerror").style.display = 'block';
         return;
     }
