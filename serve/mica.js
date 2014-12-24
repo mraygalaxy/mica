@@ -1161,9 +1161,9 @@ function appendChat(who, msg) {
     $.get(micaurl, "", $.proxy(function(response, success){
         var html = '';
         var id = ("" + who).split("@");
-        html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
+        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + id[0] + ':</b></td><td>';
         html += response;
-        html += '</div>';
+        html += '</td></tr></table></div>';
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
 
