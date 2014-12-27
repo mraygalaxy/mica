@@ -618,10 +618,12 @@ class ChineseSimplifiedToEnglish(Processor) :
     def test_dictionaries(self, opaque) :
         cjk, d = opaque 
 
+        '''
         for x in d.getFor(u'白鹭'.decode('utf-8')) :
             mdebug(str(x))
         for x in cjk.getReadingForCharacter(u'白','Pinyin') :
             mdebug(str(x))
+        '''
 
         self.tonedb = {}
         db = create_engine('sqlite:///' + self.params["scratch"] + 'tones.db', listeners= [MyListener()])
@@ -650,7 +652,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                 self.tonedb["conn"].execute(i)
             dpfh.close()
             trans.commit()
-        mdebug("Tone test: " + str(self.convertPinyin(u'白')))
+        #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []

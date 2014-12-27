@@ -326,6 +326,7 @@ class MICA(object):
         return l
         
     def __init__(self, db_adapter):
+        self.general_processor = Processor(self, params)
         self.client = Translator(params["trans_id"], params["trans_secret"])
         self.mutex = Lock()
         self.transmutex = Lock()
@@ -413,6 +414,7 @@ class MICA(object):
                            "type": "user",
                            "mica_database" : dbname,
                            "language" : language,
+                           "learnlanguage" : "en",
                            "date" : timest(),
                            "email" : email,
                            "source" : source,
@@ -453,6 +455,7 @@ class MICA(object):
                                            'default_app_zoom' : 1.15,
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
+                                           "learnlanguage" : "en",
                                            "source" : source, 
                                            'email' : email,
                                            'filters' : {'files' : [], 'stories' : [] },
@@ -879,8 +882,7 @@ class MICA(object):
 
         opaque = processor.parse_page_start() 
 
-        if not live :
-            processor.test_dictionaries(opaque)
+        processor.test_dictionaries(opaque)
 
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -1813,8 +1815,12 @@ class MICA(object):
                                 line_out.append("<a class='transroman' ")
                             else :
                                 line_out.append("<a class='trans' ")
-                            line_out.append("onclick=\"memorize('" + \
+                            if uuid :
+                                line_out.append("onclick=\"memorize('" + \
                                         tid + "', '" + str(uuid) + "', '" + str(nb_unit) + "', '" + page + "')\">")
+                            else :
+                                line_out.append("onclick=\"memorize_nostory('" + \
+                                        tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
 
@@ -3151,6 +3157,9 @@ class MICA(object):
                 if "language" not in user :
                     user["language"] = get_global_language()
 
+                if "learnlanguage" not in user :
+                    user["learnlanguage"] = "en"
+
                 if "source" not in user :
                     user["source"] = "mica"
 
@@ -3184,6 +3193,8 @@ class MICA(object):
                     req.session.value["language"] = get_global_language()
                 else :
                     req.session.value["language"] = user["language"]
+
+                req.session.value["learnlanguage"] = user["learnlanguage"]
 
                 req.db[self.acct(username)] = user
                 req.session.save()
@@ -3307,10 +3318,11 @@ class MICA(object):
 
                 output = False
                 imes = int(req.http.params.get("ime"))
+                mode = req.http.params.get("mode")
                 story = {
                    "name" : "ime",
-                   "target_language" : req.http.params.get("target_language"),
-                   "source_language" : req.http.params.get("source_language"),
+                   "target_language" : supported_map[req.http.params.get("target_language")],
+                   "source_language" : supported_map[req.http.params.get("source_language")],
                 }
 
                 source = ""
@@ -3332,7 +3344,7 @@ class MICA(object):
                     output = _("Failed to translate story") + ": " + str(e)
 
                 if not output :
-                    output = self.view_page(req, False, False, story, "read", "", "0", "100", "false", disk = False)
+                    output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
 
                 return self.bootstrap(req, output, now = True)
 
@@ -3657,7 +3669,28 @@ class MICA(object):
                                            self.edits(req, story, uuid, page, list_mode) + \
                                            "</div></div>", now = True)
 
-            if req.http.params.get("memorized") :
+            if req.http.params.get("memorizednostory") :
+                memorized = int(req.http.params.get("memorizednostory"))
+                multiple_correct = int(req.http.params.get("multiple_correct"))
+                source = req.http.params.get("source")
+                mdebug("Received memorization request without story: " + str(memorized) + " " + str(multiple_correct) + " " + source)
+                nshash = self.get_polyphome_hash(multiple_correct, source)
+
+                if memorized :
+                    unit = self.general_processor.add_unit([source], source, [source]) 
+                    unit["multiple_correct"] = multiple_correct
+                    unit["date"] = timest()
+                    unit["hash"] = nshash
+                    if not req.db.doc_exist(self.memorized(req, nshash)) :
+                        req.db[self.memorized(req, nshash)] = unit
+                else :
+                    if req.db.doc_exist(self.memorized(req, nshash)) :
+                        del req.db[self.memorized(req, nshash)]
+
+                return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
+                                           str(nshash) + "</div></div>", now = True)
+
+            elif req.http.params.get("memorized") :
                 memorized = int(req.http.params.get("memorized"))
                 nb_unit = int(req.http.params.get("nb_unit"))
                 page = req.http.params.get("page")
@@ -4171,6 +4204,12 @@ class MICA(object):
                     req.session.save()
                     self.install_local_language(req)
                     out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
+                elif req.http.params.get("changelearnlanguage") :
+                    language = req.http.params.get("learnlanguage")
+                    user["learnlanguage"] = language
+                    req.db[self.acct(username)] = user
+                    self.install_local_language(req)
+                    out += self.heromsg + "\n<h4>" + _("Success! Learning Language changed") + ".</h4></div>"
                 elif req.http.params.get("changeemail") :
                     email = req.http.params.get("email")
                     try :
@@ -4377,6 +4416,29 @@ class MICA(object):
                 """
                 out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
 
+                out += "<h4><b>" + _("Learning Language") + "</b>?</h4>"
+                out += """
+                    <form action='/account' method='post' enctype='multipart/form-data'>
+                    <select name="learnlanguage">
+                """
+                softlangs = []
+                for l, readable in lang.iteritems() :
+                    locale = l.split("-")[0]
+                    if locale not in softlangs :
+                        softlangs.append((locale, readable))
+
+                for l, readable in softlangs :
+                    out += "<option value='" + l + "'"
+                    if "learnlanguage" in user and l == user["learnlanguage"] :
+                        out += "selected"
+                    out += ">" + _(readable) + "</option>\n"
+                out += """
+                    </select>
+                    <br/>
+                    <br/>
+                """
+                out += "<button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Learning Language") + "</button></form>"
+
                 out += """
                         <a onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});;"
                         """
@@ -4425,6 +4487,13 @@ class MICA(object):
                     
             elif req.action == "chat" :
                 req.main_server = params["main_server"]
+                story = {
+                   "target_language" : supported_map[req.session.value["language"]],
+                   "source_language" : supported_map[req.session.value["learnlanguage"]],
+                }
+                req.gp = self.processors[self.tofrom(story)]
+                req.source_language = story["source_language"]
+                req.target_language = story["target_language"]
                 out = run_template(req, ChatElement)
                 return self.bootstrap(req, out)
 

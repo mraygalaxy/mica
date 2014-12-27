@@ -112,6 +112,14 @@ supported = {
           u"en,es" : _(u"English to Spanish"),
         }
 
+supported_map = {
+        u"zh-CHS" : u"zh-CHS",
+        u"zh" : u"zh-CHS",
+        u"en" : u"en",
+        u"es" : u"es",
+        u"py" : u"py",
+}
+
 processor_map = {
         u"zh-CHS,en" : u"ChineseSimplifiedToEnglish", 
         u"en,zh-CHS" : u"EnglishToChineseSimplified", 
