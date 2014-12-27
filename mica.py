@@ -201,11 +201,6 @@ class Params(object) :
             mdebug("Setting session language to browser language: " + self.session.value["language"])
             self.session.save()
                 
-        if "language" not in self.session.value :
-            self.session.value["language"] = environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
-            mdebug("Setting session language to browser language: " + self.session.value["language"])
-            self.session.save()
-
         self.session.save()
         self.unparsed_uri = self.http.url
         self.uri = self.http.path
