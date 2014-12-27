@@ -336,7 +336,7 @@ class ChatElement(CommonElement) :
                       imecss = self.req.mpath + "/chinese-ime/ime.css",
                       beep = self.req.mpath + "/beep.wav",
                       # Incoming chat messages
-                      incoming = _("Incoming"),
+                      incoming = _("Your Chat Username is: ") + myquote(self.req.session.value["username"]) + "@" + self.req.main_server,
                       # Send a chat message
                       sendmsg = _("Send Message"),
                       # Destination of chat receiver
