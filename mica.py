@@ -3314,37 +3314,40 @@ class MICA(object):
                 self.first_request[username] = True 
 
             if req.action == "chat" and req.http.params.get("ime") :
-                self.install_local_language(req, req.http.params.get("lang"))
-
-                output = False
-                imes = int(req.http.params.get("ime"))
-                mode = req.http.params.get("mode")
-                story = {
-                   "name" : "ime",
-                   "target_language" : supported_map[req.http.params.get("target_language")],
-                   "source_language" : supported_map[req.http.params.get("source_language")],
-                }
-
-                source = ""
-
-                for imex in range(1, imes + 1) :
-                    if imes > 1 :
-                        source += " " + str(imex) + ". "
-                    source += req.http.params.get("ime" + str(imex)).decode("utf-8")
-
-                story["source"] = source
-
                 try :
+                    self.install_local_language(req, req.http.params.get("lang"))
+
+                    output = False
+                    imes = int(req.http.params.get("ime"))
+                    mode = req.http.params.get("mode")
+                    story = {
+                       "name" : "ime",
+                       "target_language" : supported_map[req.http.params.get("target_language")],
+                       "source_language" : supported_map[req.http.params.get("source_language")],
+                    }
+
+                    source = ""
+
+                    for imex in range(1, imes + 1) :
+                        if imes > 1 :
+                            source += " " + str(imex) + ". "
+                        source += req.http.params.get("ime" + str(imex)).decode("utf-8")
+
+                    story["source"] = source
                     start = timest()
                     self.parse(req, story, live = True)
                     mdebug("Parse time: " + str(timest() - start))
+
+                    if not output :
+                        output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
                 except OSError, e :
                     output = self.warn_not_replicated(req, bootstrap = False)
                 except Exception, e :
+                    err = ""
+                    for line in format_exc().splitlines() :
+                        err += line + "\n"
+                    mdebug(err)
                     output = _("Failed to translate story") + ": " + str(e)
-
-                if not output :
-                    output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
 
                 return self.bootstrap(req, output, now = True)
 
