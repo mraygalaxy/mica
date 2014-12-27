@@ -1155,20 +1155,32 @@ function handleIQ(oIQ) {
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
 
-function appendChat(who, msg) {
-    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + msg;
-
-    $.get(micaurl, "", $.proxy(function(response, success){
+function appendStatus(who, msg) {
+        var id = ("" + who).split("@");
+	document.getElementById('iStatus').innerHTML = id[0] + msg;
+}
+function appendBox(who, msg) {
         var html = '';
         var id = ("" + who).split("@");
         html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + id[0] + ':</b></td><td>';
-        html += response;
+        html += msg;
         html += '</td></tr></table></div>';
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
+}
 
-    }, {}), 'html');
+function appendChat(who, msg) {
+    if ($.trim(msg) != "") {
+	    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + msg;
 
+	    $.get(micaurl, "", $.proxy(function(response, success){
+		appendBox(who, response);
+
+	    }, {}), 'html');
+    } else {
+	appendStatus(who, ": is typing...");
+	setTimeout("appendStatus('', '');", 5000);
+    }
 }
 
 function handleMessage(oJSJaCPacket) {
@@ -1266,11 +1278,11 @@ function doLogin(oForm) {
 
     try {
         
-        if (window.location.protocol !== "https:"){
-            httpbase = 'http://' + server + ':5280/http-bind/';
-        } else {
+        //if (window.location.protocol !== "https:"){
+        //    httpbase = 'http://' + server + ':5280/http-bind/';
+        //} else {
             httpbase = 'https://' + server + ':5281/http-bind/';
-        }
+        //}
         
         // set up the connection
         con = new JSJaCHttpBindingConnection({

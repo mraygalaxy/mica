@@ -8,8 +8,8 @@
 
 <div id="login_pane">
     <form name="loginForm" id="loginForm">
-        <input type="hidden" name="server" id="server" tabindex="3" value="localhost"/>
-        <input type="hidden" name="domain" id="domain" tabindex="4" value="localhost"/>
+        <input type="hidden" name="server" id="server" tabindex="3"><t:attr name="value"><t:slot name="server"/></t:attr></input>
+        <input type="hidden" name="domain" id="domain" tabindex="4"><t:attr name="value"><t:slot name="domain"/></t:attr></input>
         <input type="hidden" name="username" id="username" tabindex="5"><t:attr name='value'><t:slot name='username'/></t:attr></input>
         <input type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
       <h4><t:slot name="spinner"/>&#160;<t:slot name='loading'/>...</h4>
@@ -18,12 +18,13 @@
 
 <div id="sendmsg_pane" style="display:none;">
     <t:slot name="incoming"/>:
-    <div style='height: 250px; overflow-y: auto; border: 1px solid black' id="iResp"></div>
+    <div style='height: 35%; overflow-y: auto; border: 1px solid black' id="iResp"></div>
+    <div style='height: 5%; border: 1px solid black' id="iStatus"></div>
     <h4><t:slot name="sendmsg"/></h4>
     <form id='sendForm' name="sendForm" onSubmit="return sendMsg(this);" action="#">
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
-            <input type="text" name="sendTo" tabindex="1" value='mica_admin@beethoven.local'/>
+            <input type="text" name="sendTo" tabindex="1" value='mica_admin@readalien.com'/>
         </div>
         <div class="spaced">
             <textarea style='margin-bottom: 120px' name="msg" id='msgArea' rows="1" cols="80" tabindex="2"></textarea>
