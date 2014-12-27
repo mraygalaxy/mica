@@ -320,6 +320,8 @@ class ChatElement(Element) :
                       sendmsg = _("Send Message"),
                       # Destination of chat receiver
                       to = _("To"),
+                      server = self.req.main_server,
+                      domain = self.req.main_server,
                      )
         return tag
 
