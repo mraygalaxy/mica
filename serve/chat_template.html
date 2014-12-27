@@ -25,9 +25,10 @@
          <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
-            <input type="text" name="sendTo" tabindex="1" value='还在分析@readalien.com'/>
+            <input type="text" name="sendTo" tabindex="1" value=''/>
             <t:slot name="chatlangtype"/>? <select id='chattextlanguage' name="languagetype" t:render="languages"/>
             <!--
+            <input type="text" name="sendTo" tabindex="1" value='还在分析@readalien.com'/>
             <input type="text" name="sendTo" tabindex="1" value='mica_admin@readalien.com'/>
             -->
 	     <button type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
