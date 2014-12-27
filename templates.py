@@ -332,13 +332,13 @@ class ChatElement(CommonElement) :
                       # Indicates that the chat software is starting up... 
                       loading = _("Loading Chat"),
                       xmpp = self.req.mpath + "/JSJaC-dec-2014/JSJaC.js",
-                      username = myquote(self.req.session.value["username"]),
+                      username = self.req.session.value["username"].replace("@", "%40"),
                       ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                       caret = self.req.mpath + "/chinese-ime/caret.js",
                       imecss = self.req.mpath + "/chinese-ime/ime.css",
                       beep = self.req.mpath + "/beep.wav",
                       # Incoming chat messages
-                      incoming = _("Your Chat Username is: ") + myquote(self.req.session.value["username"]) + "@" + self.req.main_server,
+                      incoming = _("Your Chat Username is: ") + self.req.session.value["username"].replace("@", "%40") + "@" + self.req.main_server,
                       # Send a chat message
                       sendmsg = _("Send Message"),
                       # Destination of chat receiver
