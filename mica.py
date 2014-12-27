@@ -614,27 +614,33 @@ class MICA(object):
         Timer(1, self.runloop_sched).start()
 
     def __call__(self, environ, start_response):
-        # Hack to make WebOb work with Twisted
-        setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
+        try :
+            # Hack to make WebOb work with Twisted
+            setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
 
-        req = Params(environ, start_response.im_self.request.session)
+            req = Params(environ, start_response.im_self.request.session)
 
-        req.source = environ["REMOTE_ADDR"]
-        req.db = False
-        req.dest = ""#prefix(req.unparsed_uri)
-        req.front_ads = False
+            req.source = environ["REMOTE_ADDR"]
+            req.db = False
+            req.dest = ""#prefix(req.unparsed_uri)
+            req.front_ads = False
 
-        if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
-            req.front_ads = True
+            if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
+                req.front_ads = True
 
-        if params["serialize_couch_on_mobile"] :
-            rq = Queue_Queue()
-            co = self.serial_common()
-            co.next()
-            params["q"].put((co, req, rq))
-            resp = rq.get()
-        else :
-            resp = self.run_common(req)
+            if params["serialize_couch_on_mobile"] :
+                rq = Queue_Queue()
+                co = self.serial_common()
+                co.next()
+                params["q"].put((co, req, rq))
+                resp = rq.get()
+            else :
+                resp = self.run_common(req)
+
+        except Exception, e :
+            merr("BAD MICA ********\nException:")
+            for line in format_exc().splitlines() :
+                merr("BAD MICA ********\n" + line)
 
         r = None
 
