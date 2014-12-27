@@ -27,8 +27,10 @@ class CommonElement(Element) :
 
     @renderer
     def languages(self, request, tag) :
-        wanted = supported_map[self.req.session.value["learnlanguage"]] + "," + supported_map[self.req.session.value["language"]]
-
+        if "learnlanguage" in self.req.session.value :
+            wanted = supported_map[self.req.session.value["learnlanguage"]] + "," + supported_map[self.req.session.value["language"]]
+        else :
+            wanted = False
         if wanted not in supported :
             tag(tags.option(value='', selected='selected')(_("None Selected")))
 
