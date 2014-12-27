@@ -398,7 +398,18 @@ var _callbacks_ = {
 
         self.updateDialog = function(){
             if (self.currentText.length > 0) {
-                var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
+
+                var languagepair = $('#chattextlanguage').val();
+                var pair = languagepair.split(",")
+                var chat_source_language = pair[0];
+                var chat_target_language = pair[1];  
+
+                if (chat_target_language == "zh" || chat_target_language == "zh-CHS") {
+                    var options = [self.currentText];
+                } else {
+                    var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
+                }
+
                 if (options && options.length){
                     var $box = $('#chinese-ime');
                     if (!$box.size()){
@@ -410,7 +421,13 @@ var _callbacks_ = {
                     $box.find('.typing').text(self.currentText);
                     var lis = [];
 
-                    var micaurl = "/chat?ime=" + options.length + "&target_language=en&source_language=zh-CHS&lang=en";
+                    /* For now, assume that the target language
+                     * is the same as the language the user's native
+                     * language. We can fix this later. 
+                     */
+                    var chat_language = chat_target_language;
+                     
+                    var micaurl = "/chat?ime=" + options.length + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
                     for (var i = 0; i < 5 && i < options.length; i++) {
                         micaurl += "&ime" + (i + 1) + "=" + options[i];
                     }
@@ -478,9 +495,18 @@ var _callbacks_ = {
             if (!$.wordDatabase.hasWord(text, num)){
                 $.wordDatabase.addWord(text, num);
                 
-                $.get(self.url, params, $.proxy(function(response, success){
+                var languagepair = $('#chattextlanguage').val();
+                var pair = languagepair.split(",")
+                var chat_target_language = pair[1];
+
+                if (chat_target_language == "zh" || chat_target_language == "zh-CHS") { 
+                    self.currentText = text;
                     self.updateDialog();
-                }, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
+                } else {
+                    $.get(self.url, params, $.proxy(function(response, success){
+                        self.updateDialog();
+                    }, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
+                }
             }
         };
 

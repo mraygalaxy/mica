@@ -22,9 +22,15 @@
     <div style='height: 5%; border: 1px solid black' id="iStatus"></div>
     <h4><t:slot name="sendmsg"/></h4>
     <form id='sendForm' name="sendForm" onSubmit="return sendMsg(this);" action="#">
+         <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
+            <input type="text" name="sendTo" tabindex="1" value='还在分析@readalien.com'/>
+            <t:slot name="chatlangtype"/>? <select id='chattextlanguage' name="languagetype" t:render="languages"/>
+            <!--
             <input type="text" name="sendTo" tabindex="1" value='mica_admin@readalien.com'/>
+            -->
+	     <button type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
         </div>
         <div class="spaced">
             <textarea style='margin-bottom: 120px' name="msg" id='msgArea' rows="1" cols="80" tabindex="2"></textarea>
@@ -39,5 +45,6 @@
 	-->
     </form>
 </div>
+<audio id='soundNotify' type="audio/wav"><t:attr name="src"><t:slot name="beep"/></t:attr></audio>
 <script>doLogin(document.getElementById('loginForm'));</script>
 </html>

@@ -21,6 +21,26 @@ if not mobile :
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
+class CommonElement(Element) :
+    def __init__(self, req) :
+        super(CommonElement, self).__init__() 
+
+    @renderer
+    def languages(self, request, tag) :
+        wanted = supported_map[self.req.session.value["learnlanguage"]] + "," + supported_map[self.req.session.value["language"]]
+
+        if wanted not in supported :
+            tag(tags.option(value='', selected='selected')(_("None Selected")))
+
+        for l, readable in supported.iteritems() :
+            if l in processor_map and processor_map[l] :
+                if l == wanted :
+                    option = tags.option(value=l, selected='selected')
+                else :
+                    option = tags.option(value=l)
+                tag(option(_(readable)))
+        return tag
+
 class StoryElement(Element) :
     def __init__(self, req, content) :
         super(StoryElement, self).__init__(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='story'>" + content + "</html>")) 
@@ -297,9 +317,9 @@ class MobileFrontElement(Element) :
 
         return tag
 
-class ChatElement(Element) :
+class ChatElement(CommonElement) :
     def __init__(self, req) :
-        super(ChatElement, self).__init__() 
+        super(ChatElement, self).__init__(req) 
         self.req = req
         self.loader = XMLFile(FilePath(cwd + 'serve/chat_template.html').path)
 
@@ -314,6 +334,7 @@ class ChatElement(Element) :
                       ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                       caret = self.req.mpath + "/chinese-ime/caret.js",
                       imecss = self.req.mpath + "/chinese-ime/ime.css",
+                      beep = self.req.mpath + "/beep.wav",
                       # Incoming chat messages
                       incoming = _("Incoming"),
                       # Send a chat message
@@ -322,6 +343,10 @@ class ChatElement(Element) :
                       to = _("To"),
                       server = self.req.main_server,
                       domain = self.req.main_server,
+                      processinstanttitle = _("instant translation of one or more words"),
+                      processinstant = processinstantclick(self.req, request, tag),
+                      performingtranslation= _("Doing instant translation..."),
+                      chatlangtype = _("Chat Language"),
                      )
         return tag
 
@@ -441,6 +466,22 @@ class ReadingViewElement(Element) :
         tag.fillSlots(meaningclasstitle = _("show/hide translations"))
         return tag
 
+
+def processinstantclick(req, request, tag) :
+    if mobile :
+        assert("password" in req.session.value)
+        assert("username" in req.session.value)
+
+        if "language" not in req.session.value :
+            onclick = ""
+            mwarn("Strange missing language key error.")
+        else :
+            onclick = "process_instant(" + ("true" if req.gp.already_romanized else "false") + ",'" + req.session.value["language"] + "', '" + req.source_language + "', '" + req.target_language + "', '" + myquote(req.session.value["username"]) + "', '" + myquote(req.session.value["password"]) + "')"
+    else :
+        onclick = "process_instant(" + ("true" if req.gp.already_romanized else "false") + ",'" + req.session.value["language"] + "', '" + req.source_language + "', '" + req.target_language + "', false, false)"
+
+    return onclick
+
 class StaticViewElement(Element) :
     def __init__(self, req) :
         super(StaticViewElement, self).__init__() 
@@ -465,22 +506,10 @@ class StaticViewElement(Element) :
                 tclasses["meaning"] += "active "
             tclasses["meaning"] += "btn btn-default"
                 
-        if mobile :
-            assert("password" in self.req.session.value)
-            assert("username" in self.req.session.value)
-
-            if "language" not in self.req.session.value :
-                onclick = ""
-                mwarn("Strang missing language key error.")
-            else :
-                onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', '" + myquote(self.req.session.value["username"]) + "', '" + myquote(self.req.session.value["password"]) + "')"
-        else :
-            onclick = "process_instant(" + ("true" if self.req.gp.already_romanized else "false") + ",'" + self.req.session.value["language"] + "', '" + self.req.source_language + "', '" + self.req.target_language + "', false, false)"
-
         tag.fillSlots(textclass = tclasses["text"],
                       imageclass = tclasses["images"],
                       bothclass = tclasses["both"],
-                      processinstant = onclick,
+                      processinstant = processinstantclick(self.req, request, tag),
                       meaningclass = tclasses["meaning"],
                       textclasstitle = _("show text only"),
                       bothclasstitle = _("side-by-side text and image"),
@@ -529,20 +558,11 @@ class ViewElement(Element) :
             tag(DynamicViewElement(self.req))
         return tag
 
-class HeadElement(Element):
+class HeadElement(CommonElement):
     def __init__(self, req) :
-        super(HeadElement, self).__init__() 
+        super(HeadElement, self).__init__(req) 
         self.req = req
         self.loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
-
-    @renderer
-    def languages(self, request, tag) :
-        tag(tags.option(value='', selected='selected')(_("None Selected")))
-        for l, readable in supported.iteritems() :
-            if l in processor_map and processor_map[l] :
-                option = tags.option(value=l)
-                tag(option(_(readable)))
-        return tag
 
     @renderer
     def user_languages(self, request, tag) :

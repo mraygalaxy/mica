@@ -2,7 +2,7 @@
 var last_data = '';
 var first_time = true;
 var debug = false;
-//var debug = true;
+//var debug = true; 
 var unavailable = "error!";
 var prmstr = window.location.search.substr(1);
 var prmarr = prmstr.split ("&");
@@ -357,6 +357,7 @@ function make_child(node) {
         pages.push($(this).attr('page'));
         batchids.push($(this).attr('batchid'));
         operations.push($(this).attr('operation'));
+        select_toggle($(this).attr("transid"));
       });
       
       var out = "";
@@ -469,6 +470,15 @@ function make_child(node) {
 
   function process_instant(with_spaces, lang, source, target, username, password) {
 
+    var languageitem = $('#chattextlanguage');
+    if (languageitem != undefined) {
+        var languagepair = languageitem.val();
+        var pair = languagepair.split(",")
+        var source = pair[0];
+        var target = pair[1];  
+        alert("Overriding source and target to: " + source + " " + target);
+    }
+
       var chars = [];
       var allchars = "";
       $("span.label > a").each(function(index) {
@@ -481,6 +491,7 @@ function make_child(node) {
 		    chars.push(split[x]);
 		}
 	      }
+              select_toggle($(this).attr("transid"));
       });
 
       for(var x = 0; x < chars.length; x++) {
@@ -757,9 +768,8 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
 	}
 }
 
-function memory_finish(data, opaque1, opaque2) {
+function memory_finish(data, opaque1, unused) {
     var hash = opaque1;
-    var uuid = opaque2;
     toggle(hash, 0);
     toggle_specific('memory', hash, 0);
 }
@@ -774,7 +784,7 @@ function memory(id, uuid, nb_unit, memorized, page) {
           memory_finish,
           false,
           id,
-          uuid);
+          false);
 }
 
 function memorize(id, uuid, nb_unit, page) {
@@ -783,6 +793,27 @@ function memorize(id, uuid, nb_unit, page) {
 
 function forget(id, uuid, nb_unit, page) {
     memory(id, uuid, nb_unit, 0, page);
+}
+
+function memory_nostory(id, source, multiple_correct, memorized) {
+   toggle_specific('memory', id, 0);
+   change('#memory' + id, 
+          '/read?source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+          '#memoryresult',
+          unavailable, 
+          true, 
+          memory_finish,
+          false,
+          id,
+          false);
+}
+
+function memorize_nostory(id, source, multiple_correct) {
+    memory_nostory(id, source, multiple_correct, 1);
+}
+
+function forget_nostory(id, source, multiple_correct) {
+    memory_nostory(id, source, multiple_correct, 0);
 }
 
 function reveal_all(hide) {
@@ -1159,6 +1190,20 @@ function appendStatus(who, msg) {
         var id = ("" + who).split("@");
 	document.getElementById('iStatus').innerHTML = id[0] + msg;
 }
+
+var flashTimer="";
+
+function messageNotify(val) {
+  flashTimer=window.setInterval(function() {
+    document.title = document.title == "MICA" ? val : "MICA";
+  }, 1000);
+}
+
+window.onfocus=function() { 
+  document.title = "MICA";
+  clearInterval(flashTimer);
+}
+
 function appendBox(who, msg) {
         var html = '';
         var id = ("" + who).split("@");
@@ -1170,35 +1215,38 @@ function appendBox(who, msg) {
 }
 
 function appendChat(who, msg) {
-    if ($.trim(msg) != "") {
-	    var micaurl = "/chat?ime=1&target_language=en&source_language=zh-CHS&lang=en&ime1=" + msg;
+    var languagepair = $('#chattextlanguage').val();
+    var pair = languagepair.split(",");
+    var chat_source_language = pair[0];
+    var chat_target_language = pair[1];  
 
-	    $.get(micaurl, "", $.proxy(function(response, success){
-		appendBox(who, response);
+    /* For now, assume that the target language
+     * is the same as the language the user's native
+     * language. We can fix this later. 
+     */
+    var chat_language = chat_target_language;
+     
+    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg;
 
-	    }, {}), 'html');
-    } else {
-	appendStatus(who, ": is typing...");
-	setTimeout("appendStatus('', '');", 5000);
-    }
+    $.get(micaurl, "", $.proxy(function(response, success){
+	appendBox(who, response);
+    }, {}), 'html');
 }
 
 function handleMessage(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
     var msg = oJSJaCPacket.getBody().htmlEnc();
 
-    appendChat(who, msg);
-
-    /*
-    var html = '';
-    var id = ("" + oJSJaCPacket.getFromJID()).split("@");
-    html += '<div class="msg"><b>Received Message from ' + id[0] + ':</b><br/>';
-    html += oJSJaCPacket.getBody().htmlEnc();
-
-    html += '</div>';
-    document.getElementById('iResp').innerHTML += html;
-    document.getElementById('iResp').lastChild.scrollIntoView();
-    */
+    if ($.trim(msg) != "") {
+       appendChat(who, msg);
+       if (!document.hasFocus()) {
+           messageNotify("RECEIVED!");
+           document.getElementById('soundNotify').play();
+       }
+    } else {
+	appendStatus(who, ": is typing...");
+	setTimeout("appendStatus('', '');", 5000);
+    }
 }
 
 function handlePresence(oJSJaCPacket) {
