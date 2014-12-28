@@ -4226,6 +4226,8 @@ class MICA(object):
                 elif req.http.params.get("changelearnlanguage") :
                     language = req.http.params.get("learnlanguage")
                     user["learnlanguage"] = language
+                    req.session.value["learnlanguage"] = language
+                    req.session.save()
                     req.db[self.acct(username)] = user
                     self.install_local_language(req)
                     out += self.heromsg + "\n<h4>" + _("Success! Learning Language changed") + ".</h4></div>"
@@ -4510,6 +4512,11 @@ class MICA(object):
                    "target_language" : supported_map[req.session.value["language"]],
                    "source_language" : supported_map[req.session.value["learnlanguage"]],
                 }
+
+                if self.tofrom(story) not in self.processors :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
+
+
                 req.gp = self.processors[self.tofrom(story)]
                 req.source_language = story["source_language"]
                 req.target_language = story["target_language"]

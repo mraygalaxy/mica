@@ -348,11 +348,17 @@ class ChatElement(CommonElement) :
                       processinstanttitle = _("instant translation of one or more words"),
                       processinstant = processinstantclick(self.req, request, tag),
                       performingtranslation= _("Doing instant translation..."),
-                      chatlangtype = _("Chat Language"),
+                      # In Chat mode, from what source language to what target language should translations occur.
+                      chatlangtype = _("Learn (translate) from"),
                       # Notification from the online chat system that another user is logged in and has become available.
                       hasbecome = _("has become available"),
                       # Notification from the online chat system that another user has changed status, like 'away' or 'available'.
                       setpresence = _("has set their presence to"),
+                      # Appears in Chat mode and allows user to disable IME input system for character-based languages.
+                      phonetic = _("phonetic typing"),
+                      # Use a traditional or simplified character IME system
+                      traditional = _("Traditional"),
+                      provideaddress = _("Please provide the address of someone to chat with."),
                      )
         return tag
 

@@ -202,42 +202,11 @@ var _callbacks_ = {
             self.$el.keypress(self.keyPress);
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
-            self.$active = $('<label class="chinese-checkbox" for="check_' + self.id + '"><input type="checkbox"' + (self.options.active ? ' checked="checked"' : '')+ ' id="check_' + self.id + '"/> phonetic typing</label>');
-            self.$input = $('<label class="chinese-checkbox" for="type_' + self.id + '"><input type="checkbox"' + (self.options.input.initial == 'traditional' ? ' checked="checked"' : '')+ ' id="type_' + self.id + '"/> traditional</label>')
-
             self.$toolbar.insertAfter(self.$el);
             self.$toolbar.css({'position': 'absolute', 'z-index': 1000}).show();
             self.reposition(self.$toolbar);
 
-            if (self.options.allowHide) {
-                
-                var $hide = self.$active;
-                $hide.appendTo(self.$toolbar);
-                $hide.find('input').click(function(){
-                    self.options.active = $(this).is(':checked');
-                    if (self.options.active === false){
-                        self.currentText = '';
-                        self.currentPage = 0;
-                        self.updateDialog();
-                    }
-                    self.$el.focus();
-                });
-            }
-
-            if (self.options.input.allowChange){
-                self.$input.appendTo(self.$toolbar);
-                self.$input.find('input').click(function(){
-                    var trad = $(this).is(':checked');
-                    // self.options.input.initial = ( trad === true ? 'traditional' : 'simplified');
-                    $.wordDatabase.traditional = trad;
-                    self.updateDialog();
-                    self.$el.focus();
-                });
-            }
-
-            if (self.options.input.initial == 'traditional'){
-                $.wordDatabase.traditional = true;
-            }
+            $.wordDatabase.traditional = false;
 
             $(window).resize($.proxy(function() { // TODO: attach to textarea resize event
                 this.self.updateDialog();
@@ -305,11 +274,16 @@ var _callbacks_ = {
                     }
 	        } else if (event.which == 13) {
 			// send text in MICA chat system
-		        var tval = sendMsg(document.getElementById('sendForm'));
-		        if (tval) 
-				appendChat('me', tval);
-			else
-				appendChat('me', "error");
+                        if ($("#sendTo").val() == "") {
+                            alert(local('provideaddress')); 
+                            
+                        } else {
+                            var tval = sendMsg(document.getElementById('sendForm'));
+                            if (tval) 
+                                    appendChat('me', tval);
+                            else
+                                    appendChat('me', "error");
+                        }
                 } else {
                     if (key == '.') { // pressed period
                         self.addText('\u3002');
@@ -399,8 +373,8 @@ var _callbacks_ = {
         self.updateDialog = function(){
             if (self.currentText.length > 0) {
 
-                var languagepair = $('#chattextlanguage').val();
-                var pair = languagepair.split(",")
+                var pair = getPairs(); 
+
                 var chat_source_language = pair[0];
                 var chat_target_language = pair[1];  
 
@@ -494,12 +468,9 @@ var _callbacks_ = {
             }
             if (!$.wordDatabase.hasWord(text, num)){
                 $.wordDatabase.addWord(text, num);
-                
-                var languagepair = $('#chattextlanguage').val();
-                var pair = languagepair.split(",")
-                var chat_target_language = pair[1];
+                var pairs = getPairs();
+                if (pairs[1] == "zh" || pairs[1] == "zh-CHS") { 
 
-                if (chat_target_language == "zh" || chat_target_language == "zh-CHS") { 
                     self.currentText = text;
                     self.updateDialog();
                 } else {
