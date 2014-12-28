@@ -1238,7 +1238,8 @@ function handleMessage(oJSJaCPacket) {
     var msg = oJSJaCPacket.getBody().htmlEnc();
 
     if ($("#sendTo").val() == "") {
-        $("#sendTo").val(decodeURIComponent(("" + who).split("@")[0]));
+        var id = ("" + who).split("@");
+        $("#sendTo").val(decodeURIComponent(id[0]) + "@" + id[1]);
     }
 
     if ($.trim(msg) != "") {
