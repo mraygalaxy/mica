@@ -3724,9 +3724,11 @@ class MICA(object):
                 
                 if memorized :
                     unit["date"] = timest()
-                    req.db[self.memorized(req, unit["hash"])] = unit
+                    if not req.db.doc_exist(self.memorized(req, unit["hash"])) :
+                        req.db[self.memorized(req, unit["hash"])] = unit
                 else :
-                    del req.db[self.memorized(req, unit["hash"])]
+                    if req.db.doc_exist(self.memorized(req, unit["hash"])) :
+                        del req.db[self.memorized(req, unit["hash"])]
                     
                 return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
                                            unit["hash"] + "</div></div>", now = True)
