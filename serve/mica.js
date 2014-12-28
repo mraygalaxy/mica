@@ -1,4 +1,3 @@
-  debugger;
 var last_data = '';
 var first_time = true;
 var debug = false;
@@ -1232,13 +1231,17 @@ function appendChat(who, msg) {
     }, {}), 'html');
 }
 
+function addressableID(who) {
+    var id = ("" + who).split("@");
+    return id[0] + "@" + id[1].split("/")[0];
+}
+
 function handleMessage(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
     var msg = oJSJaCPacket.getBody().htmlEnc();
 
     if ($("#sendTo").val() == "") {
-        var id = ("" + who).split("@");
-        $("#sendTo").val(id[0] + "@" + id[1].split("/")[0]);
+        $("#sendTo").val(addressableID(who));
     }
 
     if ($.trim(msg) != "") {
@@ -1255,11 +1258,13 @@ function handleMessage(oJSJaCPacket) {
 
 function handlePresence(oJSJaCPacket) {
     var html = '<div class="msg">';
-    var id = ("" + oJSJaCPacket.getFromJID()).split("@");
+    var who = oJSJaCPacket.getFromJID();
+    var id = ("" + who).split("@");
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
-        html += '<b>' + decodeURIComponent(id[0]) + ' has become available.</b>';
+        html += '<b>' + decodeURIComponent(id[0]) + ' ' + local("hasbecome") + ".</b>";
+        html += " <a style='cursor: pointer' onclick=\"$('#sendTo').val('" + addressableID(who) + "')\">Chat</a>";
     } else {
-        html += '<b>' + decodeURIComponent(id[0]) + ' has set his presence to ';
+        html += '<b>' + decodeURIComponent(id[0]) + ' ' + local('setpresence') + " ";
         if (oJSJaCPacket.getType())
             html += oJSJaCPacket.getType() + '.</b>';
         else

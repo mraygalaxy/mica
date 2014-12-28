@@ -349,6 +349,10 @@ class ChatElement(CommonElement) :
                       processinstant = processinstantclick(self.req, request, tag),
                       performingtranslation= _("Doing instant translation..."),
                       chatlangtype = _("Chat Language"),
+                      # Notification from the online chat system that another user is logged in and has become available.
+                      hasbecome = _("has become available"),
+                      # Notification from the online chat system that another user has changed status, like 'away' or 'available'.
+                      setpresence = _("has set their presence to"),
                      )
         return tag
 

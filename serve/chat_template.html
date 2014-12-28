@@ -1,4 +1,6 @@
 <html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="chat">
+<div style='display: none' id='hasbecome'><t:slot name='hasbecome'/></div>
+<div style='display: none' id='setpresence'><t:slot name='setpresence'/></div>
 <script><t:attr name='src'><t:slot name='xmpp'/></t:attr></script>
 <script><t:attr name='src'><t:slot name='ime'/></t:attr></script>
 <script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
