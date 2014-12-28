@@ -321,7 +321,7 @@ class MICA(object):
         else :
             l = get_global_language()
 
-        catalogs.language = l
+        catalogs.language = l.split("-")[0]
 
         return l
         
