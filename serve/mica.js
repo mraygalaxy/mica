@@ -1237,7 +1237,7 @@ function handleMessage(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
     var msg = oJSJaCPacket.getBody().htmlEnc();
 
-    if $("#sendTo").val() == "") {
+    if ($("#sendTo").val() == "") {
         $("#sendTo").val(decodeURIComponent(("" + who).split("@")[0]));
     }
 
