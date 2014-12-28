@@ -1188,7 +1188,7 @@ function handleIQ(oIQ) {
 
 function appendStatus(who, msg) {
         var id = ("" + who).split("@");
-	document.getElementById('iStatus').innerHTML = id[0] + msg;
+	document.getElementById('iStatus').innerHTML = decodeURIComponent(id[0]) + msg;
 }
 
 var flashTimer="";
@@ -1207,7 +1207,7 @@ window.onfocus=function() {
 function appendBox(who, msg) {
         var html = '';
         var id = ("" + who).split("@");
-        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + id[0] + ':</b></td><td>';
+        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + decodeURIComponent(id[0]) + ':</b></td><td>';
         html += msg;
         html += '</td></tr></table></div>';
         document.getElementById('iResp').innerHTML += html;
@@ -1236,6 +1236,10 @@ function appendChat(who, msg) {
 function handleMessage(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
     var msg = oJSJaCPacket.getBody().htmlEnc();
+
+    if $("#sendTo").val() == "") {
+        $("#sendTo").val(decodeURIComponent(("" + who).split("@")[0]));
+    }
 
     if ($.trim(msg) != "") {
        appendChat(who, msg);
