@@ -1281,7 +1281,8 @@ function handlePresence(oJSJaCPacket) {
 function handleError(e) {
     document.getElementById('err').innerHTML = "An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName).htmlEnc();
     document.getElementById('login_pane').style.display = '';
-    document.getElementById('sendmsg_pane').style.display = 'none';
+    //document.getElementById('sendmsg_pane').style.display = 'none';
+    $("#chatLoading").attr("style", "display: none");
 
     if (con.connected())
         con.disconnect();
@@ -1315,6 +1316,12 @@ function handleIqTime(iq) {
     return true;
 }
 
+function getPairs() {
+    var languagepair = $('#chattextlanguage').val();
+    var pair = languagepair.split(",");
+    return pair;
+}
+
 function doLogin(oForm) {
     $("#msgArea").chineseInput({
         debug: true,
@@ -1326,8 +1333,7 @@ function doLogin(oForm) {
         active: true
     });
 
-    var server = oForm.server.value,
-        oArgs = new Object();
+    var server = oForm.server.value, oArgs = new Object();
         
     oDbg = new JSJaCConsoleLogger(3);
     document.getElementById('err').innerHTML = '';
@@ -1335,11 +1341,7 @@ function doLogin(oForm) {
 
     try {
         
-        //if (window.location.protocol !== "https:"){
-        //    httpbase = 'http://' + server + ':5280/http-bind/';
-        //} else {
-            httpbase = 'https://' + server + ':5281/http-bind/';
-        //}
+        httpbase = 'https://' + server + ':5281/http-bind/';
         
         // set up the connection
         con = new JSJaCHttpBindingConnection({
@@ -1412,7 +1414,6 @@ function quit() {
     document.getElementById('login_pane').style.display = '';
     document.getElementById('sendmsg_pane').style.display = 'none';
 }
-
 
 onunload = function() {
     if ( typeof con != 'undefined' && con && con.connected()) {
