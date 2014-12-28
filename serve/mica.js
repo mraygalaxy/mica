@@ -476,8 +476,7 @@ function make_child(node) {
         var pair = languagepair.split(",")
         var source = pair[0];
         var target = pair[1];  
-        alert("Overriding source and target to: " + source + " " + target);
-    }
+     }
 
       var chars = [];
       var allchars = "";
@@ -1239,7 +1238,7 @@ function handleMessage(oJSJaCPacket) {
 
     if ($("#sendTo").val() == "") {
         var id = ("" + who).split("@");
-        $("#sendTo").val(decodeURIComponent(id[0]) + "@" + id[1].split("/")[0]);
+        $("#sendTo").val(id[0] + "@" + id[1].split("/")[0]);
     }
 
     if ($.trim(msg) != "") {
