@@ -1239,7 +1239,7 @@ function handleMessage(oJSJaCPacket) {
 
     if ($("#sendTo").val() == "") {
         var id = ("" + who).split("@");
-        $("#sendTo").val(decodeURIComponent(id[0]) + "@" + id[1]);
+        $("#sendTo").val(decodeURIComponent(id[0]) + "@" + id[1].split("/")[0]);
     }
 
     if ($.trim(msg) != "") {
