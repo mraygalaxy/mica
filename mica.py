@@ -194,6 +194,7 @@ class Params(object) :
         self.session = session
         
         if 'connected' not in self.session.value :
+            mdebug("New session. Setting connected to false.")
             self.session.value['connected'] = False
 
         if "language" not in self.session.value and "HTTP_ACCEPT_LANGUAGE" in environ:
@@ -575,11 +576,16 @@ class MICA(object):
             resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
             # This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
+            aout = ""
             resp = "<h4>" + _("Exception") + ":</h4>"
+            aout += "Exception\n"
             for line in format_exc().splitlines() :
                 resp += "<br>" + line
+                aout += line + "\n"
             resp += "<h2>" + _("Please report the exception above to the author. Thank you.") + "</h2>"
+            merr(aout)
             if "connected" in req.session.value and req.session.value["connected"] :
+                mwarn("Not a well-caught exception. Setting connected to false.")
                 req.session.value["connected"] = False
                 req.session.save()
 
@@ -640,7 +646,7 @@ class MICA(object):
         except Exception, e :
             merr("BAD MICA ********\nException:")
             for line in format_exc().splitlines() :
-                merr("BAD MICA ********\n" + line)
+                merr(line)
 
         r = None
 
@@ -652,7 +658,7 @@ class MICA(object):
         except Exception, e :
             merr("RESPONSE MICA ********\nException:")
             for line in format_exc().splitlines() :
-                merr("RESPONSE MICA ********\n" + line)
+                merr(line)
 
         return r
     
@@ -2386,6 +2392,7 @@ class MICA(object):
             msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if "connected" in req.session.value and req.session.value["connected"] :
+                mwarn("Setting to disconnected!")
                 req.session.value["connected"] = False
                 req.session.save()
 
@@ -2400,6 +2407,7 @@ class MICA(object):
             return msg
 
     def disconnect(self, req, session) :
+        mwarn("Loggin out user now.")
         session.value['connected'] = False
 
         if 'username' in session.value :
@@ -4537,6 +4545,7 @@ class MICA(object):
 
                 resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
                 if "connected" in req.session.value and req.session.value["connected"] :
+                    mwarn("Boo other, logging out user now.")
                     req.session.value["connected"] = False
                     req.session.save()
                 req.skip_show = True
