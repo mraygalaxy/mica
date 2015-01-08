@@ -469,9 +469,9 @@ function make_child(node) {
 
   function process_instant(with_spaces, lang, source, target, username, password) {
 
-    var languageitem = $('#chattextlanguage');
+    var languageitem = $('#chattextlanguage').val();
     if (languageitem != undefined) {
-        var languagepair = languageitem.val();
+        var languagepair = languageitem;
         var pair = languagepair.split(",")
         var source = pair[0];
         var target = pair[1];  
@@ -1281,7 +1281,7 @@ function handlePresence(oJSJaCPacket) {
 function handleError(e) {
     document.getElementById('err').innerHTML = "An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName).htmlEnc();
     document.getElementById('login_pane').style.display = '';
-    //document.getElementById('sendmsg_pane').style.display = 'none';
+    document.getElementById('sendmsg_pane').style.display = 'none';
     $("#chatLoading").attr("style", "display: none");
 
     if (con.connected())
