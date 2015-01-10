@@ -134,7 +134,7 @@ class IdxFileReader(object):
         self.db = db
         self._offset = 0
 
-        s = self.db["_word_idx"].select()
+        s = self.db["_word_idx"].select().limit(1)
         rs = s.execute()
         result = rs.fetchone()
 
