@@ -27,6 +27,11 @@ if not mobile :
     except SystemError, e :
         mdebug("Could not import ICTCLAS library. Full translation will not work.")
 
+    try:
+        import xml.etree.cElementTree as ET
+    except ImportError:
+        import xml.etree.ElementTree as ET
+
 class MyListener(PoolListener):
     def connect(self, dbapi_con, con_record):
         dbapi_con.execute('pragma journal_mode=OFF')
@@ -286,6 +291,7 @@ class RomanizedSource(Processor) :
             db.echo = False
             metadata = MetaData(db)
             self.srcdb["conn"] = db.connect()
+            self.srcdb["metadata"] = metadata
 
             self.srcdb["_index_idx"] = Table('_index_idx', metadata,
                 Column('idx', Integer, primary_key=True),
@@ -409,12 +415,14 @@ class RomanizedSource(Processor) :
 
         uni = actual_word
 
+        try_source = uni 
         # Names sometimes need to avoid being lowercased
         targ = self.get_first_translation(opaque, uni, False, none_if_not_found = False)
 
         # Then try lowercasing...
         if not targ :
-            targ = self.get_first_translation(opaque, uni.lower(), False, none_if_not_found = False)
+            try_source = uni.lower()
+            targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
 
         for combo, replacement in self.matches.iteritems() :
             x = len(combo)
@@ -422,21 +430,25 @@ class RomanizedSource(Processor) :
                 search = uni[:-x]
                 if replacement :
                     search += replacement
-                targ = self.get_first_translation(opaque, search, False, none_if_not_found = False)
+                try_source = search
+                targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
 
                 # Try lowercase
                 if not targ :
-                    targ = self.get_first_translation(opaque, search.lower(), False, none_if_not_found = False)
+                    try_source = search.lower()
+                    targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
 
                 # Try repeating without accented characters
                 if not targ and self.accented_source :
                     unsource = ''.join((c for c in normalize('NFD', search) if category(c) != 'Mn'))
 
-                    targ = self.get_first_translation(opaque, unsource, False, none_if_not_found = False)
+                    try_source = unsource 
+                    targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
 
                     # And again, unaccented lowercase
                     if not targ :
-                        targ = self.get_first_translation(opaque, unsource.lower(), False, none_if_not_found = False)
+                        try_source = unsource.lower()
+                        targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
 
                 if targ :
                     break
@@ -455,12 +467,18 @@ class RomanizedSource(Processor) :
 
             if len(targ) > 1 :
                 for target in targ :
-                    #unit["multiple_sromanization"].append([x])
                     unit["multiple_target"].append([target])
                     
                 if unit["multiple_correct"] == -1 :
                     self.score_and_rank_unit(unit, tone_keys)
 
+            ipa = self.get_ipa(try_source)
+            if ipa :
+                unit["ipa_word"] = ipa[0]
+                unit["ipa_role"] = ipa[1]
+            else :
+                unit["ipa_word"] = False
+                unit["ipa_role"] = False
             units.append(unit)
         else :
             online_units = self.online_cross_reference(req, story, uni, opaque)
@@ -470,6 +488,13 @@ class RomanizedSource(Processor) :
                 raise Exception("Can't translate this word. API has no result: " + str(uni))
 
             for unit in online_units :
+                ipa = self.get_ipa(uni)
+                if ipa :
+                    unit["ipa_word"] = ipa[0]
+                    unit["ipa_role"] = ipa[1]
+                else :
+                    unit["ipa_word"] = False
+                    unit["ipa_role"] = False
                 units.append(unit)
 
         for ep in end_punct :
@@ -477,6 +502,9 @@ class RomanizedSource(Processor) :
                  units.append(self.add_unit([ep], ep, [ep], punctuation = True))
 
         return units
+
+    def get_ipa(self, source) :
+        return False
     
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
         result = self.dictionary.get_dict_by_word(source)
@@ -583,6 +611,71 @@ class EnglishSource(RomanizedSource) :
                          #u"’" : False,
                          #u"'" : False,
                 })
+
+    # Setup all english sources with phonetic IPA
+    def test_dictionaries(self, opaque) :
+        super(EnglishSource, self).test_dictionaries(opaque)
+
+        mdebug("Testing EnglishSource IPA database...")
+
+        db = create_engine('sqlite:///' + self.params["scratch"] + "engipa.db", listeners= [MyListener()])
+        db.echo = False
+        metadata = MetaData(db)
+        conn = db.connect()
+
+        self.srcdb["ipa"] = Table('ipa', metadata,
+            Column('word_str', String, primary_key=True),
+            Column('ipa_repr', String),
+            Column('role', String),
+        )
+
+        self.srcdb["ipa"].create(checkfirst=True)
+
+        s = self.srcdb["ipa"].select().limit(1)
+        rs = s.execute()
+        result = rs.fetchone()
+
+        if result is None :
+            orig_ipa = self.params["scratch"] + "general-american-dictionary.xml"
+            mdebug("Need to re-generate EnglishSource IPA database from " + orig_ipa)
+            tree = ET.ElementTree(file=orig_ipa)
+            root = tree.getroot()
+
+            trans = conn.begin()
+
+            exists = {}
+            for child in root :
+                print child.tag
+                if "role" in child.attrib :
+                    role = child.attrib["role"]
+                else :
+                    role = ""
+
+                grapheme = child[0].text.lower().decode("utf-8")
+                phoneme = child[1].text.decode("utf-8")
+
+                if grapheme not in exists :
+                    exists[grapheme] = True
+                    i = self.srcdb["ipa"].insert().values(word_str = grapheme, ipa_repr = phoneme, role = role)
+                    conn.execute(i)
+
+            trans.commit()
+
+    def get_ipa(self, source) :
+        if "ipa" in self.srcdb :
+            s = self.srcdb["ipa"].select().where(self.srcdb["ipa"].c.word_str == source)
+            rs = s.execute()
+            result = rs.fetchone()
+            # 0 is the IPA
+            # 1 is the 'role', like noun, adjective, etc...
+            if result is not None :
+                return (result[1], result[2])
+
+        return False
+
+    def get_dictionaries(self) :
+        return super(EnglishSource, self).get_dictionaries() + ["engipa.db"]
+
 
 class EnglishToChineseSimplified(EnglishSource) :
     def __init__(self, mica, params) :

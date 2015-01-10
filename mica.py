@@ -1602,11 +1602,11 @@ class MICA(object):
                     if py :
                         if action == "edit" and merge_end :
                             # mergeright
-                            line_out.append(merge_end_spacer )
+                            line_out.append(merge_end_spacer)
                         elif action == "edit" and curr_merge :
-                            line_out.append(merge_spacer )
+                            line_out.append(merge_spacer)
                         else :
-                            line_out.append(spacer )
+                            line_out.append(spacer)
 
                 line_out.append("</tr>\n<tr>")
 
@@ -1751,6 +1751,8 @@ class MICA(object):
                         line_out.append((("hold" if py == u' ' else py) if py else target).lower())
 
                 if not disk :
+                    if "ipa_word" in unit and unit["ipa_word"] :
+                        line_out.append("<br>" + unit["ipa_word"])
                     line_out.append("<br/>")
 
                     if action == "home" and py and len(unit["multiple_target"]) :
@@ -1784,7 +1786,7 @@ class MICA(object):
                     py = word[1]
                     source = word[5]
                     memorized = False
-                    
+
                     if py and action == 'read' :
                         if unit["hash"] in sources['memorized'] :
                             memorized = True
@@ -1835,7 +1837,9 @@ class MICA(object):
                                         tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
-
+                        if "ipa_word" in unit and unit["ipa_word"] :
+                            line_out.append("<br>" + unit["ipa_word"])
+                    
                         if action in [ "read", "edit" ] :
                             line_out.append("</a>")
 
@@ -2888,10 +2892,16 @@ class MICA(object):
                             request = requests[idx]
                             if len(requests) > 1 and idx == 0 :
                                 continue
-                            tar = gp.get_first_translation(opaque, request.decode("utf-8"), False)
+                            request_decoded = request.decode("utf-8")
+                            tar = gp.get_first_translation(opaque, request_decoded, False)
                             if tar :
                                 for target in tar :
-                                    out += "<br/>(" + request + "): " + target.encode("utf-8")
+                                    out += "<br/>(" + request
+                                    ipa = gp.get_ipa(request_decoded)
+                                    if ipa :
+                                        out += ", " + str(ipa[0])
+
+                                    out += "): " + target.encode("utf-8")
                             else :
                                 out += "<br/>(" + request + ") " + _("No instant translation found.")
 
