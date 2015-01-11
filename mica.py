@@ -1751,8 +1751,9 @@ class MICA(object):
                         line_out.append((("hold" if py == u' ' else py) if py else target).lower())
 
                 if not disk :
-                    if "ipa_word" in unit and unit["ipa_word"] :
-                        line_out.append("<br>" + unit["ipa_word"])
+                    if action == "home" :
+                        if "ipa_word" in unit and unit["ipa_word"] :
+                            line_out.append("<br>" + unit["ipa_word"])
                     line_out.append("<br/>")
 
                     if action == "home" and py and len(unit["multiple_target"]) :
@@ -1837,8 +1838,9 @@ class MICA(object):
                                         tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
-                        if "ipa_word" in unit and unit["ipa_word"] :
-                            line_out.append("<br>" + unit["ipa_word"])
+                        if action == "read" :
+                            if "ipa_word" in unit and unit["ipa_word"] :
+                                line_out.append("<br>" + unit["ipa_word"])
                     
                         if action in [ "read", "edit" ] :
                             line_out.append("</a>")
