@@ -327,7 +327,7 @@ class ChatElement(CommonElement) :
 
     @renderer
     def chat(self, request, tag) :
-        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"],
+        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"] if not mobile else self.req.session.value["password"],
                       spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                       # Indicates that the chat software is starting up... 
                       loading = _("Loading Chat"),

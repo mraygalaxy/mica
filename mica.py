@@ -3095,10 +3095,11 @@ class MICA(object):
 
                 # Make a temporary jabber secret that is safe to store in a session
                 # so the BOSH javascript client can authenticate
-                if "temp_jabber_pw" in params :
-                    req.session.value["temp_jabber_pw"] = params["temp_jabber_pw"]
-                else :
-                    req.session.value["temp_jabber_pw"] = binascii_hexlify(os_urandom(4))
+                if not mobile :
+                    if "temp_jabber_pw" in params :
+                        req.session.value["temp_jabber_pw"] = params["temp_jabber_pw"]
+                    else :
+                        req.session.value["temp_jabber_pw"] = binascii_hexlify(os_urandom(4))
 
                 if mobile :
                     req.session.value["password"] = password
@@ -3121,9 +3122,10 @@ class MICA(object):
                 mdebug("verifying...")
                 self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
 
-                if "temp_jabber_pw" not in params :
-                    auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
-                    self.userdb["org.couchdb.user:" + username] = auth_user
+                if not mobile :
+                    if "temp_jabber_pw" not in params :
+                        auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
+                        self.userdb["org.couchdb.user:" + username] = auth_user
 
                 if mobile :
                     if req.db.doc_exist("MICA:appuser") :
