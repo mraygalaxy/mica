@@ -135,7 +135,8 @@ tutorials = {
         u"py": "info_template.html",
 }
 
-verbose = False
+#verbose = False
+verbose = True
 
 def minfo(msg) :
    if micalogger :

@@ -1338,10 +1338,15 @@ function doLogin(oForm) {
     oDbg = new JSJaCConsoleLogger(3);
     document.getElementById('err').innerHTML = '';
     // reset
-
+ 
     try {
         
-        httpbase = 'https://' + server + ':5281/http-bind/';
+        httpbase = 'http://' + server + ':5280/http-bind/';
+        if (window.location.protocol !== "https:"){
+            httpbase = 'http://' + server + ':5280/http-bind/';
+        } else {
+            httpbase = 'https://' + server + ':5281/http-bind/';
+        }
         
         // set up the connection
         con = new JSJaCHttpBindingConnection({

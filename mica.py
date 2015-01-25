@@ -896,8 +896,11 @@ class MICA(object):
 
         processor.test_dictionaries(opaque)
 
+        mverbose("Starting translation...")
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
+
+            mverbose("Translating page " + str(iidx))
 
             if live :
                 page_input = story["source"]
@@ -915,6 +918,7 @@ class MICA(object):
                 else :
                     page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
+            mverbose("Pre-parsing page " + str(iidx))
             parsed = processor.pre_parse_page(opaque, page_input)
 
             mverbose("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
@@ -2892,7 +2896,7 @@ class MICA(object):
                     try :
                         for idx in range(0, len(requests)) :
                             request = requests[idx]
-                            if len(requests) > 1 and idx == 0 :
+                            if gp.already_romanized and len(requests) > 1 and idx == 0 :
                                 continue
                             request_decoded = request.decode("utf-8")
                             tar = gp.get_first_translation(opaque, request_decoded, False)

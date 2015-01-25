@@ -52,9 +52,7 @@ def stacksize(since=0.0):
 
 cpus = multiprocessing.cpu_count()
 #print "Testing with " + str(cpus) + " processors."
-#jieba.initialize(sqlite = True)
-jieba.initialize()
-print "Memory usage: " + str(resident() / 1024/1024) + " MB"
+jieba.initialize(sqlite = True)
 #jieba.initialize()
 #jieba.enable_parallel(cpus)
 #print " ".join(jieba.cut(u"面对新世纪。"))
@@ -64,5 +62,6 @@ text = u"\n今天，真是个野餐的好日子。 猪先生精心打扮着自�
 #print text
 ts = time()
 result = jieba.cut(text)
+print "Memory usage: " + str(resident() / 1024/1024) + " MB"
 #print "Parse Time: " + str(time() - ts) + " seconds"
 #print " ".join(result)
