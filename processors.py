@@ -9,6 +9,13 @@ from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
 from re import compile as re_compile, IGNORECASE
 from unicodedata import normalize, category
+import multiprocessing
+
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
+import sys
+sys.path = [cwd, cwd + "mica/"] + sys.path
+
+import jieba
 
 story_format = 2
 
@@ -20,12 +27,14 @@ pinyinToneMarks = {
 }
 
 if not mobile :
+    '''
     try :
         import mica_ictclas
     except ImportError, e :
         mdebug("Could not import ICTCLAS library. Full translation will not work.")
     except SystemError, e :
         mdebug("Could not import ICTCLAS library. Full translation will not work.")
+    '''
 
     try:
         import xml.etree.cElementTree as ET
@@ -69,6 +78,9 @@ class Processor(object) :
         self.punctuation_without_newlines.update(deepcopy(self.punctuation_numbers))
         self.punctuation.update(deepcopy(self.punctuation_numbers))
 
+    def get_ipa(self, source) :
+        return False
+    
     def parse_page(self, opaque, req, story, groups, page, temp_units = False, progress = False, error = False) :
         if temp_units :
             story["temp_units"] = []
@@ -213,6 +225,7 @@ class Processor(object) :
             unit["multiple_correct"] = selector 
 
     def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+        found = False
         mverbose("Requested: " + uni)
 
         if self.all_punct(uni) :
@@ -220,6 +233,8 @@ class Processor(object) :
             units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
             units = self.recursive_translate_lang(req, story, opaque, uni, temp_units, page, tone_keys)
+        if len(units) :
+            found = True
 
         for unit in units :
             if len(unit["sromanization"]) == 1 and unit["sromanization"][0] == u'' :
@@ -233,6 +248,8 @@ class Processor(object) :
             story["temp_units"] = story["temp_units"] + units
         else :
             story["pages"][page]["units"] = story["pages"][page]["units"] + units 
+
+        return found
 
     def online_cross_reference(self, req, story, uni, opaque) :
         online_units = False
@@ -264,6 +281,11 @@ def get_cjk_handle(params) :
         # CEDICT internally references pinyin syllables from the main dictionary or crash.
         d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
         mverbose("MICA cedict success!")
+
+        if not jieba.initialized :
+            self.jieba_open()
+            self.jieba_close()
+
     except Exception, e :
         merr("MICA offline open failed: " + str(e))
 
@@ -503,9 +525,6 @@ class RomanizedSource(Processor) :
 
         return units
 
-    def get_ipa(self, source) :
-        return False
-    
     def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
         result = self.dictionary.get_dict_by_word(source)
 
@@ -706,7 +725,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         self.punctuation.update(deepcopy(self.punctuation_letters))
 
     def get_dictionaries(self) :
-        return ["cjklib.db", "cedict.db", "tones.db"]
+        return ["cjklib.db", "cedict.db", "tones.db", "jieba.db"]
 
     def test_dictionaries(self, opaque) :
         cjk, d = opaque 
@@ -804,18 +823,39 @@ class ChineseSimplifiedToEnglish(Processor) :
         return result
 
 
+    def jieba_open(self) :
+        cpus = multiprocessing.cpu_count()
+        jfile = self.params["scratch"] + "jieba.db"
+        mdebug("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
+        jieba.initialize(sqlite = jfile)
+        #jieba.enable_parallel(cpus)
+
+    def jieba_close(self) :
+        jieba.use_sqlite["conn"].close()
+        jieba.use_sqlite = False
+        jieba.initialized = False
+
     def parse_page_start(self) : 
+        self.jieba_open()
         return get_cjk_handle(self.params)
 
     def parse_page_stop(self, opaque) :
         (cjk, d) = opaque 
         cjk.db.connection.close()
         d.db.connection.close()
+        self.jieba_close()
 
     def pre_parse_page(self, opaque, page_input_unicode) :
         try :
-            return mica_ictclas.trans(page_input_unicode.encode("utf-8"))
-        except mica_ictclas.error, e :
+            #result = mica_ictclas.trans(strinput)
+            strinput = page_input_unicode.encode("utf-8")
+            result = " "
+            for uresult in jieba.cut(strinput) :
+                result += " " + uresult.encode("utf-8")
+            return result
+
+        except Exception, e :
+            merr("Failed to cut: " + str(e))
             self.parse_page_stop(opaque)
             raise e
 
@@ -1093,9 +1133,47 @@ class ChineseSimplifiedToEnglish(Processor) :
             unit = self.add_unit(trans[0].split(" "), uni, [targ[0]])
             units.append(unit)
         elif len(trans) == 0 :
-            if len(uni) > 1 :
-                for char in uni :
-                    self.recursive_translate(req, story, opaque, char, temp_units, page, tone_keys)
+            sub_uni = uni
+            uni_size = len(uni)
+            if len(sub_uni) > 1 :
+                # Recursively figure out if any ordered, subset of the characters
+                # in this group of characters can be found
+                check_whole = False 
+
+                count_sub_chars = 0
+                while True :
+                    size = len(sub_uni)
+                    if not size :
+                        break
+
+                    mdebug("Iterate: " + sub_uni)
+
+                    # The whole group is checked already at the beginning of this
+                    # function, including for single characters. Only check the
+                    # whole thing if were are recursing on a subset.
+                    if check_whole :
+                        end = size 
+                    else :
+                        end = size - 1 
+
+                    try_uni = sub_uni[:end]
+                    check_whole = True
+                    mdebug("Trying: " +  try_uni)
+
+                    sub_units = self.recursive_translate_lang(req, story, opaque, try_uni, temp_units, page, tone_keys)
+
+                    for su in sub_units :
+                        count_sub_chars += len(su["source"])
+
+                    mverbose("Sub unit characters: " + str(count_sub_chars) + " size " + str(size) + " source " + str(su["source"]))
+
+                    # Strip off what was matched, according to the leng
+                    units += sub_units
+                    sub_uni = sub_uni[end:]
+                    size = len(sub_uni)
+                    mdebug("Found. Next: " + sub_uni)
+
+                assert(count_sub_chars == len(uni))
 
         elif len(trans) > 1 :
                         
