@@ -9,13 +9,18 @@ from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
 from re import compile as re_compile, IGNORECASE
 from unicodedata import normalize, category
-import multiprocessing
+from os.path import exists as path_exists
+
+if not mobile :
+    import multiprocessing
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 import sys
 sys.path = [cwd, cwd + "mica/"] + sys.path
 
 import jieba
+
+ictc_available = False
 
 story_format = 2
 
@@ -26,15 +31,23 @@ pinyinToneMarks = {
     u'O': u'ŌÓǑÒ', u'U': u'ŪÚǓÙ', u'Ü': u'ǕǗǙǛ'
 }
 
+class NotReady(Exception) :
+    def __init__(self, msg, e = False):
+        Exception.__init__(self)
+        self.msg = msg
+        self.e = e
+
+    def __str__(self) :
+        return self.msg
+
 if not mobile :
-    '''
     try :
         import mica_ictclas
+        ictc_available = False
     except ImportError, e :
-        mdebug("Could not import ICTCLAS library. Full translation will not work.")
+        mdebug("Could not import ICTCLAS library. Will fallback to jieba library.")
     except SystemError, e :
-        mdebug("Could not import ICTCLAS library. Full translation will not work.")
-    '''
+        mdebug("Could not import ICTCLAS library. Will fallback to jieba library.")
 
     try:
         import xml.etree.cElementTree as ET
@@ -264,33 +277,6 @@ class Processor(object) :
                 all = False
                 break
         return all
-
-def get_cjk_handle(params) :
-    cjk = None
-    d = None
-    try :
-        from cjklib.dictionary import CEDICT
-        from cjklib.characterlookup import CharacterLookup
-        from cjklib.dbconnector import getDBConnector
-        cjkurl = 'sqlite:///' + params["scratch"] + "cjklib.db"
-        cedicturl = 'sqlite:///' + params["scratch"] + "cedict.db"
-        mverbose("Opening CJK from: " + cedicturl + " and " + cjkurl)
-        cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
-        mverbose("MICA cjklib success!")
-        # CEDICT must use a connector, just a url which includes both dictionaries.
-        # CEDICT internally references pinyin syllables from the main dictionary or crash.
-        d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
-        mverbose("MICA cedict success!")
-
-        if not jieba.initialized :
-            self.jieba_open()
-            self.jieba_close()
-
-    except Exception, e :
-        merr("MICA offline open failed: " + str(e))
-
-    return (cjk, d)
-
 
 class RomanizedSource(Processor) :
     def __init__(self, mica, params) :
@@ -755,6 +741,8 @@ class ChineseSimplifiedToEnglish(Processor) :
         result = rs.fetchone()
 
         if result is None :
+            if mobile :
+                raise NotReady("jieba is not initialized yet.")
             trans = self.tonedb["conn"].begin()
             mdebug("Building tone file")
             dpfh = open(self.params["scratch"] + "chinese.txt")
@@ -822,36 +810,80 @@ class ChineseSimplifiedToEnglish(Processor) :
                 y -= 1
         return result
 
-
     def jieba_open(self) :
-        cpus = multiprocessing.cpu_count()
         jfile = self.params["scratch"] + "jieba.db"
-        mdebug("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
-        jieba.initialize(sqlite = jfile)
-        #jieba.enable_parallel(cpus)
+
+        if not mobile :
+            cpus = multiprocessing.cpu_count()
+            mdebug("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
+
+        if path_exists(jfile) or not mobile : 
+            mdebug("Initializing jieba library from: " + jfile)
+            jieba.initialize(sqlite = jfile, check_age = False)
+            mdebug("Initializing complete.")
+
+        #if not mobile :
+            #jieba.enable_parallel(cpus)
 
     def jieba_close(self) :
-        jieba.use_sqlite["conn"].close()
-        jieba.use_sqlite = False
+        if isinstance(jieba.use_sqlite, dict) and "conn" in jieba.use_sqlite :
+            mdebug("Closing jieba library.")
+            jieba.use_sqlite["conn"].close()
+            jieba.use_sqlite = False
         jieba.initialized = False
 
+    def get_cjk_handle(self) :
+        cjk = None
+        d = None
+        try :
+            from cjklib.dictionary import CEDICT
+            from cjklib.characterlookup import CharacterLookup
+            from cjklib.dbconnector import getDBConnector
+            cjkurl = 'sqlite:///' + self.params["scratch"] + "cjklib.db"
+            cedicturl = 'sqlite:///' + self.params["scratch"] + "cedict.db"
+            mverbose("Opening CJK from: " + cedicturl + " and " + cjkurl)
+            cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
+            mverbose("MICA cjklib success!")
+            # CEDICT must use a connector, just a url which includes both dictionaries.
+            # CEDICT internally references pinyin syllables from the main dictionary or crash.
+            d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
+            mverbose("MICA cedict success!")
+
+            if not ictc_available and not jieba.initialized :
+                self.jieba_open()
+                self.jieba_close()
+
+        except Exception, e :
+            merr("MICA offline open failed: " + str(e))
+
+        return (cjk, d)
+
+
     def parse_page_start(self) : 
-        self.jieba_open()
-        return get_cjk_handle(self.params)
+        if not ictc_available :
+            self.jieba_open()
+        return self.get_cjk_handle()
 
     def parse_page_stop(self, opaque) :
         (cjk, d) = opaque 
         cjk.db.connection.close()
         d.db.connection.close()
-        self.jieba_close()
+        if not ictc_available :
+            self.jieba_close()
 
     def pre_parse_page(self, opaque, page_input_unicode) :
+        strinput = page_input_unicode.encode("utf-8")
         try :
-            #result = mica_ictclas.trans(strinput)
-            strinput = page_input_unicode.encode("utf-8")
-            result = " "
-            for uresult in jieba.cut(strinput) :
-                result += " " + uresult.encode("utf-8")
+            if ictc_available :
+                result = mica_ictclas.trans(strinput)
+            else :
+                if not jieba.initialized :
+                    raise NotReady("jieba is not initialized yet.")
+                    
+                result = " "
+                for uresult in jieba.cut(strinput) :
+                    result += " " + uresult.encode("utf-8")
+
             return result
 
         except Exception, e :

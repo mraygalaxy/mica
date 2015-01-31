@@ -331,6 +331,7 @@ class MICA(object):
         self.client = Translator(params["trans_id"], params["trans_secret"])
         self.mutex = Lock()
         self.transmutex = Lock()
+        self.imemutex = Lock()
         self.heromsg = "<div class='img-rounded jumbotron' style='padding: 5px'>"
         self.pid = "none"
         self.dbs = {}
@@ -367,7 +368,6 @@ class MICA(object):
         for tofrom, readable in processor_map.iteritems() :
             if processor_map[tofrom] :
                 self.processors[tofrom] = getattr(processors, processor_map[tofrom])(self, params)
-
         try :
             mdebug("Checking database access")
             if mobile :
@@ -752,24 +752,28 @@ class MICA(object):
 
     def test_dicts_handle_common(self, f) :
         fname = params["scratch"] + f 
+        exported = False
 
         try :
             if not os_path.isfile(fname) :
                 self.db.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
-                mdebug("Exported " + f + ".")
+                mdebug("Exported " + f + " to " + fname)
+            exported = True
         except couch_adapter.CommunicationError, e :
             mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
         except couch_adapter.ResourceNotFound, e :
             mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
 
+        return exported
+
     def test_dicts_handle_serial(self) :
         if params["serialize_couch_on_mobile"] :
             (f, rq) = (yield)
 
-        self.test_dicts_handle_common(f)
+        exported = self.test_dicts_handle_common(f)
 
         if params["serialize_couch_on_mobile"] :
-            rq.put(None)
+            rq.put(exported)
             rq.task_done()
 
     def test_dicts(self) :
@@ -794,12 +798,16 @@ class MICA(object):
                                 co = self.test_dicts_handle_serial()
                                 co.next()
                                 params["q"].put((co, f, rq))
-                                resp = rq.get()
+                                if rq.get() :
+                                    exported = True
                             else :
-                                self.test_dicts_handle_common(f)
+                                if self.test_dicts_handle_common(f) :
+                                    exported = True
 
-                            sleep(30)
-                            break
+                            if not exported :
+                                break
+
+                sleep(30)
 
         for name, lgp in self.processors.iteritems() :
             for f in lgp.get_dictionaries() :
@@ -3367,12 +3375,35 @@ class MICA(object):
 
                     story["source"] = source
                     start = timest()
-                    self.parse(req, story, live = True)
+
+                    # FIXME: The long-term solution to open all sqlite database handles
+                    # inside the main routine and use couroutines to synchronize
+                    # all DB accesses from the main processor, but that requires
+                    # re-writing the processor, let's deal with that later.
+                    # The goal is to allow sqlite to do normal caching.
+                    # CUrrently, the RomanizedSource languages are still are
+                    # not closing/re-opening their sqlite handles and may crash.
+                    # We don't want to re-open them anyway and need to keep
+                    # them open in the main thread.
+                    # When we finish this fix, we can remove the imemutex lock below.
+
+                    self.imemutex.acquire()
+                    try :
+                        self.parse(req, story, live = True)
+                    except Exception, e :
+                        mwarn("Need to release before propogating.")
+                        self.imemutex.release()
+                        raise e
+                    self.imemutex.release()
                     mdebug("Parse time: " + str(timest() - start))
 
                     if not output :
                         output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
                 except OSError, e :
+                    mdebug("OSError: " + str(e))
+                    output = self.warn_not_replicated(req, bootstrap = False)
+                except processors.NotReady, e :
+                    mdebug("Translation processor is not ready: " + str(e))
                     output = self.warn_not_replicated(req, bootstrap = False)
                 except Exception, e :
                     err = ""
@@ -4866,8 +4897,7 @@ def go(p) :
 
         db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
 
-        if params["serialize_couch_on_mobile"] :
-            params["q"] = Queue_Queue()
+        params["q"] = Queue_Queue()
 
         if not mobile :
             if int(params["sslport"]) == -1 :
@@ -4933,34 +4963,31 @@ def go(p) :
                 params["debug_host"] = None
                 exit(1)
 
-        if params["serialize_couch_on_mobile"] :
-            minfo("We will serialize couchdb access. Setting up queue and coroutine.")
-            if mobile :
-                rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
-            else :
-                rt = Thread(target = reactor.run)
-
-            rt.daemon = True
-            rt.start()
-
-            while True :
-                while True :
-                    try :
-                        (co, req, rq) = params["q"].get(timeout=10000)
-                        break
-                    except Queue_Empty :
-                        pass
-                try :
-                    co.send((req, rq))
-                except StopIteration :
-                    params["q"].task_done()
-                    continue
-
-                params["q"].task_done()
-
-            rt.join()
+        minfo("Setting up serialization queues and coroutine.")
+        if mobile :
+            rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
         else :
-            reactor.run()
+            rt = Thread(target = reactor.run)
+
+        rt.daemon = True
+        rt.start()
+
+        while True :
+            while True :
+                try :
+                    (co, req, rq) = params["q"].get(timeout=10000)
+                    break
+                except Queue_Empty :
+                    pass
+            try :
+                co.send((req, rq))
+            except StopIteration :
+                params["q"].task_done()
+                continue
+
+            params["q"].task_done()
+
+        rt.join()
 
     except Exception, e :
         merr("Startup exception: " + str(e))
