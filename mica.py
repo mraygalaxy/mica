@@ -13,6 +13,7 @@ from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remo
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from shutil import rmtree as shutil_rmtree
 from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
+from urllib import urlencode
 from codecs import open as codecs_open
 from uuid import uuid4 as uuid_uuid4
 from hashlib import md5 as hashlib_md5
@@ -707,6 +708,25 @@ class MICA(object):
         contents = contents_fh.read()
         contents_fh.close()
         return contents
+
+    def api(self, req, json, human = True, wrap = True) :
+        if human :
+            out = ""
+            if wrap :
+                # Don't ask me why, but jquery find() cannot find an element
+                # by its ID, if it is not wrapped in *any* parent element.
+                # Very strange.
+                out += "<div><div id='" + req.action + "result'>"
+
+            out += str(json["desc"])
+
+            if wrap:
+                out += "</div></div>"
+
+            mdebug("Returing: " + str(out))
+            return self.bootstrap(req, out, now = True)
+        else :
+            return self.bootstrap(req, json_dumps(json), now = True)
 
     def bootstrap(self, req, body, now = False, pretend_disconnected = False, nodecode = False) :
 
@@ -1892,6 +1912,39 @@ class MICA(object):
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
+        if (int(req.http.params.get("test", "0")) or mobile) and req.http.params.get("username") :
+            result = []
+            human = True if int(req.http.params.get("human", "1")) else False
+            if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
+                mdebug("Preparing online relay...")
+                newdict = {"name" : name, "requests" : json_dumps(requests)}
+                for k in req.http.params :
+                    if k not in ["test"] :
+                        newdict[k] = req.http.params.get(k)
+
+                newdict["source_language"] = from_lang
+                newdict["target_language"] = lang
+                newdict["username"] = req.session.value["username"]
+                if mobile :
+                    newdict["password"] = req.session.value["password"]
+                newdict["lang"] = req.session.value["language"]
+
+                try :
+                    ureq = urllib2_Request("https://" + params["main_server"] + "/online", urlencode(newdict))
+                    data = json_loads(urllib2_urlopen(ureq, timeout = 20).read())
+                    if data["success"] :
+                        result = data["result"]
+                    else :
+                        result.append({"TranslatedText" : data["desc"]})
+                except Exception, e :
+                    mdebug("Failed to request online translation: " + str(e))
+                    return False
+            else :
+                mdebug("Appending what we can't find.")
+                result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
+
+            return result
+
         self.mutex.acquire()
 
         attempts = 15
@@ -2748,6 +2801,20 @@ class MICA(object):
         # The user has deleted a story from the system.
         return _("Deleted")
 
+    def api_validate(self, req, human_default = "0") :
+        human = True if int(req.http.params.get("human", human_default)) else False
+
+        if "connected" not in req.session.value or not req.session.value["connected"] :
+            if not req.http.params.get("username") or not req.http.params.get("password") :
+                return self.api(req, {"success" : False, "desc" : _("API access denied")}, human)
+            else :
+                username = req.http.params.get("username")
+                password = req.http.params.get("password")
+                auth_user, reason = self.authenticate(username, password, self.credentials())
+                if not auth_user :
+                    return self.api(req, {"success" : False, "desc" : _("API access denied") + ": " + str(reason)}, human)
+
+        return False 
 
     def common(self, req) :
         try :
@@ -2756,7 +2823,6 @@ class MICA(object):
                 self.install_local_language(req)
                 req.skip_show = True
                 return self.bootstrap(req, run_template(req, FrontPageElement))
-                #return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
 
             if req.action == "privacy" :
                 self.install_local_language(req)
@@ -2810,53 +2876,48 @@ class MICA(object):
 
                 return self.bootstrap(req, 'good', now = True)
                  
+            if req.action == "online" :
+                v = self.api_validate(req)
+                if v :
+                    return v
+
+                out = {"success" : True, "desc" : False}
+                target_language = req.http.params.get("target_language")
+                source_language = req.http.params.get("source_language")
+                requests = json_loads(req.http.params.get("requests"))
+                language = req.http.params.get("lang")
+
+                self.install_local_language(req, language)
+                try :
+                    out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
+                except OnlineTranslateException, e :
+                    return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, False, wrap = False)
+
+                return self.api(req, out, False, wrap = False)
+
             if req.action == "instant" :
-                if "connected" not in req.session.value or not req.session.value["connected"] :
-                    if not req.http.params.get("username") or not req.http.params.get("password") :
-                        return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + "</div>", now = True)
-                    else :
-                        username = req.http.params.get("username")
-                        password = req.http.params.get("password")
-                        auth_user, reason = self.authenticate(username, password, self.credentials())
-                        if not auth_user :
-                            return self.bootstrap(req, "<div id='instantresult'>" + _("Translation access denied") + ": " + str(reason) + ".</div>", now = True)
+                human = True if int(req.http.params.get("human", "1")) else False
 
-                if mobile and req.http.params.get("username") :
-                    mdebug("Preparing translation relay...")
-                    if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                        instant_dest = "https://" + params["main_server"]
-                        newdict = {}
+                v = self.api_validate(req, "1")
+                if v :
+                    return v
 
-                        for k in req.http.params :
-                            v = req.http.params.get(k)
-                            # urllib doesn't like spaces, or you get 400 Bad Request
-                            if k in [ u"source", u"username", u"password"] :
-                                v = myquote(v.encode('utf-8'))
-                            newdict[k] = v 
-
-                        par = "&".join("{}={}".format(key, val) for key, val in newdict.items())
-                        try :
-                            iurl = instant_dest + "/instant?" + par
-                            mdebug("Ready to relay: " + iurl)
-                            ureq = urllib2_Request(iurl)
-                            mdebug("Returning result from relay.")
-                            return self.bootstrap(req, urllib2_urlopen(ureq, timeout = 20).read(), now = True)
-                        except Exception, e :
-                            mdebug("Failed to request translation by relay: " + str(e))
-                            iout = _("Internet access error. Try again later: ") + str(e)
-                    else :
-                        iout = _("No internet access. Offline instant translation only.")
-                    return self.bootstrap(req, "<div id='instantresult'>" + iout + "</div>", now = True)
-                            
                 target_language = req.http.params.get("target_language")
                 source_language = req.http.params.get("source_language")
                 source = req.http.params.get("source")
                 language = req.http.params.get("lang")
+
                 out = ""
+                if not human :
+                    out = {"success" : True, "online" : [], "offline" : []}
+
+                mdebug("Request to translate: " + str(source) + " from " + source_language + " to " + target_language)
+
                 self.install_local_language(req, language)
-                out += "<div id='instantresult'>"
-                out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
-                final = { }
+
+                if human :
+                    out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
+
                 requests = [source]
                 gp = self.processors[source_language + "," + target_language]
 
@@ -2868,35 +2929,43 @@ class MICA(object):
                     for x in range(0, len(breakout)) :
                         requests.append(breakout[x].encode("utf-8"))
 
-                if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                    try :
-                        result = self.translate_and_check_array(req, False, requests, target_language, source_language)
-                        for x in range(0, len(requests)) : 
-                            part = result[x]
-                            if "TranslatedText" not in part :
-                                mdebug("Why didn't we get anything: " + json_dumps(result))
-                                target = _("No instant translation available.")
-                            else :
-                                target = part["TranslatedText"].encode("utf-8")
-                            
-                            if x == 0 :
-                                out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
-                                final["whole"] = (source, target)
-                            else :
-                                char = breakout[x-1].encode("utf-8")
-                                if "parts" not in final :
-                                    out += _("Piecemeal instant translation") + ":<br/>\n"
-                                    final["parts"] = []
-                                out += "(" + char + "): "
-                                out += target 
-                                out += "<br/>\n"
-                                final["parts"].append((char, target))
-                    except OnlineTranslateException, e :
-                        out += _("Internet access error. Try again later: ") + str(e)
-                else :
-                    out += _("No internet access. Offline instant translation only.")
+                try :
+                    result = self.translate_and_check_array(req, False, requests, target_language, source_language)
+                    if not result :
+                        self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ")}, human)
+                except OnlineTranslateException, e :
+                    mwarn("Online translate error: " + str(e))
+                    return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, human)
+
+                for x in range(0, len(requests)) : 
+                    if (x + 1) > len(result) :
+                        continue
+
+                    part = result[x]
+                    if "TranslatedText" not in part :
+                        target = _("No instant translation available.")
+                    else :
+                        target = part["TranslatedText"].encode("utf-8")
+                    
+                    if x == 0 :
+                        if human :
+                            out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
+                        else :
+                            out["whole"] = {"source" : source, "target" : target}
+                    else :
+                        char = breakout[x-1].encode("utf-8")
+                        if human :
+                            if x == 1:
+                                out += _("Piecemeal instant translation") + ":<br/>\n"
+                        if human :
+                            out += "(" + char + "): "
+                            out += target 
+                            out += "<br/>\n"
+                        else :
+                            out["online"].append({"char" : char, "target" : target})
                        
-                out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
+                if human :
+                    out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
 
                 try :
                     opaque = gp.parse_page_start()
@@ -2910,24 +2979,33 @@ class MICA(object):
                             tar = gp.get_first_translation(opaque, request_decoded, False)
                             if tar :
                                 for target in tar :
-                                    out += "<br/>(" + request
                                     ipa = gp.get_ipa(request_decoded)
-                                    if ipa :
-                                        out += ", " + str(ipa[0])
 
-                                    out += "): " + target.encode("utf-8")
+                                    if human :
+                                        out += "<br/>(" + request
+                                        if ipa :
+                                            out += ", " + str(ipa[0])
+                                        out += "): " + target.encode("utf-8")
+                                    else :
+                                        out["offline"].append({"request" : request, "ipa" : ipa, "target" : target.encode("utf-8")})
                             else :
-                                out += "<br/>(" + request + ") " + _("No instant translation found.")
+                                if human :
+                                    out += "<br/>(" + request + ") " + _("No instant translation found.")
+                                else :
+                                    out["offline"].append({"request" : request, "ipa" : False, "target" : False})
 
                         gp.parse_page_stop(opaque)
                     except OSError, e :
                         mdebug("Looking up target instant translation failed: " + str(e))
-                        out += _("Please wait until this account is fully synchronized for an offline instant translation.")
+                        return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
                 except Exception, e :
                     mdebug("Instant test failed: " + str(e))
-                    out += _("Please wait until this account is fully synchronized for an offline instant translation.")
-                out += "</div>"
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + out + "</h4></div>", now = True)
+                    return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
+
+                if human :
+                    out = {"success" : True, "desc" : out}
+
+                return self.api(req, out, human)
 
             def baidu_compliance_fix(session):
                 self.fixed = False
