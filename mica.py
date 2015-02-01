@@ -3434,42 +3434,71 @@ class MICA(object):
 
                 self.first_request[username] = True 
 
+            if req.action == "chat" and req.http.params.get("pinyin") :
+                self.install_local_language(req, req.http.params.get("lang"))
+
+                story = {
+                   "name" : "pinyin",
+                   "target_language" : supported_map["en"],
+                   "source_language" : supported_map["zh-CHS"],
+                }
+
+                gp = self.processors[self.tofrom(story)]
+
+                return self.api(req, {"success" : True, "result" : gp.get_chars(req.http.params.get("source"))}, human = False)
+
             if req.action == "chat" and req.http.params.get("ime") :
-                try :
-                    self.install_local_language(req, req.http.params.get("lang"))
+                self.install_local_language(req, req.http.params.get("lang"))
+                output = False
+                mode = req.http.params.get("mode")
+                orig = req.http.params.get("source")
+                imes = int(req.http.params.get("ime"), 0)
+                story = {
+                   "name" : "ime",
+                   "target_language" : supported_map[req.http.params.get("target_language")],
+                   "source_language" : supported_map[req.http.params.get("source_language")],
+                }
 
-                    output = False
+                source = ""
+                if orig :
                     imes = int(req.http.params.get("ime"))
-                    mode = req.http.params.get("mode")
-                    story = {
-                       "name" : "ime",
-                       "target_language" : supported_map[req.http.params.get("target_language")],
-                       "source_language" : supported_map[req.http.params.get("source_language")],
-                    }
+                    gp = self.processors[self.tofrom(story)]
+                    mdebug("Type: " + str(type(orig)))
+                    char_result = gp.get_chars(orig)
 
-                    source = ""
+                    if not char_result :
+                        mdebug("No result from search for: " + orig)
+                        return self.bootstrap(req, _("No result") + ".", now = True)
 
+                    imes = len(char_result)
+
+                    for imex in range(0, imes) :
+                        if imes > 0 :
+                            source += " " + str(imex + 1) + ". "
+                        source += char_result[imex][0]
+                else :
                     for imex in range(1, imes + 1) :
                         if imes > 1 :
                             source += " " + str(imex) + ". "
                         source += req.http.params.get("ime" + str(imex)).decode("utf-8")
 
-                    story["source"] = source
-                    start = timest()
+                story["source"] = source
+                start = timest()
 
-                    # FIXME: The long-term solution to open all sqlite database handles
-                    # inside the main routine and use couroutines to synchronize
-                    # all DB accesses from the main processor, but that requires
-                    # re-writing the processor, let's deal with that later.
-                    # The goal is to allow sqlite to do normal caching.
-                    # CUrrently, the RomanizedSource languages are still are
-                    # not closing/re-opening their sqlite handles and may crash.
-                    # We don't want to re-open them anyway and need to keep
-                    # them open in the main thread.
-                    # When we finish this fix, we can remove the imemutex lock below.
+                # FIXME: The long-term solution to open all sqlite database handles
+                # inside the main routine and use couroutines to synchronize
+                # all DB accesses from the main processor, but that requires
+                # re-writing the processor, let's deal with that later.
+                # The goal is to allow sqlite to do normal caching.
+                # CUrrently, the RomanizedSource languages are still are
+                # not closing/re-opening their sqlite handles and may crash.
+                # We don't want to re-open them anyway and need to keep
+                # them open in the main thread.
+                # When we finish this fix, we can remove the imemutex lock below.
 
-                    self.imemutex.acquire()
-                    cerror = False
+                self.imemutex.acquire()
+                cerror = False
+                try :
                     try :
                         self.parse(req, story, live = True)
                     except Exception, e :

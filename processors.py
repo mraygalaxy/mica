@@ -3,13 +3,14 @@
 
 from common import *
 from stardict import load_dictionary
-from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column
+from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column, Float
 from sqlalchemy.interfaces import PoolListener
 from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
 from re import compile as re_compile, IGNORECASE
 from unicodedata import normalize, category
 from os.path import exists as path_exists
+import codecs
 
 if not mobile :
     import multiprocessing
@@ -90,6 +91,9 @@ class Processor(object) :
 
         self.punctuation_without_newlines.update(deepcopy(self.punctuation_numbers))
         self.punctuation.update(deepcopy(self.punctuation_numbers))
+
+    def get_chars(self, romanized) :
+        return False
 
     def get_ipa(self, source) :
         return False
@@ -666,6 +670,7 @@ class EnglishSource(RomanizedSource) :
 
             trans.commit()
 
+
     def get_ipa(self, source) :
         if "ipa" in self.srcdb :
             s = self.srcdb["ipa"].select().where(self.srcdb["ipa"].c.word_str == source)
@@ -711,7 +716,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         self.punctuation.update(deepcopy(self.punctuation_letters))
 
     def get_dictionaries(self) :
-        return ["cjklib.db", "cedict.db", "tones.db", "jieba.db"]
+        return ["cjklib.db", "cedict.db", "tones.db", "jieba.db", "pinyin.db"]
 
     def test_dictionaries(self, opaque) :
         cjk, d = opaque 
@@ -753,6 +758,118 @@ class ChineseSimplifiedToEnglish(Processor) :
             dpfh.close()
             trans.commit()
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
+
+        db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [MyListener()])
+        db.echo = False
+        metadata = MetaData(db)
+        conn = db.connect()
+
+        self.imedb = {}
+
+        self.imedb["ime"] = Table('ime', metadata,
+            Column('chars', String),
+            Column('freq', Float),
+            Column('traditional', Integer, index=True),
+            Column('wordall', String, index = True),
+            Column('wordmerged', String, index = True),
+            Column('word0', String, index = True),
+            Column('word1', String, index = True),
+            Column('word2', String, index = True),
+            Column('word3', String, index = True),
+        )
+
+        self.imedb["ime"].create(checkfirst=True)
+
+        s = self.imedb["ime"].select().limit(1)
+        rs = s.execute()
+        result = rs.fetchone()
+
+        if result is None :
+            orig_ime = self.params["scratch"] + "pinyin.txt"
+            mdebug("Need to re-generate pinyin IME database from " + orig_ime)
+            fh = codecs.open(orig_ime, "r", "utf-8")
+
+            trans = conn.begin()
+
+            while True :
+                line = fh.readline().strip()
+                if line == u'':
+                    break
+
+                chars, freq, traditional, wordall = line.split(u" ", 3)
+                wordmerged = wordall.replace(u" ", u"")
+                words = wordall.split(u" ")
+                wordlist = [u"", u"", u"", u""]
+                for idx in range(0, len(words)) :
+                    wordlist[idx] = words[idx]
+
+                i = self.imedb["ime"].insert().values(chars = chars, 
+                                                      freq = float(freq),  
+                                                      traditional = int(traditional),
+                                                      wordall = wordall,
+                                                      wordmerged = wordmerged,
+                                                      word0 = wordlist[0],
+                                                      word1 = wordlist[1],
+                                                      word2 = wordlist[2],
+                                                      word3 = wordlist[3])
+                conn.execute(i)
+
+            trans.commit()
+            fh.close()
+
+    def get_chars(self, wordall, limit = 5) :
+        # First see if the original version is in there without spaces:
+        assert(isinstance(wordall, unicode))
+        merged = wordall.replace(u" ", u"")
+
+        # No reason to limit to 5, here, except that we do not yet have pagination
+        # in javascript
+        s = self.imedb["ime"].select().where(self.imedb["ime"].c.traditional == 0). \
+                                       where(self.imedb["ime"].c.wordmerged == merged). \
+                                       limit(limit). \
+                                       order_by(self.imedb["ime"].c.freq.desc())
+        rs = s.execute()
+        results = rs.fetchall()
+
+        if len(results) > 0 :
+            mdebug("Win on merged: " + merged)
+            return map(list, results)
+
+        # Try original
+        s = self.imedb["ime"].select().where(self.imedb["ime"].c.traditional == 0). \
+                                       where(self.imedb["ime"].c.wordall == wordall). \
+                                       limit(limit). \
+                                       order_by(self.imedb["ime"].c.freq.desc())
+
+        rs = s.execute()
+        results = rs.fetchall()
+
+        if len(results) > 0 :
+            mdebug("Win on all: " + wordall)
+            return map(list, results)
+
+        # OK, last try separated:
+        words = wordall.split(u" ")
+        wordlist = [u"", u"", u"", u""]
+        for idx in range(0, len(words)) :
+            wordlist[idx] = words[idx]
+
+        s = self.imedb["ime"].select().where(self.imedb["ime"].c.traditional == 0). \
+                                       where(self.imedb["ime"].c.word0 == wordlist[0]). \
+                                       where(self.imedb["ime"].c.word1 == wordlist[1]). \
+                                       where(self.imedb["ime"].c.word2 == wordlist[2]). \
+                                       where(self.imedb["ime"].c.word3 == wordlist[3]). \
+                                       limit(limit). \
+                                       order_by(self.imedb["ime"].c.freq.desc())
+
+        rs = s.execute()
+        results = rs.fetchall()
+
+        if len(results) > 0 :
+            mdebug("Win on : " + wordall)
+            return map(list, results)
+
+        return False 
 
     def get_pinyin(self, chars=u'你好', splitter=''):
         result = []

@@ -401,10 +401,8 @@ var _callbacks_ = {
                      */
                     var chat_language = chat_target_language;
                      
-                    var micaurl = "/chat?ime=" + options.length + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
-                    for (var i = 0; i < 5 && i < options.length; i++) {
-                        micaurl += "&ime" + (i + 1) + "=" + options[i];
-                    }
+                    //var micaurl = "/chat?ime=" + options.length + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+                    var micaurl = "/chat?ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
                     $.get(micaurl, "", $.proxy(function(response, success){
                         //console.log("Response: " + response); 
@@ -474,9 +472,12 @@ var _callbacks_ = {
                     self.currentText = text;
                     self.updateDialog();
                 } else {
-                    $.get(self.url, params, $.proxy(function(response, success){
+                    // FIXME FIXME: Javascript needs to know what the choices are
+                    // in JSON (mixed with HTML inside JSON)
+                    // So that the user can press the right option!!!! 
+                    //$.get(self.url, params, $.proxy(function(response, success){
                         self.updateDialog();
-                    }, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
+                    //}, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
                 }
             }
         };
