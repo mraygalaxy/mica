@@ -1912,11 +1912,10 @@ class MICA(object):
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
-        if (int(req.http.params.get("test", "0")) or mobile) and req.http.params.get("username") :
+        username = req.http.params.get("username", req.session.value["username"])
+        if (int(req.http.params.get("test", "0")) or mobile) :
             result = []
-            human = True if int(req.http.params.get("human", "1")) else False
             if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                mdebug("Preparing online relay...")
                 newdict = {"name" : name, "requests" : json_dumps(requests)}
                 for k in req.http.params :
                     if k not in ["test"] :
@@ -1924,14 +1923,18 @@ class MICA(object):
 
                 newdict["source_language"] = from_lang
                 newdict["target_language"] = lang
-                newdict["username"] = req.session.value["username"]
+                newdict["username"] = username 
                 if mobile :
                     newdict["password"] = req.session.value["password"]
                 newdict["lang"] = req.session.value["language"]
 
+                mdebug("Preparing online relay with: " + str(newdict) + " to " + params["main_server"])
+
                 try :
                     ureq = urllib2_Request("https://" + params["main_server"] + "/online", urlencode(newdict))
+                    mverbose("Returning from online relay")
                     data = json_loads(urllib2_urlopen(ureq, timeout = 20).read())
+                    mverbose("Finished data read from online relay: " + str(data))
                     if data["success"] :
                         result = data["result"]
                     else :
@@ -3466,29 +3469,33 @@ class MICA(object):
                     # When we finish this fix, we can remove the imemutex lock below.
 
                     self.imemutex.acquire()
+                    cerror = False
                     try :
                         self.parse(req, story, live = True)
                     except Exception, e :
-                        mwarn("Need to release before propogating.")
+                        merr("Cannot parse chat: " + str(e))
+                        cerror = e
+                    finally :
                         self.imemutex.release()
-                        raise e
-                    self.imemutex.release()
+                        if cerror :
+                            raise cerror
+
                     mdebug("Parse time: " + str(timest() - start))
 
                     if not output :
                         output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
                 except OSError, e :
-                    mdebug("OSError: " + str(e))
+                    merr("OSError: " + str(e))
                     output = self.warn_not_replicated(req, bootstrap = False)
                 except processors.NotReady, e :
-                    mdebug("Translation processor is not ready: " + str(e))
+                    merr("Translation processor is not ready: " + str(e))
                     output = self.warn_not_replicated(req, bootstrap = False)
                 except Exception, e :
                     err = ""
                     for line in format_exc().splitlines() :
                         err += line + "\n"
-                    mdebug(err)
-                    output = _("Failed to translate story") + ": " + str(e)
+                    merr(err)
+                    output = _("Chat error") + ": " + source 
 
                 return self.bootstrap(req, output, now = True)
 
