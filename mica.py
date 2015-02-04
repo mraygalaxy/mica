@@ -3459,6 +3459,9 @@ class MICA(object):
                    "source_language" : supported_map[req.http.params.get("source_language")],
                 }
 
+                out = {"success" : False}
+                lens = []
+                chars = []
                 source = ""
                 if orig :
                     imes = int(req.http.params.get("ime"))
@@ -3468,7 +3471,9 @@ class MICA(object):
 
                     if not char_result :
                         mdebug("No result from search for: " + orig)
-                        return self.bootstrap(req, _("No result") + ".", now = True)
+                        out["desc"] = _("No result") + "."
+                        return self.api(req, out, False)
+
 
                     imes = len(char_result)
 
@@ -3476,11 +3481,17 @@ class MICA(object):
                         if imes > 0 :
                             source += " " + str(imex + 1) + ". "
                         source += char_result[imex][0]
+                        lens.append(len(char_result[imex][0]))
+                        chars.append(char_result[imex][0])
+
                 else :
                     for imex in range(1, imes + 1) :
                         if imes > 1 :
                             source += " " + str(imex) + ". "
-                        source += req.http.params.get("ime" + str(imex)).decode("utf-8")
+                        char_result = req.http.params.get("ime" + str(imex)).decode("utf-8")
+                        source += char_result 
+                        lens.append(len(char_result))
+                        chars.append(char_result)
 
                 story["source"] = source
                 start = timest()
@@ -3512,21 +3523,23 @@ class MICA(object):
                     mdebug("Parse time: " + str(timest() - start))
 
                     if not output :
-                        output = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
+                        out["success"] = True
+                        out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
+                        out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
                 except OSError, e :
                     merr("OSError: " + str(e))
-                    output = self.warn_not_replicated(req, bootstrap = False)
+                    out["result"] = self.warn_not_replicated(req, bootstrap = False)
                 except processors.NotReady, e :
                     merr("Translation processor is not ready: " + str(e))
-                    output = self.warn_not_replicated(req, bootstrap = False)
+                    out["result"] = self.warn_not_replicated(req, bootstrap = False)
                 except Exception, e :
                     err = ""
                     for line in format_exc().splitlines() :
                         err += line + "\n"
                     merr(err)
-                    output = _("Chat error") + ": " + source 
+                    out["result"] = _("Chat error") + ": " + source 
 
-                return self.bootstrap(req, output, now = True)
+                return self.api(req, out, False) 
 
             if req.http.params.get("uploadfile") :
                 fh = req.http.params.get("storyfile")

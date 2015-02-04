@@ -378,13 +378,15 @@ var _callbacks_ = {
                 var chat_source_language = pair[0];
                 var chat_target_language = pair[1];  
 
+		/*
                 if (chat_target_language == "zh" || chat_target_language == "zh-CHS") {
                     var options = [self.currentText];
                 } else {
                     var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
                 }
+		*/
 
-                if (options && options.length){
+                //if (true || options && options.length){
                     var $box = $('#chinese-ime');
                     if (!$box.size()){
                         $box = $(document.createElement('div')).
@@ -405,8 +407,20 @@ var _callbacks_ = {
                     var micaurl = "/chat?ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
                     $.get(micaurl, "", $.proxy(function(response, success){
-                        //console.log("Response: " + response); 
-                        $box.find('ul').html(response);
+                        console.log("Response: " + response); 
+			var data = JSON.parse(response);
+			if(data.success)  {
+				if (!$.wordDatabase.hasWord(data.result.word, 10)){
+					$.wordDatabase.addWord(data.result.word, 10);
+					$.wordDatabase.setChoices(data.result.word, data.result.chars, data.result.lens);
+				}
+
+				$box.find('ul').html(data.result.human);
+			} else {
+				$box.find('ul').html(data.desc);
+				//self.callAjax(self.currentText, self.currentPage);
+			}
+
                         $box.show();
                         var caretPosition = self.$el.getCaretPosition();
                         $box.css({
@@ -429,9 +443,8 @@ var _callbacks_ = {
                         top: self.$el.offset().top + caretPosition.top
                     });
                     */
-                } else { // load options with ajax
-                    self.callAjax(self.currentText, self.currentPage);
-                }
+                //} else { // load options with ajax
+               // }
             } else {
                 var $box = $('#chinese-ime').hide();
             }
@@ -472,9 +485,6 @@ var _callbacks_ = {
                     self.currentText = text;
                     self.updateDialog();
                 } else {
-                    // FIXME FIXME: Javascript needs to know what the choices are
-                    // in JSON (mixed with HTML inside JSON)
-                    // So that the user can press the right option!!!! 
                     //$.get(self.url, params, $.proxy(function(response, success){
                         self.updateDialog();
                     //}, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
