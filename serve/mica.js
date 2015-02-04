@@ -1227,7 +1227,12 @@ function appendChat(who, msg) {
     var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg;
 
     $.get(micaurl, "", $.proxy(function(response, success){
-	appendBox(who, response);
+	var data = JSON.parse(response);
+	if(data.success)  {
+		appendBox(who, data.result.human);
+	} else {
+		appendBox(who, data.desc);
+	}
     }, {}), 'html');
 }
 
