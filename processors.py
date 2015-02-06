@@ -719,7 +719,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         return ["cjklib.db", "cedict.db", "tones.db", "jieba.db", "pinyin.db"]
 
     def test_dictionaries(self, opaque) :
-        cjk, d = opaque 
+        cjk, d, hold = opaque 
 
         '''
         for x in d.getFor(u'白鹭'.decode('utf-8')) :
@@ -832,7 +832,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         results = rs.fetchall()
 
         if len(results) > 0 :
-            mdebug("Win on merged: " + merged)
+            mverbose("Win on merged: " + merged)
             return map(list, results)
 
         # Try original
@@ -943,13 +943,13 @@ class ChineseSimplifiedToEnglish(Processor) :
             #jieba.enable_parallel(cpus)
 
     def jieba_close(self) :
-        if isinstance(jieba.use_sqlite, dict) and "conn" in jieba.use_sqlite :
+        if jieba.initialized and isinstance(jieba.use_sqlite, dict) and "conn" in jieba.use_sqlite :
             mdebug("Closing jieba library.")
             jieba.use_sqlite["conn"].close()
             jieba.use_sqlite = False
         jieba.initialized = False
 
-    def get_cjk_handle(self) :
+    def get_cjk_handle(self, big_enough = True) :
         cjk = None
         d = None
         try :
@@ -966,23 +966,38 @@ class ChineseSimplifiedToEnglish(Processor) :
             d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
             mverbose("MICA cedict success!")
 
-            if not ictc_available and not jieba.initialized :
+            if big_enough and not ictc_available and not jieba.initialized :
                 self.jieba_open()
                 self.jieba_close()
 
         except Exception, e :
             merr("MICA offline open failed: " + str(e))
 
-        return (cjk, d)
+        return (cjk, d, False)
 
 
-    def parse_page_start(self) : 
-        if not ictc_available :
+    def all_two_chars_or_less(self, hint_strinput) :
+        # Check if parsing is necessary
+        parts = hint_strinput.split(" ")
+        all_two_chars_or_less = True
+
+        for part in parts :
+            if len(part) > 2 :
+                all_two_chars_or_less = False
+                break
+
+        return all_two_chars_or_less
+
+    def parse_page_start(self, hint_strinput = False) : 
+        big_enough = not hint_strinput or not self.all_two_chars_or_less(hint_strinput)
+        if big_enough and not ictc_available :
+            mdebug("Opening jieba......")
             self.jieba_open()
-        return self.get_cjk_handle()
+
+        return self.get_cjk_handle(big_enough = big_enough)
 
     def parse_page_stop(self, opaque) :
-        (cjk, d) = opaque 
+        (cjk, d, hold) = opaque 
         cjk.db.connection.close()
         d.db.connection.close()
         if not ictc_available :
@@ -990,6 +1005,10 @@ class ChineseSimplifiedToEnglish(Processor) :
 
     def pre_parse_page(self, opaque, page_input_unicode) :
         strinput = page_input_unicode.encode("utf-8")
+
+        if self.all_two_chars_or_less(page_input_unicode) :
+            return strinput
+
         try :
             if ictc_available :
                 result = mica_ictclas.trans(strinput)
@@ -1008,10 +1027,14 @@ class ChineseSimplifiedToEnglish(Processor) :
             self.parse_page_stop(opaque)
             raise e
 
-    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
-        cjk, d = opaque 
+    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False, temp_r = False) :
+        cjk, d, hold = opaque 
         targ = []
-        temp_r = d.getFor(source)
+        if hold :
+            temp_r = hold 
+        else :
+            temp_r = d.getFor(source)
+
         if debug :
             mdebug("CJK result: " + str(temp_r))
         for tr in temp_r :
@@ -1034,7 +1057,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             return False
 
         mdebug("Going online...")
-        (cjk, d) = opaque 
+        (cjk, d, hold) = opaque 
         name = story['name']
         ms = []
         targ = []
@@ -1269,7 +1292,7 @@ class ChineseSimplifiedToEnglish(Processor) :
     def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         units = []
 
-        cjk, d = opaque 
+        cjk, d, hold = opaque 
         trans = []
         targ = []
         results = d.getFor(uni)
@@ -1346,10 +1369,12 @@ class ChineseSimplifiedToEnglish(Processor) :
                 online_units = self.online_cross_reference(req, story, uni, opaque)
 
                 if not online_units or not len(online_units) :
-                    targ = self.get_first_translation(opaque, uni, readings[0])
+                    temp_r = d.getFor(uni)
+                    tmp_opaque = (cjk, d, temp_r)
+                    targ = self.get_first_translation(tmp_opaque, uni, readings[0])
                     unit = self.add_unit([readings[0]], uni, [targ[0]])
                     for x in readings :
-                        targ = self.get_first_translation(opaque, uni, x, False)
+                        targ = self.get_first_translation(tmp_opaque, uni, x, False)
                         if not targ :
                             continue
                         for e in targ :
