@@ -19,24 +19,11 @@ from uuid import uuid4 as uuid_uuid4
 from hashlib import md5 as hashlib_md5
 from json import loads as json_loads, dumps as json_dumps
 from base64 import b64encode as base64_b64encode
-from sys import settrace as sys_settrace
 from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
 
-'''
-def tracefunc(frame, event, arg, indent=[0]):
-    if event == "call":
-        indent[0] += 2
-        mdebug("-" * indent[0] + "> call function: " + frame.f_code.co_name)
-    elif event == "return":
-        mdebug("<" + "-" * indent[0] + " exit function: " + frame.f_code.co_name)
-        indent[0] -= 2
-
-    return tracefunc
-#sys_settrace(tracefunc)
-'''
 
 import couch_adapter
 import processors
@@ -920,7 +907,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-        opaque = processor.parse_page_start() 
+        opaque = processor.parse_page_start(False if not live else story["source"])
 
         processor.test_dictionaries(opaque)
 
@@ -2820,6 +2807,7 @@ class MICA(object):
         return False 
 
     def common(self, req) :
+        global times
         try :
             if req.action == "disconnect" :
                 self.disconnect(req, req.session)
@@ -3494,7 +3482,6 @@ class MICA(object):
                         chars.append(char_result)
 
                 story["source"] = source
-                start = timest()
 
                 # FIXME: The long-term solution to open all sqlite database handles
                 # inside the main routine and use couroutines to synchronize
@@ -3511,7 +3498,14 @@ class MICA(object):
                 cerror = False
                 try :
                     try :
+                        #from sys import settrace as sys_settrace
+                        #sys_settrace(tracefunc)
+                        start = timest()
                         self.parse(req, story, live = True)
+                        #sys_settrace(None)
+                        mdebug("Parse time: " + str(timest() - start))
+                        #call_report()
+
                     except Exception, e :
                         merr("Cannot parse chat: " + str(e))
                         cerror = e
@@ -3520,7 +3514,6 @@ class MICA(object):
                         if cerror :
                             raise cerror
 
-                    mdebug("Parse time: " + str(timest() - start))
 
                     if not output :
                         out["success"] = True

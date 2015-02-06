@@ -11,6 +11,7 @@ from sys import getdefaultencoding
 from locale import setlocale, LC_ALL, getlocale
 from gettext import install as gettext_install, GNUTranslations, NullTranslations
 from urllib2 import quote
+from time import time as timest
 
 import __builtin__
 import xmlrpclib
@@ -135,8 +136,8 @@ tutorials = {
         u"py": "info_template.html",
 }
 
-#verbose = False
-verbose = True
+verbose = False
+#verbose = True
 
 def minfo(msg) :
    if micalogger :
@@ -339,3 +340,46 @@ def myquote(val):
         val_unquoted = val_unquoted.decode("utf-8")
 
     return val_unquoted
+
+times = {}
+tree = []
+
+def tracefunc(frame, event, arg, indent=[0]):
+    global times
+    if event == "call":
+        tree.append(frame.f_code.co_name)
+        name = ".".join(tree)
+        indent[0] += 1
+        if name not in times :
+            times[name] = {"level" : indent[0], "time" : 0, "calls" : 0}
+        times[name]["start"] = timest()
+        #mdebug("-" * indent[0] + "> call function: " + name)
+    elif event == "return":
+        name = ".".join(tree)
+        if name in times :
+            times[name]["time"] = times[name]["time"] + (timest() - times[name]["start"])
+            times[name]["calls"] += 1
+
+        indent[0] -= 1
+        #mdebug("<" + "-" * indent[0] + " exit function: " + name)
+        del tree[-1]
+
+    return tracefunc
+def call_report() :
+    global times
+    mdebug("Times length: " + str(len(times)))
+    fulist = []
+    for fname, fdata in times.iteritems() :
+        fdata["fname"] = fname
+        fulist.append(fdata)
+
+    def by_time( a ):
+        return a["time"]
+
+    fulist.sort(key=by_time, reverse = True)
+
+    for fidx in range(0, min(50, len(fulist))) :
+        fdata = fulist[fidx]
+        mdebug("Function: " + fdata["fname"] + " calls: " + str(fdata["calls"]) + " level: " + str(fdata["level"]) + " time: " + str(fdata["time"]))
+    times = {}
+
