@@ -117,7 +117,7 @@ class Processor(object) :
         if not opaque :
             self.parse_page_stop(handle)
 
-    def parse_page_start(self) : 
+    def parse_page_start(self, hint_strinput = False) : 
         return True
 
     def parse_page_stop(self, opaque) :
@@ -350,7 +350,7 @@ class RomanizedSource(Processor) :
         unit["match_romanization"] = []
         return [unit]
 
-    def parse_page_start(self) : 
+    def parse_page_start(self, hint_strinput = False) : 
         return False
 
     def parse_page_stop(self, opaque) :
@@ -759,6 +759,9 @@ class ChineseSimplifiedToEnglish(Processor) :
             trans.commit()
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
+        self.setup_imedb()
+
+    def setup_imedb(self) :
         db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [MyListener()])
         db.echo = False
         metadata = MetaData(db)
@@ -818,6 +821,9 @@ class ChineseSimplifiedToEnglish(Processor) :
             fh.close()
 
     def get_chars(self, wordall, limit = 5) :
+        if not hasattr(self, "imedb") :
+            self.setup_imedb()
+
         # First see if the original version is in there without spaces:
         assert(isinstance(wordall, unicode))
         merged = wordall.replace(u" ", u"")

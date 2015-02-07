@@ -256,7 +256,18 @@ var _callbacks_ = {
                 } else if (self.currentText.length > 0) {
                     if (key == ' '){ 
                         // pressed space
-                        self.makeSelection(self.currentSelection - 1);
+                        var pair = getPairs(); 
+                        var chat_source_language = pair[0];
+                        var chat_target_language = pair[1];  
+                        if (chat_target_language != "zh" && chat_target_language != "zh-CHS") {
+                            self.makeSelection(self.currentSelection - 1);
+                        } else {
+                            self.addText(self.currentText + " ");
+                            self.currentText = '';
+                            self.currentPage = 0;
+                            self.currentSelection = 1;
+                            self.lastPage = false;
+                        }
                     } else if (event.which >= 49 && event.which <= 53) { 
                         // pressed number between 1 and 5
                         self.makeSelection(event.which - 49);
