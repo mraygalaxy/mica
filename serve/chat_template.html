@@ -15,18 +15,19 @@
     <t:slot name="incoming"/>
     <div style='height: 35%; overflow-y: auto; border: 1px solid black' id="iResp"></div>
     <div style='height: 5%; border: 1px solid black' id="iStatus"></div>
-    <form id='sendForm' name="sendForm" onSubmit="return sendMsg(this);" action="#">
+    <form id='sendForm' name="sendForm">
          <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
             <input type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
             <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
 	    <button type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-        <input class='btn btn-default btn-xs' type="submit" value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"/>
+        <input class='btn btn-default btn-xs' value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"/>
         <!--    <input type="button" value="Quit" tabindex="4" onclick="return quit();"/>-->
         </div>
         <div class="spaced">
-            <textarea class='form-control' name="msg" id='msgArea' rows="1" tabindex="2"/>
+            <div id='missing' style='display: none'><div style='display: inline; color: red'><t:slot name='provideaddress'/></div></div>
+            <input type='text' class='form-control' name="msg" id='msgArea' rows="1" tabindex="2" autocomplete="off"/>
         </div>
         <br/><br/>
     </form>

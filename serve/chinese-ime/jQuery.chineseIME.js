@@ -177,12 +177,32 @@ var _callbacks_ = {
         options.allowHide = options.allowHide == true;
 
 
-        self.currentText = '';
-        self.currentPage = 0; // page of given options
-        self.currentSelection = 1; // current selection on the current page (normally 1-5)
-        self.lastPage = false; // are we at the last page of options?
+        self.resetCurrent = function() {
+            self.currentText = '';
+            self.currentPage = 0;
+            self.currentSelection = 1;
+            self.lastPage = false;
+        }
+
+        self.clearOld = function(amount) {
+            var txt = $("#msgArea").val(); 
+            if (amount == -1) {
+                amount = self.currentText.length;
+            } else if(amount == -2) {
+                $("#msgArea").val('');
+                return;
+            }
+
+            $("#msgArea").val(txt.substring(0, txt.length - amount));
+        }
+
+
+        self.resetCurrent();
+        self.inputText = '';
+        self.clearOld(-2);
+        document.getElementById("msgArea").focus();
         //self.options = [];
-        self.html = '<span class="typing"></span><ul class="options"></ul>';
+        self.html = '<ul class="options"></ul>';
         self.url = '//www.google.com/inputtools/request?ime=pinyin&ie=utf-8&oe=utf-8&app=translate&uv'
         self.paramNames = {'text': 'text',
                            'num': 'num',
@@ -192,14 +212,18 @@ var _callbacks_ = {
         // Add a reverse reference to the DOM object
         self.$el.data("chineseInput", self);
         
+        self.nothing = function() {
+            event.preventDefault();
+            return false; 
+        }
         self.init = function(){
             
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
             // Further initialization
 
-            self.$el.keydown(self.keyDown);
-            self.$el.keypress(self.keyPress);
+            self.$el.keydown(self.nothing);
+            self.$el.keyup(self.keyPress);
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
             self.$toolbar.insertAfter(self.$el);
@@ -216,9 +240,8 @@ var _callbacks_ = {
             self.reposition();
         };
         
-        self.keyDown = function(event){
-            if (self.options.active) {
-                if (self.currentText.length > 0){
+
+        /*
                     switch(event.which){
                         case 37: // left 
                             self.previousChoice();
@@ -228,26 +251,32 @@ var _callbacks_ = {
                             return false;
                     }
                 }
-                switch(event.which){
-                    case 8: // backspace
-                        if (self.currentText.length > 0){
-                            self.currentText = self.currentText.substring(0,self.currentText.length-1);
-                            self.updateDialog();
-                            break;
-                        }
-                    default:
-                        return true; // continue with keypress if one of the above criteria not met
-                }
-                event.preventDefault();
-                return false;
-            }
-        };
+        */
 
         self.keyPress = function(event){
+            event.preventDefault();
+
             if (self.options.active) {
-                var key = String.fromCharCode(event.which);
-                var pat = /[a-zA-Z]/;
-                if (pat.test(key)){ 
+                var beforeCheck = $("#msgArea").val();
+                var key = '';
+                var backspace = 0;
+                if (beforeCheck.length > self.inputText.length) {
+                    var diff = (beforeCheck.length - self.inputText.length);
+                    if (self.inputText.length == 0) {
+                        key = beforeCheck;
+                    } else {
+                        key = beforeCheck.substring(beforeCheck.length - diff, beforeCheck.length)
+                    }
+                } else if(beforeCheck.length < self.inputText.length) {
+                    backspace = self.inputText.length - beforeCheck.length;
+                } else {
+                    if (self.currentText.length == 0) {
+                        self.sendText();
+                    }
+                    return false;
+                }
+                if (/[a-zA-Z]/.test(key)){ 
+                    self.inputText = beforeCheck;
                     // pressed a character
                     if (self.currentText.length <= 20){ 
                         // set maximum num characters to arbitrary 20 limit
@@ -260,54 +289,61 @@ var _callbacks_ = {
                         var chat_source_language = pair[0];
                         var chat_target_language = pair[1];  
                         if (chat_target_language != "zh" && chat_target_language != "zh-CHS") {
+                            self.clearOld(-1);
                             self.makeSelection(self.currentSelection - 1);
                         } else {
-                            self.addText(self.currentText + " ");
-                            self.currentText = '';
-                            self.currentPage = 0;
-                            self.currentSelection = 1;
-                            self.lastPage = false;
+                            self.resetCurrent();
                         }
-                    } else if (event.which >= 49 && event.which <= 53) { 
-                        // pressed number between 1 and 5
-                        self.makeSelection(event.which - 49);
+                        self.inputText = $("#msgArea").val();
+                    } else if (/[1-5]/.test(key)) { 
+                      // pressed number between 1 and 5
+                        self.clearOld(1);
+                        self.makeSelection(parseInt(key) - 1);
+                        self.inputText = $("#msgArea").val();
                     } else if (key == ',') { // go to previous page
                         self.previousPage();
                     } else if (key == '.') { // go to next page
                         self.nextPage();
-                    } else if (event.which == 13) {
-                        // enter key pressed -- accept phonetic input
-                        self.addText(self.currentText);
-                        self.currentText = '';
-                        self.currentPage = 0;
-                        self.currentSelection = 1;
-                        self.lastPage = false;
-                    }
-	        } else if (event.which == 13) {
-			// send text in MICA chat system
-                        if ($("#sendTo").val() == "") {
-                            alert(local('provideaddress')); 
-                            
+                    } else if (key == '') {
+                        if (backspace) {
+                            self.currentText = self.currentText.substring(0, self.currentText.length - backspace);
+                            self.inputText = beforeCheck;
                         } else {
-                            var tval = sendMsg(document.getElementById('sendForm'));
-                            if (tval) 
-                                    appendChat('me', tval);
-                            else
-                                    appendChat('me', "error");
+                            // enter key pressed -- accept phonetic input
+                            self.clearOld(-1);
+                            self.addText(self.currentText);
+                            self.resetCurrent();
                         }
-                } else {
-                    if (key == '.') { // pressed period
-                        self.addText('\u3002');
-                        return false;
                     }
-                    return true;
+                } else {
+                    self.inputText = beforeCheck;
                 }
+                    // enter send text in MICA chat system
+                    //self.sendText();
                 self.updateDialog();
-
-                event.preventDefault();
-                return false;
             }
+            return false;
         };
+
+        self.sendText = function() {
+            if ($("#msgArea").val() != "") {
+                if ($("#sendTo").val() == "") {
+                    $("#missing").attr("style", "display: block");
+                } else {
+                    var tval = sendMsg(document.getElementById('sendForm'));
+                    if (tval) 
+                        appendChat('me', tval);
+                    else
+                        appendChat('me', "error");
+                }
+                self.clearOld(-2);
+            }
+            $("#sendTo").style("border", "0");
+            self.inputText = "";
+            self.clearOld(-2);
+            self.resetCurrent();
+            self.updateDialog();
+        }
 
         self.addText = function(text){
             self.$el.insertAtCaret(text);
@@ -350,21 +386,17 @@ var _callbacks_ = {
             var choices = $.wordDatabase.getChoices(self.currentText);
             selectionIndex += self.currentPage * 5; // add current page to index
             if (selectionIndex < 0) { 
+                self.clearOld(-1);
                 // if selection is smaller than zero, we use the text input as is, effectively canceling smart input
                 self.addText(self.currentText);
-                self.currentText = '';
-                self.currentPage = 0;
-                self.currentSelection = 1;
-                self.lastPage = false;
+                self.resetCurrent();
             }
             if (choices && selectionIndex < choices.length){
+                self.clearOld(-1);
                 choice = choices[selectionIndex];
                 len = $.wordDatabase.getLength(self.currentText, selectionIndex);
                 self.addText(choice);
-                self.currentText = '';//+ self.currentText.substring(len);
-                self.currentPage = 0;
-                self.currentSelection = 1;
-                self.lastPage = false;
+                self.resetCurrent();
             }
 
         };
@@ -405,7 +437,7 @@ var _callbacks_ = {
                                 html(self.html)
                         $('body').append($box);
                     }
-                    $box.find('.typing').text(self.currentText);
+                    //$box.find('.typing').text(self.currentText);
                     var lis = [];
 
                     /* For now, assume that the target language
