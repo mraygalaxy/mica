@@ -1213,6 +1213,7 @@ function appendBox(who, msg) {
 }
 
 function appendChat(who, msg) {
+    $("#missing").attr("style", "display: none");
     var languagepair = $('#chattextlanguage').val();
     var pair = languagepair.split(",");
     var chat_source_language = pair[0];
@@ -1261,13 +1262,17 @@ function handleMessage(oJSJaCPacket) {
     }
 }
 
+function newContact() {
+    $("#missing").attr("style", "display: none");
+}
+
 function handlePresence(oJSJaCPacket) {
     var html = '<div class="msg">';
     var who = oJSJaCPacket.getFromJID();
     var id = ("" + who).split("@");
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
         html += '<b>' + decodeURIComponent(id[0]) + ' ' + local("hasbecome") + ".</b>";
-        html += " <a style='cursor: pointer' onclick=\"$('#sendTo').val('" + addressableID(who) + "')\">Chat</a>";
+        html += " <a style='cursor: pointer' onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\">Chat</a>";
     } else {
         html += '<b>' + decodeURIComponent(id[0]) + ' ' + local('setpresence') + " ";
         if (oJSJaCPacket.getType())
@@ -1301,7 +1306,7 @@ function handleConnected() {
     document.getElementById('login_pane').style.display = 'none';
     document.getElementById('sendmsg_pane').style.display = '';
     document.getElementById('err').innerHTML = '';
-
+    document.getElementById("msgArea").focus();
     con.send(new JSJaCPresence());
 }
 

@@ -824,13 +824,7 @@ class MICA(object):
                 mdebug("FILE " + f + " size: " + str(size))
                 assert(size != 0)
 
-        if mobile :
-            # We are in a thread, but because of this bug, we cannot exit by ourselves:
-            # https://github.com/kivy/pyjnius/issues/107
-            # So, we have to run forever
-            while True :
-                mdebug("Dict test infinite sleep.")
-                sleep(100000)
+        self.db.detach_thread()
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -843,6 +837,8 @@ class MICA(object):
                 tmpstory["last_error"] = [msg] + tmpstory["last_error"]
                 req.db[self.story(req, name)] = tmpstory
             except couch_adapter.ResourceConflict, e :
+                mdebug("Failure to sync error message. No big deal: " + str(e))
+            except couch_adapter.ResourceNotFound, e :
                 mdebug("Failure to sync error message. No big deal: " + str(e))
             finally :
                 self.transmutex.release()
@@ -3460,19 +3456,21 @@ class MICA(object):
                     if not char_result :
                         mdebug("No result from search for: " + orig)
                         out["desc"] = _("No result") + "."
-                        return self.api(req, out, False)
+                        if not gp.already_romanized :
+                            return self.api(req, out, False)
+                        source = orig
+                    else :
+                        imes = len(char_result)
 
-
-                    imes = len(char_result)
-
-                    for imex in range(0, imes) :
-                        if imes > 0 :
-                            source += " " + str(imex + 1) + ". "
-                        source += char_result[imex][0]
-                        lens.append(len(char_result[imex][0]))
-                        chars.append(char_result[imex][0])
+                        for imex in range(0, imes) :
+                            if imes > 0 :
+                                source += " " + str(imex + 1) + ". "
+                            source += char_result[imex][0]
+                            lens.append(len(char_result[imex][0]))
+                            chars.append(char_result[imex][0])
 
                 else :
+                    # legacy implementation for v0.5
                     for imex in range(1, imes + 1) :
                         if imes > 1 :
                             source += " " + str(imex) + ". "

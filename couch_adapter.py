@@ -10,7 +10,7 @@ except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.") 
 
 try :
-    from jnius import autoclass
+    from jnius import autoclass, detach as jnius_detach
     String = autoclass('java.lang.String')
 except ImportError, e :
     try :
@@ -92,7 +92,6 @@ class NotImplementedError(Exception) :
 class MicaDatabaseCouchDB(object) :
     def __init__(self, db) :
         self.db = db
-
 
     def get_security(self) :
         return self.db.security
@@ -233,6 +232,9 @@ class MicaDatabaseCouchDB(object) :
 
     def push_percent(self) :
         return "100.0"
+
+    def detach_thread(self) :
+        pass
 
        
 # FIXME: need try's here so we return our "NotFound"
@@ -471,6 +473,10 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
     def updateView(self, js) :
         self.db.updateView(String(js))
 
+    def detach_thread(self) :
+        # https://github.com/kivy/pyjnius/commit/9e60152dc5172cfa0c2c90dbcc9e25d5c4cb2493
+        jnius_detach()
+
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
@@ -673,6 +679,9 @@ class iosMicaDatabaseCouchbaseMobile(object) :
         else :
             mdebug("Replication started. Yay.")
             return True
+
+    def detach_thread(self) :
+        pass
 
 class iosMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
