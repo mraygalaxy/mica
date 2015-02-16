@@ -604,6 +604,8 @@ class EnglishSource(RomanizedSource) :
                          u"'s" : False,
                          u"s" : False,
                          u"ies" : u"y",
+                         u"iest" : u"y",
+                         u"ly" : False,
                          u"ied" : u"d",
                          u"er" : False,
                          u"d" : False,
@@ -820,7 +822,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             trans.commit()
             fh.close()
 
-    def get_chars(self, wordall, limit = 5) :
+    def get_chars(self, wordall, limit = 8) :
         if not hasattr(self, "imedb") :
             self.setup_imedb()
 
@@ -828,7 +830,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         assert(isinstance(wordall, unicode))
         merged = wordall.replace(u" ", u"")
 
-        # No reason to limit to 5, here, except that we do not yet have pagination
+        # No reason to limit to 8, here, except that we do not yet have pagination
         # in javascript
         s = self.imedb["ime"].select().where(self.imedb["ime"].c.traditional == 0). \
                                        where(self.imedb["ime"].c.wordmerged == merged). \

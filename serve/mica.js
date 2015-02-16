@@ -1177,6 +1177,7 @@ function validatefile() {
 }
 
 var oDbg, con;
+var start_trans_id = 0;
 
 function handleIQ(oIQ) {
     document.getElementById('iResp').innerHTML += "<div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div>';
@@ -1225,7 +1226,9 @@ function appendChat(who, msg) {
      */
     var chat_language = chat_target_language;
      
-    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg;
+    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id;
+
+    start_trans_id += msg.length;
 
     $.get(micaurl, "", $.proxy(function(response, success){
 	var data = JSON.parse(response);

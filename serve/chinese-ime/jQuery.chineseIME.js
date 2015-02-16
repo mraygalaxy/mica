@@ -260,6 +260,7 @@ var _callbacks_ = {
                 var beforeCheck = $("#msgArea").val();
                 var key = '';
                 var backspace = 0;
+                console.log("inputText: " + self.inputText + " beforeCheck " + beforeCheck + " currentText " + self.currentText);
                 if (beforeCheck.length > self.inputText.length) {
                     var diff = (beforeCheck.length - self.inputText.length);
                     if (self.inputText.length == 0) {
@@ -285,18 +286,23 @@ var _callbacks_ = {
                 } else if (self.currentText.length > 0) {
                     if (key == ' '){ 
                         // pressed space
+                        /* I don't like the behavior of pressing space
+                         * for chinese to get the current selection.
+                         * just put the pinyin directly.
+                         */
+
                         var pair = getPairs(); 
                         var chat_source_language = pair[0];
                         var chat_target_language = pair[1];  
-                        if (chat_target_language != "zh" && chat_target_language != "zh-CHS") {
-                            self.clearOld(-1);
-                            self.makeSelection(self.currentSelection - 1);
-                        } else {
+                        //if (chat_target_language != "zh" && chat_target_language != "zh-CHS") {
+                        //    self.clearOld(-1);
+                        //    self.makeSelection(self.currentSelection - 1);
+                        //} else {
                             self.resetCurrent();
-                        }
+                        //}
                         self.inputText = $("#msgArea").val();
-                    } else if (/[1-5]/.test(key)) { 
-                      // pressed number between 1 and 5
+                    } else if (/[1-8]/.test(key)) { 
+                      // pressed number between 1 and 8
                         self.clearOld(1);
                         self.makeSelection(parseInt(key) - 1);
                         self.inputText = $("#msgArea").val();
@@ -338,7 +344,6 @@ var _callbacks_ = {
                 }
                 self.clearOld(-2);
             }
-            $("#sendTo").style("border", "0");
             self.inputText = "";
             self.clearOld(-2);
             self.resetCurrent();
@@ -363,7 +368,7 @@ var _callbacks_ = {
         }
 
         self.nextChoice = function(){
-            if (self.currentSelection < 5) {
+            if (self.currentSelection < 8) {
                 self.currentSelection += 1;
                 self.updateDialog();
             } else {
@@ -377,14 +382,14 @@ var _callbacks_ = {
                 self.currentSelection -= 1;
                 self.updateDialog();
             } else if (self.currentPage > 0) {
-                self.currentSelection = 5;
+                self.currentSelection = 8;
                 self.previousPage(); 
             }
         }
 
         self.makeSelection = function(selectionIndex){
             var choices = $.wordDatabase.getChoices(self.currentText);
-            selectionIndex += self.currentPage * 5; // add current page to index
+            selectionIndex += self.currentPage * 8; // add current page to index
             if (selectionIndex < 0) { 
                 self.clearOld(-1);
                 // if selection is smaller than zero, we use the text input as is, effectively canceling smart input
@@ -495,7 +500,7 @@ var _callbacks_ = {
 
         self.getOptionsFromDatabase = function(text, page, num){
             if (typeof page == 'undefined') { page = self.currentPage; }
-            if (typeof num == 'undefined') { num = 5; }
+            if (typeof num == 'undefined') { num = 8; }
             var options = $.wordDatabase.getChoices(text);
             if (options && options.length >= (page + 1) * num) {
                 // we have options in the database already, and enough of them
