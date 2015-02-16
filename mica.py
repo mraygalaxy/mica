@@ -1377,7 +1377,7 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0) :
         output = [output]
         gp = self.processors[self.tofrom(story)]
 
@@ -1401,7 +1401,7 @@ class MICA(object):
         lines = [] 
         line = [] 
 
-        trans_id = 0
+        trans_id = start_trans_id 
         chars = 0
         batch = -1
 
@@ -1412,10 +1412,9 @@ class MICA(object):
         if action == "edit" :
             sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
             sources['splits'] = self.view_keys(req, "splits", units) 
-
-        if action == "home" :
+        elif action == "home" :
             sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
-        if action == "read" :
+        elif action == "read" :
             sources['memorized'] = self.view_keys(req, "memorized", units) 
         
         mdebug("View Page " + str(page) + " story " + str(name) + " querying...")
@@ -1896,6 +1895,7 @@ class MICA(object):
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
         username = req.http.params.get("username", req.session.value["username"])
+        mdebug("translate Preparing for mobile internet check")
         if (int(req.http.params.get("test", "0")) or mobile) :
             result = []
             if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
@@ -3437,6 +3437,7 @@ class MICA(object):
                 mode = req.http.params.get("mode")
                 orig = req.http.params.get("source")
                 imes = int(req.http.params.get("ime"), 0)
+                start_trans_id = int(req.http.params.get("start_trans_id", 0))
                 story = {
                    "name" : "ime",
                    "target_language" : supported_map[req.http.params.get("target_language")],
@@ -3458,6 +3459,7 @@ class MICA(object):
                         out["desc"] = _("No result") + "."
                         if not gp.already_romanized :
                             return self.api(req, out, False)
+
                         source = orig
                     else :
                         imes = len(char_result)
@@ -3516,7 +3518,7 @@ class MICA(object):
                     if not output :
                         out["success"] = True
                         out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
-                        out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False)
+                        out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
                 except OSError, e :
                     merr("OSError: " + str(e))
                     out["result"] = self.warn_not_replicated(req, bootstrap = False)
