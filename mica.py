@@ -23,6 +23,7 @@ from socket import timeout as socket_timeout
 from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
+from sys import settrace as sys_settrace
 
 
 import couch_adapter
@@ -606,6 +607,7 @@ class MICA(object):
         params["q"].put((co, None, rq))
         resp = rq.get()
         Timer(1, self.runloop_sched).start()
+        self.db.detach_thread()
 
     def __call__(self, environ, start_response):
         try :
@@ -786,45 +788,52 @@ class MICA(object):
     def test_dicts(self) :
         files = ["cjklib.db", "cedict.db", "chinese.txt"]
 
-        if mobile :
-            all_found = False
+        exported = False
+        try :
+            if mobile :
+                all_found = False
 
-            while not all_found :
-                all_found = True
+                while not all_found :
+                    all_found = True
 
-                for name, lgp in self.processors.iteritems() :
-                    for f in lgp.get_dictionaries() :
-                        fname = params["scratch"] + f
+                    for name, lgp in self.processors.iteritems() :
+                        for f in lgp.get_dictionaries() :
+                            fname = params["scratch"] + f
 
-                        if not os_path.isfile(fname) :
-                            all_found = False
+                            if not os_path.isfile(fname) :
+                                all_found = False
 
-                            mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
-                            if params["serialize_couch_on_mobile"] :
-                                rq = Queue_Queue()
-                                co = self.test_dicts_handle_serial()
-                                co.next()
-                                params["q"].put((co, f, rq))
-                                if rq.get() :
-                                    exported = True
-                            else :
-                                if self.test_dicts_handle_common(f) :
-                                    exported = True
+                                mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
+                                if params["serialize_couch_on_mobile"] :
+                                    rq = Queue_Queue()
+                                    co = self.test_dicts_handle_serial()
+                                    co.next()
+                                    params["q"].put((co, f, rq))
+                                    if rq.get() :
+                                        exported = True
+                                else :
+                                    if self.test_dicts_handle_common(f) :
+                                        exported = True
 
-                            if not exported :
-                                break
+                                if not exported :
+                                    break
 
-                sleep(30)
+                    sleep(30)
 
-        for name, lgp in self.processors.iteritems() :
-            for f in lgp.get_dictionaries() :
-                fname = params["scratch"] + f
-                mdebug("Exists: " + fname)
-                size = os_path.getsize(fname)
-                mdebug("FILE " + f + " size: " + str(size))
-                assert(size != 0)
+            for name, lgp in self.processors.iteritems() :
+                for f in lgp.get_dictionaries() :
+                    fname = params["scratch"] + f
+                    mdebug("Exists: " + fname)
+                    size = os_path.getsize(fname)
+                    mdebug("FILE " + f + " size: " + str(size))
+                    assert(size != 0)
 
-        self.db.detach_thread()
+            #self.db.detach_thread()
+        except Exception, e :
+            merr("Something else bad happened: " + str(e))
+
+        while True :
+            sleep(3600)
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -2643,6 +2652,8 @@ class MICA(object):
         except Exception, e :
             self.store_error(req, name, "Failure to upgrade story: " + str(e))
 
+        req.db.detach_thread()
+
     def multiple_select(self, req, record, nb_unit, mindex, trans_id, page, name) :
         # This is also kind of silly: getting a whole page
         # of units just to update one of them.
@@ -2681,6 +2692,8 @@ class MICA(object):
         jobs = req.db["MICA:jobs"]
         jobs["list"][job["uuid"]] = job
         req.db["MICA:jobs"] = jobs
+
+        req.db.detach_thread()
 
     def new_job(self, req, func, cleanup, description, obj, args = [], kwargs = {}) :
         out = ""
@@ -3498,7 +3511,6 @@ class MICA(object):
                 cerror = False
                 try :
                     try :
-                        #from sys import settrace as sys_settrace
                         #sys_settrace(tracefunc)
                         start = timest()
                         self.parse(req, story, live = True)
@@ -4920,6 +4932,8 @@ def go(p) :
     global params
     params = p
 
+    sys_settrace(None)
+
     if not mobile :
         prelang = "en"
         try :
@@ -4956,7 +4970,7 @@ def go(p) :
             exit(1)
 
     if "session_dir" not in params :
-        params["session_dir"] = cwd + "mica_session/"
+        params["session_dir"] = params["scratch"] + "mica_session/"
 
     mdebug("Session dir: " + params["session_dir"])
 

@@ -9,9 +9,12 @@ try :
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.") 
 
+jnius_detachable = False
 try :
-    from jnius import autoclass, detach as jnius_detach
+    from jnius import autoclass
     String = autoclass('java.lang.String')
+    from jnius import detach as jnius_detach
+    jnius_detachable = True
 except ImportError, e :
     try :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
@@ -474,8 +477,15 @@ class AndroidMicaDatabaseCouchbaseMobile(object) :
         self.db.updateView(String(js))
 
     def detach_thread(self) :
-        # https://github.com/kivy/pyjnius/commit/9e60152dc5172cfa0c2c90dbcc9e25d5c4cb2493
-        jnius_detach()
+        if jnius_detachable :
+            mdebug("Trying to detach...")
+            # https://github.com/kivy/pyjnius/commit/9e60152dc5172cfa0c2c90dbcc9e25d5c4cb2493
+            jnius_detach()
+            mdebug("Detached.")
+        else :
+            mdebug("No detach available. Need to upgrade. Will spin instead.")
+            while True :
+                sleep(3600)
 
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
