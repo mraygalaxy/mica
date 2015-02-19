@@ -12,6 +12,7 @@ from locale import setlocale, LC_ALL, getlocale
 from gettext import install as gettext_install, GNUTranslations, NullTranslations
 from urllib2 import quote
 from time import time as timest
+from traceback import extract_stack
 
 import __builtin__
 import xmlrpclib
@@ -53,6 +54,20 @@ duplicate_logger = False
 def get_global_language() :
     global global_language
     return global_language
+
+def dump_all_threads() :
+    mdebug("\n*** STACKTRACE - START ***\n")
+
+    for threadId, stack in sys._current_frames().items():
+        mdebug("\n# ThreadID: " + str(threadId) + " " + str(stack))
+        for filename, lineno, name, line in extract_stack(stack):
+            mdebug("File: " + str(filename))
+            mdebug("File: %s, line %d, in %s" % (filename, lineno, name))
+            if line:
+                mdebug("  %s" % (line.strip()))
+
+    mdebug("\n*** STACKTRACE - END ***\n")
+
 
 def gettext(message):
     global global_language
