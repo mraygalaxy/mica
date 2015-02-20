@@ -499,19 +499,25 @@ class MICA(object):
             rq.put(None)
             rq.task_done()
 
-    def view_runner_sched(self) :
-        while True :
-            if params["serialize_couch_on_mobile"] :
-                rq = Queue_Queue()
-                co = self.view_runner()
-                co.next()
-                params["q"].put((co, None, rq))
-                resp = rq.get()
-            else :
-                self.view_runner_common()
+    def view_runner_go(self) :
+        if params["serialize_couch_on_mobile"] :
+            rq = Queue_Queue()
+            co = self.view_runner()
+            co.next()
+            params["q"].put((co, None, rq))
+            resp = rq.get()
+        else :
+            self.view_runner_common()
 
+    def view_runner_sched(self) :
+        mdebug("Execute the view runner one time to get started...")
+        self.view_runner_go()
+
+        while True :
             mdebug("View runner complete. Waiting until next time...")
             sleep(1800)
+            self.view_runner_go()
+
 
     def get_filter_params(self, req) :
         filterparams = {"name" : "download/mobile"}
@@ -1904,7 +1910,13 @@ class MICA(object):
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
-        username = req.http.params.get("username", req.session.value["username"])
+        assert(req.http.params.get("username") or "username" in req.session.value)
+
+        username = req.http.params.get("username")
+
+        if not username :
+            username = req.session.value['username']
+
         mdebug("translate Preparing for mobile internet check")
         if (int(req.http.params.get("test", "0")) or mobile) :
             result = []
