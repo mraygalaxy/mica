@@ -281,24 +281,26 @@ class MICA(object):
     def acct(self, name) :
         return "MICA:accounts:" + name
 
+    def key_common(self, req) :
+        return "MICA:" + req.session.value['username']
+        
     def story(self, req, key) :
-        ret = "MICA:" + req.session.value['username'] + ":stories:" + key
-        return ret 
+        return self.key_common(req) + ":stories:" + key
 
     def index(self, req, key) :
-        return "MICA:" + req.session.value['username'] + ":story_index:" + key 
+        return self.key_common(req) + ":story_index:" + key 
     
     def merge(self, req, key) :
-        return "MICA:" + req.session.value['username'] + ":mergegroups:" + key 
+        return self.key_common(req) + ":mergegroups:" + key 
     
     def splits(self, req, key) :
-        return "MICA:" + req.session.value['username'] + ":splits:" + key 
+        return self.key_common(req) + ":splits:" + key 
     
     def tones(self, req, key) :
-        return "MICA:" + req.session.value['username'] + ":tonechanges:" + key 
+        return self.key_common(req) + ":tonechanges:" + key 
     
     def memorized(self, req, key):
-        return "MICA:" + req.session.value['username'] + ":memorized:" + key 
+        return self.key_common(req) + ":memorized:" + key 
     
     def credentials(self) :
         return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
@@ -712,7 +714,6 @@ class MICA(object):
             if wrap:
                 out += "</div></div>"
 
-            mdebug("Returing: " + str(out))
             return self.bootstrap(req, out, now = True)
         else :
             return self.bootstrap(req, json_dumps(json), now = True)
