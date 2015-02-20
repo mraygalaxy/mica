@@ -2933,37 +2933,42 @@ class MICA(object):
                 try :
                     result = self.translate_and_check_array(req, False, requests, target_language, source_language)
                     if not result :
-                        self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ")}, human)
+                        if human :
+                            out += _("Internet access error. Try again later: ") + "<br/>"
+                        else :
+                            out["whole"] = {"source" : source, "target" : _("Internet access error. Try again later: ")}
+                    else :
+                        for x in range(0, len(requests)) : 
+                            if (x + 1) > len(result) :
+                                continue
+
+                            part = result[x]
+                            if "TranslatedText" not in part :
+                                target = _("No instant translation available.")
+                            else :
+                                target = part["TranslatedText"].encode("utf-8")
+                            
+                            if x == 0 :
+                                if human :
+                                    out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
+                                else :
+                                    out["whole"] = {"source" : source, "target" : target}
+                            else :
+                                char = breakout[x-1].encode("utf-8")
+                                if human :
+                                    if x == 1:
+                                        out += _("Piecemeal instant translation") + ":<br/>\n"
+                                if human :
+                                    out += "(" + char + "): "
+                                    out += target 
+                                    out += "<br/>\n"
+                                else :
+                                    out["online"].append({"char" : char, "target" : target})
+
                 except OnlineTranslateException, e :
                     mwarn("Online translate error: " + str(e))
                     return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, human)
 
-                for x in range(0, len(requests)) : 
-                    if (x + 1) > len(result) :
-                        continue
-
-                    part = result[x]
-                    if "TranslatedText" not in part :
-                        target = _("No instant translation available.")
-                    else :
-                        target = part["TranslatedText"].encode("utf-8")
-                    
-                    if x == 0 :
-                        if human :
-                            out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
-                        else :
-                            out["whole"] = {"source" : source, "target" : target}
-                    else :
-                        char = breakout[x-1].encode("utf-8")
-                        if human :
-                            if x == 1:
-                                out += _("Piecemeal instant translation") + ":<br/>\n"
-                        if human :
-                            out += "(" + char + "): "
-                            out += target 
-                            out += "<br/>\n"
-                        else :
-                            out["online"].append({"char" : char, "target" : target})
                        
                 if human :
                     out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
