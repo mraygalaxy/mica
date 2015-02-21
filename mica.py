@@ -269,6 +269,10 @@ class MICA(object):
                 req.session.save()
                 self.dbs[username] = cs[dbname]
 
+            self.views_ready[username] = 0
+            req.db = self.dbs[username]
+            self.new_job(req, self.view_runner_go, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]])
+
             mdebug("Installing view counter.")
             if username not in self.views_ready :
                 self.views_ready[username] = 0
@@ -457,66 +461,68 @@ class MICA(object):
         self.check_all_views(req)
         req.db = savedb
 
-    def view_runner_common(self) :
+    def view_runner_common(self, username, db) :
         # This only primes views for logged-in users.
         # Scaling the backgrounding for all users will need more thought.
 
         # FIXME: If the session expires, the backgrounding continues. Should we
         # leave it that way?
 
-        for username, db in self.dbs.iteritems() :
-            mdebug("Priming views for user: " + username)
-            self.views_ready[username] = 0
+        mdebug("Priming views for user: " + username)
+        self.views_ready[username] = 0
 
-            for (name, startend) in self.view_runs :
-                if not db.doc_exist("_design/" + name.split("/")[0]) :
-                    mdebug("View " + name + " does not yet exist. Loading...")
-                    dbsave = self.db
-                    self.db = db
-                    self.view_check(self, name.split("/")[0], recreate = True)
-                    self.db = dbsave
-                    mdebug("Done.")
-                    continue
+        for (name, startend) in self.view_runs :
+            if not db.doc_exist("_design/" + name.split("/")[0]) :
+                mdebug("View " + name + " does not yet exist. Loading...")
+                dbsave = self.db
+                self.db = db
+                self.view_check(self, name.split("/")[0], recreate = True)
+                self.db = dbsave
+                mdebug("Done.")
+                continue
 
-                mdebug("Priming view for user: " + username + " db " + name)
+            mdebug("Priming view for user: " + username + " db " + name)
 
-                if startend :
-                    for unused in db.view(name, startkey=["foo", "bar"], endkey=["foo", "bar", "baz"]) :
-                        pass
-                else :
-                    for unused in db.view(name, keys = ["foo"], username = "bar") :
-                        pass
+            if startend :
+                for unused in db.view(name, startkey=["foo", "bar"], endkey=["foo", "bar", "baz"]) :
+                    pass
+            else :
+                for unused in db.view(name, keys = ["foo"], username = "bar") :
+                    pass
 
-                self.views_ready[username] += 1
+            self.views_ready[username] += 1
 
     def view_runner(self) :
-        if params["serialize_couch_on_mobile"] :
-            (unused, rq) = (yield)
+        (stuff, rq) = (yield)
+        (username, db) = stuff
 
-        self.view_runner_common()
+        self.view_runner_common(username, db)
 
-        if params["serialize_couch_on_mobile"] :
-            rq.put(None)
-            rq.task_done()
+        rq.put(None)
+        rq.task_done()
 
-    def view_runner_go(self) :
+    def view_runner_go(self, username, db) :
         if params["serialize_couch_on_mobile"] :
             rq = Queue_Queue()
             co = self.view_runner()
             co.next()
-            params["q"].put((co, None, rq))
+            params["q"].put((co, (username, db), rq))
             resp = rq.get()
         else :
-            self.view_runner_common()
+            self.view_runner_common(username, db)
+
+        return _("Database optimized.")
 
     def view_runner_sched(self) :
         mdebug("Execute the view runner one time to get started...")
-        self.view_runner_go()
+        for username, db in self.dbs.iteritems() :
+            self.view_runner_go(username, db)
 
         while True :
             mdebug("View runner complete. Waiting until next time...")
             sleep(1800)
-            self.view_runner_go()
+            for username, db in self.dbs.iteritems() :
+                self.view_runner_go(username, db)
 
 
     def get_filter_params(self, req) :
@@ -796,51 +802,45 @@ class MICA(object):
         files = ["cjklib.db", "cedict.db", "chinese.txt"]
 
         exported = False
-        try :
-            if mobile :
-                all_found = False
+        if mobile :
+            all_found = False
 
-                while not all_found :
-                    all_found = True
+            while not all_found :
+                all_found = True
 
-                    for name, lgp in self.processors.iteritems() :
-                        for f in lgp.get_dictionaries() :
-                            fname = params["scratch"] + f
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        fname = params["scratch"] + f
 
-                            if not os_path.isfile(fname) :
-                                all_found = False
+                        if not os_path.isfile(fname) :
+                            all_found = False
 
-                                mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
-                                if params["serialize_couch_on_mobile"] :
-                                    rq = Queue_Queue()
-                                    co = self.test_dicts_handle_serial()
-                                    co.next()
-                                    params["q"].put((co, f, rq))
-                                    if rq.get() :
-                                        exported = True
-                                else :
-                                    if self.test_dicts_handle_common(f) :
-                                        exported = True
+                            mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
+                            if params["serialize_couch_on_mobile"] :
+                                rq = Queue_Queue()
+                                co = self.test_dicts_handle_serial()
+                                co.next()
+                                params["q"].put((co, f, rq))
+                                if rq.get() :
+                                    exported = True
+                            else :
+                                if self.test_dicts_handle_common(f) :
+                                    exported = True
 
-                                if not exported :
-                                    break
+                            if not exported :
+                                break
 
-                    sleep(30)
+                sleep(30)
 
-            for name, lgp in self.processors.iteritems() :
-                for f in lgp.get_dictionaries() :
-                    fname = params["scratch"] + f
-                    mdebug("Exists: " + fname)
-                    size = os_path.getsize(fname)
-                    mdebug("FILE " + f + " size: " + str(size))
-                    assert(size != 0)
+        for name, lgp in self.processors.iteritems() :
+            for f in lgp.get_dictionaries() :
+                fname = params["scratch"] + f
+                mdebug("Exists: " + fname)
+                size = os_path.getsize(fname)
+                mdebug("FILE " + f + " size: " + str(size))
+                assert(size != 0)
 
-            #self.db.detach_thread()
-        except Exception, e :
-            merr("Something else bad happened: " + str(e))
-
-        while True :
-            sleep(3600)
+        self.db.detach_thread()
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -2685,7 +2685,7 @@ class MICA(object):
             self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
-    def run_job(self, req, func, cleanup, job, args, kwargs) :
+    def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
         self.install_local_language(req)
 
         try :
@@ -2701,14 +2701,26 @@ class MICA(object):
             job["success"] = False
             job["result"] = str(e)
 
-        job["finished"] = True
-        jobs = req.db["MICA:jobs"]
-        jobs["list"][job["uuid"]] = job
-        req.db["MICA:jobs"] = jobs
+        if self_delete and job["success"] :
+            mdebug("Deleting job immediately. Not adding to list")
+            try :
+                jobs = req.db["MICA:jobs"]
+                if job["uuid"] in jobs :
+                    del jobs["list"][job["uuid"]]
+                    req.db["MICA:jobs"] = jobs
+            except Exception, e :
+                mdebug("Failed to delete immediately: " + str(e))
+                while True :
+                    sleep(3600)
+        else :
+            job["finished"] = True
+            jobs = req.db["MICA:jobs"]
+            jobs["list"][job["uuid"]] = job
+            req.db["MICA:jobs"] = jobs
 
         req.db.detach_thread()
 
-    def new_job(self, req, func, cleanup, description, obj, args = [], kwargs = {}) :
+    def new_job(self, req, func, cleanup, description, obj, self_delete, args = [], kwargs = {}) :
         out = ""
         job = { "uuid" : str(uuid_uuid4()),
                "description" : description, 
@@ -2726,7 +2738,7 @@ class MICA(object):
             if not jobs :
                 jobs = {"list" : {}}
 
-            vt = Thread(target=self.run_job, args = [req, func, cleanup, job, args, kwargs])
+            vt = Thread(target=self.run_job, args = [req, func, cleanup, job, self_delete, args, kwargs])
             vt.daemon = True
             jobs["list"][job["uuid"]] = job
             req.db["MICA:jobs"] = jobs
@@ -3603,8 +3615,7 @@ class MICA(object):
                 mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
                 # A new story has been uploaded and is being processed in the background.
-                return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename,
-                     args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
+                return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
 
             if req.http.params.get("uploadtext") :
                 source = req.http.params.get("storytext") + "\n"
@@ -3613,7 +3624,7 @@ class MICA(object):
                 source_lang, target_lang = langtype.split(",")
 
                 # A new story has been uploaded and is being processed in the background.
-                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, args = [req, filename, source, "txt", source_lang, target_lang, False])
+                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, False, args = [req, filename, source, "txt", source_lang, target_lang, False])
 
             start_page = "0"
             view_mode = "text"
@@ -3665,7 +3676,7 @@ class MICA(object):
 
 
             if req.http.params.get("delete") :
-                return self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, args = [req, uuid, name])
+                return self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name])
 
             if uuid :
                 if not req.db.doc_exist(self.index(req, uuid)) :
@@ -3730,7 +3741,7 @@ class MICA(object):
                 # Resetting means that we are dropping the translate contents of the original story. We are
                 # not deleteing the story itself, nor the user's memorization data, only the translated
                 # version of the story itself.
-                return self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, args = [req, uuid, name])
+                return self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name])
 
             if req.http.params.get("switchmode") :
                 req.session.value["view_mode"] = req.http.params.get("switchmode")

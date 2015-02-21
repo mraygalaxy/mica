@@ -2,6 +2,7 @@
 from common import *
 from json import loads, dumps
 from uuid import uuid4
+from time import sleep
 
 try :
     from couchdb import Server
