@@ -88,6 +88,26 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mdebug("Punctuation complete.")
 
+def baidu_compliance_fix(session):
+    self.fixed = False
+
+    def _compliance_fix(r):
+        if self.fixed :
+            return r
+        self.fixed = True
+        # Facebook returns a content-type of text/plain when sending their
+        # x-www-form-urlencoded responses, along with a 200. If not, let's
+        # assume we're getting JSON and bail on the fix.
+        mdebug("Going to dump response token text: " + r.text)
+        token = json_loads(r.text)
+        mdebug("Adding bearer to token type") 
+        token['token_type'] = 'Bearer'
+        r._content = to_unicode(dumps(token)).encode('UTF-8')
+        return r
+
+    session.register_compliance_hook('access_token_response', _compliance_fix)
+    return session
+
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
     images = []
@@ -564,7 +584,7 @@ class MICA(object):
                     resp = self.common(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
-                    self.disconnect(req, req.session)
+                    self.clean_session(req)
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
@@ -1553,7 +1573,6 @@ class MICA(object):
                                     if endword[1] :
                                         endunit = endword[3]
                                         endchars = "".join(endunit["source"])
-                                        #endgroup = req.db[self.merge(req, endchars)]
                                         endgroup = False if endchars not in sources['mergegroups'] else sources['mergegroups'][endchars]
                                         if not endgroup or (endunit["hash"] not in endgroup["record"]) :
                                             merge_end = True
@@ -2485,22 +2504,22 @@ class MICA(object):
             mwarn("raw: " + msg)
             return msg
 
-    def disconnect(self, req, session) :
+    def clean_session(self, req) :
         mwarn("Loggin out user now.")
-        session.value['connected'] = False
+        req.session.value['connected'] = False
 
-        if 'username' in session.value :
+        if 'username' in req.session.value :
             if mobile :
                 req.db.stop_replication()
 
-            username = session.value['username']
+            username = req.session.value['username']
             if username in self.dbs :
                 del self.dbs[username]
 
             if username in self.view_runs :
                 del self.view_runs[username]
 
-            session.save()
+            req.session.save()
 
     def check_all_views(self, req) :
         self.view_check(req, "stories")
@@ -2840,791 +2859,1776 @@ class MICA(object):
 
         return False 
 
-    def common(self, req) :
-        global times
+    def common_disconnect(self, req) : 
+        self.clean_session(req)
+        self.install_local_language(req)
+        req.skip_show = True
+        return self.bootstrap(req, run_template(req, FrontPageElement))
+
+    def common_privacy(self, req) :
+        self.install_local_language(req)
+        output = ""
+        helpfh = codecs_open(cwd + "serve/privacy_template.html", "r", "utf-8")
+        output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
+        helpfh.close()
+        return self.bootstrap(req, output, pretend_disconnected = True)
+
+    def common_help(self, req) :
+        l = self.install_local_language(req)
+        output = ""
+        helpfh = codecs_open(cwd + "serve/" + tutorials[l], "r", "utf-8")
+        output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
+        helpfh.close()
+        output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
+        req.skip_show = True
+        return self.bootstrap(req, output)
+
+    def common_switchlang(self, req) :
+        req.session.value["language"] = req.http.params.get("lang")
+        req.session.save()
+        self.install_local_language(req)
+        return self.bootstrap(req, run_template(req, FrontPageElement))
+
+    def common_auth(self, req) :
+        # We only allow jabber to do this from the localhost. Nowhere else.
+        if req.source != "127.0.0.1" :
+            return self.bootstrap(req, 'error', now = True)
+
+        if not req.http.params.get("username") or not req.http.params.get("password") :
+            return self.bootstrap(req, 'error', now = True)
+
+        username = req.http.params.get("username")
+        password = req.http.params.get("password")
+
+        auth_user = self.userdb.__getitem__("org.couchdb.user:" + username, false_if_not_found = True)
+
+        if not auth_user or "temp_jabber_pw" not in auth_user or password != auth_user["temp_jabber_pw"] :
+            auth_user, reason = self.authenticate(username, password, self.credentials())
+
+            if not auth_user :
+                return self.bootstrap(req, 'bad', now = True)
+            else :
+                mdebug("Success jabber auth w/ password: " + username)
+        else :
+            mdebug("Success jabber auth w/ token: " + username)
+
+        return self.bootstrap(req, 'good', now = True)
+
+    def common_online(self, req) :
+        v = self.api_validate(req)
+        if v :
+            return v
+
+        out = {"success" : True, "desc" : False}
+        target_language = req.http.params.get("target_language")
+        source_language = req.http.params.get("source_language")
+        requests = json_loads(req.http.params.get("requests"))
+        language = req.http.params.get("lang")
+
+        self.install_local_language(req, language)
         try :
-            if req.action == "disconnect" :
-                self.disconnect(req, req.session)
-                self.install_local_language(req)
-                req.skip_show = True
-                return self.bootstrap(req, run_template(req, FrontPageElement))
+            out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
+        except OnlineTranslateException, e :
+            return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, False, wrap = False)
 
-            if req.action == "privacy" :
-                self.install_local_language(req)
-                output = ""
-                helpfh = codecs_open(cwd + "serve/privacy_template.html", "r", "utf-8")
-                output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
-                helpfh.close()
+        return self.api(req, out, False, wrap = False)
 
-                return self.bootstrap(req, output, pretend_disconnected = True)
+    def common_instant(self, req) :
+        human = True if int(req.http.params.get("human", "1")) else False
 
-            if req.action == "help" :
-                l = self.install_local_language(req)
-                output = ""
+        v = self.api_validate(req, "1")
+        if v :
+            return v
 
-                helpfh = codecs_open(cwd + "serve/" + tutorials[l], "r", "utf-8")
-                output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
-                helpfh.close()
-                output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
-                req.skip_show = True
-                return self.bootstrap(req, output)
+        target_language = req.http.params.get("target_language")
+        source_language = req.http.params.get("source_language")
+        source = req.http.params.get("source")
+        language = req.http.params.get("lang")
 
+        out = ""
+        if not human :
+            out = {"success" : True, "online" : [], "offline" : []}
 
-            if req.action == "switchlang" and req.http.params.get("lang") : 
-                req.session.value["language"] = req.http.params.get("lang")
-                req.session.save()
-                self.install_local_language(req)
-                return self.bootstrap(req, run_template(req, FrontPageElement))
+        mdebug("Request to translate: " + str(source) + " from " + source_language + " to " + target_language)
 
-            if not mobile and req.action == "auth" :
-                # We only allow jabber to do this from the localhost. Nowhere else.
-                if req.source != "127.0.0.1" :
-                    return self.bootstrap(req, 'error', now = True)
+        self.install_local_language(req, language)
 
-                if not req.http.params.get("username") or not req.http.params.get("password") :
-                    return self.bootstrap(req, 'error', now = True)
+        if human :
+            out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
 
-                username = req.http.params.get("username")
-                password = req.http.params.get("password")
+        requests = [source]
+        gp = self.processors[source_language + "," + target_language]
 
-                auth_user = self.userdb.__getitem__("org.couchdb.user:" + username, false_if_not_found = True)
+        breakout = source.decode("utf-8") if isinstance(source, str) else source
+        if gp.already_romanized :
+            breakout = breakout.split(" ")
+        
+        if len(breakout) > 1 :
+            for x in range(0, len(breakout)) :
+                requests.append(breakout[x].encode("utf-8"))
 
-                if not auth_user or "temp_jabber_pw" not in auth_user or password != auth_user["temp_jabber_pw"] :
-                    auth_user, reason = self.authenticate(username, password, self.credentials())
-
-                    if not auth_user :
-                        return self.bootstrap(req, 'bad', now = True)
-                    else :
-                        mdebug("Success jabber auth w/ password: " + username)
-                else :
-                    mdebug("Success jabber auth w/ token: " + username)
-
-                return self.bootstrap(req, 'good', now = True)
-                 
-            if req.action == "online" :
-                v = self.api_validate(req)
-                if v :
-                    return v
-
-                out = {"success" : True, "desc" : False}
-                target_language = req.http.params.get("target_language")
-                source_language = req.http.params.get("source_language")
-                requests = json_loads(req.http.params.get("requests"))
-                language = req.http.params.get("lang")
-
-                self.install_local_language(req, language)
-                try :
-                    out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
-                except OnlineTranslateException, e :
-                    return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, False, wrap = False)
-
-                return self.api(req, out, False, wrap = False)
-
-            if req.action == "instant" :
-                human = True if int(req.http.params.get("human", "1")) else False
-
-                v = self.api_validate(req, "1")
-                if v :
-                    return v
-
-                target_language = req.http.params.get("target_language")
-                source_language = req.http.params.get("source_language")
-                source = req.http.params.get("source")
-                language = req.http.params.get("lang")
-
-                out = ""
-                if not human :
-                    out = {"success" : True, "online" : [], "offline" : []}
-
-                mdebug("Request to translate: " + str(source) + " from " + source_language + " to " + target_language)
-
-                self.install_local_language(req, language)
-
+        try :
+            result = self.translate_and_check_array(req, False, requests, target_language, source_language)
+            if not result :
                 if human :
-                    out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
-
-                requests = [source]
-                gp = self.processors[source_language + "," + target_language]
-
-                breakout = source.decode("utf-8") if isinstance(source, str) else source
-                if gp.already_romanized :
-                    breakout = breakout.split(" ")
-                
-                if len(breakout) > 1 :
-                    for x in range(0, len(breakout)) :
-                        requests.append(breakout[x].encode("utf-8"))
-
-                try :
-                    result = self.translate_and_check_array(req, False, requests, target_language, source_language)
-                    if not result :
-                        if human :
-                            out += _("Internet access error. Try again later: ") + "<br/>"
-                        else :
-                            out["whole"] = {"source" : source, "target" : _("Internet access error. Try again later: ")}
-                    else :
-                        for x in range(0, len(requests)) : 
-                            if (x + 1) > len(result) :
-                                continue
-
-                            part = result[x]
-                            if "TranslatedText" not in part :
-                                target = _("No instant translation available.")
-                            else :
-                                target = part["TranslatedText"].encode("utf-8")
-                            
-                            if x == 0 :
-                                if human :
-                                    out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
-                                else :
-                                    out["whole"] = {"source" : source, "target" : target}
-                            else :
-                                char = breakout[x-1].encode("utf-8")
-                                if human :
-                                    if x == 1:
-                                        out += _("Piecemeal instant translation") + ":<br/>\n"
-                                if human :
-                                    out += "(" + char + "): "
-                                    out += target 
-                                    out += "<br/>\n"
-                                else :
-                                    out["online"].append({"char" : char, "target" : target})
-
-                except OnlineTranslateException, e :
-                    mwarn("Online translate error: " + str(e))
-                    return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, human)
-
-                       
-                if human :
-                    out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
-
-                try :
-                    opaque = gp.parse_page_start()
-                    gp.test_dictionaries(opaque)
-                    try :
-                        for idx in range(0, len(requests)) :
-                            request = requests[idx]
-                            if gp.already_romanized and len(requests) > 1 and idx == 0 :
-                                continue
-                            request_decoded = request.decode("utf-8")
-                            tar = gp.get_first_translation(opaque, request_decoded, False)
-                            if tar :
-                                for target in tar :
-                                    ipa = gp.get_ipa(request_decoded)
-
-                                    if human :
-                                        out += "<br/>(" + request
-                                        if ipa :
-                                            out += ", " + str(ipa[0])
-                                        out += "): " + target.encode("utf-8")
-                                    else :
-                                        out["offline"].append({"request" : request, "ipa" : ipa, "target" : target.encode("utf-8")})
-                            else :
-                                if human :
-                                    out += "<br/>(" + request + ") " + _("No instant translation found.")
-                                else :
-                                    out["offline"].append({"request" : request, "ipa" : False, "target" : False})
-
-                        gp.parse_page_stop(opaque)
-                    except OSError, e :
-                        mdebug("Looking up target instant translation failed: " + str(e))
-                        return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
-                except Exception, e :
-                    mdebug("Instant test failed: " + str(e))
-                    return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
-
-                if human :
-                    out = {"success" : True, "desc" : out}
-
-                return self.api(req, out, human)
-
-            def baidu_compliance_fix(session):
-                self.fixed = False
-
-                def _compliance_fix(r):
-                    if self.fixed :
-                        return r
-                    self.fixed = True
-                    # Facebook returns a content-type of text/plain when sending their
-                    # x-www-form-urlencoded responses, along with a 200. If not, let's
-                    # assume we're getting JSON and bail on the fix.
-                    mdebug("Going to dump response token text: " + r.text)
-                    token = json_loads(r.text)
-                    mdebug("Adding bearer to token type") 
-                    token['token_type'] = 'Bearer'
-                    r._content = to_unicode(dumps(token)).encode('UTF-8')
-                    return r
-
-                session.register_compliance_hook('access_token_response', _compliance_fix)
-                return session
-
-            from_third_party = False
-
-            if not mobile and req.action in params["oauth"].keys() :
-                self.install_local_language(req)
-                who = req.action
-                creds = params["oauth"][who]
-                redirect_uri = params["oauth"]["redirect"] + who 
-                service = OAuth2Session(creds["client_id"], redirect_uri=redirect_uri)
-
-                if who == "facebook" :
-                    service = facebook_compliance_fix(service)
-
-                if who == "baidu" :
-                    service = baidu_compliance_fix(service)
-
-                if not req.http.params.get("code") and not req.http.params.get("finish") :
-                    if req.http.params.get("error") :
-                        reason = req.http.params.get("error_reason") if req.http.params.get("error_reason") else "Access Denied."
-                        desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
-                        if reason == "user_denied" :
-                            # User denied our request to create their account using social networking. Apologize and move on.
-                            req.skip_show = True
-                            return self.bootstrap(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
-                        else :
-                            # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                            req.skip_show = True
-                            return self.bootstrap(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
-                    else :
-                        # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
-                        req.skip_show = True
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
-
-                code = req.http.params.get("code")
-
-                req.skip_show = True
-                if not req.http.params.get("finish") :
-                    return self.bootstrap(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
-
-
-                service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
-
-                mdebug("Token fetched successfully: " + str(service.token))
-
-                if who == "baidu" :
-                    del service.token["token_type"]
-
-                lookup_url = creds["lookup_url"]
-
-                updated = False
-
-                if "force_token" in creds and creds["force_token"] :
-                    if updated :
-                        lookup_url += "&"
-                    else :
-                        lookup_url += "?"
-                    lookup_url += "access_token=" + service.token["access_token"]
-
-                r = service.get(lookup_url)
-                
-                mdebug("MICA returned content is: " + str(r.content))
-                values = json_loads(r.content)
-
-                if who == "renren" :
-                    values = values["response"]
-
-                if creds["verified_key"] :
-                    assert(creds["verified_key"] in values)
-
-                    if not values[creds["verified_key"]] :
-                        req.skip_show = True
-                        return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
-
-                if creds["email_key"] and creds["email_key"] not in values :
-                    authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-                    req.skip_show = True
-                    out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
-                    out += authorization_url
-                    out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
-                    return self.bootstrap(req, out)
-
-                password = binascii_hexlify(os_urandom(4))
-                if "locale" not in values :
-                    language = "en"
+                    out += _("Internet access error. Try again later: ") + "<br/>"
                 else :
-                    language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
+                    out["whole"] = {"source" : source, "target" : _("Internet access error. Try again later: ")}
+            else :
+                for x in range(0, len(requests)) : 
+                    if (x + 1) > len(result) :
+                        continue
 
-                if creds["email_key"] :
-                    if isinstance(values[creds["email_key"]], dict) :
-                        values["email"] = None
-
-                        if "preferred" in values[creds["email_key"]] :
-                            values["email"] = values[creds["email_key"]]["preferred"]
-
-                        if values["email"] is None :
-                            for key, email in values[creds["email_key"]] :
-                                if email is not None :
-                                    values["email"] = email 
+                    part = result[x]
+                    if "TranslatedText" not in part :
+                        target = _("No instant translation available.")
                     else :
-                        values["email"] = values[creds["email_key"]]
-
-                from_third_party = values
-                if creds["email_key"] :
-                    from_third_party["username"] = values["email"]
-
-                #req.skip_show = True
-                #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
-
-                if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
-                    if values["email"].count(":") :
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
-
-                    self.make_account(req, values["email"], password, values["email"], who, language = language)
-                    mdebug("Language: " + language)
-
-                    output = ""
-                    output += "<h4>" + _("Congratulations. Your account is created") + ": " + values["email"] 
-                    output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
-
-                    output += "<br/><br/>Save this Password: " + password
-                    output += "<br/><br/>" + _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
-                    output += _("please read the tutorial") + "</a>"
-                    output += "<br/><br/>Happy Learning!</h4>"
-
-                    from_third_party["output"] = output
-                else :
-                    from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/home';</script>" 
-                    auth_user = self.userdb["org.couchdb.user:" + values["username"]]
-
-                    if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
-                        req.skip_show = True
-                        source = "mica" if "source" not in auth_user else auth_user["source"]
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
-
-            if req.http.params.get("connect") or from_third_party != False :
-                if from_third_party :
-                    username = from_third_party["email"]
-                    req.session.value["from_third_party"] = True 
-                else :
-                    req.session.value["from_third_party"] = False 
-                    if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
-                        # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                        req.skip_show = True
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
-                    username = req.http.params.get('username')
-                    password = req.http.params.get('password')
-
-                if req.http.params.get("address") :
-                    address = req.http.params.get('address')
-                elif "adddress" in req.session.value and req.session.value["address"] != None :
-                    address = req.session.value["address"]
-                else :
-                    address = self.credentials()
-
-                req.session.value["username"] = username
-                req.session.value["address"] = address
-
-                # Make a temporary jabber secret that is safe to store in a session
-                # so the BOSH javascript client can authenticate
-                if not mobile :
-                    if "temp_jabber_pw" in params :
-                        req.session.value["temp_jabber_pw"] = params["temp_jabber_pw"]
-                    else :
-                        req.session.value["temp_jabber_pw"] = binascii_hexlify(os_urandom(4))
-
-                if mobile :
-                    req.session.value["password"] = password
-
-                req.session.save()
-
-                mdebug("authenticating...")
-
-                auth_user, reason = self.authenticate(username, password, address, from_third_party = from_third_party)
-
-                if not auth_user :
-                    # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-                    req.skip_show = True
-                    return self.bootstrap(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
-
-                req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
-                req.session.value["database"] = auth_user["mica_database"] 
-                req.session.save()
-
-                mdebug("verifying...")
-                self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
-
-                if not mobile :
-                    if "temp_jabber_pw" not in params :
-                        auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
-                        self.userdb["org.couchdb.user:" + username] = auth_user
-
-                if mobile :
-                    if req.db.doc_exist("MICA:appuser") :
-                       mdebug("There is an existing user. Verifying it is the same one.")
-                       appuser = req.db["MICA:appuser"]
-                       if appuser["username"] != username :
-                            # Beginning of a message 
-                            req.skip_show = True
-                            return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
-                                # next part of the same message 
-                                appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
-                                 # next part of the same message 
-                                _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
-                                 # end of the message 
-                                _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.") + "</h4></div>")
-                    else :
-                       mdebug("First time user. Reserving this device: " + username)
-                       appuser = {"username" : username}
-                       req.db["MICA:appuser"] = appuser
-                           
-                    tmpuser = req.db.__getitem__(self.acct(username), false_if_not_found = True)
-                    if tmpuser and "filters" in tmpuser :
-                        mdebug("Found old filters.")
-                        req.session.value["filters"] = tmpuser["filters"]
-                        req.session.save()
-                    if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                        # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                        req.skip_show = True
-                        return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
-
-                req.action = "home"
-                req.session.value['connected'] = True 
-                req.session.save()
-
-                if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
-                    req.session.value['last_username'] = username
-                    req.session.value['last_remember'] = 'checked'
-                elif 'last_username' in req.session.value :
-                    del req.session.value['last_username']
-                    req.session.value['last_remember'] = ''
-                req.session.save()
-
-                self.clear_story(req)
-
-                req.session.value["last_refresh"] = str(timest())
-                req.session.save()
-
-                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
-                if not user :
-                    return self.warn_not_replicated(req)
-
-                if not mobile :
-                    jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
-                    if not jobs :
-                        req.db["MICA:jobs"] = {"list" : {}}
+                        target = part["TranslatedText"].encode("utf-8")
                     
-                if "language" not in user :
-                    user["language"] = get_global_language()
+                    if x == 0 :
+                        if human :
+                            out += _("Selected instant translation") + " (" + source + "): " + target + "<br/>\n"
+                        else :
+                            out["whole"] = {"source" : source, "target" : target}
+                    else :
+                        char = breakout[x-1].encode("utf-8")
+                        if human :
+                            if x == 1:
+                                out += _("Piecemeal instant translation") + ":<br/>\n"
+                        if human :
+                            out += "(" + char + "): "
+                            out += target 
+                            out += "<br/>\n"
+                        else :
+                            out["online"].append({"char" : char, "target" : target})
 
-                if "learnlanguage" not in user :
-                    user["learnlanguage"] = "en"
+        except OnlineTranslateException, e :
+            mwarn("Online translate error: " + str(e))
+            return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, human)
 
-                if "source" not in user :
-                    user["source"] = "mica"
+               
+        if human :
+            out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
 
-                if "date" not in user :
-                    user["date"] = timest()
+        try :
+            opaque = gp.parse_page_start()
+            gp.test_dictionaries(opaque)
+            try :
+                for idx in range(0, len(requests)) :
+                    request = requests[idx]
+                    if gp.already_romanized and len(requests) > 1 and idx == 0 :
+                        continue
+                    request_decoded = request.decode("utf-8")
+                    tar = gp.get_first_translation(opaque, request_decoded, False)
+                    if tar :
+                        for target in tar :
+                            ipa = gp.get_ipa(request_decoded)
 
-                if "story_format" not in user :
-                    mwarn("Story format is missing. Upgrading design document for story upgrades.")
-                    self.view_check(req, "stories", recreate = True)
-                    user["story_format"] = story_format
+                            if human :
+                                out += "<br/>(" + request
+                                if ipa :
+                                    out += ", " + str(ipa[0])
+                                out += "): " + target.encode("utf-8")
+                            else :
+                                out["offline"].append({"request" : request, "ipa" : ipa, "target" : target.encode("utf-8")})
+                    else :
+                        if human :
+                            out += "<br/>(" + request + ") " + _("No instant translation found.")
+                        else :
+                            out["offline"].append({"request" : request, "ipa" : False, "target" : False})
 
-                if "app_chars_per_line" not in user :
-                    user["app_chars_per_line"] = 70
-                if "web_chars_per_line" not in user :
-                    user["web_chars_per_line"] = 70
-                if "default_app_zoom" not in user :
-                    user["default_app_zoom"] = 1.15
-                if "default_web_zoom" not in user :
-                    user["default_web_zoom"] = 1.0
+                gp.parse_page_stop(opaque)
+            except OSError, e :
+                mdebug("Looking up target instant translation failed: " + str(e))
+                return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
+        except Exception, e :
+            mdebug("Instant test failed: " + str(e))
+            return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
 
-                if "filters" not in user :
-                   user["filters"] = {'files' : [], 'stories' : [] }
+        if human :
+            out = {"success" : True, "desc" : out}
 
+        return self.api(req, out, human)
+
+    def common_chat_ime(req) :
+        self.install_local_language(req, req.http.params.get("lang"))
+        output = False
+        mode = req.http.params.get("mode")
+        orig = req.http.params.get("source")
+        imes = int(req.http.params.get("ime"), 0)
+        start_trans_id = int(req.http.params.get("start_trans_id", 0))
+        story = {
+           "name" : "ime",
+           "target_language" : supported_map[req.http.params.get("target_language")],
+           "source_language" : supported_map[req.http.params.get("source_language")],
+        }
+
+        out = {"success" : False}
+        lens = []
+        chars = []
+        source = ""
+        if orig :
+            imes = int(req.http.params.get("ime"))
+            gp = self.processors[self.tofrom(story)]
+            mdebug("Type: " + str(type(orig)))
+            char_result = gp.get_chars(orig)
+
+            if not char_result :
+                mdebug("No result from search for: " + orig)
+                out["desc"] = _("No result") + "."
+                if not gp.already_romanized :
+                    return self.api(req, out, False)
+
+                source = orig
+            else :
+                imes = len(char_result)
+
+                for imex in range(0, imes) :
+                    if imes > 0 :
+                        source += " " + str(imex + 1) + ". "
+                    source += char_result[imex][0]
+                    lens.append(len(char_result[imex][0]))
+                    chars.append(char_result[imex][0])
+
+        else :
+            # legacy implementation for v0.5
+            for imex in range(1, imes + 1) :
+                if imes > 1 :
+                    source += " " + str(imex) + ". "
+                char_result = req.http.params.get("ime" + str(imex)).decode("utf-8")
+                source += char_result 
+                lens.append(len(char_result))
+                chars.append(char_result)
+
+        story["source"] = source
+
+        # FIXME: The long-term solution to open all sqlite database handles
+        # inside the main routine and use couroutines to synchronize
+        # all DB accesses from the main processor, but that requires
+        # re-writing the processor, let's deal with that later.
+        # The goal is to allow sqlite to do normal caching.
+        # CUrrently, the RomanizedSource languages are still are
+        # not closing/re-opening their sqlite handles and may crash.
+        # We don't want to re-open them anyway and need to keep
+        # them open in the main thread.
+        # When we finish this fix, we can remove the imemutex lock below.
+
+        self.imemutex.acquire()
+        cerror = False
+        try :
+            try :
+                #sys_settrace(tracefunc)
+                start = timest()
+                self.parse(req, story, live = True)
+                #sys_settrace(None)
+                mdebug("Parse time: " + str(timest() - start))
+                #call_report()
+
+            except Exception, e :
+                merr("Cannot parse chat: " + str(e))
+                cerror = e
+            finally :
+                self.imemutex.release()
+                if cerror :
+                    raise cerror
+
+
+            if not output :
+                out["success"] = True
+                out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
+                out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
+        except OSError, e :
+            merr("OSError: " + str(e))
+            out["result"] = self.warn_not_replicated(req, bootstrap = False)
+        except processors.NotReady, e :
+            merr("Translation processor is not ready: " + str(e))
+            out["result"] = self.warn_not_replicated(req, bootstrap = False)
+        except Exception, e :
+            err = ""
+            for line in format_exc().splitlines() :
+                err += line + "\n"
+            merr(err)
+            out["result"] = _("Chat error") + ": " + source 
+
+        return self.api(req, out, False) 
+
+    def common_uploadfile(self, req) :
+        fh = req.http.params.get("storyfile")
+        filetype = req.http.params.get("filetype")
+        langtype = req.http.params.get("languagetype")
+        source_lang, target_lang = langtype.split(",")
+        # Stream the file contents directly to disk, first
+        # Make sure it's not too big while we're doing it...
+        sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
+        mdebug("Will stream upload to " + sourcepath)
+        sourcefh = open(sourcepath, 'wb')
+
+        sourcebytes = 0
+        maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
+        sourcefailed = False
+        while True :
+            data = fh.file.read(1)
+            if data == '' :
+                break
+            sourcebytes += 1
+            if sourcebytes > maxbytes[filetype] :
+                sourcefailed = True
+                break 
+
+            sourcefh.write(data)
+
+        sourcefh.close()
+        fh.file.close()
+
+        if sourcefailed :
+            mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
+            os_remove(sourcepath)
+            # This appears when the user tries to upload a story document that is too large.
+            # At the end of the message will appear something like '30 MB', or whatever is
+            # the current maximum file size allowed by the system.
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB.</h4></div>")
+
+        mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
+
+        # A new story has been uploaded and is being processed in the background.
+        return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
+
+    def common_uploadtext(self, req) :
+        source = req.http.params.get("storytext") + "\n"
+        filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
+        langtype = req.http.params.get("languagetype")
+        source_lang, target_lang = langtype.split(",")
+
+        # A new story has been uploaded and is being processed in the background.
+        return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, False, args = [req, filename, source, "txt", source_lang, target_lang, False])
+
+    def common_tstatus(self, req, uuid, story) :
+        out = "<div id='tstatusresult'>"
+        if not req.db.doc_exist(self.index(req, uuid)) :
+            out += "error 25 0 0"
+        else :
+            if "translating" not in story or not story["translating"] :
+                out += "no 0 0 0"
+            else :
+                curr = float(int(story["translating_current"]))
+                total = float(int(story["translating_total"]))
+
+                out += "yes " + str(int(curr / total * 100))
+                out += (" " + str(story["translating_page"])) if "translating_page" in story else "0"
+                out += (" " + str(story["translating_pages"])) if "translating_pages" in story else "1"
+                
+        out += "</div>"
+        return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
+
+    def common_finished(self, req, name) :
+        finished = True if req.http.params.get("finished") == "1" else False
+        tmp_story = req.db[self.story(req, name)]
+        tmp_story["finished"] = finished 
+        req.db[self.story(req, name)] = tmp_story 
+        # Finished reviewing a story in review mode.
+        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
+
+    def common_reviewed(self, req, name, uuid) :
+        reviewed = True if req.http.params.get("reviewed") == "1" else False
+        tmp_story = req.db[self.story(req, name)]
+        tmp_story["reviewed"] = reviewed
+        if reviewed :
+            if "finished" not in tmp_story or tmp_story["finished"] :
+                tmp_story["finished"] = False
+
+            pages = self.nb_pages(req, tmp_story)
+            if pages == 1 :
+                final = {}
+
+                if req.db.doc_exist(self.story(req, name) + ":final") :
+                    final["_rev"] = req.db[self.story(req, name) + ":final"]["_rev"]
+
+                minfo("Generating final pagesets...")
+                
+                for page in range(0, pages) :
+                    minfo("Page " + str(page) + "...")
+                    final[str(page)] = self.view_page(req, uuid, name, \
+                        story, req.action, "", str(page), \
+                        req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, disk = True)
+                    
+                req.db[self.story(req, name) + ":final"] = final
+        req.db[self.story(req, name)] = tmp_story 
+        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
+
+    def common_translate(self, req, story) :
+        output = "<div id='translationstatusresult'>" + self.heromsg
+        if story["translated"] :
+            output += _("Story already translated. To re-translate, please select 'Forget'.")
+        else :
+            try :
+                self.parse(req, story)
+                output += self.heromsg + _("Translation complete!")
+            except OSError, e :
+                output += self.warn_not_replicated(req, bootstrap = False)
+            except Exception, e :
+                output += _("Failed to translate story") + ": " + str(e)
+        output += "</div></div>"
+        return self.bootstrap(req, output, now = True)
+
+    def common_jobs(self, req, jobs) :
+        out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n"
+        out += "<table class='table'>"
+
+        finished = []
+
+        for jkey in jobs["list"] :
+            job = jobs["list"][jkey]
+            out += "<tr>"
+            if job["finished"] :
+                finished.append(job)
+                out += "<td>" + _("Finished") + ": </td>"
+            else :
+                # Same as 'processing', when a background job is running like uploading/deleting stories.
+                out += "<td>" + _("Running") + ": </td>"
+
+            out += "<td>" + _(job["description"]) + "</td><td>&#160;&#160;</td><td>" + job["object"] + "</td><td>&#160;&#160;</td>" 
+        
+            out += "<td>"
+
+            if job["result"] :
+                out += job["result"]
+            elif not job["finished"] :
+                out += _("Please wait")
+
+            out += "</td>"
+
+            out += "</tr>"
+
+        out += "</table>"
+
+        if len(finished) > 0 :
+            for job in finished :
+                del jobs["list"][job["uuid"]]
+            req.db["MICA:jobs"] = jobs
+
+        return self.bootstrap(req, out)
+
+    def common_multiple_select(self, req, story, uuid) :
+        nb_unit = int(req.http.params.get("nb_unit"))
+        mindex = int(req.http.params.get("index"))
+        trans_id = int(req.http.params.get("trans_id"))
+        page = req.http.params.get("page")
+        unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
+
+        return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
+                                   self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page) + \
+                                   "</div></div>", now = True)
+
+    def common_memorizednostory(self, req) :
+        memorized = int(req.http.params.get("memorizednostory"))
+        multiple_correct = int(req.http.params.get("multiple_correct"))
+        source = req.http.params.get("source")
+        mdebug("Received memorization request without story: " + str(memorized) + " " + str(multiple_correct) + " " + source)
+        nshash = self.get_polyphome_hash(multiple_correct, source)
+
+        if memorized :
+            unit = self.general_processor.add_unit([source], source, [source]) 
+            unit["multiple_correct"] = multiple_correct
+            unit["date"] = timest()
+            unit["hash"] = nshash
+            if not req.db.doc_exist(self.memorized(req, nshash)) :
+                req.db[self.memorized(req, nshash)] = unit
+        else :
+            if req.db.doc_exist(self.memorized(req, nshash)) :
+                del req.db[self.memorized(req, nshash)]
+
+        return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
+                                   str(nshash) + "</div></div>", now = True)
+
+    def common_memorized(self, req, name) :
+        memorized = int(req.http.params.get("memorized"))
+        nb_unit = int(req.http.params.get("nb_unit"))
+        page = req.http.params.get("page")
+        
+        # FIXME This is kind of stupid - looking up the whole page
+        # just to get the hash of one unit.
+        # But, we are storing the whole unit dict inside
+        # the memorization link - maybe or maybe not we shouldn't
+        # be doing that, or we could put the whole unit's json
+        # into the original memorization request. I dunno.
+        
+        page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+        unit = page_dict["units"][nb_unit]
+        
+        if memorized :
+            unit["date"] = timest()
+            if not req.db.doc_exist(self.memorized(req, unit["hash"])) :
+                req.db[self.memorized(req, unit["hash"])] = unit
+        else :
+            if req.db.doc_exist(self.memorized(req, unit["hash"])) :
+                del req.db[self.memorized(req, unit["hash"])]
+            
+        return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
+                                   unit["hash"] + "</div></div>", now = True)
+
+    def common_storyupgrade(self, req, story, name) :
+        if mobile :
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
+
+        version = int(req.http.params.get("version"))
+
+        original = 0
+        if "format" not in story or story["format"] == 1 :
+            if version != 2 :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
+            original = 1
+
+        # Add new story upgrades to this list here, like this:
+        #elif "format" in story and story["format"] == 2 :
+        #    if version != 3 :
+        #        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 2") + " =>" + str(version) + ".</h4></div>")
+        #    original = 2
+        #    mdebug("Will upgrade from version 2 to 3")
+
+        elif "format" in story and story["format"] == story_format and (not "upgrading" in story or not story["upgrading"]) :
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
+        else :
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
+
+        if version > story_format :
+            # 'format' referring to the database format the we are upgrading to
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
+
+        if "upgrading" in story and story["upgrading"] :
+            curr_page = story["upgrade_page"] if "upgrade_page" in story else 0
+            nbpages = self.nb_pages(req, story)
+            assert(nbpages > 0)
+            percent = float(curr_page) / float(nbpages) * 100
+            out = self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>"
+            if "last_error" in story and not isinstance(story["last_error"], str) :
+                out += "<br/>" + _("Last upgrade Exception") + ":<br/>"
+                for err in story["last_error"] :
+                    out += "<br/>" + err.replace("\n", "<br/>")
+                del story["upgrading"]
+                del story["last_error"]
+                req.db[self.story(req, name)] = story
+                story = req.db[self.story(req, name)]
+            return self.bootstrap(req, out)
+
+        if "last_error" in story :
+            mdebug("Clearing out last error message.")
+            del story["last_error"]
+            req.db[self.story(req, name)] = story
+            story = req.db[self.story(req, name)]
+
+        mdebug("Starting upgrade thread...")
+        if original == 1 : 
+            ut = Thread(target = self.upgrade2, args=[req, story])
+        #elif original == 2 :
+        #    ut = Thread(target = self.upgrade3, args=[req, story])
+        ut.daemon = True
+        ut.start()
+        mdebug("Upgrade thread started.")
+        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
+
+    def common_memolist(self, req, story) :
+        page = req.http.params.get("page")
+        output = []
+                
+        result = self.memocount(req, story, page)
+
+        if result :
+            total_memorized, total_unique, unique, progress = result
+
+            pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
+            for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
+                output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
+            # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
+            output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
+            # A count of all the unique words on this page, not just the ones the user has memorized.
+            output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
+            if list_mode :
+                output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+                output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
+
+                if total_memorized :
+                    output.append("<div class='panel-group' id='panelMemorized'>\n")
+                    for p in progress :
+                        output.append("""
+                                <div class='panel panel-default'>
+                                  <div class="panel-heading">
+                                  """)
+                        py, target, unit, nb_unit, trans_id, page_idx = p
+                        if len(target) and target[0] == '/' :
+                            target = target[1:-1]
+                        tid = unit["hash"] if py else trans_id 
+
+                        output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
+                                str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
+                                "<i class='glyphicon glyphicon-remove'></i></a>")
+
+                        output.append("&#160; " + "".join(unit["source"]) + ": ")
+                        output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
+
+                        output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
+                        output.append("</a>")
+                        output.append("</div>")
+                        output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
+                        output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
+                        output.append("</div>")
+                        output.append("</div>")
+                    output.append("</div>")
+                else :
+                    output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
+            else :
+                output.append(_("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device."))
+        else :
+            # statistics in reading mode are disabled
+            output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
+
+        return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
+
+    def common_view(self, req, uuid) :
+        if uuid :
+            # Reload just in case the translation changed anything
+            name = req.db[self.index(req, uuid)]["value"]
+            story = req.db[self.story(req, name)]
+            gp = self.processors[self.tofrom(story)]
+            
+            if req.action == "edit" and gp.already_romanized :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
+            
+            if req.http.params.get("page") and not req.http.params.get("retranslate") :
+                page = req.http.params.get("page")
+                mdebug("Request for page: " + str(page))
+                if page == "-1" :
+                    page = start_page
+
+                if req.http.params.get("image") :
+                    nb_image = req.http.params.get("image")
+                    output = "<div><div id='pageresult'>"
+                    image_found = False
+                    if "filetype" in story and story["filetype"] != "txt" :
+                        attach_raw = req.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
+                        original = eval(attach_raw)
+
+                        if "images" in original and int(nb_image) < len(original["images"]) :
+                            # I think couch is already base-64 encoding this, so if we can find
+                            # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
+                            output += "<img src='data:image/jpeg;base64," + base64_b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
+                            image_found = True
+                    if not image_found :
+                       # Beginning of a sentence: Original source image of the current page from which the text comes
+                       output += _("Image") + " #" + str(nb_image) + " "
+                       # end of thes sentence, indicating that a particular image number doesn't exist.
+                       output += _("not available on this page")
+                    output += "</div></div>"
+                    return self.bootstrap(req, output, now = True)
+                else :
+                    self.set_page(req, story, page)
+                    output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode)
+                    return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
+            output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
+        else :
+            if from_third_party and "output" in from_third_party :
+                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+            elif from_third_party and "redirect" in from_third_party :
+                return self.bootstrap(req, from_third_party["redirect"], now = True)
+
+            else :
+                # Beginning of a message.
+                output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
+                if mobile :
+                    output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
+                else :
+                    # end of a message
+                    output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
+                    output += "<br/><br/>"
+                    output += "<h4>"
+                    # Beginning of a message
+                    output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                    # end of a message
+                    output += _("please read the tutorial") + "</a>"
+                    output += "</h4>"
+                output += "</div>"
+
+        return self.bootstrap(req, output)
+
+    def common_stories(self, req, story, name) :
+        ftype = "txt" if "filetype" not in story else story["filetype"]
+        if ftype != "txt" :
+            # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + \
+                       # Tho original story format as it was imported, that is
+                       ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
+        
+        which = req.http.params.get("type")
+        assert(which)
+            
+        if which == "original" :
+            original = self.heromsg + _("Here is the original story. Choose from one of the options in the above navigation bar to begin learning with this story.") + "</div>"
+            original += req.db[self.story(req, name) + ":original"]["value"]
+            return self.bootstrap(req, original.encode("utf-8").replace("\n","<br/>"))
+        elif which == "pinyin" :
+            final = req.db[self.story(req, name) + ":final"]["0"]
+            return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
+
+    def common_account(self, req, story, name, uuid) :
+        out = ""
+
+        user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+
+        if not user :
+            return self.warn_not_replicated(req)
+        
+        if req.http.params.get("pack") :
+            req.db.compact()
+            req.db.cleanup()
+            design_docs = ["memorized", "stories", "mergegroups",
+                           "tonechanges", "accounts", "splits" ]
+
+            if not mobile :
+                design_docs.append("download")
+
+            for name in design_docs :
+                if req.db.doc_exist("_design/" + name) :
+                    mdebug("Compacting view " + name)
+                    req.db.compact(name)
+
+            # The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
+            out += self.heromsg + "\n<h4>" + _("Database compaction complete for your account") + ".</h4></div>\n"
+        elif req.http.params.get("changepassword") :
+            if mobile :
+                # The next handful of mundane phrases are associated with the creation
+                # and management of user accounts in the software program and the relevant
+                # errors that can occur while performing operations on a user's account.
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+            oldpassword = req.http.params.get("oldpassword")
+            newpassword = req.http.params.get("password")
+            newpasswordconfirm = req.http.params.get("confirm")
+
+            if len(newpassword) < 8 :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
+            if newpassword != newpasswordconfirm :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
+            auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
+            if not auth_user :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
+            try :
+                auth_user['password'] = newpassword
+                del self.dbs[username]
+                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                req.db["org.couchdb.user:" + username] = auth_user
+                del self.dbs[username]
+                self.verify_db(req, req.session.value["database"], newpassword)
+            except Exception, e :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                
+            out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
+
+        elif req.http.params.get("resetpassword") :
+            if mobile :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+
+            newpassword = binascii_hexlify(os_urandom(4))
+
+            auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
+            if not auth_user :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
+
+            try :
+                auth_user['password'] = newpassword
+                del self.dbs[username]
+                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                req.db["org.couchdb.user:" + username] = auth_user
+                del self.dbs[username]
+                self.verify_db(req, req.session.value["database"], newpassword)
+            except Exception, e :
+                out = ""
+                for line in format_exc().splitlines() :
+                    out += line + "\n"
+                mdebug(out)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                
+            out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
+
+        elif req.http.params.get("newaccount") :
+            if not self.userdb : 
+                # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+
+            newusername = req.http.params.get("username")
+            newpassword = req.http.params.get("password")
+            newpasswordconfirm = req.http.params.get("confirm")
+            admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
+            email = req.http.params.get("email")
+            language = req.http.params.get("language")
+
+            if newusername == "mica_admin" :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
+
+            if len(newpassword) < 8 :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
+            if newpassword != newpasswordconfirm :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
+
+            if not req.session.value["isadmin"] :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
+
+            if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
+
+            if newusername.count(":") :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
+
+            self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
+
+            out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
+        elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
+            if mobile :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
+
+            username = req.http.params.get("username") 
+
+            if not self.userdb : 
+                # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+
+            if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
+
+            auth_user = self.userdb["org.couchdb.user:" + username]
+
+
+            if req.session.value["username"] != username :
+                if not req.session.value["isadmin"] :
+                    # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
+                role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
+
+                if role_length == 0 :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
+
+            dbname = auth_user["mica_database"]
+            mdebug("Confirming database before delete: " + dbname)
+
+            todelete = self.cs[dbname]
+
+            del self.userdb["org.couchdb.user:" + username]
+            del self.cs[dbname]
+
+            if req.session.value["username"] != username :
+                out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
+            else :
+                self.clean_session(req)
+                req.skip_show = True
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
+
+        elif req.http.params.get("changelanguage") :
+            language = req.http.params.get("language")
+            user["language"] = language
+            req.db[self.acct(username)] = user
+            req.session.value["language"] = language
+            req.session.save()
+            self.install_local_language(req)
+            out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
+        elif req.http.params.get("changelearnlanguage") :
+            language = req.http.params.get("learnlanguage")
+            user["learnlanguage"] = language
+            req.session.value["learnlanguage"] = language
+            req.session.save()
+            req.db[self.acct(username)] = user
+            self.install_local_language(req)
+            out += self.heromsg + "\n<h4>" + _("Success! Learning Language changed") + ".</h4></div>"
+        elif req.http.params.get("changeemail") :
+            email = req.http.params.get("email")
+            try :
+                email_user = self.userdb["org.couchdb.user:" + username]
+                email_user['email'] = email 
+                self.userdb["org.couchdb.user:" + username] = email_user
+            except Exception, e :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
+            user["email"] = email 
+            req.db[self.acct(username)] = user
+            req.session.save()
+            out += self.heromsg + "\n<h4>" + _("Success! Email changed") + ".</h4></div>"
+        elif req.http.params.get("setappchars") :
+            chars_per_line = int(req.http.params.get("setappchars"))
+            if chars_per_line > 1000 or chars_per_line < 5 :
+                # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
+            user["app_chars_per_line"] = chars_per_line
+            req.db[self.acct(username)] = user
+            req.session.value["app_chars_per_line"] = chars_per_line 
+            req.session.save()
+            # Same as before, but specifically for a mobile device
+            out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
+        elif req.http.params.get("tofrom") :
+            tofrom = req.http.params.get("tofrom")
+            remove = int(req.http.params.get("remove"))
+
+            if tofrom not in processor_map :
+                # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+
+            if "filters" not in user :
+               user["filters"] = {'files' : [], 'stories' : [] }
+
+            if remove == 0 :
+                if tofrom not in user["filters"]['files'] :
+                    user["filters"]['files'].append(tofrom)
+            else :
+                if tofrom in user["filters"]['files'] :
+                    user["filters"]['files'].remove(tofrom)
+
+            req.session.value["filters"] = user["filters"]
+
+            if mobile :
+                req.db.stop_replication()
+
+                if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+
+            req.db[self.acct(username)] = user
+            req.session.save()
+
+            if mobile :
+                if remove == 0 :
+                    out += self.heromsg + "\n<h4>" + _("Success! We will start downloading that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
+                else :
+                    out += self.heromsg + "\n<h4>" + _("Success! We will no longer download that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
+            else :
+                if remove == 0 :
+                    out += self.heromsg + "\n<h4>" + _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
+                else :
+                    out += self.heromsg + "\n<h4>" + _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
+
+        elif req.http.params.get("setwebchars") :
+            chars_per_line = int(req.http.params.get("setwebchars"))
+            if chars_per_line > 1000 or chars_per_line < 5:
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
+            user["web_chars_per_line"] = chars_per_line
+            req.db[self.acct(username)] = user
+            req.session.value["web_chars_per_line"] = chars_per_line 
+            req.session.save()
+            # Same as before, but specifically for a website 
+            out += self.heromsg + "\n<h4>" + _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
+        elif req.http.params.get("setappzoom") :
+            zoom = float(req.http.params.get("setappzoom"))
+            if zoom > 3.0 or zoom < 0.5 :
+                # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
+            user["default_app_zoom"] = zoom 
+            req.db[self.acct(username)] = user
+            req.session.value["default_app_zoom"] = zoom
+            req.session.save()
+            # Same as before, but specifically for an application running on a mobile device
+            out += self.heromsg + "\n<h4>" + _("Success! App zoom level set to:") + " " + str(zoom) + ".</h4></div>"
+        elif req.http.params.get("setwebzoom") :
+            zoom = float(req.http.params.get("setwebzoom"))
+            if zoom > 3.0 or zoom < 0.5 :
+                # Same as before, but specifically for an application running on the website 
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
+            user["default_web_zoom"] = zoom 
+            req.db[self.acct(username)] = user
+            req.session.value["default_web_zoom"] = zoom
+            req.session.save()
+            # Same as before, but specifically for an application running on the website 
+            out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
+
+        out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
+
+        if mobile :
+            out += "<h4><b>" + _("Dictionaries") + "?</b></h4>"
+        else :
+            # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
+            out += "<h4><b>" + _("Send Dictionaries to your devices?") + "</b></h4>"
+        out += "<h5>(" + _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each") + ".)</h5>"
+
+        out += "<table>"
+        for pair, readable in supported.iteritems() :
+            out += "<tr><td>"
+            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
+            dname = "dict" + pair.replace("-", "")
+            out += "<input type='hidden' name='tofrom' value='" + pair + "'/>\n"
+
+            out += "<button id='" + dname + "' name='downloaddictionary' type='submit' class='btn btn-default btn-primary"
+
+            downloaded = False 
+
+            if "filters" in user and pair in user["filters"]["files"] :
+                downloaded = True
+
+            remove = False
+            if not downloaded :
+                # The next few messages appear on mobile devices and allow the user to control the synchronization status
+                # of the story they want to use. For example, if a story (or a dictionary) is on the website,
+                # but not yet synchronized with the device, we show a series of messages as the user indicates
+                # which ones to download/synchronize and which ones not to.
+                out += "'>" + _("Download")
+            else :
+                all_found = True
+
+                lgp = self.processors[pair]
+                for f in lgp.get_dictionaries() :
+                    fname = params["scratch"] + f
+
+                    if not os_path.isfile(fname) :
+                        all_found = False
+                        break
+
+                remove = True
+                if all_found :
+                    out += "'>" + _("Stop downloading")
+                else :
+                    #out += " btn-disabled' disabled"
+                    out += "'"
+                    out += ">" + _("Downloading") + "..."
+
+            out += "</button>"
+
+            if remove :
+                out += "<input type='hidden' name='remove' value='1'/>\n"
+            else :
+                out += "<input type='hidden' name='remove' value='0'/>\n"
+
+            out += "</form>"
+            out += "</td><td>"
+            out += "&#160;" + _(readable) + "<br/>"
+            out += "</td></tr>"
+        out += "</table>"
+
+        try :
+            # the zoom level or characters-per-line limit
+            out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"
+            out += "<table>"
+            out += "<tr><td>&#160;" + _("Characters per line") + ":</td><td>"
+            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
+            out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
+            out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
+            out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
+            out += "</form>"
+            out += "</td></tr>"
+            out += "</table>"
+            out += "<table>"
+            out += "<tr><td><h5>&#160;" + _("Default zoom level") + ": </h5></td><td>"
+            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
+            out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
+            out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
+            out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
+            out += "</form>"
+            out += "</td></tr>"
+            out += "</table>"
+        except KeyError, e :
+            merr("Keep having this problem: " + str(user) + " " + str(e))
+            raise e
+
+        out += "<h4><b>" + _("Language") + "</b>?</h4>"
+        out += """
+            <form action='/account' method='post' enctype='multipart/form-data'>
+            <select name="language">
+        """
+        softlangs = []
+        for l, readable in lang.iteritems() :
+            locale = l.split("-")[0]
+            if locale not in softlangs :
+                softlangs.append((locale, readable))
+
+        for l, readable in softlangs :
+            out += "<option value='" + l + "'"
+            if l == user["language"] :
+                out += "selected"
+            out += ">" + _(readable) + "</option>\n"
+        out += """
+            </select>
+            <br/>
+            <br/>
+        """
+        out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
+
+        out += "<h4><b>" + _("Learning Language") + "</b>?</h4>"
+        out += """
+            <form action='/account' method='post' enctype='multipart/form-data'>
+            <select name="learnlanguage">
+        """
+        softlangs = []
+        for l, readable in lang.iteritems() :
+            locale = l.split("-")[0]
+            if locale not in softlangs :
+                softlangs.append((locale, readable))
+
+        for l, readable in softlangs :
+            out += "<option value='" + l + "'"
+            if "learnlanguage" in user and l == user["learnlanguage"] :
+                out += "selected"
+            out += ">" + _(readable) + "</option>\n"
+        out += """
+            </select>
+            <br/>
+            <br/>
+        """
+        out += "<button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Learning Language") + "</button></form>"
+
+        out += """
+                <a onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});;"
+                """
+
+        out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
+
+        if username == "demo" :
+            return self.bootstrap(req, out)
+         
+        out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
+        if not mobile :
+            out += run_template(req, PasswordElement)
+        else :
+            out += _("Please change your password on the website. Will support mobile in a future version.")
+
+        if self.userdb :
+            if not mobile and req.session.value["isadmin"] :
+                out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
+                out += "<table>"
+                for result in self.userdb.view('accounts/all') :
+                    tmp_doc = result["key"]
+                    out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
+                    out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
+                    out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
+                    out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
+                    out += "</tr>"
+                out += "</table>"
+
+        if not mobile :
+            out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
+            out += """
+                <form action='/account' method='post' enctype='multipart/form-data'>
+            """
+            out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
+            out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
+        else :
+            out += _("Please change your email address on the website. Will support mobile in a future version.")
+
+        out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
+        if not mobile :
+            out += run_template(req, DeleteAccountElement)
+        else :
+            out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
+
+        return self.bootstrap(req, out)
+                    
+    def common_chat(self, req) :
+        req.main_server = params["main_server"]
+        story = {
+           "target_language" : supported_map[req.session.value["language"]],
+           "source_language" : supported_map[req.session.value["learnlanguage"]],
+        }
+
+        if self.tofrom(story) not in self.processors :
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
+
+
+        req.gp = self.processors[self.tofrom(story)]
+        req.source_language = story["source_language"]
+        req.target_language = story["target_language"]
+        out = run_template(req, ChatElement)
+        return self.bootstrap(req, out)
+
+    def common_storylist(self, req) :
+        if req.http.params.get("sync") :
+            sync = int(req.http.params.get("sync"))
+            tmpuuid = req.http.params.get("uuid")
+            tmpname = req.db[self.index(req, tmpuuid)]["value"]
+            tmpstory = req.db[self.story(req, tmpname)]
+            tmpuser = req.db[self.acct(req.session.value["username"])]
+
+            if sync == 1 :
+                tmpstory["download"] = True
+                if name not in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].append(name)
+            else :
+                tmpstory["download"] = False
+                if name in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].remove(name)
+                
+            req.session.value["filters"] = tmpuser["filters"]
+
+            if mobile :
+                req.db.stop_replication()
+                if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to change synchronization. Please try again") + ": " + tofrom + ".</h4></div>")
+
+            req.db[self.story(req, tmpname)] = tmpstory
+            req.db[self.acct(req.session.value["username"])] = tmpuser
+            req.session.save()
+
+            #mdebug("Want to perform: user " + str(tmpuser) + " story " + str(tmpstory))
+            return self.bootstrap(req, "changed", now = True)
+
+        storylist = [self.template("storylist")]
+
+        result = repeat(self.makestorylist, args = [req], kwargs = {})
+        
+        if not result[0] and len(result) > 1 :
+            return self.bootstrap(req, result[1])
+        
+        untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
+        
+        reading.append("</table></div></div></div>\n")
+        noreview.append("</table></div></div></div>\n")
+        untrans.append("</table></div></div></div>\n")
+        finish.append("</table></div></div></div>\n")
+
+        scripts = [""]
+
+        if untrans_count :
+            storylist += untrans + reading + noreview + finish + ["</div></td></tr></table>"]
+            scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
+        elif reading_count :
+            storylist += reading + untrans + noreview + finish + ["</div></td></tr></table>"]
+            scripts.append("<script>$('#collapseReading').collapse('show');</script>")
+        else :
+            storylist += noreview + reading + untrans + finish + ["</div></td></tr></table>"]
+            scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
+
+        scripts.append("""
+                    
+                   <script>
+                   for(var tidx = 0; tidx < translist.length; tidx++) {
+                       trans_start(translist[tidx]);
+                   }
+                   translist = [];
+                   </script>
+                  """)
+
+        try :
+            finallist = run_template(req, StoryElement, "".join(storylist)) + "".join(scripts)
+        except Exception, e:
+            merr("Storylist fill failed: " + str(e))
+
+        return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
+
+    def common_phistory(self, req, story, uuid) :
+        return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
+                                   # statistics in review mode are disabled
+                                   (self.history(req, story, uuid, req.http.params.get("page")) if list_mode else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
+                                   "</div></div>", now = True)
+
+    def common_editslist(self, req, story, uuid) :
+        return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
+                                   self.edits(req, story, uuid, req.http.params.get("page"), list_mode) + \
+                                   "</div></div>", now = True)
+
+    def common_oauth(req) :
+        from_third_party = False
+        self.install_local_language(req)
+        who = req.action
+        creds = params["oauth"][who]
+        redirect_uri = params["oauth"]["redirect"] + who 
+        service = OAuth2Session(creds["client_id"], redirect_uri=redirect_uri)
+
+        if who == "facebook" :
+            service = facebook_compliance_fix(service)
+
+        if who == "baidu" :
+            service = baidu_compliance_fix(service)
+
+        if not req.http.params.get("code") and not req.http.params.get("finish") :
+            if req.http.params.get("error") :
+                reason = req.http.params.get("error_reason") if req.http.params.get("error_reason") else "Access Denied."
+                desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
+                if reason == "user_denied" :
+                    # User denied our request to create their account using social networking. Apologize and move on.
+                    req.skip_show = True
+                    return self.bootstrap(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
+                else :
+                    # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
+                    req.skip_show = True
+                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
+            else :
+                # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
+                req.skip_show = True
+                return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
+
+        code = req.http.params.get("code")
+
+        req.skip_show = True
+        if not req.http.params.get("finish") :
+            return self.bootstrap(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
+
+
+        service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
+
+        mdebug("Token fetched successfully: " + str(service.token))
+
+        if who == "baidu" :
+            del service.token["token_type"]
+
+        lookup_url = creds["lookup_url"]
+
+        updated = False
+
+        if "force_token" in creds and creds["force_token"] :
+            if updated :
+                lookup_url += "&"
+            else :
+                lookup_url += "?"
+            lookup_url += "access_token=" + service.token["access_token"]
+
+        r = service.get(lookup_url)
+        
+        mdebug("MICA returned content is: " + str(r.content))
+        values = json_loads(r.content)
+
+        if who == "renren" :
+            values = values["response"]
+
+        if creds["verified_key"] :
+            assert(creds["verified_key"] in values)
+
+            if not values[creds["verified_key"]] :
+                req.skip_show = True
+                return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
+
+        if creds["email_key"] and creds["email_key"] not in values :
+            authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
+            req.skip_show = True
+            out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
+            out += authorization_url
+            out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
+            return self.bootstrap(req, out)
+
+        password = binascii_hexlify(os_urandom(4))
+        if "locale" not in values :
+            language = "en"
+        else :
+            language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
+
+        if creds["email_key"] :
+            if isinstance(values[creds["email_key"]], dict) :
+                values["email"] = None
+
+                if "preferred" in values[creds["email_key"]] :
+                    values["email"] = values[creds["email_key"]]["preferred"]
+
+                if values["email"] is None :
+                    for key, email in values[creds["email_key"]] :
+                        if email is not None :
+                            values["email"] = email 
+            else :
+                values["email"] = values[creds["email_key"]]
+
+        from_third_party = values
+        if creds["email_key"] :
+            from_third_party["username"] = values["email"]
+
+        #req.skip_show = True
+        #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
+
+        if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
+            if values["email"].count(":") :
+                return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
+
+            self.make_account(req, values["email"], password, values["email"], who, language = language)
+            mdebug("Language: " + language)
+
+            output = ""
+            output += "<h4>" + _("Congratulations. Your account is created") + ": " + values["email"] 
+            output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
+
+            output += "<br/><br/>Save this Password: " + password
+            output += "<br/><br/>" + _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+            output += _("please read the tutorial") + "</a>"
+            output += "<br/><br/>Happy Learning!</h4>"
+
+            from_third_party["output"] = output
+        else :
+            from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/home';</script>" 
+            auth_user = self.userdb["org.couchdb.user:" + values["username"]]
+
+            if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
+                req.skip_show = True
+                source = "mica" if "source" not in auth_user else auth_user["source"]
+                return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
+
+        return from_third_party
+
+    def common_connect(self, req, from_third_party) :
+        if from_third_party :
+            username = from_third_party["email"]
+            req.session.value["from_third_party"] = True 
+        else :
+            req.session.value["from_third_party"] = False 
+            if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
+                # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
+                req.skip_show = True
+                return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
+            username = req.http.params.get('username')
+            password = req.http.params.get('password')
+
+        if req.http.params.get("address") :
+            address = req.http.params.get('address')
+        elif "adddress" in req.session.value and req.session.value["address"] != None :
+            address = req.session.value["address"]
+        else :
+            address = self.credentials()
+
+        req.session.value["username"] = username
+        req.session.value["address"] = address
+
+        # Make a temporary jabber secret that is safe to store in a session
+        # so the BOSH javascript client can authenticate
+        if not mobile :
+            if "temp_jabber_pw" in params :
+                req.session.value["temp_jabber_pw"] = params["temp_jabber_pw"]
+            else :
+                req.session.value["temp_jabber_pw"] = binascii_hexlify(os_urandom(4))
+
+        if mobile :
+            req.session.value["password"] = password
+
+        req.session.save()
+
+        mdebug("authenticating...")
+
+        auth_user, reason = self.authenticate(username, password, address, from_third_party = from_third_party)
+
+        if not auth_user :
+            # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
+            req.skip_show = True
+            return self.bootstrap(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
+
+        req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
+        req.session.value["database"] = auth_user["mica_database"] 
+        req.session.save()
+
+        mdebug("verifying...")
+        self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
+
+        if not mobile :
+            if "temp_jabber_pw" not in params :
+                auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
+                self.userdb["org.couchdb.user:" + username] = auth_user
+
+        if mobile :
+            if req.db.doc_exist("MICA:appuser") :
+               mdebug("There is an existing user. Verifying it is the same one.")
+               appuser = req.db["MICA:appuser"]
+               if appuser["username"] != username :
+                    # Beginning of a message 
+                    req.skip_show = True
+                    return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                        # next part of the same message 
+                        appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
+                         # next part of the same message 
+                        _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
+                         # end of the message 
+                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.") + "</h4></div>")
+            else :
+               mdebug("First time user. Reserving this device: " + username)
+               appuser = {"username" : username}
+               req.db["MICA:appuser"] = appuser
+                   
+            tmpuser = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+            if tmpuser and "filters" in tmpuser :
+                mdebug("Found old filters.")
+                req.session.value["filters"] = tmpuser["filters"]
+                req.session.save()
+            if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
+                req.skip_show = True
+                return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
+
+        req.action = "home"
+        req.session.value['connected'] = True 
+        req.session.save()
+
+        if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
+            req.session.value['last_username'] = username
+            req.session.value['last_remember'] = 'checked'
+        elif 'last_username' in req.session.value :
+            del req.session.value['last_username']
+            req.session.value['last_remember'] = ''
+        req.session.save()
+
+        self.clear_story(req)
+
+        req.session.value["last_refresh"] = str(timest())
+        req.session.save()
+
+        user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+        if not user :
+            return self.warn_not_replicated(req)
+
+        if not mobile :
+            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            if not jobs :
+                req.db["MICA:jobs"] = {"list" : {}}
+            
+        if "language" not in user :
+            user["language"] = get_global_language()
+
+        if "learnlanguage" not in user :
+            user["learnlanguage"] = "en"
+
+        if "source" not in user :
+            user["source"] = "mica"
+
+        if "date" not in user :
+            user["date"] = timest()
+
+        if "story_format" not in user :
+            mwarn("Story format is missing. Upgrading design document for story upgrades.")
+            self.view_check(req, "stories", recreate = True)
+            user["story_format"] = story_format
+
+        if "app_chars_per_line" not in user :
+            user["app_chars_per_line"] = 70
+        if "web_chars_per_line" not in user :
+            user["web_chars_per_line"] = 70
+        if "default_app_zoom" not in user :
+            user["default_app_zoom"] = 1.15
+        if "default_web_zoom" not in user :
+            user["default_web_zoom"] = 1.0
+
+        if "filters" not in user :
+           user["filters"] = {'files' : [], 'stories' : [] }
+
+        req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
+        req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
+        req.session.value["default_app_zoom"] = user["default_app_zoom"]
+        req.session.value["default_web_zoom"] = user["default_web_zoom"]
+        req.session.value["filters"] = user["filters"]
+
+        if req.session.value["username"] == "demo" :
+            req.session.value["language"] = get_global_language()
+        else :
+            req.session.value["language"] = user["language"]
+
+        req.session.value["learnlanguage"] = user["learnlanguage"]
+
+        req.db[self.acct(username)] = user
+        req.session.save()
+
+        if not mobile :
+            try :
+                if req.db.doc_exist("MICA:filelisting") :
+                    del req.db["MICA:filelisting"]
+
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        if not req.db.doc_exist("MICA:filelisting_" + f) :
+                            req.db["MICA:filelisting_" + f] = {"foo" : "bar"} 
+
+                mdebug("Checking if files exist............") 
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        listing = req.db["MICA:filelisting_" + f]
+                        fname = params["scratch"] + f 
+
+                        if '_attachments' not in listing or f not in listing['_attachments'] :
+                            if os_path.isfile(fname) :
+                                minfo("Opening dict file: " + f)
+                                fh = open(fname, 'r')
+                                minfo("Uploading " + f + " to file listing...")
+                                req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
+                                fh.close()
+                                minfo("Uploaded.")
+                            else :
+                                minfo("Cannot Upload " + f + ", not generated yet.")
+                        else :
+                            mdebug("File " + f + " already exists.")
+                            handle = lgp.parse_page_start()
+                            lgp.test_dictionaries(handle)
+                            lgp.parse_page_stop(handle)
+
+            except TypeError, e :
+                out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
+                for line in format_exc().splitlines() :
+                    out += line + "\n"
+                mwarn(out)
+            except couch_adapter.ResourceNotFound, e :
+                mwarn("Account document @ MICA:filelisting not found: " + str(e))
+            except Exception, e :
+                out = "Database not available yet: " + str(e)
+                for line in format_exc().splitlines() :
+                    out += line + "\n"
+                mwarn(out)
+
+        return False
+
+    def common_logged_in_check(self, req) :
+        username = req.session.value['username']
+
+        if "app_chars_per_line" not in req.session.value :
+            user = req.db[self.acct(username)]
+            if "filters" not in user :
+                user["filters"] = {'files' : [], 'stories' : [] }
+                req.db[self.acct(username)] = user
+                user = req.db[self.acct(username)]
+
+            if user :
                 req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
                 req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
                 req.session.value["default_app_zoom"] = user["default_app_zoom"]
                 req.session.value["default_web_zoom"] = user["default_web_zoom"]
                 req.session.value["filters"] = user["filters"]
-
-                if req.session.value["username"] == "demo" :
-                    req.session.value["language"] = get_global_language()
-                else :
-                    req.session.value["language"] = user["language"]
-
-                req.session.value["learnlanguage"] = user["learnlanguage"]
-
-                req.db[self.acct(username)] = user
                 req.session.save()
 
-                if not mobile :
+        if username not in self.first_request :
+            self.check_all_views(req)
+
+            if params["transcheck"] :
+                for result in req.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                    tmp_storyname = result["key"][1]
+                    tmp_story = req.db[self.story(req, tmp_storyname)]
+                    mdebug("Killing stale translation session: " + tmp_storyname)
+                    tmp_story["translating"] = False
+
+                    if "last_error" in tmp_story :
+                        del tmp_story["last_error"]
+
                     try :
-                        if req.db.doc_exist("MICA:filelisting") :
-                            del req.db["MICA:filelisting"]
+                        req.db[self.story(req, tmp_storyname)] = tmp_story
+                    except couch_adapter.ResourceConflict, e :
+                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
-                        for name, lgp in self.processors.iteritems() :
-                            for f in lgp.get_dictionaries() :
-                                if not req.db.doc_exist("MICA:filelisting_" + f) :
-                                    req.db["MICA:filelisting_" + f] = {"foo" : "bar"} 
+                    if params["transreset"] :
+                        self.flush_pages(req, tmp_storyname)
 
-                        mdebug("Checking if files exist............") 
-                        for name, lgp in self.processors.iteritems() :
-                            for f in lgp.get_dictionaries() :
-                                listing = req.db["MICA:filelisting_" + f]
-                                fname = params["scratch"] + f 
+                if "upgrading" not in req.db["_design/stories"]["views"] :
+                    self.view_check(req, "stories", recreate = True)
+                    
+                for result in req.db.view("stories/upgrading", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                    tmp_storyname = result["key"][1]
+                    tmp_story = req.db[self.story(req, tmp_storyname)]
+                    mdebug("Killing stale upgrade session: " + tmp_storyname)
+                    tmp_story["upgrading"] = False
 
-                                if '_attachments' not in listing or f not in listing['_attachments'] :
-                                    if os_path.isfile(fname) :
-                                        minfo("Opening dict file: " + f)
-                                        fh = open(fname, 'r')
-                                        minfo("Uploading " + f + " to file listing...")
-                                        req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
-                                        fh.close()
-                                        minfo("Uploaded.")
-                                    else :
-                                        minfo("Cannot Upload " + f + ", not generated yet.")
-                                else :
-                                    mdebug("File " + f + " already exists.")
-                                    handle = lgp.parse_page_start()
-                                    lgp.test_dictionaries(handle)
-                                    lgp.parse_page_stop(handle)
+                    if "last_error" in tmp_story :
+                        del tmp_story["last_error"]
 
-                    except TypeError, e :
-                        out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
-                        for line in format_exc().splitlines() :
-                            out += line + "\n"
-                        mwarn(out)
-                    except couch_adapter.ResourceNotFound, e :
-                        mwarn("Account document @ MICA:filelisting not found: " + str(e))
-                    except Exception, e :
-                        out = "Database not available yet: " + str(e)
-                        for line in format_exc().splitlines() :
-                            out += line + "\n"
-                        mwarn(out)
+                    try :
+                        req.db[self.story(req, tmp_storyname)] = tmp_story
+                    except couch_adapter.ResourceConflict, e :
+                        mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
+
+            tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+
+            if tmpjobs and len(tmpjobs["list"]) > 0 :
+                mdebug("Resettings jobs for user.")
+                tmpjobs["list"] = {} 
+                req.db["MICA:jobs"] = tmpjobs 
+
+            self.first_request[username] = True 
+
+    def common_bulkreview(self, req, name) :
+        count = int(req.http.params.get("count"))
+
+        mdebug("Going to perform reviews for " + str(count) + " words.")
+
+        for idx in range(0, count) :
+            nb_unit = int(req.http.params.get("nbunit" + str(idx)))
+            mindex = int(req.http.params.get("index" + str(idx)))
+            trans_id = int(req.http.params.get("transid" + str(idx)))
+            page = req.http.params.get("page" + str(idx))
+            
+            mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
+            self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
+
+    def common_oprequest(req, story) :
+        oprequest = req.http.params.get("oprequest");
+        edits = json_loads(oprequest) 
+        offset = 0
+        
+        for edit in edits :
+            mdebug("Processing edit: " + str(edit))
+            if isinstance(edit, str) or str(edit).strip() == "" :
+                merr("Skipping Wierd edit request: " + str(edit))
+                continue
+            if edit["failed"] :
+                mdebug("This edit failed. Skipping.")
+                continue
+
+            try :
+                result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
+            except OSError, e :
+                return self.warn_not_replicated(req)
+            except AttributeError, e :
+                return self.warn_not_replicated(req)
+            
+            if not result[0] and len(result) > 1 :
+                return self.bootstrap(req, result[1])
+            
+            ret = result[1:]
+            success = ret[0]
+            offset = ret[1]
+            
+            if not success :
+                # This occurs in Edit mode when a merge/split request failed.
+                return self.bootstrap(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
+
+        return False
+
+    def common_rest(self, req, from_third_party) :
+        if from_third_party and "output" in from_third_party :
+            return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+        elif from_third_party and "redirect" in from_third_party :
+            return self.bootstrap(req, from_third_party["redirect"], now = True)
+        else :
+            # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
+            out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
+            out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+            out += _("please read the tutorial") + "</a>"
+        return self.bootstrap(req, out)
+
+    def common(self, req) :
+        global times
+        try :
+            if req.action in ["disconnect" :
+                return self.common_disconnect(req)
+
+            if req.action == "privacy" :
+                return self.common_privacy(req)
+
+            if req.action == "help" :
+                return self.common_help(req)
+
+            if req.action == "switchlang" and req.http.params.get("lang") : 
+                return self.common_switchlang(req)
+
+            if not mobile and req.action == "auth" :
+                return self.common_auth(req)
+                 
+            if req.action == "online" :
+                return self.common_online(req)
+
+            if req.action == "instant" :
+                return self.common_instant(req)
+
+            from_third_party = False
+
+            if not mobile and req.action in params["oauth"].keys() :
+                oauth_result = self.common_oauth(req)
+                if isinstance(oauth_result, str) or isinstance(oauth_result, unicode) :
+                    return oauth_result 
+
+                from_third_party = oauth_result
+
+            if req.http.params.get("connect") or from_third_party != False :
+                connect_result = self.common_connect(req, from_third_party)
+                if connect_result :
+                    return connect_result
                 
             self.install_local_language(req)
 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
-            username = req.session.value['username']
-
-            if "app_chars_per_line" not in req.session.value :
-                user = req.db[self.acct(username)]
-                if "filters" not in user :
-                    user["filters"] = {'files' : [], 'stories' : [] }
-                    req.db[self.acct(username)] = user
-                    user = req.db[self.acct(username)]
-
-                if user :
-                    req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
-                    req.session.value["web_chars_per_line"] = user["web_chars_per_line"]
-                    req.session.value["default_app_zoom"] = user["default_app_zoom"]
-                    req.session.value["default_web_zoom"] = user["default_web_zoom"]
-                    req.session.value["filters"] = user["filters"]
-                    req.session.save()
-
-            if username not in self.first_request :
-                self.check_all_views(req)
-
-                if params["transcheck"] :
-                    for result in req.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                        tmp_storyname = result["key"][1]
-                        tmp_story = req.db[self.story(req, tmp_storyname)]
-                        mdebug("Killing stale translation session: " + tmp_storyname)
-                        tmp_story["translating"] = False
-
-                        if "last_error" in tmp_story :
-                            del tmp_story["last_error"]
-
-                        try :
-                            req.db[self.story(req, tmp_storyname)] = tmp_story
-                        except couch_adapter.ResourceConflict, e :
-                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
-
-                        if params["transreset"] :
-                            self.flush_pages(req, tmp_storyname)
-
-                    if "upgrading" not in req.db["_design/stories"]["views"] :
-                        self.view_check(req, "stories", recreate = True)
-                        
-                    for result in req.db.view("stories/upgrading", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                        tmp_storyname = result["key"][1]
-                        tmp_story = req.db[self.story(req, tmp_storyname)]
-                        mdebug("Killing stale upgrade session: " + tmp_storyname)
-                        tmp_story["upgrading"] = False
-
-                        if "last_error" in tmp_story :
-                            del tmp_story["last_error"]
-
-                        try :
-                            req.db[self.story(req, tmp_storyname)] = tmp_story
-                        except couch_adapter.ResourceConflict, e :
-                            mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
-
-                tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
-
-                if tmpjobs and len(tmpjobs["list"]) > 0 :
-                    mdebug("Resettings jobs for user.")
-                    tmpjobs["list"] = {} 
-                    req.db["MICA:jobs"] = tmpjobs 
-
-                self.first_request[username] = True 
-
-            if req.action == "chat" and req.http.params.get("pinyin") :
-                self.install_local_language(req, req.http.params.get("lang"))
-
-                story = {
-                   "name" : "pinyin",
-                   "target_language" : supported_map["en"],
-                   "source_language" : supported_map["zh-CHS"],
-                }
-
-                gp = self.processors[self.tofrom(story)]
-
-                return self.api(req, {"success" : True, "result" : gp.get_chars(req.http.params.get("source"))}, human = False)
+            self.common_logged_in_check(req)
 
             if req.action == "chat" and req.http.params.get("ime") :
-                self.install_local_language(req, req.http.params.get("lang"))
-                output = False
-                mode = req.http.params.get("mode")
-                orig = req.http.params.get("source")
-                imes = int(req.http.params.get("ime"), 0)
-                start_trans_id = int(req.http.params.get("start_trans_id", 0))
-                story = {
-                   "name" : "ime",
-                   "target_language" : supported_map[req.http.params.get("target_language")],
-                   "source_language" : supported_map[req.http.params.get("source_language")],
-                }
-
-                out = {"success" : False}
-                lens = []
-                chars = []
-                source = ""
-                if orig :
-                    imes = int(req.http.params.get("ime"))
-                    gp = self.processors[self.tofrom(story)]
-                    mdebug("Type: " + str(type(orig)))
-                    char_result = gp.get_chars(orig)
-
-                    if not char_result :
-                        mdebug("No result from search for: " + orig)
-                        out["desc"] = _("No result") + "."
-                        if not gp.already_romanized :
-                            return self.api(req, out, False)
-
-                        source = orig
-                    else :
-                        imes = len(char_result)
-
-                        for imex in range(0, imes) :
-                            if imes > 0 :
-                                source += " " + str(imex + 1) + ". "
-                            source += char_result[imex][0]
-                            lens.append(len(char_result[imex][0]))
-                            chars.append(char_result[imex][0])
-
-                else :
-                    # legacy implementation for v0.5
-                    for imex in range(1, imes + 1) :
-                        if imes > 1 :
-                            source += " " + str(imex) + ". "
-                        char_result = req.http.params.get("ime" + str(imex)).decode("utf-8")
-                        source += char_result 
-                        lens.append(len(char_result))
-                        chars.append(char_result)
-
-                story["source"] = source
-
-                # FIXME: The long-term solution to open all sqlite database handles
-                # inside the main routine and use couroutines to synchronize
-                # all DB accesses from the main processor, but that requires
-                # re-writing the processor, let's deal with that later.
-                # The goal is to allow sqlite to do normal caching.
-                # CUrrently, the RomanizedSource languages are still are
-                # not closing/re-opening their sqlite handles and may crash.
-                # We don't want to re-open them anyway and need to keep
-                # them open in the main thread.
-                # When we finish this fix, we can remove the imemutex lock below.
-
-                self.imemutex.acquire()
-                cerror = False
-                try :
-                    try :
-                        #sys_settrace(tracefunc)
-                        start = timest()
-                        self.parse(req, story, live = True)
-                        #sys_settrace(None)
-                        mdebug("Parse time: " + str(timest() - start))
-                        #call_report()
-
-                    except Exception, e :
-                        merr("Cannot parse chat: " + str(e))
-                        cerror = e
-                    finally :
-                        self.imemutex.release()
-                        if cerror :
-                            raise cerror
-
-
-                    if not output :
-                        out["success"] = True
-                        out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
-                        out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
-                except OSError, e :
-                    merr("OSError: " + str(e))
-                    out["result"] = self.warn_not_replicated(req, bootstrap = False)
-                except processors.NotReady, e :
-                    merr("Translation processor is not ready: " + str(e))
-                    out["result"] = self.warn_not_replicated(req, bootstrap = False)
-                except Exception, e :
-                    err = ""
-                    for line in format_exc().splitlines() :
-                        err += line + "\n"
-                    merr(err)
-                    out["result"] = _("Chat error") + ": " + source 
-
-                return self.api(req, out, False) 
+                return self.common_chat_ime(req)
 
             if req.http.params.get("uploadfile") :
-                fh = req.http.params.get("storyfile")
-                filetype = req.http.params.get("filetype")
-                langtype = req.http.params.get("languagetype")
-                source_lang, target_lang = langtype.split(",")
-                # Stream the file contents directly to disk, first
-                # Make sure it's not too big while we're doing it...
-                sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
-                mdebug("Will stream upload to " + sourcepath)
-                sourcefh = open(sourcepath, 'wb')
-
-                sourcebytes = 0
-                maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
-                sourcefailed = False
-                while True :
-                    data = fh.file.read(1)
-                    if data == '' :
-                        break
-                    sourcebytes += 1
-                    if sourcebytes > maxbytes[filetype] :
-                        sourcefailed = True
-                        break 
-
-                    sourcefh.write(data)
-
-                sourcefh.close()
-                fh.file.close()
-
-                if sourcefailed :
-                    mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
-                    os_remove(sourcepath)
-                    # This appears when the user tries to upload a story document that is too large.
-                    # At the end of the message will appear something like '30 MB', or whatever is
-                    # the current maximum file size allowed by the system.
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB.</h4></div>")
-
-                mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
-
-                # A new story has been uploaded and is being processed in the background.
-                return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
+                return self.common_uploadfile(req)
 
             if req.http.params.get("uploadtext") :
-                source = req.http.params.get("storytext") + "\n"
-                filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
-                langtype = req.http.params.get("languagetype")
-                source_lang, target_lang = langtype.split(",")
-
-                # A new story has been uploaded and is being processed in the background.
-                return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, False, args = [req, filename, source, "txt", source_lang, target_lang, False])
+                return self.common_uploadtext(req)
 
             start_page = "0"
             view_mode = "text"
@@ -3674,7 +4678,6 @@ class MICA(object):
                         req.db[self.story(req, name)] = story
                         story = req.db[self.story(req, name)]
 
-
             if req.http.params.get("delete") :
                 return self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name])
 
@@ -3685,57 +4688,13 @@ class MICA(object):
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
             if req.http.params.get("tstatus") :
-                out = "<div id='tstatusresult'>"
-                if not req.db.doc_exist(self.index(req, uuid)) :
-                    out += "error 25 0 0"
-                else :
-                    if "translating" not in story or not story["translating"] :
-                        out += "no 0 0 0"
-                    else :
-                        curr = float(int(story["translating_current"]))
-                        total = float(int(story["translating_total"]))
-
-                        out += "yes " + str(int(curr / total * 100))
-                        out += (" " + str(story["translating_page"])) if "translating_page" in story else "0"
-                        out += (" " + str(story["translating_pages"])) if "translating_pages" in story else "1"
-                        
-                out += "</div>"
-                return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
+                return self.common_tstatus(req, uuid, story)
 
             if req.http.params.get("finished") :
-                finished = True if req.http.params.get("finished") == "1" else False
-                tmp_story = req.db[self.story(req, name)]
-                tmp_story["finished"] = finished 
-                req.db[self.story(req, name)] = tmp_story 
-                # Finished reviewing a story in review mode.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
+                return self.common_finished(req, name)
 
             if req.http.params.get("reviewed") :
-                reviewed = True if req.http.params.get("reviewed") == "1" else False
-                tmp_story = req.db[self.story(req, name)]
-                tmp_story["reviewed"] = reviewed
-                if reviewed :
-                    if "finished" not in tmp_story or tmp_story["finished"] :
-                        tmp_story["finished"] = False
-
-                    pages = self.nb_pages(req, tmp_story)
-                    if pages == 1 :
-                        final = {}
-
-                        if req.db.doc_exist(self.story(req, name) + ":final") :
-                            final["_rev"] = req.db[self.story(req, name) + ":final"]["_rev"]
-
-                        minfo("Generating final pagesets...")
-                        
-                        for page in range(0, pages) :
-                            minfo("Page " + str(page) + "...")
-                            final[str(page)] = self.view_page(req, uuid, name, \
-                                story, req.action, "", str(page), \
-                                req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, disk = True)
-                            
-                        req.db[self.story(req, name) + ":final"] = final
-                req.db[self.story(req, name)] = tmp_story 
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
+                return self.common_reviewed(req, name, uuid)
 
             if req.http.params.get("forget") :
                 # Resetting means that we are dropping the translate contents of the original story. We are
@@ -3761,61 +4720,14 @@ class MICA(object):
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
 
             if req.http.params.get("translate") :
-                output = "<div id='translationstatusresult'>" + self.heromsg
-                if story["translated"] :
-                    output += _("Story already translated. To re-translate, please select 'Forget'.")
-                else :
-                    try :
-                        self.parse(req, story)
-                        output += self.heromsg + _("Translation complete!")
-                    except OSError, e :
-                        output += self.warn_not_replicated(req, bootstrap = False)
-                    except Exception, e :
-                        output += _("Failed to translate story") + ": " + str(e)
-                output += "</div></div>"
-                return self.bootstrap(req, output, now = True)
+                return self.common_translate(req, story) 
 
             # We want the job list to appear before using any story-related functions
             # User must wait.
             jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
 
             if jobs and len(jobs["list"]) > 0 :
-                out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n"
-                out += "<table class='table'>"
-
-                finished = []
-
-                for jkey in jobs["list"] :
-                    job = jobs["list"][jkey]
-                    out += "<tr>"
-                    if job["finished"] :
-                        finished.append(job)
-                        out += "<td>" + _("Finished") + ": </td>"
-                    else :
-                        # Same as 'processing', when a background job is running like uploading/deleting stories.
-                        out += "<td>" + _("Running") + ": </td>"
-
-                    out += "<td>" + _(job["description"]) + "</td><td>&#160;&#160;</td><td>" + job["object"] + "</td><td>&#160;&#160;</td>" 
-                
-                    out += "<td>"
-
-                    if job["result"] :
-                        out += job["result"]
-                    elif not job["finished"] :
-                        out += _("Please wait")
-
-                    out += "</td>"
-
-                    out += "</tr>"
-
-                out += "</table>"
-
-                if len(finished) > 0 :
-                    for job in finished :
-                        del jobs["list"][job["uuid"]]
-                    req.db["MICA:jobs"] = jobs
-
-                return self.bootstrap(req, out)
+                return self.common_jobs(req, jobs)
 
             # Functions only go here if they are actions against the currently reading story
             # Functions above here can happen on any story
@@ -3849,8 +4761,6 @@ class MICA(object):
                 else :
                     self.set_page(req, tmp_story, start_page)
                 
-            #mdebug("Start page will be: " + str(start_page))
-
             if "view_mode" in req.session.value :
                 view_mode = req.session.value["view_mode"]
             else :
@@ -3870,229 +4780,31 @@ class MICA(object):
                 req.session.save()
 
             if req.http.params.get("multiple_select") :
-                nb_unit = int(req.http.params.get("nb_unit"))
-                mindex = int(req.http.params.get("index"))
-                trans_id = int(req.http.params.get("trans_id"))
-                page = req.http.params.get("page")
-
-                unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
-
-                return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
-                                           self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page) + \
-                                           "</div></div>", now = True)
+                return self.common_multiple_select(req, story, uuid)
 
             output = ""
 
             if req.http.params.get("phistory") :
-                page = req.http.params.get("page")
-                return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
-                                           # statistics in review mode are disabled
-                                           (self.history(req, story, uuid, page) if list_mode else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
-                                           "</div></div>", now = True)
+                return self.common_phistory(req, story, uuid)
 
             if req.http.params.get("editslist") :
-                page = req.http.params.get("page")
-                return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
-                                           self.edits(req, story, uuid, page, list_mode) + \
-                                           "</div></div>", now = True)
+                return self.common_editslist(req, story, uuid)
 
             if req.http.params.get("memorizednostory") :
-                memorized = int(req.http.params.get("memorizednostory"))
-                multiple_correct = int(req.http.params.get("multiple_correct"))
-                source = req.http.params.get("source")
-                mdebug("Received memorization request without story: " + str(memorized) + " " + str(multiple_correct) + " " + source)
-                nshash = self.get_polyphome_hash(multiple_correct, source)
-
-                if memorized :
-                    unit = self.general_processor.add_unit([source], source, [source]) 
-                    unit["multiple_correct"] = multiple_correct
-                    unit["date"] = timest()
-                    unit["hash"] = nshash
-                    if not req.db.doc_exist(self.memorized(req, nshash)) :
-                        req.db[self.memorized(req, nshash)] = unit
-                else :
-                    if req.db.doc_exist(self.memorized(req, nshash)) :
-                        del req.db[self.memorized(req, nshash)]
-
-                return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
-                                           str(nshash) + "</div></div>", now = True)
-
+                return self.common_memorizednostory(req)
             elif req.http.params.get("memorized") :
-                memorized = int(req.http.params.get("memorized"))
-                nb_unit = int(req.http.params.get("nb_unit"))
-                page = req.http.params.get("page")
-                
-                # FIXME This is kind of stupid - looking up the whole page
-                # just to get the hash of one unit.
-                # But, we are storing the whole unit dict inside
-                # the memorization link - maybe or maybe not we shouldn't
-                # be doing that, or we could put the whole unit's json
-                # into the original memorization request. I dunno.
-                
-                page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
-                unit = page_dict["units"][nb_unit]
-                
-                if memorized :
-                    unit["date"] = timest()
-                    if not req.db.doc_exist(self.memorized(req, unit["hash"])) :
-                        req.db[self.memorized(req, unit["hash"])] = unit
-                else :
-                    if req.db.doc_exist(self.memorized(req, unit["hash"])) :
-                        del req.db[self.memorized(req, unit["hash"])]
-                    
-                return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
-                                           unit["hash"] + "</div></div>", now = True)
+                return self.common_memorized(req, name)
 
             if req.http.params.get("storyupgrade") :
-                if mobile :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
-
-                version = int(req.http.params.get("version"))
-
-                original = 0
-                if "format" not in story or story["format"] == 1 :
-                    if version != 2 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
-                    original = 1
-
-                # Add new story upgrades to this list here, like this:
-                #elif "format" in story and story["format"] == 2 :
-                #    if version != 3 :
-                #        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 2") + " =>" + str(version) + ".</h4></div>")
-                #    original = 2
-                #    mdebug("Will upgrade from version 2 to 3")
-
-                elif "format" in story and story["format"] == story_format and (not "upgrading" in story or not story["upgrading"]) :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
-                else :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
-
-                if version > story_format :
-                    # 'format' referring to the database format the we are upgrading to
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
-
-                if "upgrading" in story and story["upgrading"] :
-                    curr_page = story["upgrade_page"] if "upgrade_page" in story else 0
-                    nbpages = self.nb_pages(req, story)
-                    assert(nbpages > 0)
-                    percent = float(curr_page) / float(nbpages) * 100
-                    out = self.heromsg + "\n<h4>" + _("Story upgrade status") + ": " + _("Page") + " " + str(curr_page) + "/" + str(nbpages) + ", " + '{0:.1f}'.format(percent) + "% ...</h4></div>"
-                    if "last_error" in story and not isinstance(story["last_error"], str) :
-                        out += "<br/>" + _("Last upgrade Exception") + ":<br/>"
-                        for err in story["last_error"] :
-                            out += "<br/>" + err.replace("\n", "<br/>")
-                        del story["upgrading"]
-                        del story["last_error"]
-                        req.db[self.story(req, story["name"])] = story
-                        story = req.db[self.story(req, story["name"])]
-                    return self.bootstrap(req, out)
-
-                if "last_error" in story :
-                    mdebug("Clearing out last error message.")
-                    del story["last_error"]
-                    req.db[self.story(req, story["name"])] = story
-                    story = req.db[self.story(req, story["name"])]
-
-                mdebug("Starting upgrade thread...")
-                if original == 1 : 
-                    ut = Thread(target = self.upgrade2, args=[req, story])
-                #elif original == 2 :
-                #    ut = Thread(target = self.upgrade3, args=[req, story])
-                ut.daemon = True
-                ut.start()
-                mdebug("Upgrade thread started.")
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
-
+                return self.common_storyupgrade(self, req, story, name)
 
             if req.http.params.get("oprequest") :
-                oprequest = req.http.params.get("oprequest");
-                edits = json_loads(oprequest) 
-                offset = 0
-                
-                for edit in edits :
-                    mdebug("Processing edit: " + str(edit))
-                    if isinstance(edit, str) or str(edit).strip() == "" :
-                        merr("Skipping Wierd edit request: " + str(edit))
-                        continue
-                    if edit["failed"] :
-                        mdebug("This edit failed. Skipping.")
-                        continue
-
-                    try :
-                        result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
-                    except OSError, e :
-                        return self.warn_not_replicated(req)
-                    except AttributeError, e :
-                        return self.warn_not_replicated(req)
-                    
-                    if not result[0] and len(result) > 1 :
-                        return self.bootstrap(req, result[1])
-                    
-                    ret = result[1:]
-                    success = ret[0]
-                    offset = ret[1]
-                    
-                    if not success :
-                        # This occurs in Edit mode when a merge/split request failed.
-                        return self.bootstrap(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
-                    
+                oprequest_result = self.common_oprequest(req, story)
+                if oprequest_result :
+                    return oprequest_result
+ 
             if req.http.params.get("memolist") :
-                page = req.http.params.get("page")
-                output = []
-                        
-                result = self.memocount(req, story, page)
-
-                if result :
-                    total_memorized, total_unique, unique, progress = result
-
-                    pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
-                    for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
-                        # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
-                        output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
-                    # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
-                    output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
-                    # A count of all the unique words on this page, not just the ones the user has memorized.
-                    output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
-                    if list_mode :
-                        output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-                        output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
-
-                        if total_memorized :
-                            output.append("<div class='panel-group' id='panelMemorized'>\n")
-                            for p in progress :
-                                output.append("""
-                                        <div class='panel panel-default'>
-                                          <div class="panel-heading">
-                                          """)
-                                py, target, unit, nb_unit, trans_id, page_idx = p
-                                if len(target) and target[0] == '/' :
-                                    target = target[1:-1]
-                                tid = unit["hash"] if py else trans_id 
-
-                                output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
-                                        str(tid) + "', '" + uuid + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
-                                        "<i class='glyphicon glyphicon-remove'></i></a>")
-
-                                output.append("&#160; " + "".join(unit["source"]) + ": ")
-                                output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
-
-                                output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
-                                output.append("</a>")
-                                output.append("</div>")
-                                output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
-                                output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
-                                output.append("</div>")
-                                output.append("</div>")
-                            output.append("</div>")
-                        else :
-                            output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
-                    else :
-                        output.append(_("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device."))
-                else :
-                    # statistics in reading mode are disabled
-                    output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
-
-                return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
+                return self.common_memolist(req, story)
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -4102,653 +4814,30 @@ class MICA(object):
                     return self.warn_not_replicated(req)
                 
             if req.http.params.get("bulkreview") :
-                count = int(req.http.params.get("count"))
-
-                mdebug("Going to perform reviews for " + str(count) + " words.")
-
-                for idx in range(0, count) :
-                    nb_unit = int(req.http.params.get("nbunit" + str(idx)))
-                    mindex = int(req.http.params.get("index" + str(idx)))
-                    trans_id = int(req.http.params.get("transid" + str(idx)))
-                    page = req.http.params.get("page" + str(idx))
-                    
-                    mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
-                    self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
+                self.common_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
-                
-                if uuid :
-                    # Reload just in case the translation changed anything
-                    name = req.db[self.index(req, uuid)]["value"]
-                    story = req.db[self.story(req, name)]
-                    gp = self.processors[self.tofrom(story)]
-                    
-                    if req.action == "edit" and gp.already_romanized :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
-                    
-                    if req.http.params.get("page") and not req.http.params.get("retranslate") :
-                        page = req.http.params.get("page")
-                        mdebug("Request for page: " + str(page))
-                        if page == "-1" :
-                            page = start_page
+                return self.common_view(req, uuid)
 
-                        if req.http.params.get("image") :
-                            nb_image = req.http.params.get("image")
-                            output = "<div><div id='pageresult'>"
-                            image_found = False
-                            if "filetype" in story and story["filetype"] != "txt" :
-                                attach_raw = req.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
-                                original = eval(attach_raw)
-
-                                if "images" in original and int(nb_image) < len(original["images"]) :
-                                    # I think couch is already base-64 encoding this, so if we can find
-                                    # away to get that out of couch raw, then we shouldn't have to re-encode this ourselves.
-                                    output += "<img src='data:image/jpeg;base64," + base64_b64encode(original["images"][int(nb_image)]) + "' width='100%' height='100%'/>"
-                                    image_found = True
-                            if not image_found :
-                               # Beginning of a sentence: Original source image of the current page from which the text comes
-                               output += _("Image") + " #" + str(nb_image) + " "
-                               # end of thes sentence, indicating that a particular image number doesn't exist.
-                               output += _("not available on this page")
-                            output += "</div></div>"
-                            return self.bootstrap(req, output, now = True)
-                        else :
-                            self.set_page(req, story, page)
-                            output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode)
-                            return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
-                    output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
-                else :
-                    if from_third_party and "output" in from_third_party :
-                        return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
-                    elif from_third_party and "redirect" in from_third_party :
-                        return self.bootstrap(req, from_third_party["redirect"], now = True)
-
-                    else :
-                        # Beginning of a message.
-                        output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
-                        if mobile :
-                            output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
-                        else :
-                            # end of a message
-                            output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
-                            output += "<br/><br/>"
-                            output += "<h4>"
-                            # Beginning of a message
-                            output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
-                            # end of a message
-                            output += _("please read the tutorial") + "</a>"
-                            output += "</h4>"
-                        output += "</div>"
-
-                return self.bootstrap(req, output)
             elif req.action == "stories" :
-                ftype = "txt" if "filetype" not in story else story["filetype"]
-                if ftype != "txt" :
-                    # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + \
-                               # Tho original story format as it was imported, that is
-                               ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
-                
-                if req.http.params.get("type") :
-                    which = req.http.params.get("type")
-                    
-                    if which == "original" :
-                        original = self.heromsg + _("Here is the original story. Choose from one of the options in the above navigation bar to begin learning with this story.") + "</div>"
-                        original += req.db[self.story(req, name) + ":original"]["value"]
-                        return self.bootstrap(req, original.encode("utf-8").replace("\n","<br/>"))
-                    elif which == "pinyin" :
-                        final = req.db[self.story(req, name) + ":final"]["0"]
-                        return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
+                return self.common_stories(req, story, name)
                     
             elif req.action == "storylist" :
-                if req.http.params.get("sync") :
-                    sync = int(req.http.params.get("sync"))
-                    tmpuuid = req.http.params.get("uuid")
-                    tmpname = req.db[self.index(req, tmpuuid)]["value"]
-                    tmpstory = req.db[self.story(req, tmpname)]
-                    tmpuser = req.db[self.acct(req.session.value["username"])]
-
-                    if sync == 1 :
-                        tmpstory["download"] = True
-                        if name not in tmpuser["filters"]["stories"] :
-                            tmpuser["filters"]["stories"].append(name)
-                    else :
-                        tmpstory["download"] = False
-                        if name in tmpuser["filters"]["stories"] :
-                            tmpuser["filters"]["stories"].remove(name)
-                        
-                    req.session.value["filters"] = tmpuser["filters"]
-
-                    if mobile :
-                        req.db.stop_replication()
-                        if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to change synchronization. Please try again") + ": " + tofrom + ".</h4></div>")
-
-                    req.db[self.story(req, tmpname)] = tmpstory
-                    req.db[self.acct(req.session.value["username"])] = tmpuser
-                    req.session.save()
-
-                    #mdebug("Want to perform: user " + str(tmpuser) + " story " + str(tmpstory))
-                    return self.bootstrap(req, "changed", now = True)
-
-                storylist = [self.template("storylist")]
-
-                result = repeat(self.makestorylist, args = [req], kwargs = {})
-                
-                if not result[0] and len(result) > 1 :
-                    return self.bootstrap(req, result[1])
-                
-                untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
-                
-                reading.append("</table></div></div></div>\n")
-                noreview.append("</table></div></div></div>\n")
-                untrans.append("</table></div></div></div>\n")
-                finish.append("</table></div></div></div>\n")
-
-                scripts = [""]
-
-                if untrans_count :
-                    storylist += untrans + reading + noreview + finish + ["</div></td></tr></table>"]
-                    scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
-                elif reading_count :
-                    storylist += reading + untrans + noreview + finish + ["</div></td></tr></table>"]
-                    scripts.append("<script>$('#collapseReading').collapse('show');</script>")
-                else :
-                    storylist += noreview + reading + untrans + finish + ["</div></td></tr></table>"]
-                    scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
-
-                scripts.append("""
-                            
-                           <script>
-                           for(var tidx = 0; tidx < translist.length; tidx++) {
-                               trans_start(translist[tidx]);
-                           }
-                           translist = [];
-                           </script>
-                          """)
-
-                try :
-                    finallist = run_template(req, StoryElement, "".join(storylist)) + "".join(scripts)
-                except Exception, e:
-                    merr("Storylist fill failed: " + str(e))
-
-                return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
+                return self.common_storylist(req)
             
             elif req.action == "account" :
-                out = ""
+                return self.common_account(req, story, name, uuid)
 
-                user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
-
-                if not user :
-                    return self.warn_not_replicated(req)
-                
-                if req.http.params.get("pack") :
-                    req.db.compact()
-                    req.db.cleanup()
-                    design_docs = ["memorized", "stories", "mergegroups",
-                                   "tonechanges", "accounts", "splits" ]
-
-                    if not mobile :
-                        design_docs.append("download")
-
-                    for name in design_docs :
-                        if req.db.doc_exist("_design/" + name) :
-                            mdebug("Compacting view " + name)
-                            req.db.compact(name)
-
-                    # The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
-                    out += self.heromsg + "\n<h4>" + _("Database compaction complete for your account") + ".</h4></div>\n"
-                elif req.http.params.get("changepassword") :
-                    if mobile :
-                        # The next handful of mundane phrases are associated with the creation
-                        # and management of user accounts in the software program and the relevant
-                        # errors that can occur while performing operations on a user's account.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
-                    oldpassword = req.http.params.get("oldpassword")
-                    newpassword = req.http.params.get("password")
-                    newpasswordconfirm = req.http.params.get("confirm")
-
-                    if len(newpassword) < 8 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
-                    if newpassword != newpasswordconfirm :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-                    auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
-                    if not auth_user :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
-                    try :
-                        auth_user['password'] = newpassword
-                        del self.dbs[username]
-                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                        req.db["org.couchdb.user:" + username] = auth_user
-                        del self.dbs[username]
-                        self.verify_db(req, req.session.value["database"], newpassword)
-                    except Exception, e :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
-                        
-                    out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
-
-                elif req.http.params.get("resetpassword") :
-                    if mobile :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
-
-                    newpassword = binascii_hexlify(os_urandom(4))
-
-                    auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
-                    if not auth_user :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
-
-                    try :
-                        auth_user['password'] = newpassword
-                        del self.dbs[username]
-                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                        req.db["org.couchdb.user:" + username] = auth_user
-                        del self.dbs[username]
-                        self.verify_db(req, req.session.value["database"], newpassword)
-                    except Exception, e :
-                        out = ""
-                        for line in format_exc().splitlines() :
-                            out += line + "\n"
-                        mdebug(out)
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
-                        
-                    out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
-
-                elif req.http.params.get("newaccount") :
-                    if not self.userdb : 
-                        # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
-
-                    newusername = req.http.params.get("username")
-                    newpassword = req.http.params.get("password")
-                    newpasswordconfirm = req.http.params.get("confirm")
-                    admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
-                    email = req.http.params.get("email")
-                    language = req.http.params.get("language")
-
-                    if newusername == "mica_admin" :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
-
-                    if len(newpassword) < 8 :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
-                    if newpassword != newpasswordconfirm :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-
-                    if not req.session.value["isadmin"] :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
-
-                    if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
-
-                    if newusername.count(":") :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
-
-                    self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
-
-                    out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
-                elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
-                    if mobile :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
-
-                    username = req.http.params.get("username") 
-
-                    if not self.userdb : 
-                        # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
-
-                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
-
-                    auth_user = self.userdb["org.couchdb.user:" + username]
-
-
-                    if req.session.value["username"] != username :
-                        if not req.session.value["isadmin"] :
-                            # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
-                        role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
-
-                        if role_length == 0 :
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
-
-                    dbname = auth_user["mica_database"]
-                    mdebug("Confirming database before delete: " + dbname)
-
-                    todelete = self.cs[dbname]
-
-                    del self.userdb["org.couchdb.user:" + username]
-                    del self.cs[dbname]
-
-                    if req.session.value["username"] != username :
-                        out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
-                    else :
-                        self.disconnect(req, req.session)
-                        req.skip_show = True
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
-    
-                elif req.http.params.get("changelanguage") :
-                    language = req.http.params.get("language")
-                    user["language"] = language
-                    req.db[self.acct(username)] = user
-                    req.session.value["language"] = language
-                    req.session.save()
-                    self.install_local_language(req)
-                    out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
-                elif req.http.params.get("changelearnlanguage") :
-                    language = req.http.params.get("learnlanguage")
-                    user["learnlanguage"] = language
-                    req.session.value["learnlanguage"] = language
-                    req.session.save()
-                    req.db[self.acct(username)] = user
-                    self.install_local_language(req)
-                    out += self.heromsg + "\n<h4>" + _("Success! Learning Language changed") + ".</h4></div>"
-                elif req.http.params.get("changeemail") :
-                    email = req.http.params.get("email")
-                    try :
-                        email_user = self.userdb["org.couchdb.user:" + username]
-                        email_user['email'] = email 
-                        self.userdb["org.couchdb.user:" + username] = email_user
-                    except Exception, e :
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
-                    user["email"] = email 
-                    req.db[self.acct(username)] = user
-                    req.session.save()
-                    out += self.heromsg + "\n<h4>" + _("Success! Email changed") + ".</h4></div>"
-                elif req.http.params.get("setappchars") :
-                    chars_per_line = int(req.http.params.get("setappchars"))
-                    if chars_per_line > 1000 or chars_per_line < 5 :
-                        # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
-                    user["app_chars_per_line"] = chars_per_line
-                    req.db[self.acct(username)] = user
-                    req.session.value["app_chars_per_line"] = chars_per_line 
-                    req.session.save()
-                    # Same as before, but specifically for a mobile device
-                    out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
-                elif req.http.params.get("tofrom") :
-                    tofrom = req.http.params.get("tofrom")
-                    remove = int(req.http.params.get("remove"))
-
-                    if tofrom not in processor_map :
-                        # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
-
-                    if "filters" not in user :
-                       user["filters"] = {'files' : [], 'stories' : [] }
-
-                    if remove == 0 :
-                        if tofrom not in user["filters"]['files'] :
-                            user["filters"]['files'].append(tofrom)
-                    else :
-                        if tofrom in user["filters"]['files'] :
-                            user["filters"]['files'].remove(tofrom)
-
-                    req.session.value["filters"] = user["filters"]
-
-                    if mobile :
-                        req.db.stop_replication()
-
-                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
-
-                    req.db[self.acct(username)] = user
-                    req.session.save()
-
-                    if mobile :
-                        if remove == 0 :
-                            out += self.heromsg + "\n<h4>" + _("Success! We will start downloading that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
-                        else :
-                            out += self.heromsg + "\n<h4>" + _("Success! We will no longer download that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
-                    else :
-                        if remove == 0 :
-                            out += self.heromsg + "\n<h4>" + _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
-                        else :
-                            out += self.heromsg + "\n<h4>" + _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
-
-                elif req.http.params.get("setwebchars") :
-                    chars_per_line = int(req.http.params.get("setwebchars"))
-                    if chars_per_line > 1000 or chars_per_line < 5:
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
-                    user["web_chars_per_line"] = chars_per_line
-                    req.db[self.acct(username)] = user
-                    req.session.value["web_chars_per_line"] = chars_per_line 
-                    req.session.save()
-                    # Same as before, but specifically for a website 
-                    out += self.heromsg + "\n<h4>" + _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
-                elif req.http.params.get("setappzoom") :
-                    zoom = float(req.http.params.get("setappzoom"))
-                    if zoom > 3.0 or zoom < 0.5 :
-                        # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
-                    user["default_app_zoom"] = zoom 
-                    req.db[self.acct(username)] = user
-                    req.session.value["default_app_zoom"] = zoom
-                    req.session.save()
-                    # Same as before, but specifically for an application running on a mobile device
-                    out += self.heromsg + "\n<h4>" + _("Success! App zoom level set to:") + " " + str(zoom) + ".</h4></div>"
-                elif req.http.params.get("setwebzoom") :
-                    zoom = float(req.http.params.get("setwebzoom"))
-                    if zoom > 3.0 or zoom < 0.5 :
-                        # Same as before, but specifically for an application running on the website 
-                        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
-                    user["default_web_zoom"] = zoom 
-                    req.db[self.acct(username)] = user
-                    req.session.value["default_web_zoom"] = zoom
-                    req.session.save()
-                    # Same as before, but specifically for an application running on the website 
-                    out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
-
-                out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
-
-                if mobile :
-                    out += "<h4><b>" + _("Dictionaries") + "?</b></h4>"
-                else :
-                    # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
-                    out += "<h4><b>" + _("Send Dictionaries to your devices?") + "</b></h4>"
-                out += "<h5>(" + _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each") + ".)</h5>"
-
-                out += "<table>"
-                for pair, readable in supported.iteritems() :
-                    out += "<tr><td>"
-                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-                    dname = "dict" + pair.replace("-", "")
-                    out += "<input type='hidden' name='tofrom' value='" + pair + "'/>\n"
-
-                    out += "<button id='" + dname + "' name='downloaddictionary' type='submit' class='btn btn-default btn-primary"
-
-                    downloaded = False 
-
-                    if "filters" in user and pair in user["filters"]["files"] :
-                        downloaded = True
-
-                    remove = False
-                    if not downloaded :
-                        # The next few messages appear on mobile devices and allow the user to control the synchronization status
-                        # of the story they want to use. For example, if a story (or a dictionary) is on the website,
-                        # but not yet synchronized with the device, we show a series of messages as the user indicates
-                        # which ones to download/synchronize and which ones not to.
-                        out += "'>" + _("Download")
-                    else :
-                        all_found = True
-
-                        lgp = self.processors[pair]
-                        for f in lgp.get_dictionaries() :
-                            fname = params["scratch"] + f
-
-                            if not os_path.isfile(fname) :
-                                all_found = False
-                                break
-
-                        remove = True
-                        if all_found :
-                            out += "'>" + _("Stop downloading")
-                        else :
-                            #out += " btn-disabled' disabled"
-                            out += "'"
-                            out += ">" + _("Downloading") + "..."
-
-                    out += "</button>"
-
-                    if remove :
-                        out += "<input type='hidden' name='remove' value='1'/>\n"
-                    else :
-                        out += "<input type='hidden' name='remove' value='0'/>\n"
-
-                    out += "</form>"
-                    out += "</td><td>"
-                    out += "&#160;" + _(readable) + "<br/>"
-                    out += "</td></tr>"
-                out += "</table>"
-
-                try :
-                    # the zoom level or characters-per-line limit
-                    out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"
-                    out += "<table>"
-                    out += "<tr><td>&#160;" + _("Characters per line") + ":</td><td>"
-                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-                    out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
-                    out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
-                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
-                    out += "</form>"
-                    out += "</td></tr>"
-                    out += "</table>"
-                    out += "<table>"
-                    out += "<tr><td><h5>&#160;" + _("Default zoom level") + ": </h5></td><td>"
-                    out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-                    out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
-                    out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
-                    out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
-                    out += "</form>"
-                    out += "</td></tr>"
-                    out += "</table>"
-                except KeyError, e :
-                    merr("Keep having this problem: " + str(user) + " " + str(e))
-                    raise e
-
-                out += "<h4><b>" + _("Language") + "</b>?</h4>"
-                out += """
-                    <form action='/account' method='post' enctype='multipart/form-data'>
-                    <select name="language">
-                """
-                softlangs = []
-                for l, readable in lang.iteritems() :
-                    locale = l.split("-")[0]
-                    if locale not in softlangs :
-                        softlangs.append((locale, readable))
-
-                for l, readable in softlangs :
-                    out += "<option value='" + l + "'"
-                    if l == user["language"] :
-                        out += "selected"
-                    out += ">" + _(readable) + "</option>\n"
-                out += """
-                    </select>
-                    <br/>
-                    <br/>
-                """
-                out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
-
-                out += "<h4><b>" + _("Learning Language") + "</b>?</h4>"
-                out += """
-                    <form action='/account' method='post' enctype='multipart/form-data'>
-                    <select name="learnlanguage">
-                """
-                softlangs = []
-                for l, readable in lang.iteritems() :
-                    locale = l.split("-")[0]
-                    if locale not in softlangs :
-                        softlangs.append((locale, readable))
-
-                for l, readable in softlangs :
-                    out += "<option value='" + l + "'"
-                    if "learnlanguage" in user and l == user["learnlanguage"] :
-                        out += "selected"
-                    out += ">" + _(readable) + "</option>\n"
-                out += """
-                    </select>
-                    <br/>
-                    <br/>
-                """
-                out += "<button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Learning Language") + "</button></form>"
-
-                out += """
-                        <a onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});;"
-                        """
-
-                out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
-
-                if username == "demo" :
-                    return self.bootstrap(req, out)
-                 
-                out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
-                if not mobile :
-                    out += run_template(req, PasswordElement)
-                else :
-                    out += _("Please change your password on the website. Will support mobile in a future version.")
-
-                if self.userdb :
-                    if not mobile and req.session.value["isadmin"] :
-                        out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
-                        out += "<table>"
-                        for result in self.userdb.view('accounts/all') :
-                            tmp_doc = result["key"]
-                            out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
-                            out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
-                            out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
-                            out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
-                            out += "</tr>"
-                        out += "</table>"
-
-                if not mobile :
-                    out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
-                    out += """
-                        <form action='/account' method='post' enctype='multipart/form-data'>
-                    """
-                    out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
-                    out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
-                else :
-                    out += _("Please change your email address on the website. Will support mobile in a future version.")
-
-                out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
-                if not mobile :
-                    out += run_template(req, DeleteAccountElement)
-                else :
-                    out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
-
-                return self.bootstrap(req, out)
-                    
             elif req.action == "chat" :
-                req.main_server = params["main_server"]
-                story = {
-                   "target_language" : supported_map[req.session.value["language"]],
-                   "source_language" : supported_map[req.session.value["learnlanguage"]],
-                }
-
-                if self.tofrom(story) not in self.processors :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
-
-
-                req.gp = self.processors[self.tofrom(story)]
-                req.source_language = story["source_language"]
-                req.target_language = story["target_language"]
-                out = run_template(req, ChatElement)
-                return self.bootstrap(req, out)
-
+                return self.common_chat(req) 
             else :
-                if from_third_party and "output" in from_third_party :
-                    return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
-                elif from_third_party and "redirect" in from_third_party :
-                    return self.bootstrap(req, from_third_party["redirect"], now = True)
-                else :
-                    # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
-                    out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-                    out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
-                    out += _("please read the tutorial") + "</a>"
-                return self.bootstrap(req, out)
+                return self.common_rest(req, from_third_party)
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
         except couch_adapter.ResourceNotFound, e :
             return self.warn_not_replicated(req)
+
         except Exception, msg:
             mdebug(_("Exception") + ": " + str(msg))
             out = _("Exception") + ":\n" 
