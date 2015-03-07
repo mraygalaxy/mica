@@ -3581,9 +3581,10 @@ class MICA(object):
             final = req.db[self.story(req, name) + ":final"]["0"]
             return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
 
-    def common_account(self, req, story, name, uuid, username) :
+    def common_account(self, req, story, name, uuid) :
         out = ""
 
+        username = req.session.value["username"]
         user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
         if not user :
@@ -4543,7 +4544,7 @@ class MICA(object):
             mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
             self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
 
-    def common_oprequest(req, story) :
+    def common_oprequest(self, req, story) :
         oprequest = req.http.params.get("oprequest");
         edits = json_loads(oprequest) 
         offset = 0
@@ -4839,7 +4840,7 @@ class MICA(object):
                 return self.common_storylist(req)
             
             elif req.action == "account" :
-                return self.common_account(req, story, name, uuid, username)
+                return self.common_account(req, story, name, uuid)
 
             elif req.action == "chat" :
                 return self.common_chat(req) 
