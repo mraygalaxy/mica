@@ -3,7 +3,7 @@
 
 from common import *
 from stardict import load_dictionary
-from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column, Float
+from sqlalchemy import MetaData, create_engine, Table, Integer, String, Column, Float, or_
 from sqlalchemy.interfaces import PoolListener
 from string import ascii_lowercase, ascii_uppercase
 from copy import deepcopy
@@ -55,9 +55,13 @@ if not mobile :
     except ImportError:
         import xml.etree.ElementTree as ET
 
+#class PinyinListener(PoolListener):
+#    def connect(self, dbapi_con, con_record):
+#        dbapi_con.execute('PRAGMA mmap_size=20971520')
+
 class MyListener(PoolListener):
     def connect(self, dbapi_con, con_record):
-        dbapi_con.execute('pragma journal_mode=OFF')
+        dbapi_con.execute('PRAGMA journal_mode=OFF')
         dbapi_con.execute('PRAGMA synchronous=OFF')
         #dbapi_con.execute('PRAGMA cache_size=100000')
 
@@ -296,7 +300,7 @@ class RomanizedSource(Processor) :
         flistvalues.append(self.dbname)
         return flistvalues
 
-    def test_dictionaries(self, opaque) :
+    def test_dictionaries(self, opaque, preload = False) :
         if not self.srcdb :
             self.srcdb = {}
             db = create_engine('sqlite:///' + self.params["scratch"] + self.dbname, listeners= [MyListener()])
@@ -624,8 +628,8 @@ class EnglishSource(RomanizedSource) :
                 })
 
     # Setup all english sources with phonetic IPA
-    def test_dictionaries(self, opaque) :
-        super(EnglishSource, self).test_dictionaries(opaque)
+    def test_dictionaries(self, opaque, preload = False) :
+        super(EnglishSource, self).test_dictionaries(opaque, preload = preload)
 
         mdebug("Testing EnglishSource IPA database...")
 
@@ -671,7 +675,6 @@ class EnglishSource(RomanizedSource) :
                     conn.execute(i)
 
             trans.commit()
-
 
     def get_ipa(self, source) :
         if "ipa" in self.srcdb :
@@ -720,11 +723,11 @@ class ChineseSimplifiedToEnglish(Processor) :
     def get_dictionaries(self) :
         return ["cjklib.db", "cedict.db", "tones.db", "jieba.db", "pinyin.db"]
 
-    def test_dictionaries(self, opaque) :
+    def test_dictionaries(self, opaque, preload = False) :
         cjk, d, hold = opaque 
 
         '''
-        for x in d.getFor(u'白鹭'.decode('utf-8')) :
+        for x in self.getFor(d, u'白鹭'.decode('utf-8')) :
             mdebug(str(x))
         for x in cjk.getReadingForCharacter(u'白','Pinyin') :
             mdebug(str(x))
@@ -761,10 +764,14 @@ class ChineseSimplifiedToEnglish(Processor) :
             trans.commit()
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
-        self.setup_imedb()
+        self.setup_imedb(preload = preload)
 
-    def setup_imedb(self) :
-        db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [MyListener()])
+    def setup_imedb(self, preload = False) :
+        if preload :
+            db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [PinyinListener()])
+        else :
+            #db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [MyListener()])
+            db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db")
         db.echo = False
         metadata = MetaData(db)
         conn = db.connect()
@@ -785,7 +792,11 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         self.imedb["ime"].create(checkfirst=True)
 
-        s = self.imedb["ime"].select().limit(1)
+        if preload :
+            s = self.imedb["ime"].select()
+        else :
+            s = self.imedb["ime"].select().limit(1)
+
         rs = s.execute()
         result = rs.fetchone()
 
@@ -821,6 +832,15 @@ class ChineseSimplifiedToEnglish(Processor) :
 
             trans.commit()
             fh.close()
+        else :
+            if preload :
+                preload_count = 1
+                mdebug("Preloading pinyin ime database into OS buffer cache.")
+                while rs.fetchone() is not None :
+                    preload_count += 1
+                mdebug("Preloaded " + str(preload_count) + " rows.")
+            else :
+                mdebug("Skipping pinyin ime database preload.")
 
     def get_chars(self, wordall, limit = 8) :
         if not hasattr(self, "imedb") :
@@ -906,9 +926,11 @@ class ChineseSimplifiedToEnglish(Processor) :
             r=r[0:pos]+pinyinToneMarks[r[pos]][tone-1]+r[pos+1:]
         return r+m.group(2)
 
+    def convertTone(self, num_pinyin) :
+        return re_compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=IGNORECASE).sub(self.convertPinyinCallback, num_pinyin)
+
     def convertPinyin(self, char):
-        s = self.get_pinyin(char)
-        return re_compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=IGNORECASE).sub(self.convertPinyinCallback, s)
+        return self.convertTone(self.get_pinyin(char))
 
     def lcs(self, a, b):
         lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
@@ -1041,7 +1063,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         if hold :
             temp_r = hold 
         else :
-            temp_r = d.getFor(source)
+            temp_r = self.getFor(d, source)
 
         if debug :
             mdebug("CJK result: " + str(temp_r))
@@ -1297,13 +1319,51 @@ class ChineseSimplifiedToEnglish(Processor) :
 
       return unit
 
+    def getFor(self, d, uni) :
+        # Verify that the results coming out of CJK
+        # are the same as the result we got by bypassing CJK
+        do_test = False
+
+        #mdebug("getFor: " + uni)
+        if do_test and not mobile :
+            master = d.getFor(uni)
+            new_master = []
+            for elem in master : 
+                new_master.append(elem)
+
+        #mdebug("Attached databases: " + str(d.db.tables))
+        s = d.db.tables["CEDICT"].select().where(
+                or_(d.db.tables["CEDICT"].c.HeadwordSimplified == uni,
+                   d.db.tables["CEDICT"].c.HeadwordTraditional == uni))
+        rs = s.execute()
+        results = rs.fetchall()
+
+        #mdebug("direct search getFor: " + str(results))
+
+        new_results = []
+        for idx in range(0, len(results)) :
+            result = []
+            for num in range(0, 4) :
+                result.append(results[idx][num])
+            result[2] = self.convertTone(result[2])
+            new_results.append(result)
+
+        if do_test and not mobile and len(new_master) :
+            #mdebug(" new len " + str(len(new_master)) + " direct len " + str(len(new_results)))
+            assert(len(new_master) == len(new_results))
+            for idx in range(0, len(new_results)) :
+                #mdebug(" new " + str(new_master[idx][2]) + " direct " + str(new_results[idx][2]))
+                assert(new_master[idx][2] == new_results[idx][2])
+                 
+        return new_results
+
     def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         units = []
 
         cjk, d, hold = opaque 
         trans = []
         targ = []
-        results = d.getFor(uni)
+        results = self.getFor(d, uni)
         if results is not None :
             for e in results :
                 trans.append(e[2])
@@ -1326,7 +1386,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                     if not size :
                         break
 
-                    mdebug("Iterate: " + sub_uni)
+                    mverbose("Iterate: " + sub_uni)
 
                     # The whole group is checked already at the beginning of this
                     # function, including for single characters. Only check the
@@ -1338,7 +1398,7 @@ class ChineseSimplifiedToEnglish(Processor) :
 
                     try_uni = sub_uni[:end]
                     check_whole = True
-                    mdebug("Trying: " +  try_uni)
+                    mverbose("Trying: " +  try_uni)
 
                     sub_units = self.recursive_translate_lang(req, story, opaque, try_uni, temp_units, page, tone_keys)
 
@@ -1351,7 +1411,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                     units += sub_units
                     sub_uni = sub_uni[end:]
                     size = len(sub_uni)
-                    mdebug("Found. Next: " + sub_uni)
+                    mverbose("Found. Next: " + sub_uni)
 
                 assert(count_sub_chars == len(uni))
 
@@ -1377,7 +1437,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                 online_units = self.online_cross_reference(req, story, uni, opaque)
 
                 if not online_units or not len(online_units) :
-                    temp_r = d.getFor(uni)
+                    temp_r = self.getFor(d, uni)
                     tmp_opaque = (cjk, d, temp_r)
                     targ = self.get_first_translation(tmp_opaque, uni, readings[0])
                     unit = self.add_unit([readings[0]], uni, [targ[0]])
