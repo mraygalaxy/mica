@@ -853,6 +853,14 @@ class MICA(object):
                 sleep(30)
 
         for name, lgp in self.processors.iteritems() :
+            try :
+                handle = lgp.parse_page_start()
+                #lgp.test_dictionaries(handle, preload = True)
+                lgp.test_dictionaries(handle)
+                lgp.parse_page_stop(handle)
+            except Exception, e :
+                merr("Error preloading dictionaries: " + str(e))
+
             for f in lgp.get_dictionaries() :
                 fname = params["scratch"] + f
                 mdebug("Exists: " + fname)
@@ -3050,7 +3058,7 @@ class MICA(object):
 
         return self.api(req, out, human)
 
-    def common_chat_ime(req) :
+    def common_chat_ime(self, req) :
         self.install_local_language(req, req.http.params.get("lang"))
         output = False
         mode = req.http.params.get("mode")
@@ -3071,7 +3079,9 @@ class MICA(object):
             imes = int(req.http.params.get("ime"))
             gp = self.processors[self.tofrom(story)]
             mdebug("Type: " + str(type(orig)))
+            start = timest()
             char_result = gp.get_chars(orig)
+            mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
 
             if not char_result :
                 mdebug("No result from search for: " + orig)
@@ -3121,7 +3131,7 @@ class MICA(object):
                 start = timest()
                 self.parse(req, story, live = True)
                 #sys_settrace(None)
-                mdebug("Parse time: " + str(timest() - start))
+                mdebug("Parse time: " + str(timest() - start) + " for " + str(orig))
                 #call_report()
 
             except Exception, e :
@@ -3484,13 +3494,13 @@ class MICA(object):
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
 
-    def common_view(self, req, uuid) :
+    def common_view(self, req, uuid, from_third_party) :
         if uuid :
             # Reload just in case the translation changed anything
             name = req.db[self.index(req, uuid)]["value"]
             story = req.db[self.story(req, name)]
             gp = self.processors[self.tofrom(story)]
-            
+ 
             if req.action == "edit" and gp.already_romanized :
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
             
@@ -3526,6 +3536,7 @@ class MICA(object):
                     return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
             output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
+            output = ""
             if from_third_party and "output" in from_third_party :
                 return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
             elif from_third_party and "redirect" in from_third_party :
@@ -4433,6 +4444,7 @@ class MICA(object):
                         else :
                             mdebug("File " + f + " already exists.")
                             handle = lgp.parse_page_start()
+                            #lgp.test_dictionaries(handle, preload = True)
                             lgp.test_dictionaries(handle)
                             lgp.parse_page_stop(handle)
 
@@ -4579,7 +4591,7 @@ class MICA(object):
     def common(self, req) :
         global times
         try :
-            if req.action in ["disconnect" :
+            if req.action in ["disconnect"] :
                 return self.common_disconnect(req)
 
             if req.action == "privacy" :
@@ -4817,7 +4829,7 @@ class MICA(object):
                 self.common_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
-                return self.common_view(req, uuid)
+                return self.common_view(req, uuid, from_third_party)
 
             elif req.action == "stories" :
                 return self.common_stories(req, story, name)
