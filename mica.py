@@ -3436,7 +3436,7 @@ class MICA(object):
         mdebug("Upgrade thread started.")
         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
 
-    def common_memolist(self, req, story) :
+    def common_memolist(self, req, story, list_mode, uuid) :
         page = req.http.params.get("page")
         output = []
                 
@@ -3494,7 +3494,8 @@ class MICA(object):
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
 
-    def common_view(self, req, uuid, from_third_party) :
+    def common_view(self, req, uuid, from_third_party, start_page, view_mode, meaning_mode) :
+        output = ""
         if uuid :
             # Reload just in case the translation changed anything
             name = req.db[self.index(req, uuid)]["value"]
@@ -3580,7 +3581,7 @@ class MICA(object):
             final = req.db[self.story(req, name) + ":final"]["0"]
             return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
 
-    def common_account(self, req, story, name, uuid) :
+    def common_account(self, req, story, name, uuid, username) :
         out = ""
 
         user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
@@ -4113,13 +4114,13 @@ class MICA(object):
 
         return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
 
-    def common_phistory(self, req, story, uuid) :
+    def common_phistory(self, req, story, uuid, list_mode) :
         return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
                                    # statistics in review mode are disabled
                                    (self.history(req, story, uuid, req.http.params.get("page")) if list_mode else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
                                    "</div></div>", now = True)
 
-    def common_editslist(self, req, story, uuid) :
+    def common_editslist(self, req, story, uuid, list_mode) :
         return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
                                    self.edits(req, story, uuid, req.http.params.get("page"), list_mode) + \
                                    "</div></div>", now = True)
@@ -4797,10 +4798,10 @@ class MICA(object):
             output = ""
 
             if req.http.params.get("phistory") :
-                return self.common_phistory(req, story, uuid)
+                return self.common_phistory(req, story, uuid, list_mode)
 
             if req.http.params.get("editslist") :
-                return self.common_editslist(req, story, uuid)
+                return self.common_editslist(req, story, uuid, list_mode)
 
             if req.http.params.get("memorizednostory") :
                 return self.common_memorizednostory(req)
@@ -4816,7 +4817,7 @@ class MICA(object):
                     return oprequest_result
  
             if req.http.params.get("memolist") :
-                return self.common_memolist(req, story)
+                return self.common_memolist(req, story, list_mode, uuid)
                
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -4829,7 +4830,7 @@ class MICA(object):
                 self.common_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
-                return self.common_view(req, uuid, from_third_party)
+                return self.common_view(req, uuid, from_third_party, start_page, view_mode, meaning_mode)
 
             elif req.action == "stories" :
                 return self.common_stories(req, story, name)
@@ -4838,7 +4839,7 @@ class MICA(object):
                 return self.common_storylist(req)
             
             elif req.action == "account" :
-                return self.common_account(req, story, name, uuid)
+                return self.common_account(req, story, name, uuid, username)
 
             elif req.action == "chat" :
                 return self.common_chat(req) 

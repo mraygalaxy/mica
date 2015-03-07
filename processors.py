@@ -263,7 +263,7 @@ class Processor(object) :
 
             self.mica.rehash_correct_polyphome(unit)
             
-            mverbose(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
