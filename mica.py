@@ -2733,7 +2733,7 @@ class MICA(object):
             mdebug("Deleting job immediately. Not adding to list")
             try :
                 jobs = req.db["MICA:jobs"]
-                if job["uuid"] in jobs :
+                if job["uuid"] in jobs["list"] :
                     del jobs["list"][job["uuid"]]
                     req.db["MICA:jobs"] = jobs
             except Exception, e :
@@ -2768,9 +2768,8 @@ class MICA(object):
 
             vt = Thread(target=self.run_job, args = [req, func, cleanup, job, self_delete, args, kwargs])
             vt.daemon = True
-            if not self_delete :
-                jobs["list"][job["uuid"]] = job
-                req.db["MICA:jobs"] = jobs
+            jobs["list"][job["uuid"]] = job
+            req.db["MICA:jobs"] = jobs
 
             mdebug("Starting job: " + str(job))
 
