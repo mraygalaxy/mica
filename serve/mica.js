@@ -197,27 +197,33 @@ function trans(uuid) {
 }
 
 function poll(s, finisher, monid) {
-        secs = s;
-        do_refresh = true;
-        finish = finisher;
-        if(debug)
-            CountBack(monid, false, s);
-        else
-            CountBack(false, false, s);
+    secs = s;
+    do_refresh = true;
+    finish = finisher;
+    if(debug)
+        CountBack(monid, false, s);
+    else
+        CountBack(false, false, s);
 }
 
 function make_child(node) {
-     var contents = "<" + node.nodeName;
+    var contents = "<" + node.nodeName;
+
     for(var y = 0; y < node.attributes.length; y++) {
         contents += " " + node.attributes[y].name + "='" + node.attributes[y].value + "'";
     }
-     if (node.childElementCount == 0)
-         contents += "/";
-     contents += ">\\n";
-     for(var x = 0; x < node.childElementCount; x++)
-         contents += make_child(node.childNodes[x]);
-     if (node.childElementCount > 0)
-         contents += "</" + node.nodeName + ">\\n";
+
+    if (node.childElementCount == 0)
+        contents += "/";
+
+    contents += ">\\n";
+
+    for(var x = 0; x < node.childElementCount; x++)
+        contents += make_child(node.childNodes[x]);
+
+    if (node.childElementCount > 0)
+        contents += "</" + node.nodeName + ">\\n";
+
     return contents;
 }
 
@@ -225,56 +231,57 @@ function make_child(node) {
      object is the body itself or an internal div. This allows us to
      make sure we don't hide the content when we click on the content itself.
      */
-  function findParentNode(parentName, childObj, stopName) {
-	    var testObj = childObj.parentNode;
-	    var count = 1;
-	    if("getAttribute" in testObj) {
-		    while(testObj.getAttribute('id') != parentName && testObj.getAttribute('id') != stopName) {
-//		        alert('My id  is ' + testObj.getAttribute('id') + '. Let\'s try moving up one level to see what we get.');
-			testObj = testObj.parentNode;
-			count++;
-		    }
-	    } else {
-		return false;
-	    }
-	    // now you have the object you are looking for - do something with it
-//	    alert('Finally found **' + testObj.getAttribute('id') + ' after going up ' + count + ' level(s) through the DOM tree');
-	    return (testObj.getAttribute('id') == stopName) ? false : true;
-  }
+function findParentNode(parentName, childObj, stopName) {
+    var testObj = childObj.parentNode;
+    var count = 1;
+    if("getAttribute" in testObj) {
+        while(testObj.getAttribute('id') != parentName && testObj.getAttribute('id') != stopName) {
+            //alert('My id  is ' + testObj.getAttribute('id') + '. Let\'s try moving up one level to see what we get.');
+            testObj = testObj.parentNode;
+            count++;
+        }
+    } else {
+        return false;
+    }
+    // now you have the object you are looking for - do something with it
+    //alert('Finally found **' + testObj.getAttribute('id') + ' after going up ' + count + ' level(s) through the DOM tree');
+    return (testObj.getAttribute('id') == stopName) ? false : true;
+}
 
   var last_opened = "";
 
-  function toggle_specific(prefix, name, check) {
-        var elms = document.getElementsByClassName(prefix + name);
+function toggle_specific(prefix, name, check) {
+    var elms = document.getElementsByClassName(prefix + name);
 
-        if (check) {
-            if(elms[0].style.display == 'none') {
-               if (last_opened != "" && last_opened != name) {
-                   toggle(last_opened, 0);
-               }
-               last_opened = name;
-            } else {
-               last_opened = "";
-            }
+    if (check) {
+        if(elms[0].style.display == 'none') {
+           if (last_opened != "" && last_opened != name) {
+               toggle(last_opened, 0);
+           }
+           last_opened = name;
+        } else {
+           last_opened = "";
         }
+    }
 
-        for (var i = 0; i < elms.length; i++) {
-            e = elms[i];
+    for (var i = 0; i < elms.length; i++) {
+        e = elms[i];
 
-            if(e.style.display == 'none') {
-                   e.style.display = 'block';
-            } else {
-                   e.style.display = 'none';
-            }
+        if(e.style.display == 'none') {
+               e.style.display = 'block';
+        } else {
+               e.style.display = 'none';
         }
-  }
-  function toggle(name, check) {
-       toggle_specific('trans', name, check);
-       toggle_specific('blank', name, 0);
-  }
+    }
+}
+
+function toggle(name, check) {
+   toggle_specific('trans', name, check);
+   toggle_specific('blank', name, 0);
+}
 
       
-  function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
+function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
   	  var op = { 
   	  			"operation": operation,
   	  			"uuid" : uuid,
@@ -331,9 +338,9 @@ function make_child(node) {
       op["out"] = out
       
       return op;
-  }
+}
   
-  function process_edits(uuid, operation, batch) {
+function process_edits(uuid, operation, batch) {
       var tids = [];
       var transids = [];
       var nbunits = [];
@@ -465,9 +472,9 @@ function make_child(node) {
 
       $('#regroupdestination').html(out);
       $('#regroupModal').modal('show');
-  }
+}
 
-  function process_instant(with_spaces, lang, source, target, username, password) {
+function process_instant(with_spaces, lang, source, target, username, password) {
 
     var languageitem = $('#chattextlanguage').val();
     if (languageitem != undefined) {
@@ -477,9 +484,9 @@ function make_child(node) {
         var target = pair[1];  
      }
 
-      var chars = [];
-      var allchars = "";
-      $("span.label > a").each(function(index) {
+     var chars = [];
+     var allchars = "";
+     $("span.label > a").each(function(index) {
 	      if (with_spaces) {
 		chars.push($(this).text());
 	      } else {
@@ -492,19 +499,19 @@ function make_child(node) {
               select_toggle($(this).attr("transid"));
       });
 
-      for(var x = 0; x < chars.length; x++) {
+     for(var x = 0; x < chars.length; x++) {
           allchars += chars[x];
 	  if (with_spaces) {
 	      if (x != (chars.length - 1))
                   allchars += " ";
 	  }
-      }
+     }
         
-      if (allchars == "") {
-          alert(local("notselected"));
-      } else {
-       $('#instantspin').attr('style', 'display: inline');
-       $('#instantdestination').html("");
+     if (allchars == "") {
+         alert(local("notselected"));
+     } else {
+        $('#instantspin').attr('style', 'display: inline');
+        $('#instantdestination').html("");
 
        var url = '/instant?source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
@@ -522,9 +529,9 @@ function make_child(node) {
           $("html").scrollTop(),
           false);
        }
-  }
+}
 
-  function select_toggle(name) {
+function select_toggle(name) {
        var spanclass = $("#spanselect_" + name).attr('class');
        if (spanclass == "none") {
            $("#spanselect_" + name).attr('class', 'label label-info none');
@@ -535,9 +542,9 @@ function make_child(node) {
        } else if (spanclass == "label label-info none") {
            $("#spanselect_" + name).attr('class', 'none');
        }
-  }
+}
 
-  function change(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque1, opaque2) {
+function change(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque1, opaque2) {
       var cb = callback;
       var o1 = opaque1;
       var o2 = opaque2;
@@ -585,11 +592,11 @@ function make_child(node) {
             }
         }
       });
-  }
+}
 
 function multipopinstall(trans_id, unused) {
     $('#ttip' + trans_id).popover({placement: 'bottom',
-//    $('#ttip' + trans_id).popover({placement: 'bottom-right',
+    //$('#ttip' + trans_id).popover({placement: 'bottom-right',
                                    trigger: 'click',
                                    html: true,
                                    content: function() {
@@ -690,10 +697,10 @@ function view(mode, uuid, page) {
 
        $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
     
-        $('#pageimg' + curr_img_num).affix();
-        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
-        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
-        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
+       $('#pageimg' + curr_img_num).affix();
+       $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
+       $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
+       $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
        go('#pagetext', 
               url, 
@@ -739,31 +746,31 @@ function view(mode, uuid, page) {
 }
 
 function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
-        current_pages = pages;
-        current_view_mode = view_mode;
-        current_meaning_mode = meaning_mode;
-        if (view_mode == "text") {
-             view_images = false;
-	     show_both = false;
-        } else if(view_mode == "images") {
-             view_images = true;
-	     show_both = false;
-        } else if(view_mode == "both") {
-             view_images = false;
-	     show_both = true;
-        }
+    current_pages = pages;
+    current_view_mode = view_mode;
+    current_meaning_mode = meaning_mode;
+    if (view_mode == "text") {
+         view_images = false;
+         show_both = false;
+    } else if(view_mode == "images") {
+         view_images = true;
+         show_both = false;
+    } else if(view_mode == "both") {
+         view_images = false;
+         show_both = true;
+    }
 
-        $('#pagenav').bootpag({
-            total: pages,
-                   page: start + 1,
-                   maxVisible: 5 
-        }).on('page', function(event, num){
-          view(mode, uuid, num-1);
-        });
+    $('#pagenav').bootpag({
+        total: pages,
+               page: start + 1,
+               maxVisible: 5 
+    }).on('page', function(event, num){
+      view(mode, uuid, num-1);
+    });
 
-	if(reload) {
-            view(mode, uuid, start);
-	}
+    if(reload) {
+        view(mode, uuid, start);
+    }
 }
 
 function memory_finish(data, opaque1, unused) {
@@ -1091,32 +1098,32 @@ function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
     go('#sidebarcontents', 
-    '/storylist',
-    '#storylistresult', 
-    unavailable, 
-    true, 
-    false,
-    true);
+        '/storylist',
+        '#storylistresult', 
+        unavailable, 
+        true, 
+        false,
+        true);
 }
 
 function reviewstory(uuid, which) {
     go('#sidebarcontents', 
-    '/home?reviewed=' + which + '&uuid=' + uuid,
-    '', 
-    unavailable, 
-    false, 
-    loadstories,
-    false);
+        '/home?reviewed=' + which + '&uuid=' + uuid,
+        '', 
+        unavailable, 
+        false, 
+        loadstories,
+        false);
 }
 
 function finishstory(uuid, which) {
     go('#sidebarcontents', 
-    '/home?finished=' + which + '&uuid=' + uuid,
-    '', 
-    unavailable, 
-    false, 
-    loadstories,
-    false);
+        '/home?finished=' + which + '&uuid=' + uuid,
+        '', 
+        unavailable, 
+        false, 
+        loadstories,
+        false);
 }
 
 $.fn.goDeep = function(levels, func){
@@ -1199,8 +1206,8 @@ function messageNotify(val) {
 }
 
 window.onfocus=function() { 
-  document.title = "MICA";
-  clearInterval(flashTimer);
+    document.title = "MICA";
+    clearInterval(flashTimer);
 }
 
 function appendBox(who, msg) {
