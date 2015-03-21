@@ -2704,7 +2704,7 @@ class MICA(object):
             mdebug("Deleting job immediately. Not adding to list")
             try :
                 jobs = req.db["MICA:jobs"]
-                if job["uuid"] in jobs :
+                if job["uuid"] in jobs["list"] :
                     del jobs["list"][job["uuid"]]
                     req.db["MICA:jobs"] = jobs
             except Exception, e :
