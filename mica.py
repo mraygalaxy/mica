@@ -2768,8 +2768,9 @@ class MICA(object):
 
             vt = Thread(target=self.run_job, args = [req, func, cleanup, job, self_delete, args, kwargs])
             vt.daemon = True
-            jobs["list"][job["uuid"]] = job
-            req.db["MICA:jobs"] = jobs
+            if not self_delete :
+                jobs["list"][job["uuid"]] = job
+                req.db["MICA:jobs"] = jobs
 
             mdebug("Starting job: " + str(job))
 
