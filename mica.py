@@ -4285,6 +4285,9 @@ class MICA(object):
         return from_third_party
 
     def common_connect(self, req, from_third_party) :
+        password = False
+        username = False
+
         if from_third_party :
             username = from_third_party["email"]
             req.session.value["from_third_party"] = True 
