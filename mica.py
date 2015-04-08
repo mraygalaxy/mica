@@ -4150,7 +4150,7 @@ class MICA(object):
                                    self.edits(req, story, req.http.params.get("page")) + \
                                    "</div></div>", now = True)
 
-    def common_oauth(req) :
+    def common_oauth(self, req) :
         from_third_party = False
         self.install_local_language(req)
         who = req.action
