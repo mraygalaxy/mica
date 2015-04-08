@@ -1321,7 +1321,7 @@ class MICA(object):
             history.sort( key=by_total, reverse = True )
 
         req.process_edits = "process_edits('" + story["uuid"] + "', 'all', true)"
-        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page)
+        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + story['uuid'] + "&page=" + str(page)
         req.list_mode = list_mode
         if list_mode :
             req.history = history
@@ -4722,9 +4722,9 @@ class MICA(object):
                     # The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history. 
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
-            if req.action in ["tstatus", "finished", "reviewed", "translate"] :
-                func = getattr(self, "common_" + req.action)
-                return func(req, story)
+            for param in ["tstatus", "finished", "reviewed", "translate"] :
+                if req.http.params.get(param) :
+                    return getattr(self, "common_" + param)(req, story)
 
             if req.http.params.get("forget") :
                 # Resetting means that we are dropping the translate contents of the original story. We are
@@ -4788,9 +4788,9 @@ class MICA(object):
                 else :
                     self.set_page(req, tmp_story, start_page)
                 
-            if req.action in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
-                func = getattr(self, "common_" + req.action)
-                return func(req, story)
+            for param in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
+                if req.http.params.get(param) :
+                    return getattr(self, "common_" + param)(req, story)
 
             if req.http.params.get("oprequest") :
                 oprequest_result = self.common_oprequest(req, story)
