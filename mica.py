@@ -88,26 +88,6 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mdebug("Punctuation complete.")
 
-def baidu_compliance_fix(session):
-    self.fixed = False
-
-    def _compliance_fix(r):
-        if self.fixed :
-            return r
-        self.fixed = True
-        # Facebook returns a content-type of text/plain when sending their
-        # x-www-form-urlencoded responses, along with a 200. If not, let's
-        # assume we're getting JSON and bail on the fix.
-        mdebug("Going to dump response token text: " + r.text)
-        token = json_loads(r.text)
-        mdebug("Adding bearer to token type") 
-        token['token_type'] = 'Bearer'
-        r._content = to_unicode(dumps(token)).encode('UTF-8')
-        return r
-
-    session.register_compliance_hook('access_token_response', _compliance_fix)
-    return session
-
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
     images = []
@@ -4150,6 +4130,26 @@ class MICA(object):
                                    self.edits(req, story, req.http.params.get("page")) + \
                                    "</div></div>", now = True)
 
+    def baidu_compliance_fix(self, session):
+        self.fixed = False
+
+        def _compliance_fix(r):
+            if self.fixed :
+                return r
+            self.fixed = True
+            # Facebook returns a content-type of text/plain when sending their
+            # x-www-form-urlencoded responses, along with a 200. If not, let's
+            # assume we're getting JSON and bail on the fix.
+            mdebug("Going to dump response token text: " + r.text)
+            token = json_loads(r.text)
+            mdebug("Adding bearer to token type") 
+            token['token_type'] = 'Bearer'
+            r._content = to_unicode(dumps(token)).encode('UTF-8')
+            return r
+
+        session.register_compliance_hook('access_token_response', _compliance_fix)
+        return session
+
     def common_oauth(self, req) :
         from_third_party = False
         self.install_local_language(req)
@@ -4162,7 +4162,7 @@ class MICA(object):
             service = facebook_compliance_fix(service)
 
         if who == "baidu" :
-            service = baidu_compliance_fix(service)
+            service = self.baidu_compliance_fix(service)
 
         if not req.http.params.get("code") and not req.http.params.get("finish") :
             if req.http.params.get("error") :
