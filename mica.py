@@ -4893,7 +4893,7 @@ def expired(uid):
    mdebug("Session " + uid + " has expired.")
    sessions.remove(uid)
    mdebug("Removing session file.")
-   osremove(sfn)
+   os_remove(sfn)
         
 class GUIDispatcher(Resource) :
     def __init__(self, mica) :
