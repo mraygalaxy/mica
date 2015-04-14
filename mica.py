@@ -4055,12 +4055,12 @@ class MICA(object):
 
             if sync == 1 :
                 tmpstory["download"] = True
-                if name not in tmpuser["filters"]["stories"] :
-                    tmpuser["filters"]["stories"].append(name)
+                if tmpname not in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].append(tmpname)
             else :
                 tmpstory["download"] = False
-                if name in tmpuser["filters"]["stories"] :
-                    tmpuser["filters"]["stories"].remove(name)
+                if tmpname in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].remove(tmpname)
                 
             req.session.value["filters"] = tmpuser["filters"]
 
@@ -5177,6 +5177,7 @@ def go(p) :
                     ctx = SSL.Context(self.sslmethod)
                     ctx.use_certificate_chain_file(self.certificateChainFileName)
                     ctx.use_privatekey_file(self.privateKeyFileName)
+                    ctx.set_cipher_list('ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS')
                     self._context = ctx
 
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
