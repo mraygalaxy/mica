@@ -218,7 +218,7 @@ class MICA(object):
         lookup_username = username
 
         if from_third_party :
-            lookup_username = from_third_party["username"]
+            lookup_username = from_third_party["username"].lower()
             password = params["admin_pass"]
             username = params["admin_user"].lower()
 
@@ -252,7 +252,7 @@ class MICA(object):
         return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
 
     def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
-        username = req.session.value["username"]
+        username = req.session.value["username"].lower()
 
         if username not in self.dbs or not self.dbs[username] : 
             mdebug("Database not set. Requesting object.")
@@ -2892,7 +2892,7 @@ class MICA(object):
         if not req.http.params.get("username") or not req.http.params.get("password") :
             return self.bootstrap(req, 'error', now = True)
 
-        username = req.http.params.get("username")
+        username = req.http.params.get("username").lower()
         password = req.http.params.get("password")
 
         auth_user = self.userdb.__getitem__("org.couchdb.user:" + username, false_if_not_found = True)
@@ -3591,7 +3591,7 @@ class MICA(object):
     def common_account(self, req, story) :
         out = ""
 
-        username = req.session.value["username"]
+        username = req.session.value["username"].lower()
         user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
 
         if not user :
@@ -3673,7 +3673,7 @@ class MICA(object):
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
-            newusername = req.http.params.get("username")
+            newusername = req.http.params.get("username").lower()
             newpassword = req.http.params.get("password")
             newpasswordconfirm = req.http.params.get("confirm")
             admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
@@ -3704,7 +3704,7 @@ class MICA(object):
             if mobile :
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
 
-            username = req.http.params.get("username") 
+            username = req.http.params.get("username").lower()
 
             if not self.userdb : 
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
@@ -4292,7 +4292,7 @@ class MICA(object):
         username = False
 
         if from_third_party :
-            username = from_third_party["email"]
+            username = from_third_party["email"].lower()
             req.session.value["from_third_party"] = True 
         else :
             req.session.value["from_third_party"] = False 
@@ -4300,7 +4300,7 @@ class MICA(object):
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
                 req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
-            username = req.http.params.get('username')
+            username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
 
         if req.http.params.get("address") :
@@ -4496,7 +4496,7 @@ class MICA(object):
         return False
 
     def common_logged_in_check(self, req) :
-        username = req.session.value['username']
+        username = req.session.value['username'].lower()
 
         if "app_chars_per_line" not in req.session.value :
             user = req.db[self.acct(username)]
