@@ -214,12 +214,13 @@ class MICA(object):
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         mdebug("Authenticating to: " + str(auth_url))
 
+        username = username.lower()
         lookup_username = username
 
         if from_third_party :
             lookup_username = from_third_party["username"]
             password = params["admin_pass"]
-            username = params["admin_user"]
+            username = params["admin_user"].lower()
 
         lookup_username_unquoted = myquote(str(lookup_username))
         username_unquoted = myquote(str(username))
@@ -398,6 +399,8 @@ class MICA(object):
 
 
     def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
+        username = username.lower()
+
         if not dbname :
             new_uuid = str(uuid_uuid4())
             dbname = "mica_" + new_uuid
