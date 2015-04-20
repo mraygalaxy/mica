@@ -1280,14 +1280,17 @@ function handlePresence(oJSJaCPacket) {
     var html = '<div class="msg">';
     var who = oJSJaCPacket.getFromJID();
     var id = ("" + who).split("@");
+    html += "<b><a onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\">" + decodeURIComponent(id[0]) + "</a> ";
+
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
-        html += "<b><a onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\"></a> " + local("hasbecome") + ".</b>";
+        html += local("hasbecome") + ".</b>";
     } else {
-        html += "<b><a onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\"></a> " + local("setpresence") + " ";
+        html += local('setpresence') + " ";
         if (oJSJaCPacket.getType())
             html += oJSJaCPacket.getType() + '.</b>';
         else
             html += oJSJaCPacket.getShow() + '.</b>';
+
         if (oJSJaCPacket.getStatus())
             html += ' (' + oJSJaCPacket.getStatus().htmlEnc() + ')';
     }
