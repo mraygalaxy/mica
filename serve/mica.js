@@ -1281,10 +1281,9 @@ function handlePresence(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
     var id = ("" + who).split("@");
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
-        html += '<b>' + decodeURIComponent(id[0]) + ' ' + local("hasbecome") + ".</b>";
-        html += " <a style='cursor: pointer' onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\">Chat</a>";
+        html += "<b><a onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\"></a> " + local("hasbecome") + ".</b>";
     } else {
-        html += '<b>' + decodeURIComponent(id[0]) + ' ' + local('setpresence') + " ";
+        html += "<b><a onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\"></a> " + local("setpresence") + " ";
         if (oJSJaCPacket.getType())
             html += oJSJaCPacket.getType() + '.</b>';
         else
