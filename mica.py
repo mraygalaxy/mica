@@ -3047,10 +3047,16 @@ class MICA(object):
 
     def common_chat_ime(self, req) :
         self.install_local_language(req, req.http.params.get("lang"))
-        output = False
         mode = req.http.params.get("mode")
         orig = req.http.params.get("source")
         imes = int(req.http.params.get("ime"), 0)
+        msgfrom = req.http.params.get("msgfrom", False)
+        msgto = req.http.params.get("msgto", False)
+        peer = req.http.params.get("peer", False)
+        timestamp = req.http.params.get("ts", False)
+        if timestamp :
+            timestamp = float(timestamp)
+
         start_trans_id = int(req.http.params.get("start_trans_id", 0))
         story = {
            "name" : "ime",
@@ -3104,7 +3110,7 @@ class MICA(object):
         # all DB accesses from the main processor, but that requires
         # re-writing the processor, let's deal with that later.
         # The goal is to allow sqlite to do normal caching.
-        # CUrrently, the RomanizedSource languages are still are
+        # Currently, the RomanizedSource languages are still are
         # not closing/re-opening their sqlite handles and may crash.
         # We don't want to re-open them anyway and need to keep
         # them open in the main thread.
@@ -3129,11 +3135,12 @@ class MICA(object):
                 if cerror :
                     raise cerror
 
+            if timestamp :
+                mdebug("Start populating everything like we simulated.")
 
-            if not output :
-                out["success"] = True
-                out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
-                out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
+            out["success"] = True
+            out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
+            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
         except OSError, e :
             merr("OSError: " + str(e))
             out["result"] = self.warn_not_replicated(req, bootstrap = False)

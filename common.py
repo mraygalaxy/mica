@@ -25,8 +25,7 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
 if getdefaultencoding() != "utf-8" :
-    print getdefaultencoding()
-    print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    print "Correcting the default encoding back to UTF-8 from " + getdefaultencoding()
     reload(sys).setdefaultencoding("utf-8")
 
 try :
