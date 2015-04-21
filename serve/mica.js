@@ -1210,17 +1210,48 @@ window.onfocus=function() {
     clearInterval(flashTimer);
 }
 
-function appendBox(who, msg) {
+function who_to_readable(who) {
+        var id = ("" + who).split("@");
+	return decodeURIComponent(id[0]);
+}
+
+var chat_username = false;
+
+function appendBox(who, ts, msg) {
         var html = '';
         var id = ("" + who).split("@");
-        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + decodeURIComponent(id[0]) + ':</b></td><td>';
-        html += msg;
+        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + who_to_readable(who) + ':</b></td><td style="vertical-align: top">';
+        html += "&nbsp;" + make_date(ts) + ": </td><td>&nbsp;</td><td>" + msg;
         html += '</td></tr></table></div>';
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
-function appendChat(who, msg) {
+function make_date(ts) {
+	var date = new Date(parseInt(parseFloat(ts)));
+	var result = "";
+
+	var hours = date.getHours();
+	var ampm = (hours >= 12) ? "PM" : "AM";
+	
+	if (hours >= 13)
+		hours -= 12;
+	
+	result += ('0' + (hours == 0 ? 12 : hours)).slice(-2);
+	result += ":" + ('0' + date.getMinutes()).slice(-2);
+	result += " " + ampm;
+	
+	//result += " " + ("" + date.getFullYear()).substring(2, 4);
+	//result += "/" + ('0' + (date.getMonth()+1)).slice(-2);
+	//result += "/" + ('0' + date.getDate()).slice(-2);
+	
+	//tdebug("Timestamp: " + result + " from original: " + ts);
+	return result;
+}
+
+function appendChat(who, to, msg) {
+    var ts = $.now() + ".0";
+
     $("#missing").attr("style", "display: none");
     var languagepair = $('#chattextlanguage').val();
     var pair = languagepair.split(",");
@@ -1232,17 +1263,29 @@ function appendChat(who, msg) {
      * language. We can fix this later. 
      */
     var chat_language = chat_target_language;
-     
-    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id;
+    var msgfrom = who_to_readable(who);
+    var msgto = who_to_readable(to);
+
+    /* 
+     * 'peer' means who we are talking to, regardless who the message comes from.
+     *
+     * If we have 'group' chats in the future, just set the 'peer' value to some kind
+     * of unique ID, like "group_UUID". Simple one-on-one chats will have document keys 
+     * equal to the name of the peer, but with a group chat, we'll need to choose something
+     * unique for the peer value. Theoretically, the server-side shouldn't change too much.
+     */ 
+    var peer = (msgfrom == chat_username) ? msgto : msgfrom;
+
+    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + ts + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 
     start_trans_id += msg.length;
 
     $.get(micaurl, "", $.proxy(function(response, success){
 	var data = JSON.parse(response);
 	if(data.success)  {
-		appendBox(who, data.result.human);
+		appendBox(who, ts, data.result.human);
 	} else {
-		appendBox(who, data.desc);
+		appendBox(who, ts, data.desc);
 	}
     }, {}), 'html');
 }
@@ -1254,6 +1297,7 @@ function addressableID(who) {
 
 function handleMessage(oJSJaCPacket) {
     var who = oJSJaCPacket.getFromJID();
+    var to = oJSJaCPacket.getToJID();
     var msg = oJSJaCPacket.getBody().htmlEnc();
 
     if ($("#sendTo").val() == "") {
@@ -1261,7 +1305,7 @@ function handleMessage(oJSJaCPacket) {
     }
 
     if ($.trim(msg) != "") {
-       appendChat(who, msg);
+       appendChat(who, to, msg);
        if (!document.hasFocus()) {
            messageNotify("RECEIVED!");
            document.getElementById('soundNotify').play();
@@ -1382,6 +1426,7 @@ function doLogin(oForm) {
         // setup args for connect method
         oArgs.domain = oForm.domain.value;
         oArgs.username = oForm.username.value;
+	chat_username = oArgs.username;
         oArgs.resource = 'mica';
         oArgs.pass = oForm.password.value;
         oArgs.register = false;

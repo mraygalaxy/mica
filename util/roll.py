@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# My simulation of how to keep track of chat history over time
+# with a random input source of messages
+
 from threading import Thread, Lock, current_thread, Timer, local as threading_local
 from random import random
 from time import sleep
@@ -51,12 +54,13 @@ while True :
     if random() < 0.3 :
         add_period("days", str(current_day))
 
-    roll_period("days", "weeks")
-    roll_period("weeks", "months")
     roll_period("months", "years")
+    roll_period("weeks", "months")
+    roll_period("days", "weeks")
     
     dump_period("days")
     dump_period("weeks")
     dump_period("months")
+    dump_period("years")
 
     current_day += 1
