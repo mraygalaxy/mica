@@ -269,10 +269,21 @@ class MICASlaveException(Exception) :
     def __str__(self):
         return self.msg
 
+def makeTimestampNoDate(supplied_epoch_time = False) :
+    if not supplied_epoch_time :
+        _now = datetime_datetime.now()
+    else :
+        _now = datetime_datetime.fromtimestamp(supplied_epoch_time)
+        
+    _date = _now.date()
+
+    result = "" 
+        
+    result += strftime(" %I:%M:%S %p", 
+                        strptime(str(_now.hour) + ":" + str(_now.minute) + ":" + \
+                                 str(_now.second), "%H:%M:%S"))
+    return result
 def makeTimestamp(supplied_epoch_time = False) :
-    '''
-    TBD
-    '''
     if not supplied_epoch_time :
         _now = datetime_datetime.now()
     else :
