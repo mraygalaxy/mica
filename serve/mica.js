@@ -717,7 +717,7 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-	      false,
+              false,
               true);
    } else {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
@@ -734,7 +734,7 @@ function view(mode, uuid, page) {
               '#pageresult',
               unavailable, 
               true, 
-	      false,
+              false,
               true);
    }
 

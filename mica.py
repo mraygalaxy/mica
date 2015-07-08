@@ -695,6 +695,8 @@ class MICA(object):
     
     def sidestart(self, req, name, username, story, reviewed, finished, gp) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
+        if "filetype" in story and story["filetype"] == "chat" :
+            rname = rname.split(";")[-1]
         sideout = []
         sideout.append("\n<tr>")
         sideout.append("<td style='font-size: x-small; width: 100px'>" )
@@ -1391,7 +1393,12 @@ class MICA(object):
             return out
 
         req.gp = self.processors[self.tofrom(story)]
+
         req.story_name = story["name"]
+
+        if "filetype" in story and story["filetype"] == "chat" :
+            req.story_name = "Chat w/ " + req.story_name.split(";")[-1]
+
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, story)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
@@ -1641,29 +1648,36 @@ class MICA(object):
                         prev_merge = curr_merge if not skip_prev_merge else False
 
                     line_out.append(">")
-                    line_out.append("<span id='spanselect_" + trans_id + "' class='")
-                    line_out.append("batch" if use_batch else "none")
-                    line_out.append("'>")
-                    if gp.already_romanized :
-                        line_out.append("<a class='transroman'")
+
+                    if "timestamp" not in unit or not unit["punctuation"] :
+                        line_out.append("<span id='spanselect_" + trans_id + "' class='")
+                        line_out.append("batch" if use_batch else "none")
+                        line_out.append("'>")
+                        if gp.already_romanized :
+                            line_out.append("<a class='transroman'")
+                        else :
+                            line_out.append("<a class='trans'")
+                        line_out.append(" uniqueid='" + tid + "' ")
+                        line_out.append(" nbunit='" + nb_unit + "' ")
+                        line_out.append(" transid='" + trans_id + "' ")
+                        line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
+                        line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
+                        line_out.append(" page='" + page + "' ")
+                        line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
+                        line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
+                        line_out.append(" style='color: black; font-weight: normal")
+                        if "punctuation" not in unit or not unit["punctuation"] :
+                            line_out.append("; cursor: pointer")
+                        line_out.append("' ")
+                        line_out.append(" onclick=\"select_toggle('" + trans_id + "')\"")
+                        line_out.append(">")
+
+                        line_out.append(source if py else target)
+                        line_out.append("</a>")
+                        line_out.append("</span>")
                     else :
-                        line_out.append("<a class='trans'")
-                    line_out.append(" uniqueid='" + tid + "' ")
-                    line_out.append(" nbunit='" + nb_unit + "' ")
-                    line_out.append(" transid='" + trans_id + "' ")
-                    line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
-                    line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
-                    line_out.append(" page='" + page + "' ")
-                    line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
-                    line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
-                    line_out.append(" style='color: black; font-weight: normal")
-                    if "punctuation" not in unit or not unit["punctuation"] :
-                        line_out.append("; cursor: pointer")
-                    line_out.append("' ")
-                    line_out.append(" onclick=\"select_toggle('" + trans_id + "')\">")
-                    line_out.append(source if py else target )
-                    line_out.append("</a>")
-                    line_out.append("</span>")
+                        line_out.append(source + u": " + makeTimestamp(unit["timestamp"]) + ":&#160;&#160;&#160;")
+
                     line_out.append("</td>")
 
                     if py :
@@ -1726,6 +1740,7 @@ class MICA(object):
                     line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
                 else :
                     line_out.append("100")
+
                 line_out.append("%")
 
                 if "punctuation" not in unit or not unit["punctuation"] :
@@ -1736,7 +1751,7 @@ class MICA(object):
 
                 line_out.append("'>")
 
-                if py and (py not in gp.punctuation) :
+                if py and (py not in gp.punctuation) and not unit["punctuation"] :
                     if not disk :
                         if gp.already_romanized :
                             line_out.append("<a class='transroman' ")
@@ -1815,7 +1830,8 @@ class MICA(object):
                     if disk :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                     else :
-                        line_out.append((("hold" if py == u' ' else py) if py else target).lower())
+                        if "timestamp" not in unit or not unit["punctuation"] :
+                            line_out.append((("hold" if py == u' ' else py) if py else target).lower())
 
                 if not disk :
                     if action == "home" :
@@ -1905,6 +1921,7 @@ class MICA(object):
                                         tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
+                            
                         if action == "read" :
                             if "ipa_word" in unit and unit["ipa_word"] :
                                 line_out.append("<br>" + unit["ipa_word"])
@@ -2046,6 +2063,7 @@ class MICA(object):
         untrans_count = 0
         reading_count = 0
         reading = [self.template("reading")]
+        chatting = [self.template("chatting")]
         noreview = [self.template("noreview")]
         untrans = [self.template("untrans")]
         finish = [self.template("finished")]
@@ -2109,20 +2127,24 @@ class MICA(object):
                    finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
                    finish.append("</td></tr>")
                 elif reviewed :
-                   reading_count += 1
-                   reading += notsure
-                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                   reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
-                    # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                   reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
-                   reading.append("</td></tr>")
+                   if "filetype" in story and story["filetype"] == "chat" :
+                       chatting += notsure
+                       chatting.append("</td></tr>")
+                   else :
+                       reading_count += 1
+                       reading += notsure
+                        # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
+                       reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
+                        # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
+                       reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
+                       reading.append("</td></tr>")
                 else :
                    noreview += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
                    noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
                    noreview.append("</td></tr>")
                    
-        return [untrans_count, reading, noreview, untrans, finish, reading_count] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -2333,7 +2355,8 @@ class MICA(object):
 
         story = {
             'uuid' : new_uuid,
-            'translated' : False,
+            'translated' : False if filetype != "chat" else True,
+            'reviewed' : False if filetype != "chat" else True,
             'name' : filename,
             'filetype' : filetype,
             'source_language' : source_lang.decode("utf-8"), 
@@ -2491,10 +2514,21 @@ class MICA(object):
            mdebug("View " + name + " does not exist. Uploading.")
            req.db["_design/" + name] = json_loads(vc)
 
+    def clear_chat(self, req, story_name):
+        peer = story_name.split(";")[-1]
+        mdebug("Checking if peer is in session cache: " + peer)
+        if peer in req.session.value["chats"] :
+            mdebug("Clearing chat with peer from session cache:" + peer)
+            del req.session.value["chats"][peer]
+            req.session.save()
+            
     def clear_story(self, req) :
         uuid = False
         if "current_story" in req.session.value :
             uuid = req.session.value["current_story"]
+            name_map = req.db.get_or_false(self.index(req, uuid))
+            if name_map :
+                self.clear_chat(req, name_map["value"])
             del req.session.value["current_story"]
             req.session.save()
 
@@ -2835,6 +2869,9 @@ class MICA(object):
                     mdebug("Deleting txt original contents.")
                     del req.db[self.story(req, name) + ":original"]
                 else :
+                    if tmp_story["filetype"] == "chat" :
+                        self.clear_chat(req, tmp_story["name"])
+                        
                     mdebug("Deleting original pages")
                     allorig = []
                     for result in req.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
@@ -3173,13 +3210,14 @@ class MICA(object):
                 if peer not in req.session.value["chats"] :
                     if not req.db.get_or_false(self.chat_current(req, peer)) :
                         self.add_story_from_source(req, self.chat_current_name(peer), False, "chat", story["source_language"], story["target_language"], False)
-                        req.session.value["chats"][peer] = req.db[self.chat_current(req, peer)]
-                        req.session.save()
+                    req.session.value["chats"][peer] = req.db[self.chat_current(req, peer)]
+                    req.session.save()
 
                 csession = req.session.value["chats"][peer]
 
-                origkey = self.chat_current(req, peer) + ":original:" + str(csession["nb_pages"])
-                pagekey = self.chat_current(req, peer) + ":pages:" + str(csession["nb_pages"])
+                page = str(max(0, int(csession["nb_pages"]) - 1))
+                origkey = self.chat_current(req, peer) + ":original:" + page 
+                pagekey = self.chat_current(req, peer) + ":pages:" + page 
                 mdebug("Original key: " + origkey)
                 mdebug("Page key: " + pagekey)
                 chat_orig = req.db.get_or_false(origkey)
@@ -3197,7 +3235,7 @@ class MICA(object):
                 if len(chat_orig["messages"]) >= 20 :
                     mdebug("Making a new page.")
                     made_new_page = True
-                    nextpage = csession["nb_pages"] + 1
+                    nextpage = csession["nb_pages"]
                     origkey = self.chat_current(req, peer) + ":original:" + str(nextpage)
                     pagekey = self.chat_current(req, peer) + ":pages:" + str(nextpage) 
                     mdebug("New page Original key: " + origkey)
@@ -3216,8 +3254,10 @@ class MICA(object):
                                             "target_language" : story["target_language"],
                                             })
                 req.db[origkey] = chat_orig 
-                before = gp.add_unit(u"", msgfrom + ": " + makeTimestamp(timestamp / 1000.0), False, punctuation = True)
-                after = gp.add_unit(u"", u"\n", False, punctuation = True)
+                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp / 1000.0)
+                self.rehash_correct_polyphome(before) 
+                after = gp.add_unit([u"\n"], u"\n", [u"\n"], punctuation = True)
+                self.rehash_correct_polyphome(after) 
                  
                 chat_page["units"] = chat_page["units"] + [before] + story["pages"]["0"]["units"] + [after]
                 req.db[pagekey] = chat_page
@@ -4192,23 +4232,24 @@ class MICA(object):
         if not result[0] and len(result) > 1 :
             return self.bootstrap(req, result[1])
         
-        untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
+        untrans_count, reading, noreview, untrans, finish, reading_count, chatting = result[1:]
         
         reading.append("</table></div></div></div>\n")
         noreview.append("</table></div></div></div>\n")
         untrans.append("</table></div></div></div>\n")
         finish.append("</table></div></div></div>\n")
+        chatting.append("</table></div></div></div>\n")
 
         scripts = [""]
 
         if untrans_count :
-            storylist += untrans + reading + noreview + finish + ["</div></td></tr></table>"]
+            storylist += untrans + reading + chatting + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
         elif reading_count :
-            storylist += reading + untrans + noreview + finish + ["</div></td></tr></table>"]
+            storylist += reading + chatting + untrans + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReading').collapse('show');</script>")
         else :
-            storylist += noreview + reading + untrans + finish + ["</div></td></tr></table>"]
+            storylist += noreview + reading + chatting + untrans + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
 
         scripts.append("""

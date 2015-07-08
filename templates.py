@@ -51,6 +51,7 @@ class StoryElement(Element) :
     @renderer
     def story(self, request, tag) :
         tag.fillSlots(notreviewed = _("Not Reviewed"),
+                      chatting = _("Chat History"),
                       reading = _("Reading"),
                       # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
                       untranslated = _("Untranslated"),
