@@ -1416,8 +1416,9 @@ class MICA(object):
             assert(nb_pages != 0)
 
             if cached :
-                story["nb_pages"] = nb_pages
-                req.db[self.story(req, story["name"])] = story
+                tmp_story = req.db[self.story(req, story["name"])]
+                tmp_story["nb_pages"] = nb_pages 
+                req.db[self.story(req, story["name"])] = tmp_story
 
         return nb_pages 
     
@@ -3178,7 +3179,7 @@ class MICA(object):
                 csession = req.session.value["chats"][peer]
 
                 origkey = self.chat_current(req, peer) + ":original:" + str(csession["nb_pages"])
-                pagekey = self.chat_current(req, peer) + ":" + str(csession["nb_pages"])
+                pagekey = self.chat_current(req, peer) + ":pages:" + str(csession["nb_pages"])
                 mdebug("Original key: " + origkey)
                 mdebug("Page key: " + pagekey)
                 chat_orig = req.db.get_or_false(origkey)
@@ -3198,7 +3199,7 @@ class MICA(object):
                     made_new_page = True
                     nextpage = csession["nb_pages"] + 1
                     origkey = self.chat_current(req, peer) + ":original:" + str(nextpage)
-                    pagekey = self.chat_current(req, peer) + ":" + str(nextpage) 
+                    pagekey = self.chat_current(req, peer) + ":pages:" + str(nextpage) 
                     mdebug("New page Original key: " + origkey)
                     mdebug("New page Page key: " + pagekey)
                     chat_orig = { "messages" : [] }
@@ -3222,8 +3223,10 @@ class MICA(object):
                 req.db[pagekey] = chat_page
 
                 if made_new_page or csession["nb_pages"] == 0 :
-                    csession = req.session.value["chats"][peer] = req.db[self.chat_current(req, peer)]
-                    csession["nb_pages"] = self.nb_pages(req, csession, force = True)
+                    csession = req.session.value["chats"][peer] = req.db[self.chat_current(req, peer) + ":pages:0"]
+                    tmp_story = deepcopy(story)
+                    tmp_story["name"] = self.chat_current_name(peer)
+                    csession["nb_pages"] = self.nb_pages(req, tmp_story, force = True)
                     req.session.value["chats"][peer] = csession
                     req.session.save()
                 
