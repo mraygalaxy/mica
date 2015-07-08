@@ -1,9 +1,17 @@
 #!/usr/bin/python
 
 import sys, os, fcntl
+from os import path as os_path
+from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from struct import *
 from subprocess import *
 from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
+
+cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
+import sys
+sys.path = [cwd, cwd + "../"] + sys.path
+
+from params import parameters
 
 def from_ejabberd():
     input_length = sys.stdin.read(2)
@@ -48,14 +56,14 @@ while True:
 
     values = request.split(":")
     action = values[0]
-
+    location = "http://localhost:" + str(parameters["port"])
     if action == "auth" :
         user = values[1]
         domain = values[2]
  	pw = values[3]
         log.write("Request: " + action + " user " + user + " domain " + domain + "\n")
-        result, reason = authenticate(user, pw, "http://localhost:20000")
-        log.write("Authenticate: " + user + " result: " + str(result) + " reason: " + str(reason) + "\n")
+        result, reason = authenticate(user, pw, location)
+        log.write("Authenticate to location " + location + ": " + user + " result: " + str(result) + " reason: " + str(reason) + "\n")
     elif action == "isuser" :
         log.write("Request: " + request + "\n")
         result = 1
