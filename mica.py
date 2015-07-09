@@ -300,7 +300,7 @@ class MICA(object):
 
     # How many days since 1970 instead of seconds
     def current_day(self) :
-        return (int(time()) / (60*60*24))
+        return (int(timest()) / (60*60*24))
 
     def get_index(self, period_key, total) :
         return (int(total) / counts[period_key]) % multipliers[period_key]
