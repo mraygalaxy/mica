@@ -36,7 +36,6 @@ def roll_period(period_key, period_next_key) :
     if get_index(period_key, current_day) == (multipliers[period_key] - 1) :
         for period_index in range(0, multipliers[period_key]) :
             if str(period_index) in periods[period_key] :
-                print "Index " + str(period_index) + " is in " + str(periods[period_key])
                 for event in periods[period_key][str(period_index)] :
                     add_period(period_next_key, event)
 
