@@ -88,10 +88,11 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mdebug("Punctuation complete.")
 
-periods = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {} }
-multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 1 }
+periods = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {} }
+multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
 # All the months are not the same.... not sure what to do about that
-counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365 }
+counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+period_mapping = {"days" : "week", "weeks" : "year", "years" : "decade"}
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -1394,10 +1395,19 @@ class MICA(object):
 
         req.gp = self.processors[self.tofrom(story)]
 
-        req.story_name = story["name"]
-
         if "filetype" in story and story["filetype"] == "chat" :
-            req.story_name = "Chat w/ " + req.story_name.split(";")[-1]
+            [x, period, howmany, peer] = story["name"].split(";")
+            if howmany == "0" : 
+                period = period[:-1]
+                if period == "day" :
+                    period = "today"
+                else :
+                    period = "this " + period
+                req.story_name = "Chat " + period + " w/ " + peer
+            else :
+                req.story_name = "Chat " + howmany + " " + period + " ago" + " w/ " + peer
+        else :
+            req.story_name = story["name"]
 
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, story)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         req.source_language = story["source_language"]
@@ -2063,7 +2073,7 @@ class MICA(object):
         untrans_count = 0
         reading_count = 0
         reading = [self.template("reading")]
-        chatting = [self.template("chatting")]
+        chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
         noreview = [self.template("noreview")]
         untrans = [self.template("untrans")]
         finish = [self.template("finished")]
@@ -2086,9 +2096,11 @@ class MICA(object):
                 mdebug("skipping UUID: " + uuid[0])
                 continue
 
+            notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
+
             if not story["translated"] : 
                 untrans_count += 1
-                untrans += self.sidestart(req, name, username, story, reviewed, finished, gp)
+                untrans += notsure
                 untrans.append("\n")
 
                 if not mobile :
@@ -2112,7 +2124,6 @@ class MICA(object):
                 untrans.append("</td>")
                 untrans.append("</tr>")
             else : 
-                notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
@@ -2128,8 +2139,8 @@ class MICA(object):
                    finish.append("</td></tr>")
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
-                       chatting += notsure
-                       chatting.append("</td></tr>")
+                       chatting[period_mapping[story["name"].split(";")[1]]] += notsure
+                       chatting[period_mapping[story["name"].split(";")[1]]].append("</td></tr>")
                    else :
                        reading_count += 1
                        reading += notsure
@@ -4238,18 +4249,25 @@ class MICA(object):
         noreview.append("</table></div></div></div>\n")
         untrans.append("</table></div></div></div>\n")
         finish.append("</table></div></div></div>\n")
-        chatting.append("</table></div></div></div>\n")
+
+        chat_all = [self.template("chatting")]
+        for period in [ "week", "month", "year", "decade" ] : # decade?
+            if len(chatting[period]) :
+                chat_all.append("<tr><td>Last " + period + ":</td></tr>")
+                chat_all += chatting[period]
+
+        chat_all.append("</table></div></div></div>\n")
 
         scripts = [""]
 
         if untrans_count :
-            storylist += untrans + reading + chatting + noreview + finish + ["</div></td></tr></table>"]
+            storylist += untrans + reading + chat_all + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
         elif reading_count :
-            storylist += reading + chatting + untrans + noreview + finish + ["</div></td></tr></table>"]
+            storylist += reading + chat_all + untrans + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReading').collapse('show');</script>")
         else :
-            storylist += noreview + reading + chatting + untrans + finish + ["</div></td></tr></table>"]
+            storylist += noreview + reading + chat_all + untrans + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
 
         scripts.append("""
