@@ -11,10 +11,10 @@ from time import sleep
 #vt.daemon = True
 #vt.start()
 
-periods = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {} }
-multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 1 }
+periods = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {} , "decades" : {} }
+multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10 , "decades" : 10 }
 # All the months are not the same.... not sure what to do about that
-counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365 }
+counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
 
 current_day = 0
 
@@ -33,9 +33,10 @@ def add_period(period_key, event) :
     print "Adding " + str(event) + " to index " + str(period_index) + " of type " + period_key + ": " + str(periods[period_key])
 
 def roll_period(period_key, period_next_key) :
-    if get_index(period_key, current_day) == 0 :
+    if get_index(period_key, current_day) == (multipliers[period_key] - 1) :
         for period_index in range(0, multipliers[period_key]) :
             if str(period_index) in periods[period_key] :
+                print "Index " + str(period_index) + " is in " + str(periods[period_key])
                 for event in periods[period_key][str(period_index)] :
                     add_period(period_next_key, event)
 
@@ -50,10 +51,11 @@ def dump_period(period_key) :
 
 while True :
     print "Current day: " + str(current_day)
-    sleep(1)
+    sleep(0.1)
     if random() < 0.3 :
         add_period("days", str(current_day))
 
+    roll_period("years", "decades")
     roll_period("months", "years")
     roll_period("weeks", "months")
     roll_period("days", "weeks")
@@ -62,5 +64,6 @@ while True :
     dump_period("weeks")
     dump_period("months")
     dump_period("years")
+    dump_period("decades")
 
     current_day += 1
