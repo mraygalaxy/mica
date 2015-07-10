@@ -1316,15 +1316,38 @@ function handleMessage(oJSJaCPacket) {
     }
 }
 
-function newContact() {
+function handleConnectedLoaded(data) {
+    $("#iResp").scrollBottom();
+    alert("Finished");
+}
+
+function newContact(who) {
+    var peer = ("" + who).split("@")[0];
+    $('#sendTo').val(peer); 
     $("#missing").attr("style", "display: none");
+
+    $("#iResp").html("<div class='col-md-12 nopadding'><div id='pagesingle'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
+    url = "/chat?history=" + peer;
+    start_trans_id = 1000000;
+    go('#pagesingle', 
+          url, 
+          '#pageresult',
+          unavailable, 
+          true, 
+          handleConnectedLoaded,
+          true);
+}
+
+
+function handleStatusChanged(status) {
+    oDbg.log("status changed: " + status);
 }
 
 function handlePresence(oJSJaCPacket) {
     var html = '<div class="msg">';
     var who = oJSJaCPacket.getFromJID();
     var id = ("" + who).split("@");
-    html += "<b><a style='cursor: pointer' onclick=\"$('#sendTo').val('" + addressableID(who) + "'); newContact();\">" + decodeURIComponent(id[0]) + "</a> ";
+    html += "<b><a style='cursor: pointer' onclick=\"newContact('" + addressableID(who)+ "');\">" + decodeURIComponent(id[0]) + "</a> ";
 
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
         html += local("hasbecome") + ".</b>";
@@ -1354,16 +1377,15 @@ function handleError(e) {
         con.disconnect();
 }
 
-function handleStatusChanged(status) {
-    oDbg.log("status changed: " + status);
-}
-
 function handleConnected() {
     document.getElementById('login_pane').style.display = 'none';
     document.getElementById('sendmsg_pane').style.display = '';
     document.getElementById('err').innerHTML = '';
     document.getElementById("msgArea").focus();
     con.send(new JSJaCPresence());
+    if ($('#sendTo').val() != "") {
+        newContact($('#sendTo').val());
+    }
 }
 
 function handleDisconnected() {
