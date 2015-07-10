@@ -1225,6 +1225,7 @@ function appendBox(who, ts, msg) {
         html += '</td></tr></table></div>';
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
+        $("#iResp").scrollBottom();
 }
 
 function make_date(ts) {

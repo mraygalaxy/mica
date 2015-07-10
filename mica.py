@@ -4247,14 +4247,14 @@ class MICA(object):
                     mdebug("Found " + str(len(stories)) + " stories for period " + period_key)
                     break
 
-            out = "<div id='pageresult'>"
+            out = "<div id='pageresult' style='block'>"
             if len(stories) :
                 stories.sort(key=by_date)
                 tmp_story = stories[0]
                 nb_pages = self.nb_pages(req, tmp_story)
                 [x, period, howmany, peer] = tmp_story["name"].split(";")
                 out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False)
-            out += "</div>"
+            out += "</div><br/>"
             return self.bootstrap(req, out)
 
         req.main_server = params["main_server"]
