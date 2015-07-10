@@ -2534,7 +2534,7 @@ class MICA(object):
     def clear_chat(self, req, story_name):
         peer = story_name.split(";")[-1]
         mdebug("Checking if peer is in session cache: " + peer)
-        for period_key in ["days", "weeks", "months", "years", "decades"] :
+        for period_key in multipliers.keys() :
             if peer in req.session.value["chats"][period_key] :
                 mdebug("Clearing chat with peer from session cache:" + peer)
                 del req.session.value["chats"][period_key][peer]
@@ -3135,10 +3135,10 @@ class MICA(object):
     #def get_index(self, period_key, total) :
     #    return (int(total) / counts[period_key]) % multipliers[period_key]
     
-    def roll_period(self, req, period_key, period_next_key) :
+    def roll_period(self, req, period_key, period_next_key, peer) :
         to_delete = []
 
-        for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key], endkey=[req.session.value['username'], period_key, {}]) :
+        for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
             tmp_story = result["value"]
             tmp_storyname = tmp_story["name"]
             nb_pages = self.nb_pages(req, tmp_story)
@@ -3307,9 +3307,6 @@ class MICA(object):
                 if cerror :
                     raise cerror
 
-            if timestamp :
-                mdebug("Start populating everything like we simulated.")
-
             if peer :
                 messages = [{
                                 "timestamp" : timestamp,
@@ -3327,10 +3324,10 @@ class MICA(object):
                 new_units = [before] + story["pages"]["0"]["units"] + [after]
 
                 self.add_period(req, "days", peer, messages, new_units, story)
-                self.roll_period(req, "years", "decades")
-                self.roll_period(req, "months", "years")
-                self.roll_period(req, "weeks", "months")
-                self.roll_period(req, "days", "weeks")
+                self.roll_period(req, "years", "decades", peer)
+                self.roll_period(req, "months", "years", peer)
+                self.roll_period(req, "weeks", "months", peer)
+                self.roll_period(req, "days", "weeks", peer)
                 
             out["success"] = True
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
@@ -4235,6 +4232,31 @@ class MICA(object):
         return self.bootstrap(req, out)
                     
     def common_chat(self, req, unused_story) :
+        if req.http.params.get("history") :
+            def by_date(story):
+                return int((story["name"].split(";")[2]))
+            # Find the most recent page of the most recent chat interval
+            peer = req.http.params.get("history")
+            stories = []
+
+            for period_key in ["days", "weeks", "months", "years", "decades"] :
+                for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
+                    stories.append(result["value"])
+
+                if len(stories) :
+                    mdebug("Found " + str(len(stories)) + " stories for period " + period_key)
+                    break
+
+            out = "<div id='pageresult'>"
+            if len(stories) :
+                stories.sort(key=by_date)
+                tmp_story = stories[0]
+                nb_pages = self.nb_pages(req, tmp_story)
+                [x, period, howmany, peer] = tmp_story["name"].split(";")
+                out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False)
+            out += "</div>"
+            return self.bootstrap(req, out)
+
         req.main_server = params["main_server"]
 
         if "chats" not in req.session.value :
