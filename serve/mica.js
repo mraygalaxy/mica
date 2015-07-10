@@ -1322,7 +1322,7 @@ function handleConnectedLoaded(data) {
 
 function newContact(who) {
     var peer = ("" + who).split("@")[0];
-    $('#sendTo').val(peer); 
+    $('#sendTo').val(who); 
     $("#missing").attr("style", "display: none");
 
     $("#iResp").html("<div class='col-md-12 nopadding'><div id='pagesingle'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
@@ -1330,7 +1330,7 @@ function newContact(who) {
     start_trans_id = 1000000;
     go('#pagesingle', 
           url, 
-          '#pageresult',
+          '#chathistoryresult',
           unavailable, 
           true, 
           handleConnectedLoaded,
