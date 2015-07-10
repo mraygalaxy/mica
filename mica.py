@@ -88,7 +88,6 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mdebug("Punctuation complete.")
 
-periods = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {} }
 multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
 # All the months are not the same.... not sure what to do about that
 counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
@@ -311,11 +310,11 @@ class MICA(object):
     def chat(self, req, period, index, peer, extra = "") :
         return self.story(req, self.chat_name(period, index, peer, extra))
 
-    def chat_current_name(self, peer, extra = "") :
-        return self.chat_name("days", self.get_index("days", self.current_day()), peer, extra)
+    def chat_period_name(self, period_key, peer, extra = "") :
+        return self.chat_name(period_key, self.get_index(period_key, self.current_day()), peer, extra)
 
-    def chat_current(self, req, peer, extra = "") :
-        return self.chat(req, "days", self.get_index("days", self.current_day()), peer, extra)
+    def chat_period(self, req, period_key, peer, extra = "") :
+        return self.chat(req, period_key, self.get_index(period_key, self.current_day()), peer, extra)
 
     def index(self, req, key) :
         return self.key_common(req) + ":story_index:" + key 
@@ -371,6 +370,7 @@ class MICA(object):
         self.view_runs = [ #name , #startend key or regular keys
                 ('accounts/all', True),
                 ('memorized/allcount', True),
+                ('chats/all', True),
                 ('stories/original', True),
                 ('stories/pages', True),
                 ('stories/allpages', True),
@@ -2595,6 +2595,7 @@ class MICA(object):
         self.view_check(req, "mergegroups")
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
+        self.view_check(req, "chats")
         if not mobile :
             self.view_check(req, "download")
 
@@ -3124,6 +3125,101 @@ class MICA(object):
 
         return self.api(req, out, human)
 
+    # TODO: add chats view to view_runs() function !!!!!!!!!!!!!!!!!!!
+
+    def roll_period(self, req, period_key, period_next_key) :
+        if self.get_index(period_key, self.current_day()) != (multipliers[period_key] - 1) :
+            return
+
+        periods = {}
+
+        for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key], endkey=[req.session.value['username'], period_key, {}]) :
+            tmp_story = result["value"]
+            tmp_storyname = tmp_story["name"]
+
+            [x, period, howmany, peer] = story["name"].split(";")
+
+            if peer not in periods :
+                periods[peer] = {}
+
+            periods[peer][howmany] = tmp_story
+
+        to_delete = []
+
+        for peer in periods.keys() :
+            old_messages = []
+            old_units = []
+            tmp_story = False
+
+            for period_index in range(0, multipliers[period_key]) :
+                if str(period_index) in periods[peer] :
+                    tmp_story = periods[peer][str(period_index)]
+                    nb_pages = self.nb_pages(req, tmp_story)
+
+                    for page in range(0, nb_pages) :
+                        old_units += req.db[self.chat_period(req, period_key, peer) + ":pages:" + page]["units"]
+                        old_messages += req.db[self.chat_period(req, period_key, peer) + ":original:" + page]["messages"]
+
+                    to_delete.append((tmp_story["name"], tmp_story["uuid"]))
+
+            mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+            #self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story)
+
+        for (name, uuid) in to_delete :
+            mdebug("Want to delete story: " + name)
+            #self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
+
+    def add_period(self, req, period_key, peer, messages, new_units, story) :
+        if peer not in req.session.value["chats"] :
+            if not req.db.get_or_false(self.chat_period(req, period_key, peer)) :
+                self.add_story_from_source(req, self.chat_period_name(period_key, peer), False, "chat", story["source_language"], story["target_language"], False)
+            story = req.db[self.chat_period(req, period_key, peer)]
+            req.session.value["chats"][peer] = story 
+            req.session.save()
+
+        csession = req.session.value["chats"][peer]
+
+        page = str(max(0, int(csession["nb_pages"]) - 1))
+        origkey = self.chat_period(req, period_key, peer) + ":original:" + page 
+        pagekey = self.chat_period(req, period_key, peer) + ":pages:" + page 
+        chat_orig = req.db.get_or_false(origkey)
+        chat_page = False 
+
+        if chat_orig :
+            chat_page = req.db.get_or_false(pagekey)
+        else :
+            chat_orig = { "messages" : [] }
+
+        if not chat_page : 
+            chat_page = { "units" : [] }
+
+        # 20 messages per page is just a wild guess. Will need to make it
+        # configurable in the preferences, of course
+
+        made_new_page = False
+        if len(chat_orig["messages"]) >= 20 :
+            made_new_page = True
+            page += 1
+            origkey = self.chat_period(req, period_key, peer) + ":original:" + str(page)
+            pagekey = self.chat_period(req, period_key, peer) + ":pages:" + str(page) 
+            chat_orig = { "messages" : [] }
+            chat_page = { "units" : [] }
+                
+        mdebug("Adding message period " + period_key + " to page Original key: " + origkey)
+
+        chat_orig["messages"] = chat_orig["messages"] + messages
+        req.db[origkey] = chat_orig 
+        chat_page["units"] = chat_page["units"] + new_units
+        req.db[pagekey] = chat_page
+
+        if made_new_page or csession["nb_pages"] == 0 :
+            csession = req.session.value["chats"][peer] = req.db[self.chat_period(req, period_key, peer) + ":pages:" + str(page)]
+            tmp_story = deepcopy(story)
+            tmp_story["name"] = self.chat_period_name(period_key, peer)
+            csession["nb_pages"] = self.nb_pages(req, tmp_story, force = True)
+            req.session.value["chats"][peer] = csession
+            req.session.save()
+
     def common_chat_ime(self, req) :
         self.install_local_language(req, req.http.params.get("lang"))
         mode = req.http.params.get("mode")
@@ -3218,68 +3314,26 @@ class MICA(object):
                 mdebug("Start populating everything like we simulated.")
 
             if peer :
-                if peer not in req.session.value["chats"] :
-                    if not req.db.get_or_false(self.chat_current(req, peer)) :
-                        self.add_story_from_source(req, self.chat_current_name(peer), False, "chat", story["source_language"], story["target_language"], False)
-                    req.session.value["chats"][peer] = req.db[self.chat_current(req, peer)]
-                    req.session.save()
+                messages = [{
+                                "timestamp" : timestamp,
+                                "from" : msgfrom,
+                                "to" : msgto,
+                                "msg" : source,
+                                "source_language" : story["source_language"],
+                                "target_language" : story["target_language"],
+                            }]
 
-                csession = req.session.value["chats"][peer]
-
-                page = str(max(0, int(csession["nb_pages"]) - 1))
-                origkey = self.chat_current(req, peer) + ":original:" + page 
-                pagekey = self.chat_current(req, peer) + ":pages:" + page 
-                mdebug("Original key: " + origkey)
-                mdebug("Page key: " + pagekey)
-                chat_orig = req.db.get_or_false(origkey)
-                chat_page = False 
-
-                if chat_orig :
-                    chat_page = req.db.get_or_false(pagekey)
-                else :
-                    chat_orig = { "messages" : [] }
-
-                if not chat_page : 
-                    chat_page = { "units" : [] }
-
-                made_new_page = False
-                if len(chat_orig["messages"]) >= 20 :
-                    mdebug("Making a new page.")
-                    made_new_page = True
-                    nextpage = csession["nb_pages"]
-                    origkey = self.chat_current(req, peer) + ":original:" + str(nextpage)
-                    pagekey = self.chat_current(req, peer) + ":pages:" + str(nextpage) 
-                    mdebug("New page Original key: " + origkey)
-                    mdebug("New page Page key: " + pagekey)
-                    chat_orig = { "messages" : [] }
-                    chat_page = { "units" : [] }
-                        
-                # 20 messages per page is just a wild guess. Will need to make it
-                # configurable in the preferences, of course
-                chat_orig["messages"].append({
-                                            "timestamp" : timestamp,
-                                            "from" : msgfrom,
-                                            "to" : msgto,
-                                            "msg" : source,
-                                            "source_language" : story["source_language"],
-                                            "target_language" : story["target_language"],
-                                            })
-                req.db[origkey] = chat_orig 
                 before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp / 1000.0)
                 self.rehash_correct_polyphome(before) 
                 after = gp.add_unit([u"\n"], u"\n", [u"\n"], punctuation = True)
                 self.rehash_correct_polyphome(after) 
-                 
-                chat_page["units"] = chat_page["units"] + [before] + story["pages"]["0"]["units"] + [after]
-                req.db[pagekey] = chat_page
+                new_units = [before] + story["pages"]["0"]["units"] + [after]
 
-                if made_new_page or csession["nb_pages"] == 0 :
-                    csession = req.session.value["chats"][peer] = req.db[self.chat_current(req, peer) + ":pages:0"]
-                    tmp_story = deepcopy(story)
-                    tmp_story["name"] = self.chat_current_name(peer)
-                    csession["nb_pages"] = self.nb_pages(req, tmp_story, force = True)
-                    req.session.value["chats"][peer] = csession
-                    req.session.save()
+                self.add_period(req, "days", peer, messages, new_units, story)
+                self.roll_period(req, "years", "decades")
+                self.roll_period(req, "months", "years")
+                self.roll_period(req, "weeks", "months")
+                self.roll_period(req, "days", "weeks")
                 
             out["success"] = True
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
@@ -3753,7 +3807,7 @@ class MICA(object):
             req.db.compact()
             req.db.cleanup()
             design_docs = ["memorized", "stories", "mergegroups",
-                           "tonechanges", "accounts", "splits" ]
+                           "tonechanges", "accounts", "splits", "chats" ]
 
             if not mobile :
                 design_docs.append("download")
