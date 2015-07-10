@@ -1193,7 +1193,7 @@ function handleIQ(oIQ) {
 }
 
 function appendStatus(who, msg) {
-        var id = ("" + who).split("@");
+    var id = ("" + who).split("@");
 	document.getElementById('iStatus').innerHTML = decodeURIComponent(id[0]) + msg;
 }
 
@@ -1211,7 +1211,7 @@ window.onfocus=function() {
 }
 
 function who_to_readable(who) {
-        var id = ("" + who).split("@");
+    var id = ("" + who).split("@");
 	return decodeURIComponent(id[0]);
 }
 

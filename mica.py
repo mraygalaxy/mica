@@ -5,6 +5,7 @@ from pwd import getpwuid
 from sys import path
 from time import sleep, time as timest
 from threading import Thread, Lock, current_thread, Timer, local as threading_local
+from datetime import datetime as datetime_datetime
 import threading
 from copy import deepcopy
 from cStringIO import StringIO
@@ -91,7 +92,9 @@ mdebug("Punctuation complete.")
 multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
 # All the months are not the same.... not sure what to do about that
 counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
-period_mapping = {"days" : "week", "weeks" : "year", "years" : "decade"}
+period_mapping = {"days" : "week", "weeks" : "month", "months" : "year", "years" : "decade", "decades" : "decade"}
+period_story_mapping = {"week" : "%a", "month" : "%m/%d", "year" : "%b", "decade" : "%Y"}
+period_view_mapping = {"days" : "%a %I:%M:%S %p", "weeks" : "%m/%d %I:%M:%S %p", "months" : "%m/%d %I:%M:%S %p", "years" : "%m/%d %I:%M:%S %p", "decades" : "%m/%d/%y %I:%M:%S %p"}
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -300,21 +303,21 @@ class MICA(object):
     # How many days since 1970 instead of seconds
     def current_day(self) :
         return (int(timest()) / (60*60*24))
+    
+    def current_period(self, period_key, current_day = False):
+        return int(current_day if current_day else self.current_day()) / counts[period_key] 
 
-    def get_index(self, period_key, total) :
-        return (int(total) / counts[period_key]) % multipliers[period_key]
-
-    def chat_name(self, period, index, peer, extra = "") :
+    def chat_name(self, period, index, peer, current_day, extra = "") :
         return "chat;" + period + ";" + str(index) + ";" + peer + extra
 
-    def chat(self, req, period, index, peer, extra = "") :
-        return self.story(req, self.chat_name(period, index, peer, extra))
+    def chat(self, req, period, index, peer, current_day, extra = "") :
+        return self.story(req, self.chat_name(period, index, peer, current_day, extra))
 
-    def chat_period_name(self, period_key, peer, extra = "") :
-        return self.chat_name(period_key, self.get_index(period_key, self.current_day()), peer, extra)
+    def chat_period_name(self, period_key, peer, current_day, extra = "") :
+        return self.chat_name(period_key, self.current_period(period_key, current_day), peer, extra)
 
-    def chat_period(self, req, period_key, peer, extra = "") :
-        return self.chat(req, period_key, self.get_index(period_key, self.current_day()), peer, extra)
+    def chat_period(self, req, period_key, peer, current_day, extra = "") :
+        return self.chat(req, period_key, self.current_period(period_key, current_day), peer, extra)
 
     def index(self, req, key) :
         return self.key_common(req) + ":story_index:" + key 
@@ -697,7 +700,11 @@ class MICA(object):
     def sidestart(self, req, name, username, story, reviewed, finished, gp) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
         if "filetype" in story and story["filetype"] == "chat" :
-            rname = rname.split(";")[-1]
+            [x, period, howmany, peer] = story["name"].split(";")
+            rname = peer + " ("
+            if period != "days" :
+                rname += "From "
+            rname += datetime_datetime.fromtimestamp(((int(howmany) * counts[period]) + 1) * (60*60*24)).strftime(period_story_mapping[period_mapping[period]]) + ")"
         sideout = []
         sideout.append("\n<tr>")
         sideout.append("<td style='font-size: x-small; width: 100px'>" )
@@ -1397,15 +1404,11 @@ class MICA(object):
 
         if "filetype" in story and story["filetype"] == "chat" :
             [x, period, howmany, peer] = story["name"].split(";")
-            if howmany == "0" : 
+            if self.current_period(period) == int(howmany) : 
                 period = period[:-1]
-                if period == "day" :
-                    period = "today"
-                else :
-                    period = "this " + period
-                req.story_name = "Chat " + period + " w/ " + peer
+                req.story_name = "Chat " + ("today" if period == "day" else ("this " + period)) + " w/ " + peer
             else :
-                req.story_name = "Chat " + howmany + " " + period + " ago" + " w/ " + peer
+                req.story_name = "Chat " + str(self.current_period(period) - int(howmany)) + " " + period + " ago" + " w/ " + peer
         else :
             req.story_name = story["name"]
 
@@ -1686,7 +1689,9 @@ class MICA(object):
                         line_out.append("</a>")
                         line_out.append("</span>")
                     else :
-                        line_out.append(source + u": " + makeTimestamp(unit["timestamp"]) + ":&#160;&#160;&#160;")
+                        period = story["name"].split(";")[1]
+                        ts = " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"])).strftime(period_view_mapping[period]) + ")"
+                        line_out.append(source + u": " + ts + ":&#160;&#160;&#160;")
 
                     line_out.append("</td>")
 
@@ -2139,8 +2144,9 @@ class MICA(object):
                    finish.append("</td></tr>")
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
-                       chatting[period_mapping[story["name"].split(";")[1]]] += notsure
-                       chatting[period_mapping[story["name"].split(";")[1]]].append("</td></tr>")
+                       period = story["name"].split(";")[1]
+                       chatting[period_mapping[period]] += notsure
+                       chatting[period_mapping[period]].append("</td></tr>")
                    else :
                        reading_count += 1
                        reading += notsure
@@ -3126,63 +3132,53 @@ class MICA(object):
 
         return self.api(req, out, human)
 
-    # TODO: add chats view to view_runs() function !!!!!!!!!!!!!!!!!!!
-
+    #def get_index(self, period_key, total) :
+    #    return (int(total) / counts[period_key]) % multipliers[period_key]
+    
     def roll_period(self, req, period_key, period_next_key) :
-        #if self.get_index(period_key, self.current_day()) != (multipliers[period_key] - 1) :
-        #    return
-
-        periods = {}
+        to_delete = []
 
         for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key], endkey=[req.session.value['username'], period_key, {}]) :
             tmp_story = result["value"]
             tmp_storyname = tmp_story["name"]
+            nb_pages = self.nb_pages(req, tmp_story)
 
             [x, period, howmany, peer] = tmp_story["name"].split(";")
 
-            if peer not in periods :
-                periods[peer] = {}
-
-            periods[peer][howmany] = tmp_story
-
-        to_delete = []
-
-        for peer in periods.keys() :
+            period_difference = self.current_period(period_key) - int(howmany)
+            period_difference_max = multipliers[period_key] - 1
+            if period_difference < period_difference_max :
+                continue
+            
             old_messages = []
             old_units = []
-            tmp_story = False
 
-            for period_index in range(0, multipliers[period_key]) :
-                if str(period_index) in periods[peer] :
-                    tmp_story = periods[peer][str(period_index)]
-                    nb_pages = self.nb_pages(req, tmp_story)
+            for page in range(0, nb_pages) :
+                old_units += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
+                old_messages += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
 
-                    for page in range(0, nb_pages) :
-                        old_units += req.db[self.chat_period(req, period_key, peer) + ":pages:" + str(page)]["units"]
-                        old_messages += req.db[self.chat_period(req, period_key, peer) + ":original:" + str(page)]["messages"]
-
-                    to_delete.append((tmp_story["name"], tmp_story["uuid"]))
+            to_delete.append((tmp_story["name"], tmp_story["uuid"]))
 
             mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
-            self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story)
+            self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
 
         for (name, uuid) in to_delete :
             mdebug("Want to delete story: " + name)
             #self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
 
-    def add_period(self, req, period_key, peer, messages, new_units, story) :
+    def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
         if peer not in req.session.value["chats"][period_key] :
-            if not req.db.get_or_false(self.chat_period(req, period_key, peer)) :
-                self.add_story_from_source(req, self.chat_period_name(period_key, peer), False, "chat", story["source_language"], story["target_language"], False)
-            story = req.db[self.chat_period(req, period_key, peer)]
+            if not req.db.get_or_false(self.chat_period(req, period_key, peer, current_day)) :
+                self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
+            story = req.db[self.chat_period(req, period_key, peer, current_day)]
             req.session.value["chats"][period_key][peer] = story 
             req.session.save()
 
         csession = req.session.value["chats"][period_key][peer]
 
         page = str(max(0, int(csession["nb_pages"]) - 1))
-        origkey = self.chat_period(req, period_key, peer) + ":original:" + str(page)
-        pagekey = self.chat_period(req, period_key, peer) + ":pages:" + str(page)
+        origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
+        pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)
         chat_orig = req.db.get_or_false(origkey)
         chat_page = False 
 
@@ -3201,8 +3197,8 @@ class MICA(object):
         if len(chat_orig["messages"]) >= 20 :
             made_new_page = True
             page = int(page) + 1
-            origkey = self.chat_period(req, period_key, peer) + ":original:" + str(page)
-            pagekey = self.chat_period(req, period_key, peer) + ":pages:" + str(page) 
+            origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
+            pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page) 
             chat_orig = { "messages" : [] }
             chat_page = { "units" : [] }
                 
@@ -3214,9 +3210,9 @@ class MICA(object):
         req.db[pagekey] = chat_page
 
         if made_new_page or csession["nb_pages"] == 0 :
-            csession = req.session.value["chats"][period_key][peer] = req.db[self.chat_period(req, period_key, peer) + ":pages:" + str(page)]
+            csession = req.session.value["chats"][period_key][peer] = req.db[self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)]
             tmp_story = deepcopy(story)
-            tmp_story["name"] = self.chat_period_name(period_key, peer)
+            tmp_story["name"] = self.chat_period_name(period_key, peer, current_day)
             csession["nb_pages"] = self.nb_pages(req, tmp_story, force = True)
             req.session.value["chats"][period_key][peer] = csession
             req.session.save()
@@ -4306,9 +4302,9 @@ class MICA(object):
         finish.append("</table></div></div></div>\n")
 
         chat_all = [self.template("chatting")]
-        for period in [ "week", "month", "year", "decade" ] : # decade?
+        for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :
-                chat_all.append("<tr><td>Last " + period + ":</td></tr>")
+                chat_all.append("<tr><td>Recent " + period + ":</td></tr>")
                 chat_all += chatting[period]
 
         chat_all.append("</table></div></div></div>\n")

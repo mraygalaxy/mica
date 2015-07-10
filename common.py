@@ -283,6 +283,7 @@ def makeTimestampNoDate(supplied_epoch_time = False) :
                         strptime(str(_now.hour) + ":" + str(_now.minute) + ":" + \
                                  str(_now.second), "%H:%M:%S"))
     return result
+
 def makeTimestamp(supplied_epoch_time = False) :
     if not supplied_epoch_time :
         _now = datetime_datetime.now()
