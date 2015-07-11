@@ -3132,9 +3132,6 @@ class MICA(object):
 
         return self.api(req, out, human)
 
-    #def get_index(self, period_key, total) :
-    #    return (int(total) / counts[period_key]) % multipliers[period_key]
-    
     def roll_period(self, req, period_key, period_next_key, peer) :
         to_delete = []
 
@@ -3164,7 +3161,7 @@ class MICA(object):
 
         for (name, uuid) in to_delete :
             mdebug("Want to delete story: " + name)
-            #self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
+            self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
 
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
         if peer not in req.session.value["chats"][period_key] :
@@ -3324,10 +3321,6 @@ class MICA(object):
                 new_units = [before] + story["pages"]["0"]["units"] + [after]
 
                 self.add_period(req, "days", peer, messages, new_units, story)
-                self.roll_period(req, "years", "decades", peer)
-                self.roll_period(req, "months", "years", peer)
-                self.roll_period(req, "weeks", "months", peer)
-                self.roll_period(req, "days", "weeks", peer)
                 
             out["success"] = True
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
@@ -4235,8 +4228,12 @@ class MICA(object):
         if req.http.params.get("history") :
             def by_date(story):
                 return int((story["name"].split(";")[2]))
-            # Find the most recent page of the most recent chat interval
+
             peer = req.http.params.get("history")
+            self.roll_period(req, "years", "decades", peer)
+            self.roll_period(req, "months", "years", peer)
+            self.roll_period(req, "weeks", "months", peer)
+            self.roll_period(req, "days", "weeks", peer)
             stories = []
 
             for period_key in ["days", "weeks", "months", "years", "decades"] :
