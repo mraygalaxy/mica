@@ -172,7 +172,7 @@ class Processor(object) :
                 new_word += char
         return new_word
 
-    def add_unit(self, trans, uni_source, target, online = False, punctuation = False) :
+    def add_unit(self, trans, uni_source, target, online = False, punctuation = False, timestamp = False) :
         unit = {}
 
         unit["sromanization"] = trans
@@ -192,6 +192,9 @@ class Processor(object) :
 
         unit["online"] = online
         unit["punctuation"] = punctuation
+
+        if timestamp: 
+            unit["timestamp"] = timestamp 
         return unit
 
     def score_and_rank_unit(self, unit, tone_keys) :

@@ -93,7 +93,11 @@ class NotImplementedError(Exception) :
     def __str__(self) :
         return self.msg
 
-class MicaDatabaseCouchDB(object) :
+class MicaDatabase(object) :
+    def get_or_false(self, name) :
+        return self.__getitem__(name, false_if_not_found = True)
+
+class MicaDatabaseCouchDB(MicaDatabase) :
     def __init__(self, db) :
         self.db = db
 
@@ -296,7 +300,7 @@ class MicaServerCouchDB(object) :
     def __contains__(self, dbname) :
         return True if dbname in self.server else False
 
-class AndroidMicaDatabaseCouchbaseMobile(object) :
+class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def __init__(self, db) :
         self.db = db
         self.dbname = 'mica'
@@ -505,7 +509,7 @@ class AndroidMicaServerCouchbaseMobile(object) :
     def __contains__(self, dbname) :
         return True if self.db.exists(dbname) else False
 
-class iosMicaDatabaseCouchbaseMobile(object) :
+class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def __init__(self, db) :
         self.db = db
         self.dbname = 'mica'

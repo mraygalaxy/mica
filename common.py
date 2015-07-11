@@ -25,8 +25,7 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
 if getdefaultencoding() != "utf-8" :
-    print getdefaultencoding()
-    print "FIXME! WE NEED THE CORRECT DEFAULT ENCODING! AHHHHHH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    print "Correcting the default encoding back to UTF-8 from " + getdefaultencoding()
     reload(sys).setdefaultencoding("utf-8")
 
 try :
@@ -270,10 +269,22 @@ class MICASlaveException(Exception) :
     def __str__(self):
         return self.msg
 
+def makeTimestampNoDate(supplied_epoch_time = False) :
+    if not supplied_epoch_time :
+        _now = datetime_datetime.now()
+    else :
+        _now = datetime_datetime.fromtimestamp(supplied_epoch_time)
+        
+    _date = _now.date()
+
+    result = "" 
+        
+    result += strftime(" %I:%M:%S %p", 
+                        strptime(str(_now.hour) + ":" + str(_now.minute) + ":" + \
+                                 str(_now.second), "%H:%M:%S"))
+    return result
+
 def makeTimestamp(supplied_epoch_time = False) :
-    '''
-    TBD
-    '''
     if not supplied_epoch_time :
         _now = datetime_datetime.now()
     else :
