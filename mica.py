@@ -5,6 +5,7 @@ from pwd import getpwuid
 from sys import path
 from time import sleep, time as timest
 from threading import Thread, Lock, current_thread, Timer, local as threading_local
+from datetime import datetime as datetime_datetime
 import threading
 from copy import deepcopy
 from cStringIO import StringIO
@@ -88,25 +89,12 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mdebug("Punctuation complete.")
 
-def baidu_compliance_fix(session):
-    self.fixed = False
-
-    def _compliance_fix(r):
-        if self.fixed :
-            return r
-        self.fixed = True
-        # Facebook returns a content-type of text/plain when sending their
-        # x-www-form-urlencoded responses, along with a 200. If not, let's
-        # assume we're getting JSON and bail on the fix.
-        mdebug("Going to dump response token text: " + r.text)
-        token = json_loads(r.text)
-        mdebug("Adding bearer to token type") 
-        token['token_type'] = 'Bearer'
-        r._content = to_unicode(dumps(token)).encode('UTF-8')
-        return r
-
-    session.register_compliance_hook('access_token_response', _compliance_fix)
-    return session
+multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+# All the months are not the same.... not sure what to do about that
+counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+period_mapping = {"days" : "week", "weeks" : "month", "months" : "year", "years" : "decade", "decades" : "decade"}
+period_story_mapping = {"week" : "%a", "month" : "%m/%d", "year" : "%b", "decade" : "%Y"}
+period_view_mapping = {"days" : "%a %I:%M:%S %p", "weeks" : "%m/%d %I:%M:%S %p", "months" : "%m/%d %I:%M:%S %p", "years" : "%m/%d %I:%M:%S %p", "decades" : "%m/%d/%y %I:%M:%S %p"}
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -234,12 +222,13 @@ class MICA(object):
     def authenticate(self, username, password, auth_url, from_third_party = False) :
         mdebug("Authenticating to: " + str(auth_url))
 
+        username = username.lower()
         lookup_username = username
 
         if from_third_party :
-            lookup_username = from_third_party["username"]
+            lookup_username = from_third_party["username"].lower()
             password = params["admin_pass"]
-            username = params["admin_user"]
+            username = params["admin_user"].lower()
 
         lookup_username_unquoted = myquote(str(lookup_username))
         username_unquoted = myquote(str(username))
@@ -271,7 +260,7 @@ class MICA(object):
         return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
 
     def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
-        username = req.session.value["username"]
+        username = req.session.value["username"].lower()
 
         if username not in self.dbs or not self.dbs[username] : 
             mdebug("Database not set. Requesting object.")
@@ -310,6 +299,25 @@ class MICA(object):
         
     def story(self, req, key) :
         return self.key_common(req) + ":stories:" + key
+
+    # How many days since 1970 instead of seconds
+    def current_day(self) :
+        return (int(timest()) / (60*60*24))
+    
+    def current_period(self, period_key, current_day = False):
+        return int(current_day if current_day else self.current_day()) / counts[period_key] 
+
+    def chat_name(self, period, index, peer, current_day, extra = "") :
+        return "chat;" + period + ";" + str(index) + ";" + peer + extra
+
+    def chat(self, req, period, index, peer, current_day, extra = "") :
+        return self.story(req, self.chat_name(period, index, peer, current_day, extra))
+
+    def chat_period_name(self, period_key, peer, current_day, extra = "") :
+        return self.chat_name(period_key, self.current_period(period_key, current_day), peer, extra)
+
+    def chat_period(self, req, period_key, peer, current_day, extra = "") :
+        return self.chat(req, period_key, self.current_period(period_key, current_day), peer, extra)
 
     def index(self, req, key) :
         return self.key_common(req) + ":story_index:" + key 
@@ -365,6 +373,7 @@ class MICA(object):
         self.view_runs = [ #name , #startend key or regular keys
                 ('accounts/all', True),
                 ('memorized/allcount', True),
+                ('chats/all', True),
                 ('stories/original', True),
                 ('stories/pages', True),
                 ('stories/allpages', True),
@@ -418,6 +427,8 @@ class MICA(object):
 
 
     def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
+        username = username.lower()
+
         if not dbname :
             new_uuid = str(uuid_uuid4())
             dbname = "mica_" + new_uuid
@@ -688,6 +699,12 @@ class MICA(object):
     
     def sidestart(self, req, name, username, story, reviewed, finished, gp) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
+        if "filetype" in story and story["filetype"] == "chat" :
+            [x, period, howmany, peer] = story["name"].split(";")
+            rname = peer + " ("
+            if period != "days" :
+                rname += "From "
+            rname += datetime_datetime.fromtimestamp(((int(howmany) * counts[period]) + 1) * (60*60*24)).strftime(period_story_mapping[period_mapping[period]]) + ")"
         sideout = []
         sideout.append("\n<tr>")
         sideout.append("<td style='font-size: x-small; width: 100px'>" )
@@ -771,7 +788,7 @@ class MICA(object):
             req.address = req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else self.credentials()
 
             if req.session.value['connected'] and not pretend_disconnected :
-                req.user = req.db.__getitem__(self.acct(req.session.value['username']), false_if_not_found = True)
+                req.user = req.db.get_or_false(self.acct(req.session.value['username']))
 
             if not mobile :
                 req.oauth = params["oauth"]
@@ -1151,7 +1168,7 @@ class MICA(object):
         source = "".join(unit["source"])
 
         total_changes = 0.0
-        changes = req.db.__getitem__(self.tones(req, source), false_if_not_found = True)
+        changes = req.db.get_or_false(self.tones(req, source))
         
         if changes :
             total_changes = float(changes["total"])
@@ -1341,7 +1358,7 @@ class MICA(object):
             history.sort( key=by_total, reverse = True )
 
         req.process_edits = "process_edits('" + story["uuid"] + "', 'all', true)"
-        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + uuid + "&page=" + str(page)
+        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + story['uuid'] + "&page=" + str(page)
         req.list_mode = list_mode
         if list_mode :
             req.history = history
@@ -1384,7 +1401,17 @@ class MICA(object):
             return out
 
         req.gp = self.processors[self.tofrom(story)]
-        req.story_name = story["name"]
+
+        if "filetype" in story and story["filetype"] == "chat" :
+            [x, period, howmany, peer] = story["name"].split(";")
+            if self.current_period(period) == int(howmany) : 
+                period = period[:-1]
+                req.story_name = "Chat " + ("today" if period == "day" else ("this " + period)) + " w/ " + peer
+            else :
+                req.story_name = "Chat " + str(self.current_period(period) - int(howmany)) + " " + period + " ago" + " w/ " + peer
+        else :
+            req.story_name = story["name"]
+
         req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, story)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
@@ -1394,13 +1421,14 @@ class MICA(object):
 
         return output
 
-    def nb_pages(self, req, story, cached = True):
-        if cached and "nb_pages" in story :
+    def nb_pages(self, req, story, cached = True, force = False):
+        nb_pages = 0
+
+        if cached and "nb_pages" in story and not force:
             mdebug("Using cached value for nb_pages")
             nb_pages = story["nb_pages"]
         else :
             mdebug("Generating cached value for nb_pages")
-            nb_pages = 0
             for result in req.db.view('stories/pages', startkey=[req.session.value['username'], story["name"]], endkey=[req.session.value['username'], story["name"], {}]) :
                 nb_pages = result['value']
                 break
@@ -1408,8 +1436,9 @@ class MICA(object):
             assert(nb_pages != 0)
 
             if cached :
-                story["nb_pages"] = nb_pages
-                req.db[self.story(req, story["name"])] = story
+                tmp_story = req.db[self.story(req, story["name"])]
+                tmp_story["nb_pages"] = nb_pages 
+                req.db[self.story(req, story["name"])] = tmp_story
 
         return nb_pages 
     
@@ -1632,29 +1661,38 @@ class MICA(object):
                         prev_merge = curr_merge if not skip_prev_merge else False
 
                     line_out.append(">")
-                    line_out.append("<span id='spanselect_" + trans_id + "' class='")
-                    line_out.append("batch" if use_batch else "none")
-                    line_out.append("'>")
-                    if gp.already_romanized :
-                        line_out.append("<a class='transroman'")
+
+                    if "timestamp" not in unit or not unit["punctuation"] :
+                        line_out.append("<span id='spanselect_" + trans_id + "' class='")
+                        line_out.append("batch" if use_batch else "none")
+                        line_out.append("'>")
+                        if gp.already_romanized :
+                            line_out.append("<a class='transroman'")
+                        else :
+                            line_out.append("<a class='trans'")
+                        line_out.append(" uniqueid='" + tid + "' ")
+                        line_out.append(" nbunit='" + nb_unit + "' ")
+                        line_out.append(" transid='" + trans_id + "' ")
+                        line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
+                        line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
+                        line_out.append(" page='" + page + "' ")
+                        line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
+                        line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
+                        line_out.append(" style='color: black; font-weight: normal")
+                        if "punctuation" not in unit or not unit["punctuation"] :
+                            line_out.append("; cursor: pointer")
+                        line_out.append("' ")
+                        line_out.append(" onclick=\"select_toggle('" + trans_id + "')\"")
+                        line_out.append(">")
+
+                        line_out.append(source if py else target)
+                        line_out.append("</a>")
+                        line_out.append("</span>")
                     else :
-                        line_out.append("<a class='trans'")
-                    line_out.append(" uniqueid='" + tid + "' ")
-                    line_out.append(" nbunit='" + nb_unit + "' ")
-                    line_out.append(" transid='" + trans_id + "' ")
-                    line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
-                    line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
-                    line_out.append(" page='" + page + "' ")
-                    line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
-                    line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
-                    line_out.append(" style='color: black; font-weight: normal")
-                    if "punctuation" not in unit or not unit["punctuation"] :
-                        line_out.append("; cursor: pointer")
-                    line_out.append("' ")
-                    line_out.append(" onclick=\"select_toggle('" + trans_id + "')\">")
-                    line_out.append(source if py else target )
-                    line_out.append("</a>")
-                    line_out.append("</span>")
+                        period = story["name"].split(";")[1]
+                        ts = " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"])).strftime(period_view_mapping[period]) + ")"
+                        line_out.append(source + u": " + ts + ":&#160;&#160;&#160;")
+
                     line_out.append("</td>")
 
                     if py :
@@ -1717,6 +1755,7 @@ class MICA(object):
                     line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
                 else :
                     line_out.append("100")
+
                 line_out.append("%")
 
                 if "punctuation" not in unit or not unit["punctuation"] :
@@ -1727,7 +1766,7 @@ class MICA(object):
 
                 line_out.append("'>")
 
-                if py and (py not in gp.punctuation) :
+                if py and (py not in gp.punctuation) and not unit["punctuation"] :
                     if not disk :
                         if gp.already_romanized :
                             line_out.append("<a class='transroman' ")
@@ -1806,7 +1845,8 @@ class MICA(object):
                     if disk :
                         disk_out += (("hold" if py == u' ' else py) if py else target).lower()
                     else :
-                        line_out.append((("hold" if py == u' ' else py) if py else target).lower())
+                        if "timestamp" not in unit or not unit["punctuation"] :
+                            line_out.append((("hold" if py == u' ' else py) if py else target).lower())
 
                 if not disk :
                     if action == "home" :
@@ -1896,6 +1936,7 @@ class MICA(object):
                                         tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
                         line_out.append(target.replace("/"," /<br/>"))
+                            
                         if action == "read" :
                             if "ipa_word" in unit and unit["ipa_word"] :
                                 line_out.append("<br>" + unit["ipa_word"])
@@ -2037,6 +2078,7 @@ class MICA(object):
         untrans_count = 0
         reading_count = 0
         reading = [self.template("reading")]
+        chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
         noreview = [self.template("noreview")]
         untrans = [self.template("untrans")]
         finish = [self.template("finished")]
@@ -2059,9 +2101,11 @@ class MICA(object):
                 mdebug("skipping UUID: " + uuid[0])
                 continue
 
+            notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
+
             if not story["translated"] : 
                 untrans_count += 1
-                untrans += self.sidestart(req, name, username, story, reviewed, finished, gp)
+                untrans += notsure
                 untrans.append("\n")
 
                 if not mobile :
@@ -2085,7 +2129,6 @@ class MICA(object):
                 untrans.append("</td>")
                 untrans.append("</tr>")
             else : 
-                notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
@@ -2100,20 +2143,25 @@ class MICA(object):
                    finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
                    finish.append("</td></tr>")
                 elif reviewed :
-                   reading_count += 1
-                   reading += notsure
-                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                   reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
-                    # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                   reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
-                   reading.append("</td></tr>")
+                   if "filetype" in story and story["filetype"] == "chat" :
+                       period = story["name"].split(";")[1]
+                       chatting[period_mapping[period]] += notsure
+                       chatting[period_mapping[period]].append("</td></tr>")
+                   else :
+                       reading_count += 1
+                       reading += notsure
+                        # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
+                       reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
+                        # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
+                       reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
+                       reading.append("</td></tr>")
                 else :
                    noreview += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
                    noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
                    noreview.append("</td></tr>")
                    
-        return [untrans_count, reading, noreview, untrans, finish, reading_count] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -2163,7 +2211,7 @@ class MICA(object):
         char = "".join(unit["source"])
         hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-        changes = req.db.__getitem__(which(req, char), false_if_not_found = True)
+        changes = req.db.get_or_false(which(req, char))
         if not changes :
             changes = {} 
             changes["record"] = {}
@@ -2255,7 +2303,7 @@ class MICA(object):
                     mindex = unit["multiple_correct"]
                     hcode = self.get_polyphome_hash(mindex, unit["source"])
 
-                    changes = req.db.__getitem__(self.merge(req, char), false_if_not_found = True)
+                    changes = req.db.get_or_false(self.merge(req, char))
                     if not changes :
                         changes = {} 
                         changes["record"] = {}
@@ -2298,8 +2346,10 @@ class MICA(object):
 
             # Do a test that we can read it back in.
             fp = open(sourcepath, 'rb')
-                    
-        if req.db.doc_exist(self.story(req, filename)) :
+
+        if filetype == "chat" :
+            assert(not req.db.doc_exist(self.story(req, filename)))
+        elif req.db.doc_exist(self.story(req, filename)) :
             return self.bootstrap(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
@@ -2322,17 +2372,21 @@ class MICA(object):
 
         story = {
             'uuid' : new_uuid,
-            'translated' : False,
+            'translated' : False if filetype != "chat" else True,
+            'reviewed' : False if filetype != "chat" else True,
             'name' : filename,
             'filetype' : filetype,
             'source_language' : source_lang.decode("utf-8"), 
             'target_language' : target_lang.decode("utf-8"), 
             'format' : story_format,
             'date' : timest(),
+            'nb_pages' : 0,
         }
         
         try :
-            if filetype == "pdf" :
+            if filetype == "chat" :
+                pass
+            elif filetype == "pdf" :
                 pagenos = set()
                 pagecount = 0
                 rsrcmgr = PDFResourceManager()
@@ -2477,10 +2531,22 @@ class MICA(object):
            mdebug("View " + name + " does not exist. Uploading.")
            req.db["_design/" + name] = json_loads(vc)
 
+    def clear_chat(self, req, story_name):
+        peer = story_name.split(";")[-1]
+        mdebug("Checking if peer is in session cache: " + peer)
+        for period_key in multipliers.keys() :
+            if peer in req.session.value["chats"][period_key] :
+                mdebug("Clearing chat with peer from session cache:" + peer)
+                del req.session.value["chats"][period_key][peer]
+                req.session.save()
+            
     def clear_story(self, req) :
         uuid = False
         if "current_story" in req.session.value :
             uuid = req.session.value["current_story"]
+            name_map = req.db.get_or_false(self.index(req, uuid))
+            if name_map :
+                self.clear_chat(req, name_map["value"])
             del req.session.value["current_story"]
             req.session.save()
 
@@ -2536,6 +2602,7 @@ class MICA(object):
         self.view_check(req, "mergegroups")
         self.view_check(req, "splits")
         self.view_check(req, "memorized")
+        self.view_check(req, "chats")
         if not mobile :
             self.view_check(req, "download")
 
@@ -2762,7 +2829,7 @@ class MICA(object):
         mdebug("Submitting job: " + str(job))
 
         try :
-            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            jobs = req.db.get_or_false("MICA:jobs")
             if not jobs :
                 jobs = {"list" : {}}
 
@@ -2821,6 +2888,9 @@ class MICA(object):
                     mdebug("Deleting txt original contents.")
                     del req.db[self.story(req, name) + ":original"]
                 else :
+                    if tmp_story["filetype"] == "chat" :
+                        self.clear_chat(req, tmp_story["name"])
+                        
                     mdebug("Deleting original pages")
                     allorig = []
                     for result in req.db.view('stories/alloriginal', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
@@ -2909,10 +2979,10 @@ class MICA(object):
         if not req.http.params.get("username") or not req.http.params.get("password") :
             return self.bootstrap(req, 'error', now = True)
 
-        username = req.http.params.get("username")
+        username = req.http.params.get("username").lower()
         password = req.http.params.get("password")
 
-        auth_user = self.userdb.__getitem__("org.couchdb.user:" + username, false_if_not_found = True)
+        auth_user = self.userdb.get_or_false("org.couchdb.user:" + username)
 
         if not auth_user or "temp_jabber_pw" not in auth_user or password != auth_user["temp_jabber_pw"] :
             auth_user, reason = self.authenticate(username, password, self.credentials())
@@ -3062,12 +3132,100 @@ class MICA(object):
 
         return self.api(req, out, human)
 
+    def roll_period(self, req, period_key, period_next_key, peer) :
+        to_delete = []
+
+        for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
+            tmp_story = result["value"]
+            tmp_storyname = tmp_story["name"]
+            nb_pages = self.nb_pages(req, tmp_story)
+
+            [x, period, howmany, peer] = tmp_story["name"].split(";")
+
+            period_difference = self.current_period(period_key) - int(howmany)
+            period_difference_max = multipliers[period_key] - 1
+            if period_difference < period_difference_max :
+                continue
+            
+            old_messages = []
+            old_units = []
+
+            for page in range(0, nb_pages) :
+                old_units += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
+                old_messages += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
+
+            to_delete.append((tmp_story["name"], tmp_story["uuid"]))
+
+            mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+            self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+
+        for (name, uuid) in to_delete :
+            mdebug("Want to delete story: " + name)
+            self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
+
+    def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
+        if peer not in req.session.value["chats"][period_key] :
+            if not req.db.get_or_false(self.chat_period(req, period_key, peer, current_day)) :
+                self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
+            story = req.db[self.chat_period(req, period_key, peer, current_day)]
+            req.session.value["chats"][period_key][peer] = story 
+            req.session.save()
+
+        csession = req.session.value["chats"][period_key][peer]
+
+        page = str(max(0, int(csession["nb_pages"]) - 1))
+        origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
+        pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)
+        chat_orig = req.db.get_or_false(origkey)
+        chat_page = False 
+
+        if chat_orig :
+            chat_page = req.db.get_or_false(pagekey)
+        else :
+            chat_orig = { "messages" : [] }
+
+        if not chat_page : 
+            chat_page = { "units" : [] }
+
+        # 20 messages per page is just a wild guess. Will need to make it
+        # configurable in the preferences, of course
+
+        made_new_page = False
+        if len(chat_orig["messages"]) >= 20 :
+            made_new_page = True
+            page = int(page) + 1
+            origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
+            pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page) 
+            chat_orig = { "messages" : [] }
+            chat_page = { "units" : [] }
+                
+        mdebug("Adding message period " + period_key + " to page Original key: " + origkey)
+
+        chat_orig["messages"] = chat_orig["messages"] + messages
+        req.db[origkey] = chat_orig 
+        chat_page["units"] = chat_page["units"] + new_units
+        req.db[pagekey] = chat_page
+
+        if made_new_page or csession["nb_pages"] == 0 :
+            csession = req.session.value["chats"][period_key][peer] = req.db[self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)]
+            tmp_story = deepcopy(story)
+            tmp_story["name"] = self.chat_period_name(period_key, peer, current_day)
+            csession["nb_pages"] = self.nb_pages(req, tmp_story, force = True)
+            req.session.value["chats"][period_key][peer] = csession
+            req.session.save()
+
     def common_chat_ime(self, req) :
         self.install_local_language(req, req.http.params.get("lang"))
-        output = False
         mode = req.http.params.get("mode")
         orig = req.http.params.get("source")
         imes = int(req.http.params.get("ime"), 0)
+        msgfrom = req.http.params.get("msgfrom", False)
+        msgto = req.http.params.get("msgto", False)
+        peer = req.http.params.get("peer", False)
+        timestamp = req.http.params.get("ts", False)
+        if timestamp :
+            timestamp = float(timestamp)
+
         start_trans_id = int(req.http.params.get("start_trans_id", 0))
         story = {
            "name" : "ime",
@@ -3075,13 +3233,13 @@ class MICA(object):
            "source_language" : supported_map[req.http.params.get("source_language")],
         }
 
+        gp = self.processors[self.tofrom(story)]
         out = {"success" : False}
         lens = []
         chars = []
         source = ""
         if orig :
             imes = int(req.http.params.get("ime"))
-            gp = self.processors[self.tofrom(story)]
             mdebug("Type: " + str(type(orig)))
             start = timest()
             char_result = gp.get_chars(orig)
@@ -3121,7 +3279,7 @@ class MICA(object):
         # all DB accesses from the main processor, but that requires
         # re-writing the processor, let's deal with that later.
         # The goal is to allow sqlite to do normal caching.
-        # CUrrently, the RomanizedSource languages are still are
+        # Currently, the RomanizedSource languages are still are
         # not closing/re-opening their sqlite handles and may crash.
         # We don't want to re-open them anyway and need to keep
         # them open in the main thread.
@@ -3146,11 +3304,29 @@ class MICA(object):
                 if cerror :
                     raise cerror
 
+            if peer :
+                messages = [{
+                                "timestamp" : timestamp,
+                                "from" : msgfrom,
+                                "to" : msgto,
+                                "msg" : source,
+                                "source_language" : story["source_language"],
+                                "target_language" : story["target_language"],
+                            }]
 
-            if not output :
-                out["success"] = True
-                out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
-                out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
+                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp / 1000.0)
+                self.rehash_correct_polyphome(before) 
+                after = gp.add_unit([u"\n"], u"\n", [u"\n"], punctuation = True)
+                self.rehash_correct_polyphome(after) 
+                new_units = [before] + story["pages"]["0"]["units"] + [after]
+
+                self.add_period(req, "days", peer, messages, new_units, story)
+                
+            out["success"] = True
+            out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
+            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
+
+
         except OSError, e :
             merr("OSError: " + str(e))
             out["result"] = self.warn_not_replicated(req, bootstrap = False)
@@ -3205,11 +3381,11 @@ class MICA(object):
         mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
         # A new story has been uploaded and is being processed in the background.
-        return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_"), False, filetype, source_lang, target_lang, sourcepath])
+        return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_").replace(";","_"), False, filetype, source_lang, target_lang, sourcepath])
 
     def common_uploadtext(self, req) :
         source = req.http.params.get("storytext") + "\n"
-        filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_")
+        filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_").replace(";","_")
         langtype = req.http.params.get("languagetype")
         source_lang, target_lang = langtype.split(",")
 
@@ -3608,8 +3784,8 @@ class MICA(object):
     def common_account(self, req, story) :
         out = ""
 
-        username = req.session.value["username"]
-        user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+        username = req.session.value["username"].lower()
+        user = req.db.get_or_false(self.acct(username))
 
         if not user :
             return self.warn_not_replicated(req)
@@ -3618,7 +3794,7 @@ class MICA(object):
             req.db.compact()
             req.db.cleanup()
             design_docs = ["memorized", "stories", "mergegroups",
-                           "tonechanges", "accounts", "splits" ]
+                           "tonechanges", "accounts", "splits", "chats" ]
 
             if not mobile :
                 design_docs.append("download")
@@ -3690,7 +3866,7 @@ class MICA(object):
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
-            newusername = req.http.params.get("username")
+            newusername = req.http.params.get("username").lower()
             newpassword = req.http.params.get("password")
             newpasswordconfirm = req.http.params.get("confirm")
             admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
@@ -3711,7 +3887,7 @@ class MICA(object):
             if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
 
-            if newusername.count(":") :
+            if newusername.count(":") or newusername.count(";") :
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
 
             self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
@@ -3721,7 +3897,7 @@ class MICA(object):
             if mobile :
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
 
-            username = req.http.params.get("username") 
+            username = req.http.params.get("username").lower()
 
             if not self.userdb : 
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
@@ -4049,7 +4225,41 @@ class MICA(object):
         return self.bootstrap(req, out)
                     
     def common_chat(self, req, unused_story) :
+        if req.http.params.get("history") :
+            def by_date(story):
+                return int((story["name"].split(";")[2]))
+
+            peer = req.http.params.get("history")
+            self.roll_period(req, "years", "decades", peer)
+            self.roll_period(req, "months", "years", peer)
+            self.roll_period(req, "weeks", "months", peer)
+            self.roll_period(req, "days", "weeks", peer)
+            stories = []
+
+            for period_key in ["days", "weeks", "months", "years", "decades"] :
+                for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
+                    stories.append(result["value"])
+
+                if len(stories) :
+                    mdebug("Found " + str(len(stories)) + " stories for period " + period_key)
+                    break
+
+            out = "<div><div id='chathistoryresult'><div class='msg'>"
+            if len(stories) :
+                stories.sort(key=by_date)
+                tmp_story = stories[0]
+                nb_pages = self.nb_pages(req, tmp_story)
+                [x, period, howmany, peer] = tmp_story["name"].split(";")
+                out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False)
+            out += "</div></div></div>"
+            return self.bootstrap(req, out, now = True)
+
         req.main_server = params["main_server"]
+
+        if "chats" not in req.session.value :
+            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
+            req.session.save()
+
         story = {
            "target_language" : supported_map[req.session.value["language"]],
            "source_language" : supported_map[req.session.value["learnlanguage"]],
@@ -4075,12 +4285,12 @@ class MICA(object):
 
             if sync == 1 :
                 tmpstory["download"] = True
-                if name not in tmpuser["filters"]["stories"] :
-                    tmpuser["filters"]["stories"].append(name)
+                if tmpname not in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].append(tmpname)
             else :
                 tmpstory["download"] = False
-                if name in tmpuser["filters"]["stories"] :
-                    tmpuser["filters"]["stories"].remove(name)
+                if tmpname in tmpuser["filters"]["stories"] :
+                    tmpuser["filters"]["stories"].remove(tmpname)
                 
             req.session.value["filters"] = tmpuser["filters"]
 
@@ -4103,23 +4313,31 @@ class MICA(object):
         if not result[0] and len(result) > 1 :
             return self.bootstrap(req, result[1])
         
-        untrans_count, reading, noreview, untrans, finish, reading_count = result[1:]
+        untrans_count, reading, noreview, untrans, finish, reading_count, chatting = result[1:]
         
         reading.append("</table></div></div></div>\n")
         noreview.append("</table></div></div></div>\n")
         untrans.append("</table></div></div></div>\n")
         finish.append("</table></div></div></div>\n")
 
+        chat_all = [self.template("chatting")]
+        for period in [ "week", "month", "year", "decade" ] :
+            if len(chatting[period]) :
+                chat_all.append("<tr><td>Recent " + period + ":</td></tr>")
+                chat_all += chatting[period]
+
+        chat_all.append("</table></div></div></div>\n")
+
         scripts = [""]
 
         if untrans_count :
-            storylist += untrans + reading + noreview + finish + ["</div></td></tr></table>"]
+            storylist += untrans + reading + chat_all + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
         elif reading_count :
-            storylist += reading + untrans + noreview + finish + ["</div></td></tr></table>"]
+            storylist += reading + chat_all + untrans + noreview + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReading').collapse('show');</script>")
         else :
-            storylist += noreview + reading + untrans + finish + ["</div></td></tr></table>"]
+            storylist += noreview + reading + chat_all + untrans + finish + ["</div></td></tr></table>"]
             scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
 
         scripts.append("""
@@ -4150,7 +4368,27 @@ class MICA(object):
                                    self.edits(req, story, req.http.params.get("page")) + \
                                    "</div></div>", now = True)
 
-    def common_oauth(req) :
+    def baidu_compliance_fix(self, session):
+        self.fixed = False
+
+        def _compliance_fix(r):
+            if self.fixed :
+                return r
+            self.fixed = True
+            # Facebook returns a content-type of text/plain when sending their
+            # x-www-form-urlencoded responses, along with a 200. If not, let's
+            # assume we're getting JSON and bail on the fix.
+            mdebug("Going to dump response token text: " + r.text)
+            token = json_loads(r.text)
+            mdebug("Adding bearer to token type") 
+            token['token_type'] = 'Bearer'
+            r._content = to_unicode(dumps(token)).encode('UTF-8')
+            return r
+
+        session.register_compliance_hook('access_token_response', _compliance_fix)
+        return session
+
+    def common_oauth(self, req) :
         from_third_party = False
         self.install_local_language(req)
         who = req.action
@@ -4162,7 +4400,7 @@ class MICA(object):
             service = facebook_compliance_fix(service)
 
         if who == "baidu" :
-            service = baidu_compliance_fix(service)
+            service = self.baidu_compliance_fix(service)
 
         if not req.http.params.get("code") and not req.http.params.get("finish") :
             if req.http.params.get("error") :
@@ -4257,7 +4495,7 @@ class MICA(object):
         #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
 
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
-            if values["email"].count(":") :
+            if values["email"].count(":") or values["email"].count(";") :
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
@@ -4285,8 +4523,11 @@ class MICA(object):
         return from_third_party
 
     def common_connect(self, req, from_third_party) :
+        password = False
+        username = False
+
         if from_third_party :
-            username = from_third_party["email"]
+            username = from_third_party["email"].lower()
             req.session.value["from_third_party"] = True 
         else :
             req.session.value["from_third_party"] = False 
@@ -4294,7 +4535,7 @@ class MICA(object):
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
                 req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
-            username = req.http.params.get('username')
+            username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
 
         if req.http.params.get("address") :
@@ -4360,7 +4601,7 @@ class MICA(object):
                appuser = {"username" : username}
                req.db["MICA:appuser"] = appuser
                    
-            tmpuser = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+            tmpuser = req.db.get_or_false(self.acct(username))
             if tmpuser and "filters" in tmpuser :
                 mdebug("Found old filters.")
                 req.session.value["filters"] = tmpuser["filters"]
@@ -4387,12 +4628,12 @@ class MICA(object):
         req.session.value["last_refresh"] = str(timest())
         req.session.save()
 
-        user = req.db.__getitem__(self.acct(username), false_if_not_found = True)
+        user = req.db.get_or_false(self.acct(username))
         if not user :
             return self.warn_not_replicated(req)
 
         if not mobile :
-            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            jobs = req.db.get_or_false("MICA:jobs")
             if not jobs :
                 req.db["MICA:jobs"] = {"list" : {}}
             
@@ -4490,7 +4731,7 @@ class MICA(object):
         return False
 
     def common_logged_in_check(self, req) :
-        username = req.session.value['username']
+        username = req.session.value['username'].lower()
 
         if "app_chars_per_line" not in req.session.value :
             user = req.db[self.acct(username)]
@@ -4545,7 +4786,7 @@ class MICA(object):
                     except couch_adapter.ResourceConflict, e :
                         mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
-            tmpjobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            tmpjobs = req.db.get_or_false("MICA:jobs")
 
             if tmpjobs and len(tmpjobs["list"]) > 0 :
                 mdebug("Resettings jobs for user.")
@@ -4719,9 +4960,9 @@ class MICA(object):
                     # The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history. 
                     return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
-            if req.action in ["tstatus", "finished", "reviewed", "translate"] :
-                func = getattr(self, "common_" + req.action)
-                return func(req, story)
+            for param in ["tstatus", "finished", "reviewed", "translate"] :
+                if req.http.params.get(param) :
+                    return getattr(self, "common_" + param)(req, story)
 
             if req.http.params.get("forget") :
                 # Resetting means that we are dropping the translate contents of the original story. We are
@@ -4748,7 +4989,7 @@ class MICA(object):
 
             # We want the job list to appear before using any story-related functions
             # User must wait.
-            jobs = req.db.__getitem__("MICA:jobs", false_if_not_found = True)
+            jobs = req.db.get_or_false("MICA:jobs")
 
             if jobs and len(jobs["list"]) > 0 :
                 return self.common_jobs(req, jobs)
@@ -4773,7 +5014,7 @@ class MICA(object):
                 tmp_story = story
                 if not tmp_story :
                     name = req.db[self.index(req, uuid)]["value"]
-                    tmp_story = req.db.__getitem__(self.story(req, name), false_if_not_found = True)
+                    tmp_story = req.db.get_or_false(self.story(req, name))
                     if not tmp_story :
                         self.clear_story(req)
                         mwarn("Could not lookup: " + self.story(req, name))
@@ -4785,9 +5026,9 @@ class MICA(object):
                 else :
                     self.set_page(req, tmp_story, start_page)
                 
-            if req.action in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
-                func = getattr(self, "common_" + req.action)
-                return func(req, story)
+            for param in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
+                if req.http.params.get(param) :
+                    return getattr(self, "common_" + param)(req, story)
 
             if req.http.params.get("oprequest") :
                 oprequest_result = self.common_oprequest(req, story)
@@ -4890,7 +5131,7 @@ def expired(uid):
    mdebug("Session " + uid + " has expired.")
    sessions.remove(uid)
    mdebug("Removing session file.")
-   osremove(sfn)
+   os_remove(sfn)
         
 class GUIDispatcher(Resource) :
     def __init__(self, mica) :
@@ -5174,6 +5415,7 @@ def go(p) :
                     ctx = SSL.Context(self.sslmethod)
                     ctx.use_certificate_chain_file(self.certificateChainFileName)
                     ctx.use_privatekey_file(self.privateKeyFileName)
+                    ctx.set_cipher_list('ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS')
                     self._context = ctx
 
             reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
