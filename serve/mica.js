@@ -1311,13 +1311,15 @@ function handleMessage(oJSJaCPacket) {
            document.getElementById('soundNotify').play();
        }
     } else {
-	appendStatus(who, ": is typing...");
-	setTimeout("appendStatus('', '');", 5000);
+        appendStatus(who, ": is typing...");
+        setTimeout("appendStatus('', '');", 5000);
     }
 }
 
 function handleConnectedLoaded(data) {
-    document.getElementById('iResp').lastChild.scrollIntoView();
+    $("#pagesingle").html("");
+    document.getElementById('iResp').innerHTML += data;
+    $("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
 function newContact(who) {
@@ -1325,16 +1327,17 @@ function newContact(who) {
     $('#sendTo').val(who); 
     $("#missing").attr("style", "display: none");
 
-    $("#iResp").html("<div class='col-md-12 nopadding'><div id='pagesingle'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
+    $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     url = "/chat?history=" + peer;
     start_trans_id = 1000000;
     go('#pagesingle', 
           url, 
           '#chathistoryresult',
           unavailable, 
-          true, 
+          false, 
           handleConnectedLoaded,
-          true);
+          false);
+    document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
 
