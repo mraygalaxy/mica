@@ -2,7 +2,7 @@
 from logging.handlers import RotatingFileHandler 
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
 from datetime import datetime as datetime_datetime
-from time import time, strftime, strptime, localtime
+from time import time as timestlocal, strftime, strptime, localtime, timezone
 from threading import Lock
 from xmlrpclib import Server
 from re import compile as re_compile
@@ -18,6 +18,9 @@ import __builtin__
 import xmlrpclib
 import sys
 import threading
+
+def timest() :
+    return timestlocal() - timezone
 
 texts = {}
 
