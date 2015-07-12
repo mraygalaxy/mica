@@ -95,6 +95,9 @@ counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 36
 period_mapping = {"days" : "week", "weeks" : "month", "months" : "year", "years" : "decade", "decades" : "decade"}
 period_story_mapping = {"week" : "%a", "month" : "%m/%d", "year" : "%b", "decade" : "%Y"}
 period_view_mapping = {"days" : "%a %I:%M:%S %p", "weeks" : "%m/%d %I:%M:%S %p", "months" : "%m/%d %I:%M:%S %p", "years" : "%m/%d %I:%M:%S %p", "decades" : "%m/%d/%y %I:%M:%S %p"}
+translated_periods = { "days" : _("days"), "day" : _("day"), "weeks" : _("weeks"), 
+                "week" : _("week"), "months" : _("months"), "month" : _("month"),
+                "years" : _("year"), "year" : _("years") }
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -1406,9 +1409,11 @@ class MICA(object):
             [x, period, howmany, peer] = story["name"].split(";")
             if self.current_period(period) == int(howmany) : 
                 period = period[:-1]
-                req.story_name = "Chat " + ("today" if period == "day" else ("this " + period)) + " w/ " + peer
+                # These two messages together effectively say "Chat with: xxxxx"
+                req.story_name = _("Chat") + " " + (_("today") if period == "day" else (_("this") + " " + period)) + " " + ("w/") + " " + peer
             else :
-                req.story_name = "Chat " + str(self.current_period(period) - int(howmany)) + " " + period + " ago" + " w/ " + peer
+                # These two messages together effectively say "Chat with: xxxxx"
+                req.story_name = _("Chat") + " " + str(self.current_period(period) - int(howmany)) + " " + period + " " + _("ago") + " " + " " + _("w/") + " " + peer
         else :
             req.story_name = story["name"]
 
@@ -4330,9 +4335,10 @@ class MICA(object):
         finish.append("</table></div></div></div>\n")
 
         chat_all = [self.template("chatting")]
+
         for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :
-                chat_all.append("<tr><td>Recent " + period + ":</td></tr>")
+                chat_all.append("<tr><td>" + _("Recent") + " " + translated_periods[period] + ":</td></tr>")
                 chat_all += chatting[period]
 
         chat_all.append("</table></div></div></div>\n")

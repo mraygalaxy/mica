@@ -23,7 +23,7 @@
             <input type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
             <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
 	    <button type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-        <input class='btn btn-default btn-xs' value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"/>
+        <input class='btn btn-default btn-xs' value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"><t:attr name='send'><t:slot name='sendbutton'/></t:attr></input>
         <!--    <input type="button" value="Quit" tabindex="4" onclick="return quit();"/>-->
         </div>
         <div class="spaced">

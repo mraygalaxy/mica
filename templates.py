@@ -346,6 +346,7 @@ class ChatElement(CommonElement) :
                       to = _("To"),
                       server = self.req.main_server,
                       domain = self.req.main_server,
+                      sendbutton = _("Send"),
                       processinstanttitle = _("instant translation of one or more words"),
                       processinstant = processinstantclick(self.req, request, tag),
                       performingtranslation= _("Doing instant translation..."),

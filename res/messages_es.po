@@ -144,7 +144,6 @@ msgstr "Volver a traducir la página"
 msgid "Disconnected from MICA"
 msgstr "Desconectado del MICA"
 
-#. This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
 msgid "Exception"
 msgstr "Excepción"
 
@@ -1441,4 +1440,131 @@ msgid ""
 msgstr ""
 
 msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
+msgstr ""
+
+msgid "days"
+msgstr ""
+
+msgid "day"
+msgstr ""
+
+msgid "weeks"
+msgstr ""
+
+msgid "week"
+msgstr ""
+
+msgid "months"
+msgstr ""
+
+msgid "month"
+msgstr ""
+
+msgid "year"
+msgstr ""
+
+msgid "years"
+msgstr ""
+
+msgid "Priming database for you. Please wait."
+msgstr ""
+
+msgid "Database optimized."
+msgstr ""
+
+#. These two messages together effectively say "Chat with: xxxxx"
+#. 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
+msgid "Chat"
+msgstr ""
+
+msgid "today"
+msgstr ""
+
+msgid "this"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "w/"
+msgstr ""
+
+msgid "API access denied"
+msgstr ""
+
+msgid "No result"
+msgstr ""
+
+msgid "Chat error"
+msgstr ""
+
+msgid "Success! Learning Language changed"
+msgstr ""
+
+msgid "Learning Language"
+msgstr ""
+
+msgid "Change Learning Language"
+msgstr ""
+
+msgid "We're sorry, but chat for this language pair is not supported"
+msgstr ""
+
+msgid "to"
+msgstr ""
+
+msgid "as indicated by your account preferences"
+msgstr ""
+
+msgid ""
+"Please choose a different 'Learning Language' in your accout preferences. "
+"Thank you."
+msgstr ""
+
+msgid "Recent"
+msgstr ""
+
+msgid "Chat History"
+msgstr ""
+
+#. Indicates that the chat software is starting up...
+msgid "Loading Chat"
+msgstr ""
+
+#. Incoming chat messages
+msgid "Your Chat Username is: "
+msgstr ""
+
+#. Send a chat message
+msgid "Send Message"
+msgstr ""
+
+#. Destination of chat receiver
+msgid "To"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+#. In Chat mode, from what source language to what target language should translations occur.
+msgid "Learn (translate) from"
+msgstr ""
+
+#. Notification from the online chat system that another user is logged in and has become available.
+msgid "has become available"
+msgstr ""
+
+#. Notification from the online chat system that another user has changed status, like 'away' or 'available'.
+msgid "has set their presence to"
+msgstr ""
+
+#. Appears in Chat mode and allows user to disable IME input system for character-based languages.
+msgid "phonetic typing"
+msgstr ""
+
+#. Use a traditional or simplified character IME system
+msgid "Traditional"
+msgstr ""
+
+msgid "Please provide the address of someone to chat with."
 msgstr ""
