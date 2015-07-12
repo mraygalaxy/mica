@@ -338,9 +338,9 @@ var _callbacks_ = {
                 } else {
                     var tval = sendMsg(document.getElementById('sendForm'));
                     if (tval) 
-                        appendChat('me', tval);
+                        appendChat(chat_username, $("#sendTo").val(), tval);
                     else
-                        appendChat('me', "error");
+                        appendChat(chat_username, $("#sendTo").val(), "error");
                 }
                 self.clearOld(-2);
             }
