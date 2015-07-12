@@ -2771,11 +2771,11 @@ class MICA(object):
 
         req.db.detach_thread()
 
-    def multiple_select(self, req, record, nb_unit, mindex, trans_id, page) :
+    def multiple_select(self, req, record, nb_unit, mindex, trans_id, page, name) :
         # This is also kind of silly: getting a whole page
         # of units just to update one of them.
         # Maybe it's not so high overhead. I dunno.
-        page_dict = req.db[self.story(req, story[name]) + ":pages:" + str(page)]
+        page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         unit = page_dict["units"][nb_unit]
         
         unit["multiple_correct"] = mindex
@@ -3516,7 +3516,7 @@ class MICA(object):
         mindex = int(req.http.params.get("index"))
         trans_id = int(req.http.params.get("trans_id"))
         page = req.http.params.get("page")
-        unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page)
+        unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, story["name"])
 
         return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                    self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page) + \
