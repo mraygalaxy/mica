@@ -1098,7 +1098,7 @@ function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
     go('#sidebarcontents', 
-        '/storylist',
+        '/storylist?tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         '#storylistresult', 
         unavailable, 
         true, 
@@ -1250,7 +1250,8 @@ function make_date(ts) {
 }
 
 function appendChat(who, to, msg) {
-    var ts = $.now() + ".0";
+    var ts = $.now();
+    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
 
     $("#missing").attr("style", "display: none");
     var languagepair = $('#chattextlanguage').val();
@@ -1276,7 +1277,7 @@ function appendChat(who, to, msg) {
      */ 
     var peer = (msgfrom == chat_username) ? msgto : msgfrom;
 
-    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + ts + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
+    var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 
     start_trans_id += msg.length;
 
@@ -1328,7 +1329,8 @@ function newContact(who) {
     $("#missing").attr("style", "display: none");
 
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
-    url = "/chat?history=" + peer;
+    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
+    url = "/chat?history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
     go('#pagesingle', 
           url, 

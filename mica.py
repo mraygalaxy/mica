@@ -3,7 +3,7 @@
 
 from pwd import getpwuid
 from sys import path
-from time import sleep, time as timest
+from time import sleep
 from threading import Thread, Lock, current_thread, Timer, local as threading_local
 from datetime import datetime as datetime_datetime
 import threading
@@ -700,14 +700,14 @@ class MICA(object):
 
         return r
     
-    def sidestart(self, req, name, username, story, reviewed, finished, gp) :
+    def sidestart(self, req, name, username, story, reviewed, finished, gp, tzoffset = 0) :
         rname = name.replace(".txt","").replace("\n","").replace("_", " ")
         if "filetype" in story and story["filetype"] == "chat" :
             [x, period, howmany, peer] = story["name"].split(";")
             rname = peer + " ("
             if period != "days" :
                 rname += "From "
-            rname += datetime_datetime.fromtimestamp(((int(howmany) * counts[period]) + 1) * (60*60*24)).strftime(period_story_mapping[period_mapping[period]]) + ")"
+            rname += datetime_datetime.fromtimestamp((((int(howmany) * counts[period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
         sideout = []
         sideout.append("\n<tr>")
         sideout.append("<td style='font-size: x-small; width: 100px'>" )
@@ -1413,7 +1413,10 @@ class MICA(object):
                 req.story_name = _("Chat") + " " + (_("today") if period == "day" else (_("this") + " " + period)) + " " + ("w/") + " " + peer
             else :
                 # These two messages together effectively say "Chat with: xxxxx"
-                req.story_name = _("Chat") + " " + str(self.current_period(period) - int(howmany)) + " " + period + " " + _("ago") + " " + " " + _("w/") + " " + peer
+                howmany_diff = self.current_period(period) - int(howmany)
+                mdebug("howmany diff: " + str(howmany_diff))
+                print_period = period[:-1] if howmany_diff == 1 else period
+                req.story_name = _("Chat") + " " + str(howmany_diff) + " " + print_period + " " + _("ago") + " " + " " + _("w/") + " " + peer
         else :
             req.story_name = story["name"]
 
@@ -1456,7 +1459,7 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0) :
         output = [output]
         gp = self.processors[self.tofrom(story)]
 
@@ -1695,7 +1698,7 @@ class MICA(object):
                         line_out.append("</span>")
                     else :
                         period = story["name"].split(";")[1]
-                        ts = " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"])).strftime(period_view_mapping[period]) + ")"
+                        ts = " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[period]) + ")"
                         line_out.append(source + u": " + ts + ":&#160;&#160;&#160;")
 
                     line_out.append("</td>")
@@ -2079,7 +2082,7 @@ class MICA(object):
 
         return result
     
-    def makestorylist(self, req):
+    def makestorylist(self, req, tzoffset):
         untrans_count = 0
         reading_count = 0
         reading = [self.template("reading")]
@@ -2106,7 +2109,7 @@ class MICA(object):
                 mdebug("skipping UUID: " + uuid[0])
                 continue
 
-            notsure = self.sidestart(req, name, username, story, reviewed, finished, gp)
+            notsure = self.sidestart(req, name, username, story, reviewed, finished, gp, tzoffset)
 
             if not story["translated"] : 
                 untrans_count += 1
@@ -4244,6 +4247,7 @@ class MICA(object):
                 return int((story["name"].split(";")[2]))
 
             peer = req.http.params.get("history")
+            tzoffset = int(req.http.params.get("tzoffset"))
             self.roll_period(req, "years", "decades", peer)
             self.roll_period(req, "months", "years", peer)
             self.roll_period(req, "weeks", "months", peer)
@@ -4264,7 +4268,7 @@ class MICA(object):
                 tmp_story = stories[0]
                 nb_pages = self.nb_pages(req, tmp_story)
                 [x, period, howmany, peer] = tmp_story["name"].split(";")
-                out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False)
+                out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
             out += "</div></div></div>"
             return self.bootstrap(req, out, now = True)
 
@@ -4320,9 +4324,11 @@ class MICA(object):
             #mdebug("Want to perform: user " + str(tmpuser) + " story " + str(tmpstory))
             return self.bootstrap(req, "changed", now = True)
 
+        tzoffset = int(req.http.params.get("tzoffset"))
+
         storylist = [self.template("storylist")]
 
-        result = repeat(self.makestorylist, args = [req], kwargs = {})
+        result = repeat(self.makestorylist, args = [req, tzoffset], kwargs = {})
         
         if not result[0] and len(result) > 1 :
             return self.bootstrap(req, result[1])
