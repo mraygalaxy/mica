@@ -1275,7 +1275,7 @@ function appendChat(who, to, msg) {
      * equal to the name of the peer, but with a group chat, we'll need to choose something
      * unique for the peer value. Theoretically, the server-side shouldn't change too much.
      */ 
-    var peer = (msgfrom == chat_username) ? msgto : msgfrom;
+    var peer = (who == chat_username) ? msgto : msgfrom;
 
     var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 

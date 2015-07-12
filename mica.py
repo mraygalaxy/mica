@@ -3216,11 +3216,11 @@ class MICA(object):
             chat_orig = { "messages" : [] }
             chat_page = { "units" : [] }
                 
-        mdebug("Adding message period " + period_key + " to page Original key: " + origkey)
+        mdebug("Adding message period " + period_key + " to page key: " + pagekey)
 
-        chat_orig["messages"] = chat_orig["messages"] + messages
-        req.db[origkey] = chat_orig 
-        chat_page["units"] = chat_page["units"] + new_units
+        chat_orig["messages"] += messages
+        req.db[origkey] = chat_orig
+        chat_page["units"] += new_units
         req.db[pagekey] = chat_page
 
         if made_new_page or csession["nb_pages"] == 0 :
@@ -3332,12 +3332,8 @@ class MICA(object):
                             }]
 
                 before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp)
-                self.rehash_correct_polyphome(before) 
-                after = gp.add_unit([u"\n"], u"\n", [u"\n"], punctuation = True)
-                self.rehash_correct_polyphome(after) 
-                new_units = [before] + story["pages"]["0"]["units"] + [after]
-
-                self.add_period(req, "days", peer, messages, new_units, story)
+                self.rehash_correct_polyphome(before)
+                self.add_period(req, "days", peer, messages, [before] + story["pages"]["0"]["units"], story)
                 
             out["success"] = True
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
