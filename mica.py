@@ -3238,7 +3238,7 @@ class MICA(object):
         peer = req.http.params.get("peer", False)
         timestamp = req.http.params.get("ts", False)
         if timestamp :
-            timestamp = float(timestamp)
+            timestamp = float(timestamp) / 1000.0
 
         start_trans_id = int(req.http.params.get("start_trans_id", 0))
         story = {
@@ -3328,7 +3328,7 @@ class MICA(object):
                                 "target_language" : story["target_language"],
                             }]
 
-                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp / 1000.0)
+                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp)
                 self.rehash_correct_polyphome(before) 
                 after = gp.add_unit([u"\n"], u"\n", [u"\n"], punctuation = True)
                 self.rehash_correct_polyphome(after) 
