@@ -2534,7 +2534,16 @@ class MICA(object):
     def clear_chat(self, req, story_name):
         peer = story_name.split(";")[-1]
         mdebug("Checking if peer is in session cache: " + peer)
+
+        if "chats" not in req.session.value :
+            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
+            req.session.save()
+
         for period_key in multipliers.keys() :
+            if period_key not in req.session.value["chats"] :
+                req.session.value["chats"][period_key] = {}
+                req.session.save()
+
             if peer in req.session.value["chats"][period_key] :
                 mdebug("Clearing chat with peer from session cache:" + peer)
                 del req.session.value["chats"][period_key][peer]
@@ -2762,11 +2771,11 @@ class MICA(object):
 
         req.db.detach_thread()
 
-    def multiple_select(self, req, record, nb_unit, mindex, trans_id, page, name) :
+    def multiple_select(self, req, record, nb_unit, mindex, trans_id, page) :
         # This is also kind of silly: getting a whole page
         # of units just to update one of them.
         # Maybe it's not so high overhead. I dunno.
-        page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
+        page_dict = req.db[self.story(req, story[name]) + ":pages:" + str(page)]
         unit = page_dict["units"][nb_unit]
         
         unit["multiple_correct"] = mindex
@@ -3507,7 +3516,7 @@ class MICA(object):
         mindex = int(req.http.params.get("index"))
         trans_id = int(req.http.params.get("trans_id"))
         page = req.http.params.get("page")
-        unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, name)
+        unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page)
 
         return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                    self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page) + \
