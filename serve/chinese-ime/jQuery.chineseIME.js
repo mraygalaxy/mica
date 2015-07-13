@@ -176,6 +176,12 @@ var _callbacks_ = {
         options.input.allowChange = options.input.allowChange == true; // set it to boolean value true if it evaluates to true
         options.allowHide = options.allowHide == true;
 
+	var foo = "bar";
+
+	$.receivePush = function(select_idx) {
+	    self.makeSelection(select_idx - 1);
+	    self.updateDialog();
+        }
 
         self.resetCurrent = function() {
             self.currentText = '';
@@ -213,6 +219,7 @@ var _callbacks_ = {
         self.$el.data("chineseInput", self);
         
         self.nothing = function() {
+	    console.log("keydown called, but doing nothing.");
             event.preventDefault();
             return false; 
         }
@@ -274,6 +281,7 @@ var _callbacks_ = {
                     if (self.currentText.length == 0) {
                         self.sendText();
                     }
+		    console.log("Returning early. Booooooooooooo.");
                     return false;
                 }
                 if (/[a-zA-Z]/.test(key)){ 
@@ -304,8 +312,8 @@ var _callbacks_ = {
                     } else if (/[1-8]/.test(key)) { 
                       // pressed number between 1 and 8
                         self.clearOld(1);
-                        self.makeSelection(parseInt(key) - 1);
-                        self.inputText = $("#msgArea").val();
+			$.receivePush(parseInt(key));
+			return false;
                     } else if (key == ',') { // go to previous page
                         self.previousPage();
                     } else if (key == '.') { // go to next page
@@ -328,6 +336,7 @@ var _callbacks_ = {
                     //self.sendText();
                 self.updateDialog();
             }
+	    console.log("Finished with keypress now.");
             return false;
         };
 
@@ -404,6 +413,7 @@ var _callbacks_ = {
                 self.resetCurrent();
             }
 
+	    self.inputText = $("#msgArea").val();
         };
 
         self.reposition = function($el){

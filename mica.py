@@ -1459,7 +1459,7 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0, chat = False) :
         output = [output]
         gp = self.processors[self.tofrom(story)]
 
@@ -1690,7 +1690,11 @@ class MICA(object):
                         if "punctuation" not in unit or not unit["punctuation"] :
                             line_out.append("; cursor: pointer")
                         line_out.append("' ")
-                        line_out.append(" onclick=\"select_toggle('" + trans_id + "')\"")
+                        if chat :
+                            if "select_idx" in unit :
+                                line_out.append(" onclick=\"select_chat_option('" + str(unit["select_idx"]) + "')\"")
+                        else :
+                            line_out.append(" onclick=\"select_toggle('" + trans_id + "')\"")
                         line_out.append(">")
 
                         line_out.append(source if py else target)
@@ -3337,7 +3341,13 @@ class MICA(object):
                 
             out["success"] = True
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
-            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id)
+
+            select_idx = 1
+            for unit_idx in range(2, min(len(story["pages"]["0"]["units"]), (len(chars) * 2 + 1)), 2) :
+                story["pages"]["0"]["units"][unit_idx]["select_idx"] = select_idx
+                select_idx += 1
+
+            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id, chat = True)
 
 
         except OSError, e :
