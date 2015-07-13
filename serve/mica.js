@@ -544,6 +544,10 @@ function select_toggle(name) {
        }
 }
 
+function select_chat_option(select_idx) {
+    $.receivePush(select_idx);
+}
+
 function change(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque1, opaque2) {
       var cb = callback;
       var o1 = opaque1;
