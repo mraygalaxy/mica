@@ -1457,7 +1457,7 @@ function doLogin(oForm) {
         oArgs.domain = oForm.domain.value;
         oArgs.username = oForm.username.value;
 	chat_username = oArgs.username;
-        oArgs.resource = 'mica';
+        oArgs.resource = 'mica' + local('jabber_key');
         oArgs.pass = oForm.password.value;
         oArgs.register = false;
         con.connect(oArgs);
