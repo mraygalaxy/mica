@@ -3347,7 +3347,7 @@ class MICA(object):
                 story["pages"]["0"]["units"][unit_idx]["select_idx"] = select_idx
                 select_idx += 1
 
-            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id, chat = True)
+            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id, chat = True if not peer else False)
 
 
         except OSError, e :
