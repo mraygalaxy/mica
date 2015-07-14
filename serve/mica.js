@@ -107,7 +107,7 @@ function local(msgid) {
             }
 
             if(id != false && id != 'false')
-                document.getElementById(id).innerHTML = 'Next Check: ' + left;
+                document.getElementById(id).innerHTML = left;
             if(left != 0 && barid != false && barid != 'false')
                 document.getElementById(barid).style.width = ((secs - left) / secs) * 100 + "%";
             setTimeout("CountBack('" + id + "', '" + barid + "', " + newSecs + ", '" + opaque + "');", 990);
@@ -1376,10 +1376,14 @@ function handlePresence(oJSJaCPacket) {
 }
 
 function handleError(e) {
-    document.getElementById('err').innerHTML = "An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName).htmlEnc();
+    secs = 5;
+    document.getElementById('err').innerHTML = ("An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\nWill reconnect in ").htmlEnc() + "<div style='display: inline' id='reconnect'>" + secs + "</div> secs");
     document.getElementById('login_pane').style.display = '';
     document.getElementById('sendmsg_pane').style.display = 'none';
     $("#chatLoading").attr("style", "display: none");
+    finish = reconnect;
+    do_refresh = true;
+    CountBack("reconnect", false, secs, false);
 
     if (con.connected())
         con.disconnect();
@@ -1416,6 +1420,14 @@ function getPairs() {
     var languagepair = $('#chattextlanguage').val();
     var pair = languagepair.split(",");
     return pair;
+}
+
+function reconnect(unused) {
+    document.getElementById('login_pane').style.display = 'block';
+    $("#chatLoading").attr("style", "display: block");
+    doLogin(document.getElementById('loginForm'));
+    finish = false;
+    do_refresh = false;
 }
 
 function doLogin(oForm) {
