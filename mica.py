@@ -4274,7 +4274,7 @@ class MICA(object):
 
             out = "<div><div id='chathistoryresult'><div class='msg'>"
             if len(stories) :
-                stories.sort(key=by_date)
+                stories.sort(key=by_date, reverse=True)
                 tmp_story = stories[0]
                 nb_pages = self.nb_pages(req, tmp_story)
                 [x, period, howmany, peer] = tmp_story["name"].split(";")
