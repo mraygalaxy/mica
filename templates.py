@@ -361,6 +361,7 @@ class ChatElement(CommonElement) :
                       # Use a traditional or simplified character IME system
                       traditional = _("Traditional"),
                       provideaddress = _("Please provide the address of someone to chat with."),
+                      jabber_key = self.req.session.value["jabber_key"],
                      )
         return tag
 

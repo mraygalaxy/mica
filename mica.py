@@ -4248,6 +4248,10 @@ class MICA(object):
         return self.bootstrap(req, out)
                     
     def common_chat(self, req, unused_story) :
+        if "jabber_key" not in req.session.value :
+            req.session.value["jabber_key"] = binascii_hexlify(os_urandom(4))
+            req.session.save()
+
         if req.http.params.get("history") :
             def by_date(story):
                 return int((story["name"].split(";")[2]))
