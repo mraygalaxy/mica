@@ -4293,7 +4293,10 @@ class MICA(object):
                     nb_pages = self.nb_pages(req, tmp_story)
 
                     if not nb_pages :
-                        continue
+                        nb_pages = self.nb_pages(req, tmp_story, force = True)
+                        if not nb_pages :
+                            mdebug("Empty. =(")
+                            continue
 
                     [x, period, howmany, peer] = tmp_story["name"].split(";")
                     out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
