@@ -4288,10 +4288,16 @@ class MICA(object):
             out = "<div><div id='chathistoryresult'><div class='msg'>"
             if len(stories) :
                 stories.sort(key=by_date, reverse=True)
-                tmp_story = stories[0]
-                nb_pages = self.nb_pages(req, tmp_story)
-                [x, period, howmany, peer] = tmp_story["name"].split(";")
-                out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+                for tmp_story in stories :
+                    tmp_story = stories[0]
+                    nb_pages = self.nb_pages(req, tmp_story)
+
+                    if not nb_pages :
+                        continue
+
+                    [x, period, howmany, peer] = tmp_story["name"].split(";")
+                    out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+
             out += "</div></div></div>"
             return self.bootstrap(req, out, now = True)
 
