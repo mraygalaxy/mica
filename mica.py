@@ -5130,7 +5130,7 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
-            mderr(out)
+            merr(out)
 
             try :
                 if isinstance(resp, str) :

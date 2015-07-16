@@ -78,10 +78,10 @@ class Processor(object) :
         self.punctuation['\n'] = {}
         self.punctuation_without_letters = {}
 
-        for c in [u'%' u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')', u'$' ] :
+        for c in [u';', u'\"', u'+', u'#', u'^', u'}', u'{', u'=', u'%', u'「', u'【', u']', u'[', u'>', u'<', u'】',u'〈', u'@', u'；', u'&', u'*', u'|', u'/', u'-', u'_', u'—', u',', u'，',u'.',u'。', u'?', u'？', u':', u'：', u'：', u'、', u'“', u'”', u'~', u'`', u'"', u'\'', u'…', u'！', u'!', u'（', u'(', u'）', u')', u'$' ] :
            self.punctuation_without_letters[c] = {} 
 
-        for c in ['%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')', '$' ] :
+        for c in ['\"', '+', '#', '}', '{', '=', '%', ']', '[', '<', '>','@',';', '&', "*', "'|', '^','\\','/', '-', '_', '—', ',', '，','.','。', '?', '？', ':', '：', '、', '“', '”', '~', '`', '"', '\'', '…', '！', '!', '（', '(', '）', ')', '$' ] :
            self.punctuation_without_letters[c] = {} 
 
         self.punctuation_without_newlines.update(self.punctuation_without_letters)
@@ -1408,7 +1408,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                     for su in sub_units :
                         count_sub_chars += len(su["source"])
 
-                    mverbose("Sub unit characters: " + str(count_sub_chars) + " size " + str(size) + " source " + str(su["source"]))
+                        mverbose("Sub unit characters: " + str(count_sub_chars) + " size " + str(size) + " source " + str(su["source"]))
 
                     # Strip off what was matched, according to the leng
                     units += sub_units
