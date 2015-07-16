@@ -3248,64 +3248,74 @@ class MICA(object):
 
     def common_chat_ime(self, req) :
         self.imemutex.acquire()
-        self.install_local_language(req, req.http.params.get("lang"))
-        mode = req.http.params.get("mode")
-        orig = req.http.params.get("source")
-        imes = int(req.http.params.get("ime"), 0)
-        msgfrom = req.http.params.get("msgfrom", False)
-        msgto = req.http.params.get("msgto", False)
-        peer = req.http.params.get("peer", False)
-        timestamp = req.http.params.get("ts", False)
-        if timestamp :
-            timestamp = float(timestamp) / 1000.0
+        try :
+            self.install_local_language(req, req.http.params.get("lang"))
+            mode = req.http.params.get("mode")
+            orig = req.http.params.get("source")
+            imes = int(req.http.params.get("ime"), 0)
+            msgfrom = req.http.params.get("msgfrom", False)
+            msgto = req.http.params.get("msgto", False)
+            peer = req.http.params.get("peer", False)
+            timestamp = req.http.params.get("ts", False)
+            if timestamp :
+                timestamp = float(timestamp) / 1000.0
 
-        start_trans_id = int(req.http.params.get("start_trans_id", 0))
-        story = {
-           "name" : "ime",
-           "target_language" : supported_map[req.http.params.get("target_language")],
-           "source_language" : supported_map[req.http.params.get("source_language")],
-        }
+            start_trans_id = int(req.http.params.get("start_trans_id", 0))
+            story = {
+               "name" : "ime",
+               "target_language" : supported_map[req.http.params.get("target_language")],
+               "source_language" : supported_map[req.http.params.get("source_language")],
+            }
 
-        gp = self.processors[self.tofrom(story)]
-        out = {"success" : False}
-        lens = []
-        chars = []
-        source = ""
-        if orig :
-            imes = int(req.http.params.get("ime"))
-            mdebug("Type: " + str(type(orig)))
-            start = timest()
-            char_result = gp.get_chars(orig)
-            mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
+            gp = self.processors[self.tofrom(story)]
+            out = {"success" : False}
+            lens = []
+            chars = []
+            source = ""
+            if orig :
+                imes = int(req.http.params.get("ime"))
+                mdebug("Type: " + str(type(orig)))
+                start = timest()
+                char_result = gp.get_chars(orig)
+                mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
 
-            if not char_result :
-                mdebug("No result from search for: " + orig)
-                out["desc"] = _("No result") + "."
-                if not gp.already_romanized :
-                    return self.api(req, out, False)
+                if not char_result :
+                    mdebug("No result from search for: " + orig)
+                    out["desc"] = _("No result") + "."
+                    if not gp.already_romanized :
+                        self.imemutex.release()
+                        return self.api(req, out, False)
 
-                source = orig
+                    source = orig
+                else :
+                    imes = len(char_result)
+
+                    for imex in range(0, imes) :
+                        if imes > 0 :
+                            source += " " + str(imex + 1) + ". "
+                        source += char_result[imex][0]
+                        lens.append(len(char_result[imex][0]))
+                        chars.append(char_result[imex][0])
+
             else :
-                imes = len(char_result)
+                # legacy implementation for v0.5
+                for imex in range(1, imes + 1) :
+                    if imes > 1 :
+                        source += " " + str(imex) + ". "
+                    char_result = req.http.params.get("ime" + str(imex)).decode("utf-8")
+                    source += char_result 
+                    lens.append(len(char_result))
+                    chars.append(char_result)
 
-                for imex in range(0, imes) :
-                    if imes > 0 :
-                        source += " " + str(imex + 1) + ". "
-                    source += char_result[imex][0]
-                    lens.append(len(char_result[imex][0]))
-                    chars.append(char_result[imex][0])
+            story["source"] = source
+        except Exception, e :
+            out = ""
+            for line in format_exc().splitlines() :
+                out += line + "\n"
+            merr(out)
+            self.imemutex.release()
+            raise e
 
-        else :
-            # legacy implementation for v0.5
-            for imex in range(1, imes + 1) :
-                if imes > 1 :
-                    source += " " + str(imex) + ". "
-                char_result = req.http.params.get("ime" + str(imex)).decode("utf-8")
-                source += char_result 
-                lens.append(len(char_result))
-                chars.append(char_result)
-
-        story["source"] = source
 
         # FIXME: The long-term solution to open all sqlite database handles
         # inside the main routine and use couroutines to synchronize
@@ -3892,7 +3902,7 @@ class MICA(object):
                 out = ""
                 for line in format_exc().splitlines() :
                     out += line + "\n"
-                mdebug(out)
+                merr(out)
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                 
             out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
@@ -5120,7 +5130,7 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 resp += "<br>" + line
                 out += line + "\n"
-            mdebug(out)
+            mderr(out)
 
             try :
                 if isinstance(resp, str) :
