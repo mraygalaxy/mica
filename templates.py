@@ -362,6 +362,9 @@ class ChatElement(CommonElement) :
                       traditional = _("Traditional"),
                       provideaddress = _("Please provide the address of someone to chat with."),
                       jabber_key = self.req.session.value["jabber_key"],
+                      notauthorized = _("Disconnected: You have probably logged in from a different web-browser. To resume your chat please sign-out an then sign-in again. Thank you."),
+                      chaterror = _("An error occured"),
+                      secsleft = _("Seconds left to reconnect"),
                      )
         return tag
 
