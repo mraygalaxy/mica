@@ -4300,6 +4300,7 @@ class MICA(object):
 
                     [x, period, howmany, peer] = tmp_story["name"].split(";")
                     out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+                    break
 
             out += "</div></div></div>"
             return self.bootstrap(req, out, now = True)
