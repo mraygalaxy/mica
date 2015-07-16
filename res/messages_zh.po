@@ -1465,3 +1465,14 @@ msgstr ""
 
 msgid "Please provide the address of someone to chat with."
 msgstr ""
+
+msgid ""
+"Disconnected: You have probably logged in from a different web-browser. To "
+"resume your chat please sign-out an then sign-in again. Thank you."
+msgstr ""
+
+msgid "An error occured"
+msgstr ""
+
+msgid "Seconds left to reconnect"
+msgstr ""
