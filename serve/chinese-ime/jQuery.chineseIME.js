@@ -284,7 +284,10 @@ var _callbacks_ = {
 		    console.log("Returning early. Booooooooooooo.");
                     return false;
                 }
-                if (/[a-zA-Z]/.test(key)){ 
+                if (/[a-zA-Z\?\=\)\-\^\%\$\#\@\!\~\`\-\_\(\+\=\*\&\'\"\;\:\]\[\}\{\/\<\>]/.test(key)){ 
+                    console.log("Caught key " + key);
+
+                //if (/[a-zA-Z]/.test(key)){ 
                     self.inputText = beforeCheck;
                     // pressed a character
                     if (self.currentText.length <= 20){ 
