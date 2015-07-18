@@ -922,7 +922,7 @@ class MICA(object):
 
     def parse(self, req, story, page = False, live = False) :
         name = story['name']
-        mdebug("Ready to translate: " + name + ". Counting pages...")
+        mverbose("Ready to translate: " + name + ". Counting pages...")
 
         assert("source_language" in story)
 
@@ -3273,10 +3273,10 @@ class MICA(object):
             source = ""
             if orig :
                 imes = int(req.http.params.get("ime"))
-                mdebug("Type: " + str(type(orig)))
-                start = timest()
+                #mdebug("Type: " + str(type(orig)))
+                #start = timest()
                 char_result = gp.get_chars(orig)
-                mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
+                #mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
 
                 if not char_result :
                     mdebug("No result from search for: " + orig)
