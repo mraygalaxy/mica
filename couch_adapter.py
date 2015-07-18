@@ -201,7 +201,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     def view(self, *args, **kwargs) :
         view_name = args[0]
-        mdebug("Query view: " + view_name)
+        mverbose("Query view: " + view_name)
         if "keys" in kwargs :
             keylist = []
             username = kwargs["username"]

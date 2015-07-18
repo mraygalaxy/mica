@@ -966,19 +966,18 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         if not mobile :
             cpus = multiprocessing.cpu_count()
-            mdebug("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
+            mverbose("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
 
         if path_exists(jfile) or not mobile : 
-            mdebug("Initializing jieba library from: " + jfile)
+            mverbose("Initializing jieba library from: " + jfile)
             jieba.initialize(sqlite = jfile, check_age = False)
-            mdebug("Initializing complete.")
 
         #if not mobile :
             #jieba.enable_parallel(cpus)
 
     def jieba_close(self) :
         if jieba.initialized and isinstance(jieba.use_sqlite, dict) and "conn" in jieba.use_sqlite :
-            mdebug("Closing jieba library.")
+            mverbose("Closing jieba library.")
             jieba.use_sqlite["conn"].close()
             jieba.use_sqlite = False
         jieba.initialized = False
@@ -1025,7 +1024,7 @@ class ChineseSimplifiedToEnglish(Processor) :
     def parse_page_start(self, hint_strinput = False) : 
         big_enough = not hint_strinput or not self.all_two_chars_or_less(hint_strinput)
         if big_enough and not ictc_available :
-            mdebug("Opening jieba......")
+            mverbose("Opening jieba......")
             self.jieba_open()
 
         return self.get_cjk_handle(big_enough = big_enough)

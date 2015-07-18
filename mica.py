@@ -883,9 +883,8 @@ class MICA(object):
 
             for f in lgp.get_dictionaries() :
                 fname = params["scratch"] + f
-                mdebug("Exists: " + fname)
                 size = os_path.getsize(fname)
-                mdebug("FILE " + f + " size: " + str(size))
+                mdebug("Exists FILE: " + str(size) + " " + fname)
                 assert(size != 0)
 
         self.db.detach_thread()
@@ -5448,7 +5447,7 @@ def go(p) :
 
         mica = MICA(db_adapter)
 
-        mdebug("INIT Testing dictionary thread")
+        mverbose("INIT Testing dictionary thread")
         ct = Thread(target=mica.test_dicts)
         ct.daemon = True
         ct.start()
