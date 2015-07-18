@@ -767,7 +767,8 @@ class ChineseSimplifiedToEnglish(Processor) :
             trans.commit()
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
-        self.setup_imedb(preload = preload)
+        if not hasattr(self, "imedb") :
+            self.setup_imedb(preload = preload)
 
     def setup_imedb(self, preload = False) :
         if preload :
