@@ -1465,7 +1465,7 @@ class MICA(object):
         if mobile and req.session.value["username"] == "demo" and gp.already_romanized :
             chars_per_line = 10 
 
-        mdebug("View Page " + str(page) + " story " + str(name) + " start...")
+        mverbose("View Page " + str(page) + " story " + str(name) + " start...")
 
         if name :
             try :
@@ -1475,7 +1475,7 @@ class MICA(object):
         else :
             page_dict = story["pages"]["0"]
 
-        mdebug("View Page " + str(page) + " story " + str(name) + " fetched...")
+        mverbose("View Page " + str(page) + " story " + str(name) + " fetched...")
 
         units = page_dict["units"]
         words = len(units)
@@ -1486,7 +1486,7 @@ class MICA(object):
         chars = 0
         batch = -1
 
-        mdebug("View Page " + str(page) + " story " + str(name) + " building...")
+        mverbose("View Page " + str(page) + " story " + str(name) + " building...")
             
         sources = {}
 
@@ -1498,7 +1498,7 @@ class MICA(object):
         elif action == "read" :
             sources['memorized'] = self.view_keys(req, "memorized", units) 
         
-        mdebug("View Page " + str(page) + " story " + str(name) + " querying...")
+        mverbose("View Page " + str(page) + " story " + str(name) + " querying...")
 
         for x in range(0, len(units)) :
             unit = units[x]
@@ -1535,7 +1535,7 @@ class MICA(object):
         if len(line) :
             lines.append(line)
 
-        mdebug("View Page " + str(page) + " story " + str(name) + " grouped...")
+        mverbose("View Page " + str(page) + " story " + str(name) + " grouped...")
         
         # TODO: The rest of the code involed in viewing a page is just a bunch of
         # loops. We have already finished querying the database and are simply
@@ -1986,7 +1986,7 @@ class MICA(object):
             # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
             output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output 
 
-        mdebug("View Page " + str(page) + " story " + str(name) + " complete.")
+        mverbose("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
@@ -3331,10 +3331,10 @@ class MICA(object):
         try :
             try :
                 #sys_settrace(tracefunc)
-                start = timest()
+                #start = timest()
                 self.parse(req, story, live = True)
                 #sys_settrace(None)
-                mdebug("Parse time: " + str(timest() - start) + " for " + str(orig))
+                #mdebug("Parse time: " + str(timest() - start) + " for " + str(orig))
                 #call_report()
 
             except Exception, e :
