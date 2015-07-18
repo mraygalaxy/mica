@@ -768,13 +768,13 @@ class ChineseSimplifiedToEnglish(Processor) :
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
         if not hasattr(self, "imedb") :
+            mdebug("imedb still not allocated from test_dictionaries (fixme in a shared thread)")
             self.setup_imedb(preload = preload)
 
     def setup_imedb(self, preload = False) :
         if preload :
             db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [PinyinListener()])
         else :
-            #db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [MyListener()])
             db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db")
         db.echo = False
         metadata = MetaData(db)
@@ -793,6 +793,8 @@ class ChineseSimplifiedToEnglish(Processor) :
             Column('word2', String, index = True),
             Column('word3', String, index = True),
         )
+
+        self.imedb["conn"] = conn
 
         self.imedb["ime"].create(checkfirst=True)
 
@@ -848,6 +850,7 @@ class ChineseSimplifiedToEnglish(Processor) :
 
     def get_chars(self, wordall, limit = 8) :
         if not hasattr(self, "imedb") :
+            mdebug("imedb still not allocated from get_chars")
             self.setup_imedb()
 
         # First see if the original version is in there without spaces:
@@ -1035,6 +1038,9 @@ class ChineseSimplifiedToEnglish(Processor) :
         d.db.connection.close()
         if not ictc_available :
             self.jieba_close()
+        if hasattr(self, "imedb") :
+            self.imedb["conn"].close()
+            mdebug("imedb closed")
 
     def pre_parse_page(self, opaque, page_input_unicode) :
         strinput = page_input_unicode.encode("utf-8")
