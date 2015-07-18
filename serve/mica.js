@@ -1376,14 +1376,19 @@ function handlePresence(oJSJaCPacket) {
 }
 
 function handleError(e) {
-    secs = 5;
-    document.getElementById('err').innerHTML = ("An error occured:<br />" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\nWill reconnect in ").htmlEnc() + "<div style='display: inline' id='reconnect'>" + secs + "</div> secs");
     document.getElementById('login_pane').style.display = '';
     document.getElementById('sendmsg_pane').style.display = 'none';
     $("#chatLoading").attr("style", "display: none");
-    finish = reconnect;
-    do_refresh = true;
-    CountBack("reconnect", false, secs, false);
+
+    if (e.firstChild.nodeName == "not-authorized") {
+        $("#err").html(local("notauthorized"));
+    } else {
+        var secs = 5;
+        $("#err").html(local("chaterror") + ":<br/>" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\n" + local("secsleft")).htmlEnc() + ": <div style='display: inline' id='reconnect'>" + secs + "</div>");
+        finish = reconnect;
+        do_refresh = true;
+        CountBack("reconnect", false, secs, false);
+    }
 
     if (con.connected())
         con.disconnect();
