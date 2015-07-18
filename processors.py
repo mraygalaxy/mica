@@ -266,7 +266,7 @@ class Processor(object) :
 
             self.mica.rehash_correct_polyphome(unit)
             
-            mdebug(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
+            mverbose(("Translation: (" + "".join(unit["source"]) + ") " + " ".join(unit["sromanization"]) + ":" + " ".join(unit["target"])).replace("\n",""))
             
         if temp_units :
             story["temp_units"] = story["temp_units"] + units
@@ -768,7 +768,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
         if not hasattr(self, "imedb") :
-            mdebug("imedb still not allocated from test_dictionaries (fixme in a shared thread)")
+            mverbose("imedb still not allocated from test_dictionaries (fixme in a shared thread)")
             self.setup_imedb(preload = preload)
 
     def setup_imedb(self, preload = False) :
@@ -846,7 +846,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                     preload_count += 1
                 mdebug("Preloaded " + str(preload_count) + " rows.")
             else :
-                mdebug("Skipping pinyin ime database preload.")
+                mverbose("Skipping pinyin ime database preload.")
 
     def get_chars(self, wordall, limit = 8) :
         if not hasattr(self, "imedb") :
@@ -1040,7 +1040,6 @@ class ChineseSimplifiedToEnglish(Processor) :
             self.jieba_close()
         if hasattr(self, "imedb") :
             self.imedb["conn"].close()
-            mdebug("imedb closed")
 
     def pre_parse_page(self, opaque, page_input_unicode) :
         strinput = page_input_unicode.encode("utf-8")
