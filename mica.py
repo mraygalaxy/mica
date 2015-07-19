@@ -3158,7 +3158,6 @@ class MICA(object):
         for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
             tmp_story = result["value"]
             tmp_storyname = tmp_story["name"]
-            nb_pages = self.nb_pages(req, tmp_story)
 
             [x, period, howmany, peer] = tmp_story["name"].split(";")
 
@@ -3166,18 +3165,17 @@ class MICA(object):
             period_difference_max = multipliers[period_key] - 1
             if period_difference < period_difference_max :
                 continue
-            
-            old_messages = []
-            old_units = []
-
-            for page in range(0, nb_pages) :
-                old_units += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
-                old_messages += req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
 
             to_delete.append((tmp_story["name"], tmp_story["uuid"]))
 
-            mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
-            self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+            for page in range(0, self.nb_pages(req, tmp_story)) :
+                old_units = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
+                old_messages = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
+                mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+                self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+
+            # name and uuid get changed in tmp variable
+            self.nb_pages(req, tmp_story, force = True)
 
         for (name, uuid) in to_delete :
             mdebug("Want to delete story: " + name)
@@ -4280,10 +4278,13 @@ class MICA(object):
 
             peer = req.http.params.get("history")
             tzoffset = int(req.http.params.get("tzoffset"))
-            self.roll_period(req, "years", "decades", peer)
-            self.roll_period(req, "months", "years", peer)
-            self.roll_period(req, "weeks", "months", peer)
-            self.roll_period(req, "days", "weeks", peer)
+
+            if not mobile :
+                self.roll_period(req, "years", "decades", peer)
+                self.roll_period(req, "months", "years", peer)
+                self.roll_period(req, "weeks", "months", peer)
+                self.roll_period(req, "days", "weeks", peer)
+
             stories = []
 
             for period_key in ["days", "weeks", "months", "years", "decades"] :
