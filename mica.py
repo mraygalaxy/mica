@@ -3174,9 +3174,6 @@ class MICA(object):
                 mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
                 self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
 
-            # name and uuid get changed in tmp variable
-            self.nb_pages(req, tmp_story, force = True)
-
         for (name, uuid) in to_delete :
             mdebug("Want to delete story: " + name)
             self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
@@ -3242,6 +3239,7 @@ class MICA(object):
                 story["nb_pages"] = str(int(page) + 1)
                 req.session.value["chats"][period_key][peer] = story 
                 req.session.save()
+                self.nb_pages(req, story, force = True)
 
     def common_chat_ime(self, req) :
         self.imemutex.acquire()
