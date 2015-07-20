@@ -928,6 +928,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         return splitter.join(result)
 
     def convertPinyinCallback(self, m):
+        mverbose("convertPinyinCallback: " + str(m))
         tone=int(m.group(3))%5
         r=m.group(1).replace(u'v', u'ü').replace(u'V', u'Ü')
         # for multple vowels, use first one if it is a/e/o, otherwise use second one
@@ -939,7 +940,10 @@ class ChineseSimplifiedToEnglish(Processor) :
         return r+m.group(2)
 
     def convertTone(self, num_pinyin) :
-        return re_compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=IGNORECASE).sub(self.convertPinyinCallback, num_pinyin)
+        num_pinyin = num_pinyin.replace(u"u:", u"ü").replace("u:", u"ü")
+        mverbose("convertTone: " + str(num_pinyin))
+        result = re_compile(ur'([aeiouüvÜ]{1,3})(n?g?r?)([012345])', flags=IGNORECASE).sub(self.convertPinyinCallback, num_pinyin)
+        return result
 
     def convertPinyin(self, char):
         return self.convertTone(self.get_pinyin(char))
