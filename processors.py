@@ -248,15 +248,20 @@ class Processor(object) :
             unit["target"] = unit["multiple_target"][selector]
             unit["multiple_correct"] = selector 
 
-    def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
-        found = False
-        mverbose("Requested: " + uni)
 
+    def recursive_translate_start(self, req, story, opaque, uni, temp_units, page, tone_keys) :
         if self.all_punct(uni) :
             units = []
             units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
             units = self.recursive_translate_lang(req, story, opaque, uni, temp_units, page, tone_keys)
+        return units
+
+    def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+        found = False
+        mverbose("Requested: " + uni)
+
+        units = self.recursive_translate_start(req, story, opaque, uni, temp_units, page, tone_keys)
         if len(units) :
             found = True
 
@@ -375,7 +380,7 @@ class RomanizedSource(Processor) :
                 else :
                     units.append(self.add_unit([u"-"], u"-", [u"-"], punctuation = True))
 
-                res = self.recursive_translate_lang(req, story, opaque, part, temp_units, page, tone_keys)
+                res = self.recursive_translate_start(req, story, opaque, part, temp_units, page, tone_keys)
                 if len(res) :
                     units = units + res
             return units
@@ -1378,9 +1383,11 @@ class ChineseSimplifiedToEnglish(Processor) :
                 targ.append(e[3])
 
         if len(trans) == 1 :
+            mverbose("Adding single-trans source " + uni + " to unit.")
             unit = self.add_unit(trans[0].split(" "), uni, [targ[0]])
             units.append(unit)
         elif len(trans) == 0 :
+            mverbose("No trans for " + uni + " unit, recursing...")
             sub_uni = uni
             uni_size = len(uni)
             if len(sub_uni) > 1 :
@@ -1408,7 +1415,9 @@ class ChineseSimplifiedToEnglish(Processor) :
                     check_whole = True
                     mverbose("Trying: " +  try_uni)
 
-                    sub_units = self.recursive_translate_lang(req, story, opaque, try_uni, temp_units, page, tone_keys)
+                    sub_units = self.recursive_translate_start(req, story, opaque, try_uni, temp_units, page, tone_keys)
+
+                    mverbose("Sub units: " + str(len(sub_units)))
 
                     for su in sub_units :
                         count_sub_chars += len(su["source"])
@@ -1424,6 +1433,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                 assert(count_sub_chars == len(uni))
 
         elif len(trans) > 1 :
+            mverbose("Many trans for " + uni + " unit, choosing...")
                         
             for x in range(0, len(trans)) :
                 trans[x] = trans[x].lower() 
