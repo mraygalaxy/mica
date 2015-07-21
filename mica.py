@@ -4283,35 +4283,36 @@ class MICA(object):
                 self.roll_period(req, "weeks", "months", peer)
                 self.roll_period(req, "days", "weeks", peer)
 
-            stories = []
 
+            out = "<div><div id='chathistoryresult'><div class='msg'>"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
+                stories = []
+
                 for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
                     stories.append(result["value"])
 
                 if len(stories) :
                     mdebug("Found " + str(len(stories)) + " stories for period " + period_key)
-                    break
 
-            out = "<div><div id='chathistoryresult'><div class='msg'>"
-            if len(stories) :
-                stories.sort(key=by_date, reverse=True)
-                for tmp_story in stories :
-                    nb_pages = self.nb_pages(req, tmp_story)
+                    stories.sort(key=by_date, reverse=True)
+                    for tmp_story in stories :
+                        nb_pages = self.nb_pages(req, tmp_story)
 
-                    if not nb_pages :
-                        nb_pages = self.nb_pages(req, tmp_story, force = True)
                         if not nb_pages :
-                            mdebug("Empty. =(")
-                            continue
+                            nb_pages = self.nb_pages(req, tmp_story, force = True)
+                            if not nb_pages :
+                                mdebug("Empty. =(")
+                                continue
 
-                    if mobile :
-                        if tmp_story["name"] not in req.session.value["filters"] :
-                            mdebug("Skipping un-downloaded story: " + tmp_story["name"])
-                            continue
+                        if mobile :
+                            if tmp_story["name"] not in req.session.value["filters"] :
+                                mdebug("Skipping un-downloaded story: " + tmp_story["name"])
+                                continue
 
-                    [x, period, howmany, peer] = tmp_story["name"].split(";")
-                    out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+                        [x, period, howmany, peer] = tmp_story["name"].split(";")
+                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+                        break
+
                     break
 
             out += "</div></div></div>"
