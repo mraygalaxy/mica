@@ -4295,6 +4295,7 @@ class MICA(object):
                     mdebug("Found " + str(len(stories)) + " stories for period " + period_key)
 
                     stories.sort(key=by_date, reverse=True)
+                    added = False
                     for tmp_story in stories :
                         nb_pages = self.nb_pages(req, tmp_story)
 
@@ -4305,15 +4306,17 @@ class MICA(object):
                                 continue
 
                         if mobile :
-                            if tmp_story["name"] not in req.session.value["filters"] :
+                            if tmp_story["name"] not in req.session.value["filters"]["stories"] :
                                 mdebug("Skipping un-downloaded story: " + tmp_story["name"])
                                 continue
 
+                        added = True
                         [x, period, howmany, peer] = tmp_story["name"].split(";")
                         out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
                         break
 
-                    break
+                    if added :
+                        break
 
             out += "</div></div></div>"
             return self.bootstrap(req, out, now = True)
