@@ -4297,13 +4297,17 @@ class MICA(object):
             if len(stories) :
                 stories.sort(key=by_date, reverse=True)
                 for tmp_story in stories :
-                    tmp_story = stories[0]
                     nb_pages = self.nb_pages(req, tmp_story)
 
                     if not nb_pages :
                         nb_pages = self.nb_pages(req, tmp_story, force = True)
                         if not nb_pages :
                             mdebug("Empty. =(")
+                            continue
+
+                    if mobile :
+                        if tmp_story["name"] not in req.session.value["filters"] :
+                            mdebug("Skipping un-downloaded story: " + tmp_story["name"])
                             continue
 
                     [x, period, howmany, peer] = tmp_story["name"].split(";")
