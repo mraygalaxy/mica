@@ -3178,7 +3178,7 @@ class MICA(object):
             for page in range(0, self.nb_pages(req, tmp_story)) :
                 old_units = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
                 old_messages = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
-                mdebug("Want to add " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+                mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
                 self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
 
         for (name, uuid) in to_delete :
@@ -3192,8 +3192,11 @@ class MICA(object):
 
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
             if peer not in req.session.value["chats"][period_key] :
+                mdebug("Peer not in session. Checking for story...")
                 if not req.db.get_or_false(self.chat_period(req, period_key, peer, current_day)) :
+                    mdebug("Adding new story for period " + period_key + " and peer" + peer)
                     self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
+                mdebug("Looking up story for period " + period_key + " and peer" + peer)
                 story = req.db[self.chat_period(req, period_key, peer, current_day)]
                 req.session.value["chats"][period_key][peer] = story 
                 req.session.save()
