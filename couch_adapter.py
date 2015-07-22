@@ -94,7 +94,7 @@ class NotImplementedError(Exception) :
         return self.msg
 
 class MicaDatabase(object) :
-    def get_or_false(self, name) :
+    def try_get(self, name) :
         return self.__getitem__(name, false_if_not_found = True)
 
 class MicaDatabaseCouchDB(MicaDatabase) :
