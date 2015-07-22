@@ -242,6 +242,17 @@ var _callbacks_ = {
 		    self.$el.keypress(self.keyPress);
             }
 	    */
+	     self.enter = function( event ) {
+		
+		    if(event.which ==13)  //13 is for enterkey
+	     {
+		 event.preventDefault();
+	      	 console.log("GOT ENTER EVENT!!!!!!"); 
+		 self.keyPress(event);
+	     }
+	    }
+
+	    $( "#msgArea" ).on( "keyup", self.enter);
 	    $("#msgArea").bind('input propertychange', self.keyPress);
 	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
