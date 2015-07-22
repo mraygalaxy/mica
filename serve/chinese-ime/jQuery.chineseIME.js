@@ -1,4 +1,9 @@
 
+var standalone = window.navigator.standalone,
+    userAgent = window.navigator.userAgent.toLowerCase(),
+    safari = /safari/.test( userAgent ),
+    ios = /iphone|ipod|ipad/.test( userAgent );
+
 var _callbacks_ = {
     'loadWords': function(rep){
         /* =========================
@@ -230,7 +235,11 @@ var _callbacks_ = {
             // Further initialization
 
             self.$el.keydown(self.nothing);
-            self.$el.keyup(self.keyPress);
+            if (ios) {
+		    self.$el.keyup(self.keyPress);
+	    } else {
+		    self.$el.keypress(self.keyPress);
+            }
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
             self.$toolbar.insertAfter(self.$el);
@@ -262,7 +271,16 @@ var _callbacks_ = {
 
         self.keyPress = function(event){
             event.preventDefault();
-            console.log("Even which value: ** " + event.which + " **")
+	    if (ios) {
+               key =  String.fromCharCode(event.which)
+               console.log("We're on iOS. Triggering keypress: " + key + " code " + event.which + " " + event.keyCode + " " + event.char + " " + event.key + " " + event.charCode);
+	       if (event.which == 8) {
+		  console.log("Performing a backspace");
+		  self.clearOld(1);
+	       } else {
+		  $("#msgArea").val($("#msgArea").val() + key);
+	       }
+	    }
 
             if (self.options.active) {
                 var beforeCheck = $("#msgArea").val();
