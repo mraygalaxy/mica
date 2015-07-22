@@ -234,12 +234,15 @@ var _callbacks_ = {
             
             // Further initialization
 
+            /*
             self.$el.keydown(self.nothing);
             if (ios) {
 		    self.$el.keyup(self.keyPress);
 	    } else {
 		    self.$el.keypress(self.keyPress);
             }
+	    */
+	    $("#msgArea").bind('input propertychange', self.keyPress);
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
             self.$toolbar.insertAfter(self.$el);
@@ -270,18 +273,6 @@ var _callbacks_ = {
         */
 
         self.keyPress = function(event){
-            event.preventDefault();
-	    if (ios) {
-               key =  String.fromCharCode(event.which)
-               console.log("We're on iOS. Triggering keypress: " + key + " code " + event.which + " " + event.keyCode + " " + event.char + " " + event.key + " " + event.charCode);
-	       if (event.which == 8) {
-		  console.log("Performing a backspace");
-		  self.clearOld(1);
-	       } else {
-		  $("#msgArea").val($("#msgArea").val() + key);
-	       }
-	    }
-
             if (self.options.active) {
                 var beforeCheck = $("#msgArea").val();
                 var key = '';
