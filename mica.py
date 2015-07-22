@@ -283,7 +283,7 @@ class MICA(object):
 
             self.views_ready[username] = 0
             req.db = self.dbs[username]
-            self.new_job(req, self.view_runner_go, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]])
+            self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]])
 
             mdebug("Installing view counter.")
             if username not in self.views_ready :
@@ -423,10 +423,11 @@ class MICA(object):
             mdebug("INIT Launching runloop timer")
             Timer(5, self.runloop_sched).start()
 
-        mdebug("Starting view runner thread")
-        vt = Thread(target=self.view_runner_sched)
-        vt.daemon = True
-        vt.start()
+        if not mobile :
+            mdebug("Starting view runner thread")
+            vt = Thread(target=self.view_runner_sched)
+            vt.daemon = True
+            vt.start()
 
 
     def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
@@ -495,7 +496,7 @@ class MICA(object):
         self.check_all_views(req)
         req.db = savedb
 
-    def view_runner_common(self, username, db) :
+    def view_runner(self, username, db) :
         # This only primes views for logged-in users.
         # Scaling the backgrounding for all users will need more thought.
 
@@ -526,38 +527,40 @@ class MICA(object):
 
             self.views_ready[username] += 1
 
-    def view_runner(self) :
+        return _("Database optimized.")
+
+    def safe_execute_serial(self) :
         (stuff, rq) = (yield)
-        (username, db) = stuff
+        (func, args, kwargs) = stuff
 
-        self.view_runner_common(username, db)
+        resp = func(*args, **kwargs)
 
-        rq.put(None)
+        rq.put(resp)
         rq.task_done()
 
-    def view_runner_go(self, username, db) :
+    def safe_execute(self, func, args = [], kwargs = {}) :
         if params["serialize_couch_on_mobile"] :
+            mdebug("Serializing this job.")
             rq = Queue_Queue()
-            co = self.view_runner()
+            co = self.safe_execute_serial()
             co.next()
-            params["q"].put((co, (username, db), rq))
+            params["q"].put((co, (func, args, kwargs), rq))
             resp = rq.get()
         else :
-            self.view_runner_common(username, db)
+            resp = func(*args, **kwargs)
 
-        return _("Database optimized.")
+        return resp
 
     def view_runner_sched(self) :
         mdebug("Execute the view runner one time to get started...")
         for username, db in self.dbs.iteritems() :
-            self.view_runner_go(username, db)
+            self.safe_execute(self.view_runner, args = [username, db])
 
         while True :
             mdebug("View runner complete. Waiting until next time...")
             sleep(1800)
             for username, db in self.dbs.iteritems() :
-                self.view_runner_go(username, db)
-
+                self.safe_execute(self.view_runner, args = [username, db])
 
     def get_filter_params(self, req) :
         filterparams = {"name" : "download/mobile"}
@@ -2800,21 +2803,9 @@ class MICA(object):
             self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
-    def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
-        self.install_local_language(req)
-
-        try :
-            mdebug("Running job: " + str(job))
-            req.job_uuid = job["uuid"]
-            job["result"] = func(*args, **kwargs)
-            job["success"] = True
-            mdebug("Complete job: " + str(job))
-        except Exception, e :
-            mdebug("Error job: " + str(job) + " " + str(e))
-            if cleanup :
-                cleanup(*args, **kwargs)
-            job["success"] = False
-            job["result"] = str(e)
+    def run_job_complete(self, req, cleanup, self_delete, job) :
+        if cleanup :
+            cleanup(*args, **kwargs)
 
         if self_delete and job["success"] :
             mdebug("Deleting job immediately. Not adding to list")
@@ -2832,6 +2823,22 @@ class MICA(object):
             jobs = req.db["MICA:jobs"]
             jobs["list"][job["uuid"]] = job
             req.db["MICA:jobs"] = jobs
+
+    def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
+        self.install_local_language(req)
+
+        try :
+            mdebug("Running job: " + str(job))
+            req.job_uuid = job["uuid"]
+            job["result"] = self.safe_execute(func, args, kwargs)
+            job["success"] = True
+            mdebug("Complete job: " + str(job))
+        except Exception, e :
+            mdebug("Error job: " + str(job) + " " + str(e))
+            job["success"] = False
+            job["result"] = str(e)
+
+        self.safe_execute(self.run_job_complete, args = [req, cleanup, self_delete, job])
 
         req.db.detach_thread()
 
