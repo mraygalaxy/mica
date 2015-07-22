@@ -3181,26 +3181,26 @@ class MICA(object):
                 pagekey = self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page_nb)
                 orig = req.db.try_get(origkey)
                 if orig :
-                    mdebug("Got original to roll.")
+                    mverbose("Got original to roll.")
                     old_messages = orig["messages"]
                     page = req.db.try_get(pagekey)
                     if page :
-                        mdebug("Got page to roll.")
+                        mverbose("Got page to roll.")
                         old_units = page["units"]
 
                         mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
                         self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
-                        mdebug("add for roll returned")
+                        mverbose("add for roll returned")
                     else :
-                        mdebug("Couldn't find page to roll: " + pagekey)
+                        mwarn("Couldn't find page to roll: " + pagekey)
                 else :
-                    mdebug("Couldn't find original to roll: " + origkey)
+                    mwarn("Couldn't find original to roll: " + origkey)
 
-        mdebug("Checking for deletes...")
+        mverbose("Checking for deletes...")
         for (name, uuid) in to_delete :
-            mdebug("Want to delete story: " + name)
+            mverbose("Want to delete story: " + name)
             self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
-        mdebug("Roll complete for period: " + period_key)
+        mverbose("Roll complete for period: " + period_key)
 
     def period_keys(self, req, period_key, current_day, peer, page) :
         origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
@@ -3209,11 +3209,11 @@ class MICA(object):
 
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
             if peer not in req.session.value["chats"][period_key] :
-                mdebug("Peer not in session. Checking for story...")
+                mverbose("Peer not in session. Checking for story...")
                 if not req.db.try_get(self.chat_period(req, period_key, peer, current_day)) :
                     mdebug("Adding new story for period " + period_key + " and peer" + peer)
                     self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
-                mdebug("Looking up story for period " + period_key + " and peer" + peer)
+                mverbose("Looking up story for period " + period_key + " and peer" + peer)
                 story = req.db[self.chat_period(req, period_key, peer, current_day)]
                 req.session.value["chats"][period_key][peer] = story 
                 req.session.save()
@@ -3242,13 +3242,13 @@ class MICA(object):
                 # configurable in the preferences, of course
 
                 if len(chat_orig["messages"]) >= 20 :
-                    mdebug("Adding new page over 20 messages.")
+                    mverbose("Adding new page over 20 messages.")
                     changed_page = True
                     page = int(page) + 1 
 
                     origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
                     if req.db.try_get(origkey) or req.db.try_get(pagekey) :
-                        mdebug("There is a discrepancy between cached pages and db pages. Resetting.")
+                        mwarn("There is a discrepancy between cached pages and db pages. Resetting.")
                         story["name"] = self.chat_period_name(period_key, peer, current_day)
                         page = str(self.nb_pages(req, story, force = True) - 1)
 
@@ -3256,21 +3256,21 @@ class MICA(object):
                 break
                     
             chat_orig["messages"] += messages
-            mdebug("Adding to: " + origkey)
+            mverbose("Adding to: " + origkey)
             req.db[origkey] = chat_orig
-            mdebug("Adding to: " + pagekey)
+            mverbose("Adding to: " + pagekey)
             chat_page["units"] += new_units
             req.db[pagekey] = chat_page
-            mdebug("Finished adding")
+            mverbose("Finished adding")
 
             if changed_page or csession["nb_pages"] == 0 :
-                mdebug("Recounting: " + pagekey)
+                mverbose("Recounting: " + pagekey)
                 story["name"] = self.chat_period_name(period_key, peer, current_day)
                 story["nb_pages"] = str(int(page) + 1)
                 req.session.value["chats"][period_key][peer] = story 
                 req.session.save()
                 self.nb_pages(req, story, force = True)
-            mdebug("Add complete")
+            mverbose("Add complete")
 
     def common_chat_ime(self, req) :
         self.imemutex.acquire()
