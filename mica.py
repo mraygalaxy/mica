@@ -3175,11 +3175,13 @@ class MICA(object):
 
             to_delete.append((tmp_story["name"], tmp_story["uuid"]))
 
-            for page in range(0, self.nb_pages(req, tmp_story)) :
+            pages = self.nb_pages(req, tmp_story)
+            for page in range(0, pages) :
                 old_units = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
                 old_messages = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
                 mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
                 self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+                mdebug("add for roll returned")
 
         mdebug("Checking for deletes...")
         for (name, uuid) in to_delete :
