@@ -3176,12 +3176,25 @@ class MICA(object):
             to_delete.append((tmp_story["name"], tmp_story["uuid"]))
 
             pages = self.nb_pages(req, tmp_story)
-            for page in range(0, pages) :
-                old_units = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page)]["units"]
-                old_messages = req.db[self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page)]["messages"]
-                mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
-                self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
-                mdebug("add for roll returned")
+            for page_nb in range(0, pages) :
+                origkey = self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page_nb)
+                pagekey = self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page_nb)
+                orig = req.db.try_get(origkey)
+                if orig :
+                    mdebug("Got original to roll.")
+                    old_messages = orig["messages"]
+                    page = req.db.try_get(pagekey)
+                    if page :
+                        mdebug("Got page to roll.")
+                        old_units = page["units"]
+
+                        mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+                        self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+                        mdebug("add for roll returned")
+                    else :
+                        mdebug("Couldn't find page to roll: " + pagekey)
+                else :
+                    mdebug("Couldn't find original to roll: " + origkey)
 
         mdebug("Checking for deletes...")
         for (name, uuid) in to_delete :
