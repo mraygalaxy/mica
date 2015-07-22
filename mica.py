@@ -3181,9 +3181,11 @@ class MICA(object):
                 mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
                 self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
 
+        mdebug("Checking for deletes...")
         for (name, uuid) in to_delete :
             mdebug("Want to delete story: " + name)
             self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
+        mdebug("Roll complete for period: " + period_key)
 
     def period_keys(self, req, period_key, current_day, peer, page) :
         origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
