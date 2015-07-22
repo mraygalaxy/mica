@@ -3244,6 +3244,7 @@ class MICA(object):
             mdebug("Adding to: " + pagekey)
             chat_page["units"] += new_units
             req.db[pagekey] = chat_page
+            mdebug("Finished adding")
 
             if changed_page or csession["nb_pages"] == 0 :
                 mdebug("Recounting: " + pagekey)
@@ -3252,6 +3253,7 @@ class MICA(object):
                 req.session.value["chats"][period_key][peer] = story 
                 req.session.save()
                 self.nb_pages(req, story, force = True)
+            mdebug("Add complete")
 
     def common_chat_ime(self, req) :
         self.imemutex.acquire()
