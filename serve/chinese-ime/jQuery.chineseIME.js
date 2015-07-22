@@ -262,6 +262,7 @@ var _callbacks_ = {
 
         self.keyPress = function(event){
             event.preventDefault();
+            console.log("Even which value: ** " + event.which + " **")
 
             if (self.options.active) {
                 var beforeCheck = $("#msgArea").val();
