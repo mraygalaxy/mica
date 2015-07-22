@@ -20,22 +20,23 @@
     <div id='pagesingle'/>
     <div style='height: 50%; overflow-y: auto; border: 1px solid black' id="iResp"></div>
     <div style='height: 5%; border: 1px solid black' id="iStatus"></div>
-    <div id='sendForm' name="sendForm">
+    <form id='sendForm' name="sendForm">
          <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
         <div class="spaced">
             <b><t:slot name='to'/>:</b>
             <input type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
             <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
 	    <button type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-        <input class='btn btn-default btn-xs' value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"><t:attr name='send'><t:slot name='sendbutton'/></t:attr></input>
+        <!--<input class='btn btn-default btn-xs' value="Send" tabindex="3" onclick="appendChat('me', $('#msgArea').val())"><t:attr name='send'><t:slot name='sendbutton'/></t:attr></input>-->
         <!--    <input type="button" value="Quit" tabindex="4" onclick="return quit();"/>-->
         </div>
         <div class="spaced">
             <div id='missing' style='display: none'><div style='display: inline; color: red'><t:slot name='provideaddress'/></div></div>
             <input type='text' class='form-control' name="msg" id='msgArea' rows="1" tabindex="2" autocomplete="off"/>
+	    <input type='submit' style='display: none'/>
         </div>
         <br/><br/>
-    </div>
+    </form>
 </div>
 <audio id='soundNotify' type="audio/wav"><t:attr name="src"><t:slot name="beep"/></t:attr></audio>
 <div id="login_pane">
