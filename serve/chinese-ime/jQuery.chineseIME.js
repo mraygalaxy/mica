@@ -243,6 +243,7 @@ var _callbacks_ = {
             }
 	    */
 	    $("#msgArea").bind('input propertychange', self.keyPress);
+	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
             self.$toolbar.insertAfter(self.$el);
