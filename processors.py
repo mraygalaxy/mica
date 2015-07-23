@@ -980,9 +980,9 @@ class ChineseSimplifiedToEnglish(Processor) :
             cpus = multiprocessing.cpu_count()
             mverbose("Enabling " + str(cpus) + " jieba CPUs from jieba @ " + jfile)
 
-        if path_exists(jfile) or not mobile : 
+        if path_exists(jfile) : 
             mverbose("Initializing jieba library from: " + jfile)
-            jieba.initialize(sqlite = jfile, check_age = False)
+            jieba.initialize(sqlite = jfile, check_age = False if mobile else True)
 
         #if not mobile :
             #jieba.enable_parallel(cpus)

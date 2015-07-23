@@ -842,8 +842,6 @@ class MICA(object):
             rq.task_done()
 
     def test_dicts(self) :
-        files = ["cjklib.db", "cedict.db", "chinese.txt"]
-
         exported = False
         if mobile :
             all_found = False
