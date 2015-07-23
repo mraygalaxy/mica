@@ -372,13 +372,11 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def get_attachment_meta(self, name, filename) :
         try :
             meta = self.db.get_attachment_meta(String(self.dbname), String(name), String(filename))
-            mdebug("We got the metadata.")
         except Exception, e :
             raise CommunicationError("Error getting attachment metadata: " + name + " " + str(e), e)
         if meta is None :
             raise ResourceNotFound("Could not find attachment meta for document: " + name)
 
-        mdebug("Returning metadata: " + str(meta))
         return loads(meta)
 
     def doc_exist(self, name) :
@@ -585,7 +583,8 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
             raise CommunicationError("Error getting attachment meta: " + name + " " + str(e), e)
         if attach is None :
             raise ResourceNotFound("Could not find attachment meta for document: " + name)
-        return meta 
+
+        return loads(meta)
 
     def doc_exist(self, name) :
         try :
