@@ -838,7 +838,7 @@ class MICA(object):
                             if not self.safe_execute(self.test_dicts_handle, args=[f]) :
                                 break
                         else :
-                            if not self.size_check(f) :
+                            if not self.safe_execute(self.size_check, args = [f]) :
                                 mdebug("Mobile file is different from DB. Deleting and re-exporting: " + f)
                                 os_remove(fname)
                                 recheck = True
@@ -4771,7 +4771,7 @@ class MICA(object):
                         listing = req.db["MICA:filelisting_" + f]
                         fname = params["scratch"] + f 
 
-                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f, req = req) :
+                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.safe_execute(self.size_check, args = [f], kwargs = {"req" : req}) :
                             if os_path.isfile(fname) :
                                 minfo("Opening dict file: " + f)
                                 fh = open(fname, 'r')
