@@ -419,9 +419,11 @@ class MICA(object):
         except Exception, e :
             mwarn("Database not available yet: " + str(e))
 
-        if mobile :
-            mdebug("INIT Launching runloop timer")
-            Timer(5, self.runloop_sched).start()
+        if mobile and params["serialize_couch_on_mobile"] :
+            mdebug("Launching runloop timer")
+            rt = Thread(target=self.runloop)
+            rt.daemon = True
+            rt.start()
 
         if not mobile :
             mdebug("Starting view runner thread")
@@ -429,6 +431,14 @@ class MICA(object):
             vt.daemon = True
             vt.start()
 
+    def runloop(self) :
+        mdebug("Runloop running.")
+        sleep(5)
+        while True :
+            self.safe_execute(self.db.runloop)
+            sleep(1)
+
+        self.db.detach_thread()
 
     def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
         username = username.lower()
@@ -540,7 +550,6 @@ class MICA(object):
 
     def safe_execute(self, func, args = [], kwargs = {}) :
         if params["serialize_couch_on_mobile"] :
-            mdebug("Serializing this job.")
             rq = Queue_Queue()
             co = self.safe_execute_serial()
             co.next()
@@ -631,35 +640,6 @@ class MICA(object):
 
         return resp
             
-    # Only used on iOS
-    def serial_common(self) :
-        if params["serialize_couch_on_mobile"] :
-            (req, rq) = (yield)
-
-        resp = self.run_common(req)
-
-        if params["serialize_couch_on_mobile"] :
-            rq.put(resp)
-            rq.task_done()
-
-    def runloop(self) :
-        if params["serialize_couch_on_mobile"] :
-            (unused, rq) = (yield)
-            self.db.runloop()
-            rq.put(None)
-            rq.task_done()
-        else :
-            self.db.runloop()
-
-    def runloop_sched(self) :
-        rq = Queue_Queue()
-        co = self.runloop()
-        co.next()
-        params["q"].put((co, None, rq))
-        resp = rq.get()
-        Timer(1, self.runloop_sched).start()
-        self.db.detach_thread()
-
     def __call__(self, environ, start_response):
         try :
             # Hack to make WebOb work with Twisted
@@ -675,14 +655,7 @@ class MICA(object):
             if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
                 req.front_ads = True
 
-            if params["serialize_couch_on_mobile"] :
-                rq = Queue_Queue()
-                co = self.serial_common()
-                co.next()
-                params["q"].put((co, req, rq))
-                resp = rq.get()
-            else :
-                resp = self.run_common(req)
+            resp = self.safe_execute(self.run_common, args = [req])
 
         except Exception, e :
             merr("BAD MICA ********\nException:")
@@ -815,7 +788,7 @@ class MICA(object):
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
-    def test_dicts_handle_common(self, f) :
+    def test_dicts_handle(self, f) :
         fname = params["scratch"] + f 
         exported = False
 
@@ -831,19 +804,7 @@ class MICA(object):
 
         return exported
 
-    def test_dicts_handle_serial(self) :
-        if params["serialize_couch_on_mobile"] :
-            (f, rq) = (yield)
-
-        exported = self.test_dicts_handle_common(f)
-
-        if params["serialize_couch_on_mobile"] :
-            rq.put(exported)
-            rq.task_done()
-
     def test_dicts(self) :
-        files = ["cjklib.db", "cedict.db", "chinese.txt"]
-
         exported = False
         if mobile :
             all_found = False
@@ -859,20 +820,8 @@ class MICA(object):
                             all_found = False
 
                             mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
-                            if params["serialize_couch_on_mobile"] :
-                                rq = Queue_Queue()
-                                co = self.test_dicts_handle_serial()
-                                co.next()
-                                params["q"].put((co, f, rq))
-                                if rq.get() :
-                                    exported = True
-                            else :
-                                if self.test_dicts_handle_common(f) :
-                                    exported = True
-
-                            if not exported :
+                            if not self.safe_execute(self.test_dicts_handle, args=[f]) :
                                 break
-
                 sleep(30)
 
         for name, lgp in self.processors.iteritems() :
