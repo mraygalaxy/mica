@@ -796,6 +796,7 @@ class MICA(object):
             if not os_path.isfile(fname) :
                 self.db.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
                 mdebug("Exported " + f + " to " + fname)
+
             exported = True
         except couch_adapter.CommunicationError, e :
             mdebug("FILE " + f + " not fully replicated yet. Waiting..." + str(e))
@@ -804,6 +805,18 @@ class MICA(object):
 
         return exported
 
+    def size_check(self, f, req = False) :
+        fname = params["scratch"] + f
+        size = os_path.getsize(fname)
+        if req :
+            meta = req.db.get_attachment_meta("MICA:filelisting_" + f, f)
+        else :
+            meta = self.db.get_attachment_meta("MICA:filelisting_" + f, f)
+        if size == meta["length"] :
+            return True
+        else :
+            return False
+
     def test_dicts(self) :
         exported = False
         if mobile :
@@ -811,10 +824,12 @@ class MICA(object):
 
             while not all_found :
                 all_found = True
+                recheck = False
 
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
                         fname = params["scratch"] + f
+                        mdebug("Testing for file: " + f)
 
                         if not os_path.isfile(fname) :
                             all_found = False
@@ -822,12 +837,20 @@ class MICA(object):
                             mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
                             if not self.safe_execute(self.test_dicts_handle, args=[f]) :
                                 break
-                sleep(30)
+                        else :
+                            if not self.size_check(f) :
+                                mdebug("Mobile file is different from DB. Deleting and re-exporting: " + f)
+                                os_remove(fname)
+                                recheck = True
+                                all_found = False
+                                break
+
+                if not recheck :
+                    sleep(30)
 
         for name, lgp in self.processors.iteritems() :
             try :
                 handle = lgp.parse_page_start()
-                #lgp.test_dictionaries(handle, preload = True)
                 lgp.test_dictionaries(handle)
                 lgp.parse_page_stop(handle)
             except Exception, e :
@@ -4748,7 +4771,7 @@ class MICA(object):
                         listing = req.db["MICA:filelisting_" + f]
                         fname = params["scratch"] + f 
 
-                        if '_attachments' not in listing or f not in listing['_attachments'] :
+                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f, req = req) :
                             if os_path.isfile(fname) :
                                 minfo("Opening dict file: " + f)
                                 fh = open(fname, 'r')

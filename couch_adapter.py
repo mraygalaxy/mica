@@ -167,7 +167,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         return self.db.put_attachment(doc, contents, filename)
 
     def get_attachment(self, name, filename) :
-        return self.db.get_attachment(name, filename).read()
+        return self.db.get_attachment(name, filename)
+
+    def get_attachment_meta(self, name, filename) :
+        return self.__getitem__(name)["_attachments"][filename]
 
     def doc_exist(self, name, true_if_deleted = False) :
         try :
@@ -175,7 +178,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
-            mdebug(str(e.args))
+            #mdebug(str(e.args))
             ((error, reason),) = e.args
             mdebug("Doc exist returns not found: " + reason)
             if true_if_deleted and reason == "deleted" :
@@ -365,6 +368,18 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
         # of native python bytearrays which can be maped into a string,
         # like this.
         return "".join(map(chr, attach))
+
+    def get_attachment_meta(self, name, filename) :
+        try :
+            meta = self.db.get_attachment_meta(String(self.dbname), String(name), String(filename))
+            mdebug("We got the metadata.")
+        except Exception, e :
+            raise CommunicationError("Error getting attachment metadata: " + name + " " + str(e), e)
+        if meta is None :
+            raise ResourceNotFound("Could not find attachment meta for document: " + name)
+
+        mdebug("Returning metadata: " + str(meta))
+        return loads(meta)
 
     def doc_exist(self, name) :
         try :
@@ -562,6 +577,15 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
             raise ResourceNotFound("Could not find attachment for document: " + name)
         #print "Pyobjus returned attachment of type: " + str(type(attach))
         return attach 
+
+    def get_attachment_meta(self, name, filename) :
+        try :
+            meta = self.db.get_attachment_meta___(String(self.dbname), String(name), String(filename)).UTF8String()
+        except Exception, e :
+            raise CommunicationError("Error getting attachment meta: " + name + " " + str(e), e)
+        if attach is None :
+            raise ResourceNotFound("Could not find attachment meta for document: " + name)
+        return meta 
 
     def doc_exist(self, name) :
         try :
