@@ -581,7 +581,8 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
             meta = self.db.get_attachment_meta___(String(self.dbname), String(name), String(filename)).UTF8String()
         except Exception, e :
             raise CommunicationError("Error getting attachment meta: " + name + " " + str(e), e)
-        if attach is None :
+
+        if meta is None :
             raise ResourceNotFound("Could not find attachment meta for document: " + name)
 
         return loads(meta)
