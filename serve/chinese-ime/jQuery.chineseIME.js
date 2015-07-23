@@ -1,19 +1,5 @@
-
-var standalone = window.navigator.standalone,
-    userAgent = window.navigator.userAgent.toLowerCase(),
-    safari = /safari/.test( userAgent ),
-    ios = /iphone|ipod|ipad/.test( userAgent );
-
 var _callbacks_ = {
     'loadWords': function(rep){
-        /* =========================
-        Example Response from Google: 
-
-        _callbacks_.loadWords(["SUCCESS",[["o",["哦","噢","喔","嚄","迲","筽"]]]])
-
-        ["SUCCESS",[["sdsa",["岁的萨","上的","受到","说的","时代","速度","是","上","说","时"],[4,2,2,2,2,2,1,1,1,1],{"matched_length":[4,2,2,2,2,2,1,1,1,1]}]]]
-
-        ========================= */
         var success = rep[0],
             reply = rep[1][0],
             word = reply[0],
@@ -232,16 +218,6 @@ var _callbacks_ = {
             
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-            // Further initialization
-
-            /*
-            self.$el.keydown(self.nothing);
-            if (ios) {
-		    self.$el.keyup(self.keyPress);
-	    } else {
-		    self.$el.keypress(self.keyPress);
-            }
-	    */
 	     self.enter = function( event ) {
 		
 		    if(event.which ==13)  //13 is for enterkey
