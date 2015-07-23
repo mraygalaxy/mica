@@ -252,7 +252,7 @@ var _callbacks_ = {
 	     }
 	    }
 
-	    $( "#msgArea" ).on( "keyup", self.enter);
+	    $("#msgArea").on( "keyup", self.enter);
 	    $("#msgArea").bind('input propertychange', self.keyPress);
 	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
