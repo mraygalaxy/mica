@@ -1221,12 +1221,19 @@ function who_to_readable(who) {
 
 var chat_username = false;
 
-function appendBox(who, ts, msg) {
-        var html = '';
+function appendBox(who, ts, msg, msgclass, reverse) {
+        var html = '<tr><td>';
         var id = ("" + who).split("@");
-        html += '<div class="msg"><table><tr><td style="vertical-align: top"><b>' + who_to_readable(who) + ':</b></td><td style="vertical-align: top">';
-        html += "&nbsp;" + make_date(ts) + ": </td><td>&nbsp;</td><td>" + msg;
-        html += '</td></tr></table></div>';
+        html += "<div style='width: 100%'><span class='badge " + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey'><table><tr><td>&nbsp</td>";
+        sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
+        sendtime += "<td style='vertical-align: top'>";
+        sendtime += "&nbsp;" + make_date(ts) + "</td>";
+        if (reverse) {
+            html += ("<td>" + msg + "</td><td>&nbsp;</td>" +  sendtime);
+        } else {
+            html += (sendtime + "<td>&nbsp;</td><td>" + msg + "</td>");
+        }
+        html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
 }
@@ -1279,7 +1286,15 @@ function appendChat(who, to, msg) {
      * equal to the name of the peer, but with a group chat, we'll need to choose something
      * unique for the peer value. Theoretically, the server-side shouldn't change too much.
      */ 
-    var peer = (who == chat_username) ? msgto : msgfrom;
+    if (who == chat_username) {
+        var peer = msgto;
+        var msgclass = "msgright";
+        var reverse = true;
+    } else {
+        var peer = msgfrom;
+        var msgclass = "msgleft";
+        var reverse = false;
+    }
 
     var micaurl = "/chat?ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 
@@ -1288,9 +1303,9 @@ function appendChat(who, to, msg) {
     $.get(micaurl, "", $.proxy(function(response, success){
 	var data = JSON.parse(response);
 	if(data.success)  {
-		appendBox(who, ts, data.result.human);
+		appendBox(who, ts, data.result.human, msgclass, reverse);
 	} else {
-		appendBox(who, ts, data.desc);
+		appendBox(who, ts, data.desc, msgclass, reverse);
 	}
     }, {}), 'html');
 }
@@ -1323,7 +1338,7 @@ function handleMessage(oJSJaCPacket) {
 
 function handleConnectedLoaded(data) {
     $("#pagesingle").html("");
-    document.getElementById('iResp').innerHTML += data;
+    document.getElementById('iResp').innerHTML += "<tr><td>" + data + "</td></tr>";
     $("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
