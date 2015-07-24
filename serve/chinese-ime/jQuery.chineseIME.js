@@ -462,7 +462,6 @@ var _callbacks_ = {
                      */
                     var chat_language = chat_target_language;
                      
-                    //var micaurl = "/chat?ime=" + options.length + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
                     var micaurl = "/chat?ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
                     $.get(micaurl, "", $.proxy(function(response, success){
@@ -489,21 +488,6 @@ var _callbacks_ = {
                         });
                     }, {}), 'html');
 
-                    /*
-                    for (var i = 0; i < 5 && i < options.length; i++) {
-                        lis.push('<li ' + (i + 1 == self.currentSelection ? 'class="current"' : '') + '> ' + (i + 1) + '. ' + options[i] +'</li>');
-                    }
-                    $box.find('ul').html(lis.join('\n'));
-                    $box.show();
-                    var caretPosition = self.$el.getCaretPosition();
-                    $box.css({
-                        position: 'absolute',
-                        left: self.$el.offset().left + caretPosition.left,
-                        top: self.$el.offset().top + caretPosition.top
-                    });
-                    */
-                //} else { // load options with ajax
-               // }
             } else {
                 var $box = $('#chinese-ime').hide();
             }

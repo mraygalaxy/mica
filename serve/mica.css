@@ -2,6 +2,15 @@ body {
 	padding-top: 55px;
 }
 
+.msgright {
+    float:right;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+
+.msgleft {
+    float: left;
+}
 .nopadding {
       padding-left: 0;
       padding-right: 0;
