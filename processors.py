@@ -1174,12 +1174,12 @@ class ChineseSimplifiedToEnglish(Processor) :
         match_romanization = ""
         for triple in matches :
           char, source_idx, trans_idx = triple
-#          mdebug("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
+          mverbose("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
           pchar = self.convertPinyin(char)
           tmatch += " " + pchar + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
           match_romanization += pchar + " "
 
-#        mdebug("matches: \n" + tmatch.replace("\n",""))
+        mverbose("matches: \n" + tmatch.replace("\n",""))
           
         for triple in matches :
           char, source_idx, trans_idx = triple
@@ -1206,7 +1206,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         passes = 0
         try :
             while changes : 
-    #            mdebug("passing: " + str(passes))
+                mverbose("passing: " + str(passes))
                 new_units = []
                 idx = 0
                 changes = False
@@ -1305,7 +1305,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             merr("Online Cross Reference Error: " + str(e))
             raise e
         
-#        mdebug(msg)
+        mverbose(msg)
         for unit_idx in range(0, len(units)) :
             units[unit_idx]["online"] = True
             units[unit_idx]["punctuation"] = False 
@@ -1457,8 +1457,19 @@ class ChineseSimplifiedToEnglish(Processor) :
 
             if uni not in self.punctuation and uni :
                 online_units = self.online_cross_reference(req, story, uni, opaque)
-
-                if not online_units or not len(online_units) :
+                online_len = 0
+                
+                # If the reverse engineered pinyin cross-referencing yields a different number of original characters
+                # than the input from the source, then it's not usable and try the next one
+                
+                if online_units and len(online_units) :
+                    for ou in online_units :
+                        online_len += len(ou["source"])
+                    if online_len != len(uni) :
+                        mwarn("Falling back on unusable cross-reference for input: " + uni + " len: " + str(online_len))
+                        online_len = -1
+                        
+                if not online_units or not len(online_units) or online_len == -1 :
                     temp_r = self.getFor(d, uni)
                     tmp_opaque = (cjk, d, temp_r)
                     targ = self.get_first_translation(tmp_opaque, uni, readings[0])
