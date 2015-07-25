@@ -151,6 +151,133 @@ class StaticNavElement(Element) :
                       )
         return tag
 
+class ModalsElement(CommonElement) :
+    def __init__(self, req) :
+        super(ModalsElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/modals_template.html').path)
+
+    @renderer
+    def newaccountadmin(self, request, tag) :
+        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
+            if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
+                # Admin account, that is
+                tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
+        return tag
+
+    @renderer
+    def user_languages(self, request, tag) :
+        for l, readable in softlangs :
+            option = tags.option(value=l)
+            tag(option(_(readable)))
+        return tag
+
+    @renderer
+    def modalslots(self, request, tag) :
+        tag.fillSlots(
+                     # This is one of the 'Account' menu items that describes the author of the software.
+                     aboutsoftware = _("About this software"),
+                     newaccount = _("Create New Account"),
+                     # Create account button
+                     create = _("Create"),
+                     uploadstory = _("Upload Story"),
+                     missing = _("* Please fill in required fields"),
+                     nocolons = _("* File/Story name cannot have colons ':' characters in it. Please fix."),
+                     choose = _("Choose one"),
+                     copypaste = _("Copy/Paste a Story"),
+                     # Unique name to identify this story in the system
+                     uniquename = _("Unique Name"),
+                     # Which language to learn, that is.
+                     langtype = _("Which language"),
+                     uploadtext = _("Upload Text"),
+                     uploadinstead = _("Or Upload a File Instead"),
+                     selectfile = _("Select File"),
+                     # i.e. PDF or TXT
+                     whatkindfile = _("What kind of file is this?"),
+                     noneselected = _("None Selected"),
+                     # Source story consists of multiple pages, like a PDF
+                     multipage = _("multi-page"),
+                     # Story is just a blob of TXT, such as copy/paste.
+                     singlepage = _("single-page"),
+                     notimplemented = _("not implemented"),
+                     uploadfile = _("Upload File"),
+                     mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
+                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                     # This appears on the front page when you login. It is the HTTP address of the website.
+                     signing = _("Signing you in, Please wait"),
+                     loading = _("Loading story, Please wait"),
+                     loadingwait = _("If you have re-installed or this is your first time logging in on this device and you have chosen to synchronize many stories at the same time, this can take a while, because we need to calculate some information to organize things on your device. Be patient."),
+                     # Compacting can also be translated as "cleaning" database.
+                     compacting = _("Compacting database, Please wait"),
+                     instant = _("Instant Translation"),
+                      )
+        return tag
+
+class LoginElement(Element) :
+    def __init__(self, req) :
+        super(LoginElement, self).__init__() 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/login_template.html').path)
+
+    @renderer
+    def remember(self, request, tag) :
+        if 'last_remember' in self.req.session.value :
+            return tag(tags.input(type='checkbox', name='remember', checked='checked'))
+        else :
+            return tag(tags.input(type='checkbox', name='remember'))
+
+    @renderer
+    def address(self, request, tag) :
+       address = self.req.session.value["address"] if ("address" in self.req.session.value and self.req.session.value["address"] is not None) else self.credentials()
+       return tag(tags.input(type="text", id="address", name="address", placeholder="Address", value=address))
+
+    @renderer
+    def username(self, request, tag) :
+       user = self.req.session.value['last_username'] if 'last_username' in self.req.session.value else ''
+       return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
+
+    @renderer
+    def loginslots(self, request, tag) :
+        tag.fillSlots(
+                     username = _("Account"),
+                     address = _("Address"),
+                     password = _("Password / Token"),
+                     signin = _("Login"),
+                     # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
+                     rememberme = _("Remember Me"),
+                      )
+        return tag
+
+    @renderer
+    def thirdparty(self, request, tag) :
+       if mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
+           tag("")
+       else : 
+           tag(tags.br(), tags.b()(_("Sign in with")), ": ", tags.br())
+
+           tr = tags.tr()
+
+           for name, creds in self.req.oauth.iteritems() :
+               if name == "redirect" :
+                   continue
+               service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+
+               if name == "facebook" :
+                   service = facebook_compliance_fix(service)
+
+               if name == "weibo" :
+                   service = weibo_compliance_fix(service)
+
+               authorization_url, state = service.authorization_url(creds["authorization_base_url"])
+
+               servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, **{"data-ajax" : "false"})
+               servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+               tr(tags.td(servicetag))
+
+           tag(tags.table()(tr))
+
+       return tag
+
 class EditHistoryElement(Element) :
     def __init__(self, req) :
         super(EditHistoryElement, self).__init__() 
@@ -313,7 +440,7 @@ class MobileFrontElement(Element) :
 
             div(tags.br(), tags.br(), tags.br(), tags.br())
             p = XMLString("<div>" + page + "</div>")
-            div(tags.h1(style="width: 75%; margin: 0 auto;")(p.load()))
+            div(tags.h1(style="margin: 0 auto;")(p.load()))
             div(tags.br(), tags.br(), tags.br(), tags.br())
 
             tag(div)
@@ -383,6 +510,10 @@ class FrontPageElement(Element) :
             
         return tag
 
+    @renderer
+    def login(self, request, tag) :
+        tag(LoginElement(self.req))
+        return tag
     @renderer
     def frontpage(self, request, tag) :
         if not mobile :
@@ -583,16 +714,16 @@ class HeadElement(CommonElement):
         self.loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
 
     @renderer
-    def user_languages(self, request, tag) :
-        for l, readable in softlangs :
-            option = tags.option(value=l)
-            tag(option(_(readable)))
+    def modals(self, request, tag) :
+        tag(ModalsElement(self.req))
         return tag
 
     @renderer
     def headnavparent(self, request, tag) :
         if not self.req.session.value['connected'] :
             return tag("")
+
+        topul = tags.ul() 
 
         navcontents = ""
         navactive = self.req.action
@@ -601,6 +732,7 @@ class HeadElement(CommonElement):
             navactive = 'home'
 
         menu = [ 
+                 ("storylist" , ("/storylist", "book", _("Stories"))), 
                  # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                  ("home" , ("/home", "home", _("Review"))), 
                  # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
@@ -620,13 +752,13 @@ class HeadElement(CommonElement):
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
                 itemtag = tags.li(**{"class":"active"})
-                tag(itemtag(atag))
+                topul(itemtag(atag))
             else :
                 if mobile :
                     atag = tags.a(href=url, onclick = "$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});")(itag, " ", display)
                 else :
                     atag = tags.a(href=url)(itag, " ", display)
-                tag(tags.li(atag))
+                topul(tags.li(atag))
 
         if not self.req.pretend_disconnected :
             itemtag = tags.li(**{"class" : "dropdown"})
@@ -648,14 +780,11 @@ class HeadElement(CommonElement):
                     utag(tags.li(ttag))
 
             utag(StaticNavElement(self.req))
-            tag(itemtag(atag, utag))
-        tag(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
-        return tag
+            topul(itemtag(atag, utag))
 
-    @renderer
-    def scriptpopover(self, request, tag) :
-        popoveractivate = "$('#connectpop').popover('show');"
-        return tag(popoveractivate if (not self.req.session.value["connected"] and not self.req.skip_show and not self.req.pretend_disconnected) else "")
+        topul(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
+        tag(tags.div(**{"data-role" : "navbar", "data-iconpos" : "right"})(topul))
+        return tag
 
     @renderer
     def scriptswitch(self, request, tag) :
@@ -747,13 +876,6 @@ class HeadElement(CommonElement):
         return tag
 
     @renderer
-    def remember(self, request, tag) :
-        if 'last_remember' in self.req.session.value :
-            return tag(tags.input(type='checkbox', name='remember', checked='checked'))
-        else :
-            return tag(tags.input(type='checkbox', name='remember'))
-
-    @renderer
     def head(self, request, tag):
         zoom_level = 1.0
 
@@ -767,102 +889,32 @@ class HeadElement(CommonElement):
         return tag(tags.meta(name="viewport", content="width=device-width, initial-scale=" + str(zoom_level)))
 
     @renderer
-    def address(self, request, tag) :
-       return tag(tags.input(type="text", id="address", name="address", placeholder="Address", value=self.req.address))
-
-    @renderer
-    def username(self, request, tag) :
-       user = self.req.session.value['last_username'] if 'last_username' in self.req.session.value else ''
-       return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
-
-    @renderer
-    def thirdparty(self, request, tag) :
-       if mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
-           tag("")
-       else : 
-           tag(tags.br(), tags.b()(_("Sign in with")), ": ", tags.br())
-
-           tr = tags.tr()
-
-           for name, creds in self.req.oauth.iteritems() :
-               if name == "redirect" :
-                   continue
-               service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
-
-               if name == "facebook" :
-                   service = facebook_compliance_fix(service)
-
-               if name == "weibo" :
-                   service = weibo_compliance_fix(service)
-
-               authorization_url, state = service.authorization_url(creds["authorization_base_url"])
-
-               servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url)
-               servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
-               tr(tags.td(servicetag))
-
-           tag(tags.table()(tr))
-
-       return tag
-    @renderer
     def allslots(self, request, tag) :
 
-       tag.fillSlots(jquery = self.req.bootstrappath + "/js/jquery.js",
+       tag.fillSlots(
+                     #jquery = self.req.bootstrappath + "/js/jquery.js",
+                     jquery = self.req.mpath + "/jquery-1.11.3.min.js",
+                     jquerymigrate = self.req.mpath + "/jquery-migrate-1.2.1.min.js",
                      bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
                      bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",
                      micajs = self.req.mpath + "/mica.js",
                      favicon = self.req.mpath + "/icon-120x120.png",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
-                     # Which language to learn, that is.
-                     langtype = _("Which language"),
+                     jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
+                     jqmjs = self.req.mpath + "/jquery.mobile-1.4.5.min.js",
+                     jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
+                     jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
                      email = _("Email Address"),
                      # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
                      # Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
                      removespaces = _("Remove Spaces?"),
-                     mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
-                     notimplemented = _("not implemented"),
-                     # Source story consists of multiple pages, like a PDF
-                     multipage = _("multi-page"),
-                     # Story is just a blob of TXT, such as copy/paste.
-                     singlepage = _("single-page"),
-                     # i.e. PDF or TXT
-                     whatkindfile = _("What kind of file is this?"),
-                     selectfile = _("Select File"),
-                     uploadfile = _("Upload File"),
-                     uploadinstead = _("Or Upload a File Instead"),
-                     choose = _("Choose one"),
-                     # Unique name to identify this story in the system
-                     uniquename = _("Unique Name"),
-                     noneselected = _("None Selected"),
-                     uploadtext = _("Upload Text"),
-                     copypaste = _("Copy/Paste a Story"),
-                     missing = _("* Please fill in required fields"),
-                     nocolons = _("* File/Story name cannot have colons ':' characters in it. Please fix."),
-                     uploadstory = _("Upload Story"),
-                     instant = _("Instant Translation"),
-                     # Create account button
-                     create = _("Create"),
+                     username = _("Account"),
+                     password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
-                     password = _("Password / Token"),
-                     username = _("Account"),
-                     newaccount = _("Create New Account"),
-                     # This is one of the 'Account' menu items that describes the author of the software.
-                     aboutsoftware = _("About this software"),
-                     signin = _("Login"),
-                     # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
-                     rememberme = _("Remember Me"),
-                     # This appears on the front page when you login. It is the HTTP address of the website.
-                     address = _("Address"),
-                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
-                     signing = _("Signing you in, Please wait"),
                      
-                     loading = _("Loading story, Please wait"),
-                     loadingwait = _("If you have re-installed or this is your first time logging in on this device and you have chosen to synchronize many stories at the same time, this can take a while, because we need to calculate some information to organize things on your device. Be patient."),
-                     # Compacting can also be translated as "cleaning" database.
-                     compacting = _("Compacting database, Please wait"),
                      # This appears as a pop-up when we are loading the text content of a story.
                      loadingtext = _("Loading Text"),
                      # This appears as a pop-up when we are image content of a PDF-based story.
@@ -918,14 +970,6 @@ class HeadElement(CommonElement):
                      stopped = _("Stopped (start?)"),
                      )
        return tag
-
-    @renderer
-    def newaccountadmin(self, request, tag) :
-        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
-            if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-                # Admin account, that is
-                tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
-        return tag
 
 def run_template(req, which, content = False) :
     try :

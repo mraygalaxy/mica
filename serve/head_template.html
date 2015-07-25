@@ -7,17 +7,17 @@
   <meta name="description" content="MICA"/>
   <meta name="author" content="Michael R. Hines"/>
 
-   <!--[if lt IE 9]>
-   <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-   <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-   <![endif]-->
-  <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
-  <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
+  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
+  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
+  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
   <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
   <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
   <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
+  <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
+  <script><t:attr name='src'><t:slot name='jquerymigrate'/></t:attr></script>
   <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
-  <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
+  <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
+  <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
   </head>
   <body id='cbody'>
   <div style='display: none' id='loadingtext'><t:slot name='loadingtext'/></div>
@@ -49,246 +49,15 @@
   <div style='display: none' id='started'><t:slot name='started'/></div>
   <div style='display: none' id='stopping'><t:slot name='stopping'/></div>
   <div style='display: none' id='stopped'><t:slot name='stopped'/></div>
-  <nav class="main-nav" id="main-nav">
-  <br/><br/>
-  <div style="background: #f0f0f0" id='sidebarcontents'></div>
-  </nav>
-  <div class='page-wrap'>
-  <div class='content'>
-    <div style="display:none" id="ConnectContents">
-        <form method="POST" action="/connect" accept-charset="UTF-8">
-	<table>
-	<tr><td>
-        <t:slot name='username'/>: 
-	</td></tr><tr><td>
-	<div style='display:inline' t:render="username"/>
-	 </td></tr><tr><td>
-        <t:slot name='password'/>:
-	 </td></tr><tr><td>
-	<input type="password" id="password" name="password" placeholder="Password" />
-	</td></tr><tr><td>
-	<div class="slide1"><div class="tri1"></div><u><t:slot name='address'/></u></div>
-	<div class="view1">
-        <div style="display:inline" t:render="address"/>
-	</div>
-	</td></tr><tr><td>
-        <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
-	</td></tr><tr><td>
-        <button onclick="$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
-	</td></tr><tr><td>
-        <div t:render="thirdparty" style='display: inline'/>
-	</td></tr>
-	</table>
-        </form>
-    </div>
-    <div class="navbar navbar-default navbar-fixed-top" style="border-bottom: 1px solid darkgray" role='navigation'>
-        <div class="container-fluid">
-              <div class='navbar-header'>
-               <button type='button' class='navbar-toggle' data-toggle="collapse" data-target=".navbar-collapse">
-                  <span class="sr-only">Toggle navigation</span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-                  <span class="icon-bar"></span>
-				  
-               </button>
-	       <div class='navbar-brand'><table t:render="cloudnav"/></div>
-              </div><!--.navbar-header-->
-              <div class="navbar-collapse collapse">
-                   <ul class="nav navbar-nav" t:render="headnavparent"/>
-                   <div class='navbar-right' style='display: inline'>
-                   </div>
-              </div><!--/.navbar-collapse -->
-         </div><!--container -->
-    </div><!--navbar navbar-fixed-top -->
-    <div id='allcontent' class='container-fluid' style="border-radius: 2%; margin-left: 5px; border: 1px solid lightgray; padding-top: 10px; padding-left: 10px; padding-right: 10px; background: #f0f0f0">
-            <div class="modal fade" id='aboutModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myAboutLabel"><t:slot name='aboutsoftware'/>:</h3>
-                        </div>
-                        
-                        <div class="modal-body">
-                            <div>
-                            <h5>Authors:</h5>
-                            <p/><br/>Michael R. Hines, Ph.D.: <a href='http://michael.hinespot.com'>http://michael.hinespot.com</a>
-                            I am not a linguist (not by a longshot) - I have a dayjob as a researcher in operating systems, virtualization and cloud computing. 
-
-                            <p/><br/>
-                            I entered China for work recently and began learning Chinese,
-                            But I'm also a former musician, so the music of spoken language came 
-                            very naturally to me - this was my saving grace. For years, I was so
-                            embarrassed that I couldn't read/write characters - so I made up lots
-                            of excuses to my friends and coworkers until finally I realized the 
-                            source of the problem: My brain cannot physically deconstruct so much 
-                            information (strokes) in such a small area of space. But I've found
-                            that this is not relevant to conversation, as this software helps to 
-                            prove later: Characters are the enemy. I wanted to be able to read
-                            Chinese books and news stories like I would any other kind of prose,
-                            so I created this software.
-
-                            <p/><br/>
-                            Hope you enjoy it as much as I do. =)
-
-                            <p/><br/>
-                            <h5>Credits:</h5>
-
-                            <br/>Lexical word parsing and character grouping: http://www.ictclas.org
-                            <br/>Offline chinese translation: https://pypi.python.org/pypi/cjklib
-                            <br/>Offline polyphome listings: https://github.com/lxyu/pinyin
-                            <br/>Online sentence-level translations: http://www.microsoft.com/en-us/translator/ (as long as it remains free)
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id='newAccountModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myNewAccountLabel"><t:slot name='newaccount'/>:</h3>
-                        </div>
-                        
-                        <div class="modal-body">
-                            <div id='newaccountdestination'>
-                                <form action='/account' method='post' enctype='multipart/form-data'>
-
-                                <h5>&#160;<t:slot name="userlang"/>: <select name="language" t:render="user_languages"/></h5>
-                                <h5>&#160;<t:slot name='email'/>: <input type="text" name="email"/></h5>
-                                <h5>&#160;<t:slot name='username'/>: <input type="text" name="username"/></h5>
-                                <h5>&#160;<t:slot name='password'/>: <input type="password" name="password"/></h5>
-                                <h5>&#160;<t:slot name='confirmpass'/>:&#160; <input type="password" name="confirm"/></h5>
-                                <div style='display: inline' t:render="newaccountadmin"/>
-                                <button name='newaccount' type="submit" class="btn-primary" value='password'>
-                                <i class="icon-plus-sign icon-white"></i>&#160;<t:slot name="create"/></button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id='loginModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div style="font-size: large" class="modal-body">
-                            <t:slot name="spinner"/>&#160;<t:slot name="signing"/>...
-                        </div>
-                    </div>
-                </div>
-            </div>
-                        
-            <div class="modal fade" id='loadingModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div style="font-size: large" class="modal-body">
-                            <t:slot name="spinner"/>&#160;<t:slot name="loading"/>...
-                            <br/><h5>(<t:slot name='loadingwait'/>)</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id='compactModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div style="font-size: large" class="modal-body">
-                            <t:slot name="spinner"/>&#160;<t:slot name="compacting"/>...
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id='instantModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
-                        </div>
-                        
-                        <div class="modal-body">
-                            <div id='instantdestination'></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id='uploadModal'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
-                            <h3 id="myUploadLabel"><t:slot name='uploadstory'/>:</h3>
-                        </div>
-                        <div class="modal-body">
-                        <div id='uploaderror' style='display: none'><div style='display: inline; color: red'><h4><t:slot name='missing'/>.</h4></div></div>
-                        <div id='colonerror' style='display: none'><div style='display: inline; color: red'><h4><t:slot name='nocolons'/>.</h4></div></div>
-                        <h4><b><t:slot name='choose'/>:</b></h4>
-                        <div class='panel-group' id='panelUpload'>
-                             <div class='panel panel-default'>
-                               <div class="panel-heading">
-                                <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelUpload' href='#collapseText'>
-                                 <b>A) <t:slot name='copypaste'/></b>
-                                 </a>
-                               </div>
-                               <div id='collapseText' class='panel-body collapse'>
-                                   <div class='panel-inner'>
-                                    <form id='textform' action='/home' method='post' enctype='multipart/form-data'>
-                                    <h5><div style='display: inline; color: red'>*&#160;</div><t:slot name="uniquename"/>: <input id='textname' type='text' name='storyname' value=''></input>
-                                    </h5>
-                                    <div style='display: inline; color: red'>*&#160;</div>
-                                      <t:slot name="langtype"/>? <select id='textlanguage' name="languagetype" t:render="languages"/>
-                                    <br/><div style='display: inline; color: red'>*&#160;</div><textarea style='width: 90%' name="storytext" id="textvalue"></textarea>
-                                       <br/>
-                                       <input type='hidden' name='uploadtext' value='1'/>
-                                       <input type="button" class="btn-primary" onclick='validatetext()'><t:attr name='value'><t:slot name='uploadtext'/></t:attr></input>
-                                    </form>                                   
-                                   </div>
-                               </div>
-                             </div>
-                             <div class='panel panel-default'>
-                               <div class="panel-heading">
-                                <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelUpload' href='#collapseScanned'>
-                                 <b>B) <t:slot name='uploadinstead'/></b>
-                                 </a>
-                               </div>
-                               <div id='collapseScanned' class='panel-body collapse'>
-                                   <div class='panel-inner'>
-                                    <form id='fileform' action='/home' method='post' enctype='multipart/form-data'>
-                                    <h5><div style='display: inline; color: red'>*&#160;</div>
-                                        <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
-                                        <br/><div style='display: inline; color: red'>*&#160;</div>
-                                          <t:slot name="whatkindfile"/> <select name="filetype" id='uploadtype'>
-                                          <option value=''><t:slot name='noneselected'/></option>
-                                          <option value='pdf'>PDF (utf-8, <t:slot name="multipage"/>)</option>
-                                          <option value='txt'>TXT (utf-8, <t:slot name="singlepage"/>)</option>
-                                          <option disabled="disabled" value='epub'>EPUB (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
-                                          <option disabled="disabled" value='json'>JSON (<t:slot name="notimplemented"/>, utf-8, <t:slot name="multipage"/>)</option>
-                                          </select>
-                                        <br/><div style='display: inline; color: red'>*&#160;</div>
-                                          <t:slot name="langtype"/>? <select id='uploadlanguage' name="languagetype" t:render="languages"/>
-                                        <br/>
-                                        <input type='hidden' name='uploadfile' value='1'/>
-                                        <input onclick='validatefile()' type="button" class="btn-primary"><t:attr name='value'><t:slot name='uploadfile'/></t:attr></input> </h5>
-                                    </form>                                   
-                                    <h5><t:slot name="mustbeencoded"/>.</h5>
-                                   </div>
-                               </div>
-                             </div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <div t:render="headnavparent"/>
+  <table t:render="cloudnav"/>
+  <div id='allcontent' class='container-fluid' style="margin-top: 50px; border-radius: 2%; margin-left: 5px; border: 1px solid lightgray; padding-top: 10px; padding-left: 10px; padding-right: 10px; background: #f0f0f0">
+    <div t:render="modals"/>
 BOOTBODY
-     </div> <!-- container -->
-     <div id='footer'></div>
-   </div>  <!--content -->
-  </div>  <!--page-wrap -->
-    <script>
-    BOOTSCRIPTHEAD 
-    </script>
-    <script t:render="scriptpopover"/>
-    <script t:render="scriptswitch"/>
+  </div>
+  <script>
+  BOOTSCRIPTHEAD 
+  </script>
+  <script t:render="scriptswitch"/>
 </body>
 </html>
