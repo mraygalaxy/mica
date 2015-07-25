@@ -865,15 +865,6 @@ if ($.browser.device == true) {
     modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "70%");
 }
 
-function togglecanvas() {
-      if ($('#offnav').attr('href') == '#main-nav') {
-        $('#offnav').attr('href', '#');
-      } else {
-        $('#offnav').attr('href', '#main-nav');
-        loadstories(false);
-      }
-}
-
 function offinstantspin(data, curr, unused) {
     //var data = JSON.parse(data);
     $('#instantdestination').html(data);
@@ -1563,3 +1554,4 @@ onunload = function() {
     }
 };
 
+$(document).bind("mobileinit", function(){ $.extend(  $.mobile , { ajaxEnabled: false });});

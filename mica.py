@@ -764,13 +764,10 @@ class MICA(object):
             else :
                 req.view_percent = "0.0"
             req.pretend_disconnected = pretend_disconnected
-            req.address = req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else self.credentials()
 
             if req.session.value['connected'] and not pretend_disconnected :
                 req.user = req.db.try_get(self.acct(req.session.value['username']))
 
-            if not mobile :
-                req.oauth = params["oauth"]
             req.mica = self
             contents = run_template(req, HeadElement)
 
@@ -2970,6 +2967,8 @@ class MICA(object):
         self.clean_session(req)
         self.install_local_language(req)
         req.skip_show = True
+        if not mobile :
+            req.oauth = params["oauth"]
         return self.bootstrap(req, run_template(req, FrontPageElement))
 
     def common_privacy(self, req) :
@@ -2997,6 +2996,8 @@ class MICA(object):
         req.session.value["language"] = req.http.params.get("lang")
         req.session.save()
         self.install_local_language(req)
+        if not mobile :
+            req.oauth = params["oauth"]
         return self.bootstrap(req, run_template(req, FrontPageElement))
 
     def common_auth(self, req) :
@@ -4409,6 +4410,13 @@ class MICA(object):
 
             return self.bootstrap(req, "changed", now = True)
 
+        if not req.http.params.get("tzoffset") :
+            return self.bootstrap(req, """
+                      <div style="background: #f0f0f0" id='sidebarcontents'></div>
+                      <script>loadstories(false);</script>
+                """)
+
+
         tzoffset = int(req.http.params.get("tzoffset"))
 
         storylist = [self.template("storylist")]
@@ -5000,6 +5008,8 @@ class MICA(object):
             self.install_local_language(req)
 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
+                if not mobile :
+                    req.oauth = params["oauth"]
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             self.common_logged_in_check(req)

@@ -1,8 +1,8 @@
 <html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="front">
-    <div style="width: 55%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
         <h3><b><t:slot name="learn"/>.</b></h3>
     </div>
-    <div style="width: 55%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
         <!-- Menu -->
         <ol class="carousel-indicators">
             <li data-target="#carousel" data-slide-to="0" class="active"></li>
@@ -11,7 +11,7 @@
         </ol>
         
         <!-- Items -->
-        <div class="carousel-inner" t:render="pages"/>
+        <div style='width=100%' class="carousel-inner" t:render="pages"/>
 
         <a href="#carousel" class="left carousel-control" data-slide="prev">
             <span class="glyphicon glyphicon-chevron-left"></span>
@@ -21,7 +21,7 @@
         </a>
     </div>
 
-    <div style="width: 50%; margin: 0 auto;">
+    <div style="width: 90%; margin: 0 auto;">
         <h4><b><t:slot name="offline"/>.</b></h4>
         <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
         <p/>

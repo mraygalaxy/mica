@@ -98,3 +98,7 @@ $(document).ready(function(){
     
 });
 
+/*
+$.mobile.loading("hide");
+$(".ui-loader").hide();
+*/

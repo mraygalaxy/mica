@@ -1,0 +1,26 @@
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="loginslots">
+<form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8">
+<table>
+<tr><td>
+<t:slot name='username'/>: 
+</td></tr><tr><td>
+<div style='display:inline' t:render="username"/>
+ </td></tr><tr><td>
+<t:slot name='password'/>:
+ </td></tr><tr><td>
+<input type="password" id="password" name="password" placeholder="Password" />
+</td></tr><tr><td>
+<div class="slide1"><div class="tri1"></div><u><t:slot name='address'/></u></div>
+<div class="view1">
+<div style="display:inline" t:render="address"/>
+</div>
+</td></tr><tr><td>
+<label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
+</td></tr><tr><td>
+<button onclick="$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+</td></tr><tr><td>
+<div t:render="thirdparty" style='display: inline'/>
+</td></tr>
+</table>
+</form>
+</html>
