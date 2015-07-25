@@ -1620,11 +1620,17 @@ class MICA(object):
 
                     if py and action == "edit" :
                         if curr_merge :
-                            if (word_idx == (len(line) - 1)) or (curr_merge and not prev_merge and merge_end ): 
-                                merge_end = False
-                                prev_merge = False
-                                curr_merge = False
-
+                            if not prev_merge :
+                                if (word_idx == (len(line) - 1)) :
+                                    merge_end = False
+                                    curr_merge = False        
+                                elif merge_end:
+                                    prev_merge = False
+                                    merge_end = False
+                                    curr_merge = False
+                            elif (word_idx == (len(line) - 1)) :
+                                merge_end = True
+                                    
                         if curr_merge :
                             line_out.append("class='mergetop mergebottom")
                             if not prev_merge : 
