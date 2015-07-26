@@ -260,11 +260,14 @@ var _callbacks_ = {
                 }
         */
 
+	self.last_key_was_backspace = false;
+
         self.keyPress = function(event){
             if (self.options.active) {
                 var beforeCheck = $("#msgArea").val();
                 var key = '';
                 var backspace = 0;
+		self.last_key_was_backspace = false;
                 console.log("inputText: " + self.inputText + " beforeCheck " + beforeCheck + " currentText " + self.currentText);
                 if (beforeCheck.length > self.inputText.length) {
                     var diff = (beforeCheck.length - self.inputText.length);
@@ -321,6 +324,7 @@ var _callbacks_ = {
                         self.nextPage();
                     } else if (key == '') {
                         if (backspace) {
+			    self.last_key_was_backspace = true;
                             self.currentText = self.currentText.substring(0, self.currentText.length - backspace);
                             self.inputText = beforeCheck;
                         } else {
@@ -430,7 +434,7 @@ var _callbacks_ = {
         }
 
         self.updateDialog = function(){
-            if (self.currentText.length > 0) {
+            if (!self.last_key_was_backspace && self.currentText.length > 0) {
 
                 var pair = getPairs(); 
 

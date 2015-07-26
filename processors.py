@@ -96,7 +96,7 @@ class Processor(object) :
         self.punctuation_without_newlines.update(deepcopy(self.punctuation_numbers))
         self.punctuation.update(deepcopy(self.punctuation_numbers))
 
-    def get_chars(self, romanized) :
+    def get_chars(self, romanized, limit = 8, preload = False, retest = True) :
         return False
 
     def get_ipa(self, source) :
@@ -308,7 +308,7 @@ class RomanizedSource(Processor) :
         flistvalues.append(self.dbname)
         return flistvalues
 
-    def test_dictionaries(self, opaque, preload = False) :
+    def test_dictionaries(self, opaque, preload = False, retest = False) :
         if not self.srcdb :
             self.srcdb = {}
             db = create_engine('sqlite:///' + self.params["scratch"] + self.dbname, listeners= [MyListener()])
@@ -636,8 +636,8 @@ class EnglishSource(RomanizedSource) :
                 })
 
     # Setup all english sources with phonetic IPA
-    def test_dictionaries(self, opaque, preload = False) :
-        super(EnglishSource, self).test_dictionaries(opaque, preload = preload)
+    def test_dictionaries(self, opaque, preload = False, retest = False) :
+        super(EnglishSource, self).test_dictionaries(opaque, preload = preload, retest = retest)
 
         mdebug("Testing EnglishSource IPA database...")
 
@@ -731,7 +731,7 @@ class ChineseSimplifiedToEnglish(Processor) :
     def get_dictionaries(self) :
         return ["cjklib.db", "cedict.db", "tones.db", "jieba.db", "pinyin.db"]
 
-    def test_dictionaries(self, opaque, preload = False) :
+    def test_dictionaries(self, opaque, preload = False, retest = False) :
         cjk, d, hold = opaque 
 
         '''
@@ -770,13 +770,15 @@ class ChineseSimplifiedToEnglish(Processor) :
                 self.tonedb["conn"].execute(i)
             dpfh.close()
             trans.commit()
-        #mdebug("Tone test: " + str(self.convertPinyin(u'白')))
 
         if not hasattr(self, "imedb") :
             mverbose("imedb still not allocated from test_dictionaries (fixme in a shared thread)")
-            self.setup_imedb(preload = preload)
+            self.setup_imedb(preload = preload, retest = retest)
 
-    def setup_imedb(self, preload = False) :
+        elif "conn" not in self.imedb :
+            self.open_imedb(preload = preload)
+
+    def open_imedb(self, preload = False) :
         if preload :
             db = create_engine('sqlite:///' + self.params["scratch"] + "pinyin.db", listeners= [PinyinListener()])
         else :
@@ -786,6 +788,8 @@ class ChineseSimplifiedToEnglish(Processor) :
         conn = db.connect()
 
         self.imedb = {}
+
+        self.imedb["conn"] = conn
 
         self.imedb["ime"] = Table('ime', metadata,
             Column('chars', String),
@@ -799,7 +803,11 @@ class ChineseSimplifiedToEnglish(Processor) :
             Column('word3', String, index = True),
         )
 
-        self.imedb["conn"] = conn
+    def setup_imedb(self, preload = False, retest = True) :
+        self.open_imedb(preload)
+
+        if not retest and not preload:
+            return
 
         self.imedb["ime"].create(checkfirst=True)
 
@@ -816,7 +824,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             mdebug("Need to re-generate pinyin IME database from " + orig_ime)
             fh = codecs.open(orig_ime, "r", "utf-8")
 
-            trans = conn.begin()
+            trans = self.imedb["conn"].begin()
 
             while True :
                 line = fh.readline().strip()
@@ -839,7 +847,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                                                       word1 = wordlist[1],
                                                       word2 = wordlist[2],
                                                       word3 = wordlist[3])
-                conn.execute(i)
+                self.imedb["conn"].execute(i)
 
             trans.commit()
             fh.close()
@@ -853,10 +861,10 @@ class ChineseSimplifiedToEnglish(Processor) :
             else :
                 mverbose("Skipping pinyin ime database preload.")
 
-    def get_chars(self, wordall, limit = 8) :
+    def get_chars(self, wordall, limit = 8, preload = False, retest = True) :
         if not hasattr(self, "imedb") :
             mdebug("imedb still not allocated from get_chars")
-            self.setup_imedb()
+            self.setup_imedb(preload = preload, retest = retest)
 
         # First see if the original version is in there without spaces:
         assert(isinstance(wordall, unicode))
@@ -1049,6 +1057,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             self.jieba_close()
         if hasattr(self, "imedb") :
             self.imedb["conn"].close()
+            del self.imedb["conn"]
 
     def pre_parse_page(self, opaque, page_input_unicode) :
         strinput = page_input_unicode.encode("utf-8")
