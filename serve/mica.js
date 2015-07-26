@@ -1191,7 +1191,7 @@ var oDbg, con;
 var start_trans_id = 0;
 
 function handleIQ(oIQ) {
-    document.getElementById('iResp').innerHTML += "<div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div>';
+    document.getElementById('iResp').innerHTML += "<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>';
     document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
@@ -1338,7 +1338,8 @@ function handleMessage(oJSJaCPacket) {
 
 function handleConnectedLoaded(data) {
     $("#pagesingle").html("");
-    document.getElementById('iResp').innerHTML += "<tr><td>" + data + "</td></tr>";
+    console.log("appending: \n" + data)
+    document.getElementById('iResp').innerHTML += data;
     $("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
@@ -1355,9 +1356,9 @@ function newContact(who) {
           url, 
           '#chathistoryresult',
           unavailable, 
-          false, 
+          true, 
           handleConnectedLoaded,
-          false);
+          true);
     document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
@@ -1367,7 +1368,7 @@ function handleStatusChanged(status) {
 }
 
 function handlePresence(oJSJaCPacket) {
-    var html = '<div class="msg">';
+    var html = '<tr><td><div class="msg">';
     var who = oJSJaCPacket.getFromJID();
     var id = ("" + who).split("@");
     html += "<b><a style='cursor: pointer' onclick=\"newContact('" + addressableID(who)+ "');\">" + decodeURIComponent(id[0]) + "</a> ";
@@ -1384,7 +1385,7 @@ function handlePresence(oJSJaCPacket) {
         if (oJSJaCPacket.getStatus())
             html += ' (' + oJSJaCPacket.getStatus().htmlEnc() + ')';
     }
-    html += '</div>';
+    html += '</div></td></tr>';
 
     document.getElementById('iResp').innerHTML += html;
     document.getElementById('iResp').lastChild.scrollIntoView();
@@ -1532,7 +1533,7 @@ function sendMsg(oForm) {
 
         return val;
     } catch (e) {
-        html = "<div class='msg error''>Error: " + e.message + "</div>";
+        html = "<tr><td><div class='msg error''>Error: " + e.message + "</div></td></tr>";
         document.getElementById('iResp').innerHTML += html;
         document.getElementById('iResp').lastChild.scrollIntoView();
         return false;

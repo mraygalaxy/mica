@@ -1433,7 +1433,7 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0, chat = False) :
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0, chat = False, history = False) :
         output = [output]
         gp = self.processors[self.tofrom(story)]
 
@@ -1554,6 +1554,20 @@ class MICA(object):
         for line in lines :
             disk_out = ""
             line_out = []
+
+            if chat and history :
+                if "peer" in line[0][3] :
+                    msgto = line[0][3]["peer"]
+                else :
+                    msgto = req.session.value["username"]
+                msgclass = "msgright" if msgto != req.session.value["username"] else "msgleft"
+
+                line_out.append("""
+                        <tr><td>                
+                            <div style='width: 100%'>
+                                <span class='badge """ + msgclass + """' style='background-color: """ + ('#f0f0f0' if not history else 'white') + """; border: 1px solid grey'>
+                                    <table><tr><td>&nbsp</td><td>
+                """)
 
             if not disk :
                 line_out.append("\n<table>")
@@ -1957,6 +1971,15 @@ class MICA(object):
                         line_out.append("<td>&#160;</td>")
                 line_out.append("</tr>")
                 line_out.append("</table>")
+
+            if chat and history :
+                line_out.append("""
+                                    </td><td>&nbsp</td></tr></table>
+                                </span>
+                            </div>
+                        </td></tr>
+                        <tr><td>&nbsp</td></tr>
+                """)
 
             if not disk :
                 output.append("".join(line_out))
@@ -3360,7 +3383,7 @@ class MICA(object):
                                 "target_language" : story["target_language"],
                             }]
 
-                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp)
+                before = gp.add_unit([msgfrom], msgfrom, [msgfrom], punctuation = True, timestamp = timestamp, peer = msgto)
                 self.rehash_correct_polyphome(before)
                 self.add_period(req, "days", peer, messages, [before] + story["pages"]["0"]["units"], story)
                 
@@ -3782,8 +3805,13 @@ class MICA(object):
                     output += "</div></div>"
                     return self.bootstrap(req, output, now = True)
                 else :
-                    self.set_page(req, story, page)
-                    output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode)
+                    output = ""
+                    chat = history = True if ("filetype" in story and story["filetype"] == "chat") else False 
+                    if chat :
+                        output += "<table style='width: 100%'>\n"
+                    output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
+                    if chat :
+                        output += "</table>"
                     return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
             output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
@@ -4293,7 +4321,7 @@ class MICA(object):
                 self.roll_period(req, "days", "weeks", peer)
 
 
-            out = "<div><div id='chathistoryresult'><div class='msg'>"
+            out = "<div><table id='chathistoryresult'>\n"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
                 stories = []
 
@@ -4321,13 +4349,13 @@ class MICA(object):
 
                         added = True
                         [x, period, howmany, peer] = tmp_story["name"].split(";")
-                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset)
+                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset, chat = True, history = True)
                         break
 
                     if added :
                         break
 
-            out += "</div></div></div>"
+            out += "\n</table></div>"
             return self.bootstrap(req, out, now = True)
 
         req.main_server = params["main_server"]
@@ -4379,7 +4407,6 @@ class MICA(object):
             req.db[self.acct(req.session.value["username"])] = tmpuser
             req.session.save()
 
-            #mdebug("Want to perform: user " + str(tmpuser) + " story " + str(tmpstory))
             return self.bootstrap(req, "changed", now = True)
 
         tzoffset = int(req.http.params.get("tzoffset"))
