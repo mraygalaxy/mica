@@ -102,3 +102,5 @@ $(document).ready(function(){
 $.mobile.loading("hide");
 $(".ui-loader").hide();
 */
+
+$("#sidebarcontents").panel({beforeopen: function(event, ui) {loadstories(false);}});
