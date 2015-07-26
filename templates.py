@@ -732,7 +732,7 @@ class HeadElement(CommonElement):
             navactive = 'home'
 
         menu = [ 
-                 ("storylist" , ("/storylist", "book", _("Stories"))), 
+                 ("storylist" , ("#sidebarcontents", "book", _("Stories"))), 
                  # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                  ("home" , ("/home", "home", _("Review"))), 
                  # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
@@ -760,6 +760,9 @@ class HeadElement(CommonElement):
                     atag = tags.a(href=url)(itag, " ", display)
                 topul(tags.li(atag))
 
+        ### THIS is the account section. It needs to go into a panel
+        ### And then we need pages. Somehow.
+        '''
         if not self.req.pretend_disconnected :
             itemtag = tags.li(**{"class" : "dropdown"})
             atag = tags.a(**{"class" : "dropdown-toggle", "data-toggle" : "dropdown", "href" : "#"})
@@ -783,6 +786,7 @@ class HeadElement(CommonElement):
             topul(itemtag(atag, utag))
 
         topul(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
+        '''
         tag(tags.div(**{"data-role" : "navbar", "data-iconpos" : "right"})(topul))
         return tag
 

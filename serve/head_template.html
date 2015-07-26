@@ -20,6 +20,7 @@
   <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
   </head>
   <body id='cbody'>
+  <div data-role='page'>
   <div style='display: none' id='loadingtext'><t:slot name='loadingtext'/></div>
   <div style='display: none' id='loadingimage'><t:slot name='loadingimage'/></div>
   <div style='display: none' id='loadingstories'><t:slot name='loadingstories'/></div>
@@ -49,15 +50,15 @@
   <div style='display: none' id='started'><t:slot name='started'/></div>
   <div style='display: none' id='stopping'><t:slot name='stopping'/></div>
   <div style='display: none' id='stopped'><t:slot name='stopped'/></div>
+  <div t:render="modals"/>
+  <div data-role='panel' data-display="push" id='sidebarcontents'/>
   <div t:render="headnavparent"/>
-  <table t:render="cloudnav"/>
-  <div id='allcontent' class='container-fluid' style="margin-top: 50px; border-radius: 2%; margin-left: 5px; border: 1px solid lightgray; padding-top: 10px; padding-left: 10px; padding-right: 10px; background: #f0f0f0">
-    <div t:render="modals"/>
+  <!--<table t:render="cloudnav"/>-->
 BOOTBODY
-  </div>
   <script>
   BOOTSCRIPTHEAD 
   </script>
   <script t:render="scriptswitch"/>
+  </div>
 </body>
 </html>
