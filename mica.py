@@ -851,7 +851,7 @@ class MICA(object):
         for name, lgp in self.processors.iteritems() :
             try :
                 handle = lgp.parse_page_start()
-                lgp.test_dictionaries(handle)
+                lgp.test_dictionaries(handle, retest = True)
                 lgp.parse_page_stop(handle)
             except Exception, e :
                 merr("Error preloading dictionaries: " + str(e))
@@ -3280,7 +3280,7 @@ class MICA(object):
                 imes = int(req.http.params.get("ime"))
                 #mdebug("Type: " + str(type(orig)))
                 #start = timest()
-                char_result = gp.get_chars(orig)
+                char_result = gp.get_chars(orig, retest = False)
                 #mdebug("IME time: " + str(timest() - start) + " for " + str(orig))
 
                 if not char_result :
@@ -4791,7 +4791,7 @@ class MICA(object):
                             mdebug("File " + f + " already exists.")
                             handle = lgp.parse_page_start()
                             #lgp.test_dictionaries(handle, preload = True)
-                            lgp.test_dictionaries(handle)
+                            lgp.test_dictionaries(handle, retest = True)
                             lgp.parse_page_stop(handle)
 
             except TypeError, e :
