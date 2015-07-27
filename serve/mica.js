@@ -1089,6 +1089,11 @@ function unsyncstory(name, uuid) {
         false);
 }
 
+function storiesfinished(unused) {
+    $("#sidebarcontents").trigger( "updatelayout" );
+    console.log("Stories loaded.");
+}
+
 function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
@@ -1097,7 +1102,7 @@ function loadstories(unused) {
         '#storylistresult', 
         unavailable, 
         true, 
-        false,
+        storiesfinished,
         true);
 }
 

@@ -18,9 +18,6 @@
   <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
   <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
   <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
-  </head>
-  <body id='cbody'>
-  <div data-role='page'>
   <div style='display: none' id='loadingtext'><t:slot name='loadingtext'/></div>
   <div style='display: none' id='loadingimage'><t:slot name='loadingimage'/></div>
   <div style='display: none' id='loadingstories'><t:slot name='loadingstories'/></div>
@@ -50,15 +47,20 @@
   <div style='display: none' id='started'><t:slot name='started'/></div>
   <div style='display: none' id='stopping'><t:slot name='stopping'/></div>
   <div style='display: none' id='stopped'><t:slot name='stopped'/></div>
-  <div t:render="modals"/>
-  <div data-role='panel' data-display="push" id='sidebarcontents'/>
-  <div t:render="headnavparent"/>
-  <!--<table t:render="cloudnav"/>-->
-BOOTBODY
-  <script>
-  BOOTSCRIPTHEAD 
-  </script>
-  <script t:render="scriptswitch"/>
-  </div>
-</body>
+  </head>
+  <body id='cbody'>
+      <div t:render="modals"/>
+      <div data-role='page'>
+          <div data-role='panel' data-display="push" id='sidebarcontents'/>
+          <div t:render="headnavparent"/>
+          <!--<table t:render="cloudnav"/>-->
+        <!--
+        BOOTBODY
+        -->
+      </div>
+      <script>
+      BOOTSCRIPTHEAD 
+      </script>
+      <script t:render="scriptswitch"/>
+  </body>
 </html>
