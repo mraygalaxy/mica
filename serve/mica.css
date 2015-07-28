@@ -226,3 +226,13 @@ ul.pagination {
     color: black; 
     background: #ced6fb;
 }
+
+html, body, div[data-role = "page"] {
+    margin: 0px;
+    padding: 0px;
+}
+ 
+.ui-content{
+    margin: 0px;
+    padding: 0px;
+}

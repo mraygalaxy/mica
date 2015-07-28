@@ -151,6 +151,71 @@ class StaticNavElement(Element) :
                       )
         return tag
 
+class TranslationsElement(CommonElement) :
+    def __init__(self, req) :
+        super(TranslationsElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/translations_template.html').path)
+
+    @renderer
+    def translationslots(self, request, tag) :
+        tag.fillSlots(
+                     # This appears as a pop-up when we are loading the text content of a story.
+                     loadingtext = _("Loading Text"),
+                     # This appears as a pop-up when we are image content of a PDF-based story.
+                     loadingimage = _("Loading Image"),
+                     # This appears when you first click on a story to be loaded
+                     loadingstories = _("Loading Stories"),
+                     # This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
+                     loadingstatistics = _("Loading Statistics"),
+                     # This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
+                     notsynchronized = _("This account is not fully synchronized"),
+                     # This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
+                     onlineoffline = _("If you are offline, please go online for an instant translation."),
+                     # This appears when you attempt to perform an instant translation without clicking on any words to translate.
+                     notselected = _("You have not selected any words for instant translation!"),
+                     # This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors. 
+                     seeabove = _("See above for problems with your edit requests."),
+                     # just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
+                     submit = _("Submit"),
+                     # This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
+                     reason = _("Reason"),
+                     # Merge as in merge/split in edit mode.
+                     merge = _("Merge"),
+                     # This appears next to the words that have errors for which you were trying to merge or split.
+                     invalid = _("INVALID"),
+                     # Split as in merge/split in edit mode.
+                     split = _("Split"),
+                     # This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
+                     areyousure = _("Are you sure you want to perform these edits?"),
+                     # Also a message in edit mode.
+                     notconsecutive = _("The selected characters are not consecutive (including punctuation). You cannot merge them."),
+                     # Also a message in edit mode.
+                     atleasttwo = _("You need at least two character groups selected before you can merge them into a word!"),
+                     # Also a message in edit mode.
+                     onlyhasone = _("This word only has one character. It cannot be split!"),
+                     # Also a message in edit mode.
+                     cannotsplit = _("You cannot split more than one word at a time!"),
+                     # This appears on the left-hand panel when a story is being actively translated.
+                     translating = _("Translating"),
+                     # This on the main page when a story is being actively translated.
+                     storiestranslating = _("Stories in translation"),
+                     # This appears after a story has just finished being translated to indicate that you can start using it.
+                     donereload = _("Done! Please reload."),
+                     # This appears during the translation of a story to indicate how many pages have been completed in the translation
+                     working = _("Working"),
+                     # This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
+                     page = _("Page"),
+                     # These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
+                     statshide = _("Stats Hidden"),
+                     statsshown = _("Stats Shown"),
+                     requesting = _("Requesting"),
+                     started = _("Started (stop?)"),
+                     stopping = _("Stopping"),
+                     stopped = _("Stopped (start?)"),
+                        )
+        return tag
+
 class ModalsElement(CommonElement) :
     def __init__(self, req) :
         super(ModalsElement, self).__init__(req) 
@@ -715,8 +780,11 @@ class HeadElement(CommonElement):
 
     @renderer
     def modals(self, request, tag) :
-        tag(ModalsElement(self.req))
-        return tag
+        return ModalsElement(self.req)
+
+    @renderer
+    def translations(self, request, tag) :
+        return TranslationsElement(self.req)
 
     @renderer
     def headnavparent(self, request, tag) :
@@ -732,7 +800,7 @@ class HeadElement(CommonElement):
             navactive = 'home'
 
         menu = [ 
-                 ("storylist" , ("#sidebarcontents", "book", _("Stories"))), 
+                 ("storylist" , ("/storylist", "book", _("Stories"))), 
                  # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                  ("home" , ("/home", "home", _("Review"))), 
                  # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
@@ -787,7 +855,7 @@ class HeadElement(CommonElement):
 
         topul(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
         '''
-        tag(tags.div(**{"data-role" : "navbar", "data-iconpos" : "right"})(topul))
+        tag(topul)
         return tag
 
     @renderer
@@ -907,6 +975,7 @@ class HeadElement(CommonElement):
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
                      jqmjs = self.req.mpath + "/jquery.mobile-1.4.5.min.js",
+                     livejs = self.req.mpath + "/live.js",
                      jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
                      jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
                      email = _("Email Address"),
@@ -919,59 +988,6 @@ class HeadElement(CommonElement):
                      # confirm password
                      confirmpass = _("Confirm"),
                      
-                     # This appears as a pop-up when we are loading the text content of a story.
-                     loadingtext = _("Loading Text"),
-                     # This appears as a pop-up when we are image content of a PDF-based story.
-                     loadingimage = _("Loading Image"),
-                     # This appears when you first click on a story to be loaded
-                     loadingstories = _("Loading Stories"),
-                     # This appears at the  bottom of the page when you are loading a story and indicates that the analytical/statistical information is also being loaded
-                     loadingstatistics = _("Loading Statistics"),
-                     # This appears on a mobile device and indicates that the devices is not fully sychronized with the website.
-                     notsynchronized = _("This account is not fully synchronized"),
-                     # This appears on a mobile device when you attempt to perform an instant translation. If the wifi is disconnect, you will see this message.
-                     onlineoffline = _("If you are offline, please go online for an instant translation."),
-                     # This appears when you attempt to perform an instant translation without clicking on any words to translate.
-                     notselected = _("You have not selected any words for instant translation!"),
-                     # This appears as a popup when you are preparing to perform a split/merge request in Edit mode, but some of the words you have chosen have errors. 
-                     seeabove = _("See above for problems with your edit requests."),
-                     # just a generic 'Submit' whenever you need to make changes or click to go to another page to perform an action.
-                     submit = _("Submit"),
-                     # This reason appears when you have made errors in Edit mode to explain why the software cannot proceed with your edits.
-                     reason = _("Reason"),
-                     # Merge as in merge/split in edit mode.
-                     merge = _("Merge"),
-                     # This appears next to the words that have errors for which you were trying to merge or split.
-                     invalid = _("INVALID"),
-                     # Split as in merge/split in edit mode.
-                     split = _("Split"),
-                     # This appears to confirm whether or not you want to merge or split one or more words in Edit mode.
-                     areyousure = _("Are you sure you want to perform these edits?"),
-                     # Also a message in edit mode.
-                     notconsecutive = _("The selected characters are not consecutive (including punctuation). You cannot merge them."),
-                     # Also a message in edit mode.
-                     atleasttwo = _("You need at least two character groups selected before you can merge them into a word!"),
-                     # Also a message in edit mode.
-                     onlyhasone = _("This word only has one character. It cannot be split!"),
-                     # Also a message in edit mode.
-                     cannotsplit = _("You cannot split more than one word at a time!"),
-                     # This appears on the left-hand panel when a story is being actively translated.
-                     translating = _("Translating"),
-                     # This on the main page when a story is being actively translated.
-                     storiestranslating = _("Stories in translation"),
-                     # This appears after a story has just finished being translated to indicate that you can start using it.
-                     donereload = _("Done! Please reload."),
-                     # This appears during the translation of a story to indicate how many pages have been completed in the translation
-                     working = _("Working"),
-                     # This 'page' also appears during the translation of a story to indicate how many pages have been completed in the translation
-                     page = _("Page"),
-                     # These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
-                     statshide = _("Stats Hidden"),
-                     statsshown = _("Stats Shown"),
-                     requesting = _("Requesting"),
-                     started = _("Started (stop?)"),
-                     stopping = _("Stopping"),
-                     stopped = _("Stopped (start?)"),
                      )
        return tag
 
