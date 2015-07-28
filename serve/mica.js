@@ -855,6 +855,7 @@ function reveal(id, hide) {
    }
 }
 
+/*
 $.browser.device = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
 
 if ($.browser.device == true) {
@@ -864,6 +865,7 @@ if ($.browser.device == true) {
     modifyStyleRuleValue("width", "#main-nav:target", "30%");
     modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "70%");
 }
+*/
 
 function offinstantspin(data, curr, unused) {
     //var data = JSON.parse(data);
@@ -1089,11 +1091,6 @@ function unsyncstory(name, uuid) {
         false);
 }
 
-function storiesfinished(unused) {
-    $("#sidebarcontents").trigger( "updatelayout" );
-    console.log("Stories loaded.");
-}
-
 function loadstories(unused) {
 
     $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
@@ -1102,7 +1099,7 @@ function loadstories(unused) {
         '#storylistresult', 
         unavailable, 
         true, 
-        storiesfinished,
+        false,
         true);
 }
 
@@ -1558,5 +1555,3 @@ onunload = function() {
         }
     }
 };
-
-$(document).bind("mobileinit", function(){ $.extend(  $.mobile , { ajaxEnabled: false });});

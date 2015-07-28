@@ -1,66 +1,49 @@
-<!DOCTYPE html>
 <html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
-<head t:render="head">
-  <meta charset="utf-8"/>
-  <title>MICA</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta name="description" content="MICA"/>
-  <meta name="author" content="Michael R. Hines"/>
+  <head t:render="head">
+      <meta charset="utf-8"/>
+      <title>MICA</title>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+      <meta name="description" content="MICA"/>
+      <meta name="author" content="Michael R. Hines"/>
 
-  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
-  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
-  <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
-  <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
-  <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
-  <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
-  <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
-  <script><t:attr name='src'><t:slot name='jquerymigrate'/></t:attr></script>
-  <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
-  <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
-  <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
-  <div style='display: none' id='loadingtext'><t:slot name='loadingtext'/></div>
-  <div style='display: none' id='loadingimage'><t:slot name='loadingimage'/></div>
-  <div style='display: none' id='loadingstories'><t:slot name='loadingstories'/></div>
-  <div style='display: none' id='loadingstatistics'><t:slot name='loadingstatistics'/></div>
-  <div style='display: none' id='notsynchronized'><t:slot name='notsynchronized'/></div>
-  <div style='display: none' id='onlineoffline'><t:slot name='onlineoffline'/></div>
-  <div style='display: none' id='notselected'><t:slot name='notselected'/></div>
-  <div style='display: none' id='seeabove'><t:slot name='seeabove'/></div>
-  <div style='display: none' id='submit'><t:slot name='submit'/></div>
-  <div style='display: none' id='reason'><t:slot name='reason'/></div>
-  <div style='display: none' id='merge'><t:slot name='merge'/></div>
-  <div style='display: none' id='invalid'><t:slot name='invalid'/></div>
-  <div style='display: none' id='split'><t:slot name='split'/></div>
-  <div style='display: none' id='areyousure'><t:slot name='areyousure'/></div>
-  <div style='display: none' id='notconsecutive'><t:slot name='notconsecutive'/></div>
-  <div style='display: none' id='atleasttwo'><t:slot name='atleasttwo'/></div>
-  <div style='display: none' id='onlyhasone'><t:slot name='onlyhasone'/></div>
-  <div style='display: none' id='cannotsplit'><t:slot name='cannotsplit'/></div>
-  <div style='display: none' id='translating'><t:slot name='translating'/></div>
-  <div style='display: none' id='storiestranslating'><t:slot name='storiestranslating'/></div>
-  <div style='display: none' id='donereload'><t:slot name='donereload'/></div>
-  <div style='display: none' id='working'><t:slot name='working'/></div>
-  <div style='display: none' id='page'><t:slot name='page'/></div>
-  <div style='display: none' id='statsshown'><t:slot name='statsshown'/></div>
-  <div style='display: none' id='statshide'><t:slot name='statshide'/></div>
-  <div style='display: none' id='requesting'><t:slot name='requesting'/></div>
-  <div style='display: none' id='started'><t:slot name='started'/></div>
-  <div style='display: none' id='stopping'><t:slot name='stopping'/></div>
-  <div style='display: none' id='stopped'><t:slot name='stopped'/></div>
+      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
+      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
+      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
+      <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
+      <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
+      <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
+      <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
+    <!--  <script><t:attr name='src'><t:slot name='jquerymigrate'/></t:attr></script>-->
+      <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
+      <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
+      <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
   </head>
+
   <body id='cbody'>
-      <div t:render="modals"/>
-      <div data-role='page'>
-          <div data-role='panel' data-display="push" id='sidebarcontents'/>
-          <div t:render="headnavparent"/>
-          <!--<table t:render="cloudnav"/>-->
-        <!--
-        BOOTBODY
-        -->
-      </div>
-      <script>
-      BOOTSCRIPTHEAD 
-      </script>
-      <script t:render="scriptswitch"/>
+    <div t:render="translations"/>
+    <div t:render="modals"/>
+    <div data-role='panel' data-display="reveal" id='panel'>
+        <table t:render="cloudnav"/>
+    </div>
+    <div data-role='page' id='stories'>
+        <div data-role='content'>
+            <a href='#foo'>next page</a>
+            <a href='#panel'>panel</a>
+            BOOTBODY
+        </div>
+    </div>
+    <div data-role='page' id='foo'>
+        <div data-role='content'>
+        This is the next page.
+        </div>
+    </div>
+    <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
+        <!--<a href="#" class="ui-btn-right ui-btn u-btm-mini ui-btn-inline ui-mini ui-corner-all ui-btn-icon-right ui-icon-gear">Options</a>-->
+      <div data-role='navbar' data-icon-pos='right' t:render="headnavparent"/>
+    </div>
+    <script>
+    BOOTSCRIPTHEAD 
+    </script>
+    <script t:render="scriptswitch"/>
   </body>
 </html>

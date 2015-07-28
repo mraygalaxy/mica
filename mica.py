@@ -777,7 +777,7 @@ class MICA(object):
             contents = contents.replace("BOOTSCRIPTHEAD", fh.read())
             fh.close()
     
-        return contents
+        return contents if now else ("<!DOCTYPE html>\n" + contents)
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -5189,13 +5189,13 @@ class MICA(object):
                     resp = resp.decode("utf-8")
 
                 resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
-                if "connected" in req.session.value and req.session.value["connected"] :
+                if not out.count("SAXParseException") and "connected" in req.session.value and req.session.value["connected"] :
                     mwarn("Boo other, logging out user now.")
                     req.session.value["connected"] = False
                     req.session.save()
                 req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
-                                            + resp + "</div>")
+                                            + resp + "</div>", now = True)
             except Exception, e :
                 merr("OTHER MICA ********Exception:")
                 for line in format_exc().splitlines() :
