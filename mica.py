@@ -5189,7 +5189,7 @@ class MICA(object):
                     resp = resp.decode("utf-8")
 
                 resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
-                if not out.count("SAXParseException") and "connected" in req.session.value and req.session.value["connected"] :
+                if not out.count("SAXParseException") and not out.count("MissingRenderMethod") and "connected" in req.session.value and req.session.value["connected"] :
                     mwarn("Boo other, logging out user now.")
                     req.session.value["connected"] = False
                     req.session.save()
