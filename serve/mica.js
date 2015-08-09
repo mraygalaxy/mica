@@ -1091,20 +1091,29 @@ function unsyncstory(name, uuid) {
         false);
 }
 
+function finishedloading(unused) {
+   $("#collapseReading").appendTo( $.mobile.pageContainer );
+   $("#collapseChatting").appendTo( $.mobile.pageContainer );
+   $("#collapseFinished").appendTo( $.mobile.pageContainer );
+   $("#collapseReviewing").appendTo( $.mobile.pageContainer );
+   $("#collapseUntranslated").appendTo( $.mobile.pageContainer );
+   //$.mobile.navigate("#collapseMain");
+}
+
 function loadstories(unused) {
 
-    $("#sidebarcontents").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go('#sidebarcontents', 
+    $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
+    go('#storypages', 
         '/storylist?tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         '#storylistresult', 
         unavailable, 
         true, 
-        false,
+        finishedloading,
         true);
 }
 
 function reviewstory(uuid, which) {
-    go('#sidebarcontents', 
+    go('#storypages', 
         '/home?reviewed=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
@@ -1114,7 +1123,7 @@ function reviewstory(uuid, which) {
 }
 
 function finishstory(uuid, which) {
-    go('#sidebarcontents', 
+    go('#storypages', 
         '/home?finished=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 

@@ -49,6 +49,16 @@ $(".ui-loader").hide();
 
 //$("#sidebarcontents").panel({beforeopen: function(event, ui) {loadstories(false);}});
 
+$(document).on("pagecontainerbeforechange", function (e, data) {
+   if (typeof data.toPage == "string") {
+        var where = data.toPage.split("#")[1];
+        if (where == 'stories') {
+            loadstories(false);
+        } 
+   }
+   return true;
+});
+
 $(document).on("pagecreate", function () {
     $("[data-role=panel]").one("panelbeforeopen", function () {
         var height = $.mobile.pageContainer.pagecontainer("getActivePage").outerHeight();
