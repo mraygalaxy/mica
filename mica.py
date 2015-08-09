@@ -2086,14 +2086,21 @@ class MICA(object):
 
         return result
     
+    def storyTemplate(self, name) :
+        return """
+        <div data-role='page' id='collapse""" + name + """'>
+            <div data-role='content'>
+              <table class='table table-hover table-striped'>
+              """
+
     def makestorylist(self, req, tzoffset):
         untrans_count = 0
         reading_count = 0
-        reading = [self.template("reading")]
+        reading = [self.storyTemplate("Reading")]
         chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
-        noreview = [self.template("noreview")]
-        untrans = [self.template("untrans")]
-        finish = [self.template("finished")]
+        noreview = [self.storyTemplate("Reviewing")]
+        untrans = [self.storyTemplate("Untranslated")]
+        finish = [self.storyTemplate("Finished")]
         
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -4411,15 +4418,11 @@ class MICA(object):
             return self.bootstrap(req, "changed", now = True)
 
         if not req.http.params.get("tzoffset") :
-            return self.bootstrap(req, """
-                      <div style="background: #f0f0f0" id='sidebarcontents'></div>
-                      <script>loadstories(false);</script>
-                """)
-
+            return self.bootstrap(req, "<script>loadstories(false);</script>")
 
         tzoffset = int(req.http.params.get("tzoffset"))
 
-        storylist = [self.template("storylist")]
+        storylist = ["<script>var translist = [];</script>\n"]
 
         result = repeat(self.makestorylist, args = [req, tzoffset], kwargs = {})
         
@@ -4428,31 +4431,32 @@ class MICA(object):
         
         untrans_count, reading, noreview, untrans, finish, reading_count, chatting = result[1:]
         
-        reading.append("</table></div></div></div>\n")
-        noreview.append("</table></div></div></div>\n")
-        untrans.append("</table></div></div></div>\n")
-        finish.append("</table></div></div></div>\n")
+        reading.append("</table></div></div>\n")
+        noreview.append("</table></div></div>\n")
+        untrans.append("</table></div></div>\n")
+        finish.append("</table></div></div>\n")
 
-        chat_all = [self.template("chatting")]
+        chat_all = [self.storyTemplate("Chatting")]
 
         for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :
                 chat_all.append("<tr><td>" + _("Recent") + " " + translated_periods[period] + ":</td></tr>")
                 chat_all += chatting[period]
 
-        chat_all.append("</table></div></div></div>\n")
+        chat_all.append("</table></div></div>\n")
 
         scripts = [""]
 
         if untrans_count :
-            storylist += untrans + reading + chat_all + noreview + finish + ["</div></td></tr></table>"]
-            scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
+            storylist += untrans + reading + chat_all + noreview + finish
+            # make JQM go to the right sub-menu first by switching to the right page
+            #scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
         elif reading_count :
-            storylist += reading + chat_all + untrans + noreview + finish + ["</div></td></tr></table>"]
-            scripts.append("<script>$('#collapseReading').collapse('show');</script>")
+            storylist += reading + chat_all + untrans + noreview + finish
+            #scripts.append("<script>$('#collapseReading').collapse('show');</script>")
         else :
-            storylist += noreview + reading + chat_all + untrans + finish + ["</div></td></tr></table>"]
-            scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
+            storylist += noreview + reading + chat_all + untrans + finish
+            #scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
 
         scripts.append("""
                     

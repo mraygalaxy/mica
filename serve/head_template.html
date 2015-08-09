@@ -25,22 +25,38 @@
     <div data-role='panel' data-display="reveal" id='settings'>
         <table t:render="cloudnav"/>
     </div>
-    <div data-role='page' id='stories'>
-        <div data-role='content'>
-            BOOTBODY
-        </div>
-    </div>
     <div data-role='page' id='chat'>
         <div data-role='content'>
         chatting 
+        </div>
+    </div>
+    <div data-role='page' id='learn'>
+        <div data-role='content'>
+        learn 
+        </div>
+    </div>
+    <div data-role='page' id='stories'>
+        <div data-role='content'>
+		<div id='storypages'></div>
+		<br/>
+		<ul data-role='listview' data-insert='true'>
+		    <li><a href='#collapseReading'><t:slot name='reading'/></a></li>
+		    <li><a href='#collapseChatting'><t:slot name='chatting'/></a></li>
+		    <li><a href='#collapseReviewing'><t:slot name='notreviewed'/></a></li>
+		    <li><a href='#collapseUntranslated'><t:slot name='untranslated'/></a></li>
+		    <li><a href='#collapseFinished'><t:slot name='finished'/></a></li>
+		</ul>
+	    <br/>
+            BOOTBODY
         </div>
     </div>
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
         <!--<a href="#" class="ui-btn-right ui-btn u-btm-mini ui-btn-inline ui-mini ui-corner-all ui-btn-icon-right ui-icon-gear">Options</a>-->
       <div data-role='navbar' data-icon-pos='right'> <!--  t:render="headnavparent" -->
       <ul>
-      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-home' href='#stories'>Stories</a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#learn'>Learn</a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#chat'>Chat</a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-home' href='#stories'><t:slot name='stories'/></a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-gear' href='#settings'>Account</a></li>
       </ul>
       </div>

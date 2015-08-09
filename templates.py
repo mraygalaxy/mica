@@ -50,13 +50,8 @@ class StoryElement(Element) :
 
     @renderer
     def story(self, request, tag) :
-        tag.fillSlots(notreviewed = _("Not Reviewed"),
-                      chatting = _("Chat History"),
-                      reading = _("Reading"),
-                      # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-                      untranslated = _("Untranslated"),
-                      finished = _("Finished"),
-                      stories = _("Stories"))
+        tag.fillSlots(
+                      )
         return tag
 
 class DeleteAccountElement(Element) :
@@ -978,6 +973,13 @@ class HeadElement(CommonElement):
                      livejs = self.req.mpath + "/live.js",
                      jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
                      jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
+                     notreviewed = _("Not Reviewed"),
+                     chatting = _("Chat History"),
+                     reading = _("Reading"),
+                     # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
+                     untranslated = _("Untranslated"),
+                     finished = _("Finished"),
+                     stories = _("Stories"),
                      email = _("Email Address"),
                      # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
