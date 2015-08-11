@@ -1,45 +1,21 @@
 <html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
-  <head t:render="head">
-      <meta charset="utf-8"/>
-      <title>MICA</title>
-      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-      <meta name="description" content="MICA"/>
-      <meta name="author" content="Michael R. Hines"/>
-
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
-      <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
-      <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
-      <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
-    <!--  <script><t:attr name='src'><t:slot name='jquerymigrate'/></t:attr></script>-->
-      <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
-  </head>
-
+  <head t:render="head"/>
   <body id='cbody'>
     <div t:render="translations"/>
     <div t:render="modals"/>
     <div data-role='panel' data-display="reveal" id='settings'>
         <table t:render="cloudnav"/>
+        <ul data-role='listview' data-inset='true'>
+            <li><a href="#uploadModal" data-toggle="model" data-backdrop="static" data-keyboard = "false"><i class='glyphicon gliphicon-upload'></i>**translateme** **Upload New Story**</a></li>  
+        </ul>
     </div>
-    <div data-role='page' id='chat'>
-        <div data-role='content'>
-        chatting 
-        </div>
-    </div>
-    <div data-role='page' id='learn'>
-        <div data-role='content'>
-        learn 
-        </div>
-    </div>
+    <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>
+    <div data-role='page' id='chat'><div data-role='content' id='chat_content'>temp</div></div>
     <div data-role='page' id='stories'>
         <div data-role='content'>
 		<div id='storypages'></div>
 		<br/>
-		<ul data-role='listview' data-insert='true'>
+		<ul data-role='listview' data-inset='true'>
 		    <li><a href='#collapseReading'><t:slot name='reading'/></a></li>
 		    <li><a href='#collapseChatting'><t:slot name='chatting'/></a></li>
 		    <li><a href='#collapseReviewing'><t:slot name='notreviewed'/></a></li>
@@ -47,7 +23,6 @@
 		    <li><a href='#collapseFinished'><t:slot name='finished'/></a></li>
 		</ul>
 	    <br/>
-            BOOTBODY
         </div>
     </div>
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>

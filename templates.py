@@ -43,17 +43,6 @@ class CommonElement(Element) :
                 tag(option(_(readable)))
         return tag
 
-class StoryElement(Element) :
-    def __init__(self, req, content) :
-        super(StoryElement, self).__init__(XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='story'>" + content + "</html>")) 
-        self.req = req
-
-    @renderer
-    def story(self, request, tag) :
-        tag.fillSlots(
-                      )
-        return tag
-
 class DeleteAccountElement(Element) :
     def __init__(self, req) :
         super(DeleteAccountElement, self).__init__() 
@@ -455,7 +444,7 @@ class MobileFrontElement(Element) :
     def __init__(self, req) :
         super(MobileFrontElement, self).__init__() 
         self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
 
     @renderer
     def mobilelinks(self, request, tag) :
@@ -466,7 +455,7 @@ class MobileFrontElement(Element) :
         return tag
 
     @renderer
-    def front(self, request, tag) :
+    def advertise(self, request, tag) :
         tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
                       offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works"),
@@ -515,15 +504,12 @@ class ChatElement(CommonElement) :
 
     @renderer
     def chat(self, request, tag) :
-        tag.fillSlots(temp_jabber_pw = self.req.session.value["temp_jabber_pw"] if not mobile else self.req.session.value["password"],
+        tag.fillSlots(
+                      temp_jabber_pw = self.req.session.value["temp_jabber_pw"] if not mobile else self.req.session.value["password"],
                       spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                       # Indicates that the chat software is starting up... 
                       loading = _("Loading Chat"),
-                      xmpp = self.req.mpath + "/JSJaC-dec-2014/JSJaC.js",
                       username = self.req.session.value["username"].replace("@", "%40"),
-                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
-                      caret = self.req.mpath + "/chinese-ime/caret.js",
-                      imecss = self.req.mpath + "/chinese-ime/ime.css",
                       beep = self.req.mpath + "/beep.wav",
                       # Incoming chat messages
                       incoming = _("Your Chat Username is: ") + self.req.session.value["username"].replace("@", "%40") + "@" + self.req.main_server,
@@ -559,7 +545,11 @@ class FrontPageElement(Element) :
     def __init__(self, req) :
         super(FrontPageElement, self).__init__() 
         self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
+
+    @renderer
+    def head(self, request, tag) :
+        return HTMLElement(self.req)
 
     @renderer
     def frontend(self, request, tag) :
@@ -574,6 +564,7 @@ class FrontPageElement(Element) :
     def login(self, request, tag) :
         tag(LoginElement(self.req))
         return tag
+
     @renderer
     def frontpage(self, request, tag) :
         if not mobile :
@@ -767,6 +758,45 @@ class ViewElement(Element) :
             tag(DynamicViewElement(self.req))
         return tag
 
+class HTMLElement(CommonElement):
+    def __init__(self, req) :
+        super(HTMLElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/html_template.html').path)
+
+    @renderer
+    def html(self, request, tag) :
+        tag.fillSlots(
+                     jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
+                     jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
+                     jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
+                     bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
+                     micacss = self.req.mpath + "/mica.css",
+                     favicon = self.req.mpath + "/icon-120x120.png",
+                     imecss = self.req.mpath + "/chinese-ime/ime.css",
+                     jquery = self.req.mpath + "/jquery-1.11.3.min.js",
+                     micajs = self.req.mpath + "/mica.js",
+                     bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
+                     jqmjs = self.req.mpath + "/jquery.mobile-1.4.5.min.js",
+                     xmpp = self.req.mpath + "/JSJaC-dec-2014/JSJaC.js",
+                     ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
+                     bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
+                     caret = self.req.mpath + "/chinese-ime/caret.js",
+                    )
+
+        zoom_level = 1.0
+
+        if mobile :
+            if "default_app_zoom" in self.req.session.value :
+                zoom_level = self.req.session.value["default_app_zoom"]
+        else :
+            if "default_web_zoom" in self.req.session.value :
+                zoom_level = self.req.session.value["default_web_zoom"]
+
+        tag(tags.meta(name="viewport", content="width=device-width, initial-scale=" + str(zoom_level)))
+
+        return tag
+
 class HeadElement(CommonElement):
     def __init__(self, req) :
         super(HeadElement, self).__init__(req) 
@@ -823,33 +853,6 @@ class HeadElement(CommonElement):
                     atag = tags.a(href=url)(itag, " ", display)
                 topul(tags.li(atag))
 
-        ### THIS is the account section. It needs to go into a panel
-        ### And then we need pages. Somehow.
-        '''
-        if not self.req.pretend_disconnected :
-            itemtag = tags.li(**{"class" : "dropdown"})
-            atag = tags.a(**{"class" : "dropdown-toggle", "data-toggle" : "dropdown", "href" : "#"})
-            # Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account. 
-            atag(tags.i(**{"class" : "glyphicon glyphicon-user"}), " " + _("Account") + " ", tags.b(**{"class" : "caret"}))
-            utag = tags.ul(**{"class" : "dropdown-menu"})
-
-            if not mobile :
-                ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-                # Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
-                ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
-                utag(tags.li(ttag))
-
-                if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-                    ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-                    # Make a new account, a button inside the 'Account' section of the top-most navigation panel
-                    ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
-                    utag(tags.li(ttag))
-
-            utag(StaticNavElement(self.req))
-            topul(itemtag(atag, utag))
-
-        topul(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))
-        '''
         tag(topul)
         return tag
 
@@ -940,39 +943,30 @@ class HeadElement(CommonElement):
 
         tag(row)
 
+        tag(tags.tr(tags.td(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))))
+
+        row = tags.td()
+
+        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
+            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
+            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
+            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
+            row(tags.li(ttag))
+
+        row(StaticNavElement(self.req))
+
+        tag(tags.tr(row))
+
         return tag
 
     @renderer
-    def head(self, request, tag):
-        zoom_level = 1.0
-
-        if mobile :
-            if "default_app_zoom" in self.req.session.value :
-                zoom_level = self.req.session.value["default_app_zoom"]
-        else :
-            if "default_web_zoom" in self.req.session.value :
-                zoom_level = self.req.session.value["default_web_zoom"]
-
-        return tag(tags.meta(name="viewport", content="width=device-width, initial-scale=" + str(zoom_level)))
+    def head(self, request, tag) :
+        return HTMLElement(self.req)
 
     @renderer
     def allslots(self, request, tag) :
 
        tag.fillSlots(
-                     #jquery = self.req.bootstrappath + "/js/jquery.js",
-                     jquery = self.req.mpath + "/jquery-1.11.3.min.js",
-                     jquerymigrate = self.req.mpath + "/jquery-migrate-1.2.1.min.js",
-                     bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
-                     bootmincss = self.req.bootstrappath + "/css/bootstrap.min.css",
-                     micacss = self.req.mpath + "/mica.css",
-                     micajs = self.req.mpath + "/mica.js",
-                     favicon = self.req.mpath + "/icon-120x120.png",
-                     bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
-                     jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
-                     jqmjs = self.req.mpath + "/jquery.mobile-1.4.5.min.js",
-                     livejs = self.req.mpath + "/live.js",
-                     jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
-                     jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
                      notreviewed = _("Not Reviewed"),
                      chatting = _("Chat History"),
                      reading = _("Reading"),

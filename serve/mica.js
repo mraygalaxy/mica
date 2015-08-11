@@ -82,7 +82,10 @@ function local(msgid) {
 	                data = response;
 	            }
 
-                if(write) {
+                if(callback != false)
+                   callback(data);
+
+                if(write || (!write && !writeSubcontent)) {
                         //have to replace script or else jQuery will remove them
                         $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
                             if (!$(this).attr('src')) {
@@ -90,8 +93,6 @@ function local(msgid) {
                             }
                         });
                 }
-	            if(callback != false)
-	               callback(data);
             }
         }
       });
@@ -1193,8 +1194,8 @@ var oDbg, con;
 var start_trans_id = 0;
 
 function handleIQ(oIQ) {
-    document.getElementById('iResp').innerHTML += "<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>';
-    document.getElementById('iResp').lastChild.scrollIntoView();
+    $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
+    //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
 
@@ -1236,8 +1237,8 @@ function appendBox(who, ts, msg, msgclass, reverse) {
             html += (sendtime + "<td>&nbsp;</td><td>" + msg + "</td>");
         }
         html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
-        document.getElementById('iResp').innerHTML += html;
-        document.getElementById('iResp').lastChild.scrollIntoView();
+        $('#iResp').prepend(html);
+        //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
 function make_date(ts) {
@@ -1340,9 +1341,8 @@ function handleMessage(oJSJaCPacket) {
 
 function handleConnectedLoaded(data) {
     $("#pagesingle").html("");
-    console.log("appending: \n" + data)
-    document.getElementById('iResp').innerHTML += data;
-    $("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
+    $("#iResp").prepend(data);
+    //$("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
 function newContact(who) {
@@ -1361,7 +1361,7 @@ function newContact(who) {
           true, 
           handleConnectedLoaded,
           true);
-    document.getElementById('iResp').lastChild.scrollIntoView();
+    //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
 
@@ -1389,8 +1389,8 @@ function handlePresence(oJSJaCPacket) {
     }
     html += '</div></td></tr>';
 
-    document.getElementById('iResp').innerHTML += html;
-    document.getElementById('iResp').lastChild.scrollIntoView();
+    $("#iResp").prepend(html);
+    //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
 function handleError(e) {
@@ -1536,8 +1536,8 @@ function sendMsg(oForm) {
         return val;
     } catch (e) {
         html = "<tr><td><div class='msg error''>Error: " + e.message + "</div></td></tr>";
-        document.getElementById('iResp').innerHTML += html;
-        document.getElementById('iResp').lastChild.scrollIntoView();
+        $('#iResp').prepend(html);
+        //document.getElementById('iResp').lastChild.scrollIntoView();
         return false;
     }
 }

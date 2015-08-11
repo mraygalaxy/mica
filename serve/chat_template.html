@@ -1,4 +1,5 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="chat">
+<div id='chat_content_result'>
 <div class='row-fluid'>
 <div class='col-md-12 nopadding'>
     <div style='display: none' id='jabber_key'><t:slot name='jabber_key'/></div>
@@ -10,11 +11,6 @@
     <div style='display: none' id='notauthorized'><t:slot name='notauthorized'/></div>
     <div style='display: none' id='chaterror'><t:slot name='chaterror'/></div>
     <div style='display: none' id='secsleft'><t:slot name='secsleft'/></div>
-    <script><t:attr name='src'><t:slot name='xmpp'/></t:attr></script>
-    <script><t:attr name='src'><t:slot name='ime'/></t:attr></script>
-    <script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
-
-    <link rel="stylesheet"><t:attr name='href'><t:slot name='imecss'/></t:attr></link>
 
     <div id="err"></div>
 
@@ -27,9 +23,6 @@
         </div>
         <div class='row-fluid nopadding'>
         <div class='col-md-12 nopadding'>
-            <div style='width: 100%; background: white; height: 50%; overflow-y: auto; border: 3px solid grey'>
-            <table style='width: 100%' id="iResp"/>
-            </div>
             <div style='height: 20px; border: 3px solid grey' id="iStatus"></div>
             <form id='sendForm' name="sendForm" action='path_to_nowhere'>
                  <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
@@ -45,6 +38,9 @@
                     <input type='submit' style='display: none'/>
                 </div>
             </form>
+            <div style='width: 100%; background: white; height: 50%; overflow-y: auto; border: 3px solid grey'>
+            <table style='width: 100%' id="iResp"/>
+            </div>
         </div>
         </div>
     </div>
@@ -65,5 +61,5 @@
     </script>
 </div> <!-- col-md-12 -->
 </div> <!-- row -->
-
+</div>
 </div>
