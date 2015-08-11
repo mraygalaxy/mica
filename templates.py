@@ -120,6 +120,24 @@ class StaticNavElement(Element) :
         self.loader = XMLFile(FilePath(cwd + 'serve/nav_template.html').path)
 
     @renderer
+    def newaccount(self, request, tag) :
+        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
+            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
+            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
+            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
+            return tags.li(ttag)
+        return ""
+
+    @renderer
+    def upload(self, request, tag) :
+        if not mobile :
+            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
+            ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
+            return tags.li(ttag)
+
+        return ""
+
+    @renderer
     def accountslots(self, request, tag) :
                       # Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
         tag.fillSlots(preferences = _("Preferences"),
@@ -132,6 +150,7 @@ class StaticNavElement(Element) :
                       # The software's privacy policy, such as what user information we keep and do not keep.
                       privacy = _("Privacy"),
                       switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
+                      username = self.req.session.value["username"],
                       )
         return tag
 
@@ -758,6 +777,34 @@ class ViewElement(Element) :
             tag(DynamicViewElement(self.req))
         return tag
 
+class HelpElement(CommonElement):
+    def __init__(self, req) :
+        super(HelpElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/' + req.tutorial).path)
+
+    @renderer
+    def head(self, request, tag) :
+        return HTMLElement(self.req)
+
+    @renderer
+    def help(self, request, tag) :
+        return tag
+
+class PrivacyElement(CommonElement):
+    def __init__(self, req) :
+        super(PrivacyElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/privacy_template.html').path)
+
+    @renderer
+    def head(self, request, tag) :
+        return HTMLElement(self.req)
+
+    @renderer
+    def privacy(self, request, tag) :
+        return tag
+
 class HTMLElement(CommonElement):
     def __init__(self, req) :
         super(HTMLElement, self).__init__(req) 
@@ -941,23 +988,12 @@ class HeadElement(CommonElement):
 
                 self.req.mica.install_local_language(self.req, original_language)
 
-        tag(row)
+        tag(tags.table(row))
 
-        tag(tags.tr(tags.td(tags.li(tags.a()(tags.b()(self.req.session.value["username"]))))))
-
-        row = tags.td()
-
-        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
-            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
-            row(tags.li(ttag))
-
-        row(StaticNavElement(self.req))
-
-        tag(tags.tr(row))
+        tag(StaticNavElement(self.req))
 
         return tag
+
 
     @renderer
     def head(self, request, tag) :

@@ -613,7 +613,7 @@ class MICA(object):
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
-                if req.http.params.get("connect") :
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
                     self.install_local_language(req)
                     resp = self.common(req)
                 else :
@@ -2979,20 +2979,11 @@ class MICA(object):
 
     def common_privacy(self, req) :
         self.install_local_language(req)
-        output = ""
-        helpfh = codecs_open(cwd + "serve/privacy_template.html", "r", "utf-8")
-        output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
-        helpfh.close()
-        return self.bootstrap(req, output, pretend_disconnected = True)
+        return "<!DOCTYPE html>\n" + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8')
 
     def common_help(self, req) :
-        l = self.install_local_language(req)
-        output = ""
-        helpfh = codecs_open(cwd + "serve/" + tutorials[l], "r", "utf-8")
-        output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
-        helpfh.close()
-        output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
-        return self.bootstrap(req, output)
+        req.tutorial = tutorials[self.install_local_language(req)]
+        return "<!DOCTYPE html>\n" + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8'))
 
     def common_frontpage(self, req) :
         self.install_local_language(req)
