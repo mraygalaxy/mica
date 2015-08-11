@@ -206,7 +206,6 @@ class Params(object) :
         self.unparsed_uri = self.http.url
         self.uri = self.http.path
         self.active = None 
-        self.skip_show = False
 
         if self.action == "index" :
             self.mpath = self.uri + relative_prefix_suffix
@@ -614,7 +613,11 @@ class MICA(object):
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
-                resp = self.common(req)
+                if req.http.params.get("connect") :
+                    self.install_local_language(req)
+                    resp = self.common(req)
+                else :
+                    resp = self.common_frontpage(req)
 
         except exc.HTTPTemporaryRedirect, e :
             resp = e
@@ -686,7 +689,10 @@ class MICA(object):
             rname += datetime_datetime.fromtimestamp((((int(howmany) * counts[period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
         sideout = []
         sideout.append("\n<tr>")
-        sideout.append("<td style='font-size: x-small; width: 100px'>" )
+        sideout.append("<td>" )
+        if "source_language" in story :
+            sideout.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
+
         if mobile :
             sideout.append("<b>" + rname + "</b>")
         else :
@@ -696,13 +702,11 @@ class MICA(object):
             sideout.append("\">")
             sideout.append(rname)
             sideout.append("</a>")
-
-        if "source_language" in story :
-            sideout.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
         
         if (finished or reviewed or story["translated"]) and "pr" in story :
+            sideout.append("</td><td>")
             pr = story["pr"]
-            sideout.append("<br/>\n<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+            sideout.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
             sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
             
         if mobile :
@@ -753,7 +757,6 @@ class MICA(object):
 
         if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
             # The demo account is provided for users who want to give the software a try without committing to it.
-            req.skip_show = True
             body = self.heromsg + "<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>"
 
         if now :
@@ -2972,11 +2975,7 @@ class MICA(object):
 
     def common_disconnect(self, req) : 
         self.clean_session(req)
-        self.install_local_language(req)
-        req.skip_show = True
-        if not mobile :
-            req.oauth = params["oauth"]
-        return self.bootstrap(req, run_template(req, FrontPageElement))
+        return self.common_frontpage(req)
 
     def common_privacy(self, req) :
         self.install_local_language(req)
@@ -2993,8 +2992,13 @@ class MICA(object):
         output += helpfh.read().encode('utf-8').replace("\n", "<br/>")
         helpfh.close()
         output = output.replace("https://raw.githubusercontent.com/hinesmr/mica/master", "")
-        req.skip_show = True
         return self.bootstrap(req, output)
+
+    def common_frontpage(self, req) :
+        self.install_local_language(req)
+        if not mobile :
+            req.oauth = params["oauth"]
+        return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
 
     def common_switchlang(self, req) :
         if not req.http.params.get("lang") :
@@ -3002,10 +3006,8 @@ class MICA(object):
 
         req.session.value["language"] = req.http.params.get("lang")
         req.session.save()
-        self.install_local_language(req)
-        if not mobile :
-            req.oauth = params["oauth"]
-        return self.bootstrap(req, run_template(req, FrontPageElement))
+
+        return self.common_frontpage(req)
 
     def common_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
@@ -4016,7 +4018,6 @@ class MICA(object):
                 out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
             else :
                 self.clean_session(req)
-                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
 
         elif req.http.params.get("changelanguage") :
@@ -4378,14 +4379,14 @@ class MICA(object):
         }
 
         if self.tofrom(story) not in self.processors :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."), now = True)
 
 
         req.gp = self.processors[self.tofrom(story)]
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
         out = run_template(req, ChatElement)
-        return self.bootstrap(req, out)
+        return self.bootstrap(req, out, now = True)
 
     def common_storylist(self, req, unused_story) :
         if req.http.params.get("sync") :
@@ -4469,7 +4470,7 @@ class MICA(object):
                   """)
 
         try :
-            finallist = run_template(req, StoryElement, "".join(storylist)) + "".join(scripts)
+            finallist = "".join(storylist) + "".join(scripts)
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
 
@@ -4526,20 +4527,16 @@ class MICA(object):
                 desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                 if reason == "user_denied" :
                     # User denied our request to create their account using social networking. Apologize and move on.
-                    req.skip_show = True
                     return self.bootstrap(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
                 else :
                     # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                    req.skip_show = True
                     return self.bootstrap(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
             else :
                 # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
-                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
         code = req.http.params.get("code")
 
-        req.skip_show = True
         if not req.http.params.get("finish") :
             return self.bootstrap(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
 
@@ -4574,12 +4571,10 @@ class MICA(object):
             assert(creds["verified_key"] in values)
 
             if not values[creds["verified_key"]] :
-                req.skip_show = True
                 return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
 
         if creds["email_key"] and creds["email_key"] not in values :
             authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-            req.skip_show = True
             out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
             out += authorization_url
             out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
@@ -4609,7 +4604,6 @@ class MICA(object):
         if creds["email_key"] :
             from_third_party["username"] = values["email"]
 
-        #req.skip_show = True
         #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
 
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
@@ -4634,7 +4628,6 @@ class MICA(object):
             auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
-                req.skip_show = True
                 source = "mica" if "source" not in auth_user else auth_user["source"]
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
 
@@ -4651,7 +4644,6 @@ class MICA(object):
             req.session.value["from_third_party"] = False 
             if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
             username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
@@ -4685,7 +4677,6 @@ class MICA(object):
 
         if not auth_user :
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            req.skip_show = True
             return self.bootstrap(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
@@ -4706,7 +4697,6 @@ class MICA(object):
                appuser = req.db["MICA:appuser"]
                if appuser["username"] != username :
                     # Beginning of a message 
-                    req.skip_show = True
                     return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
                         # next part of the same message 
                         appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
@@ -4726,7 +4716,6 @@ class MICA(object):
                 req.session.save()
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
 
         req.action = "home"
@@ -5197,7 +5186,6 @@ class MICA(object):
                     mwarn("Boo other, logging out user now.")
                     req.session.value["connected"] = False
                     req.session.save()
-                req.skip_show = True
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
                                             + resp + "</div>", now = True)
             except Exception, e :

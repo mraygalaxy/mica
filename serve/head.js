@@ -49,13 +49,31 @@ $(".ui-loader").hide();
 
 //$("#sidebarcontents").panel({beforeopen: function(event, ui) {loadstories(false);}});
 
+chat_loaded = false;
+
+function chat_success(data) {
+    chat_loaded = true;
+}
+
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
         if (where == 'stories') {
             loadstories(false);
-        } 
+        } else if (where == 'chat') {
+                if (!chat_loaded) {
+                   go('#chat_content', '/chat', '#chat_content_result', unavailable, true, chat_success, true);
+                }
+        }
    }
+    /*
+    var screen = $.mobile.getScreenHeight();
+    var header = $(".ui-header").hasClass("ui-header-fixed") ? $(".ui-header").outerHeight()  - 1 : $(".ui-header").outerHeight();
+    var footer = $(".ui-footer").hasClass("ui-footer-fixed") ? $(".ui-footer").outerHeight() - 1 : $(".ui-footer").outerHeight();
+    var contentCurrent = $(".ui-content").outerHeight() - $(".ui-content").height();
+    var content = screen - header - footer - contentCurrent;
+    $(".ui-content").height(content);
+    */
    return true;
 });
 

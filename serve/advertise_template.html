@@ -1,19 +1,32 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="advertise">
-    <div class='row-fluid'>
-        <div class='col-lg-3'>
-            <div style='display: inline' t:render="login"/>
-        </div><!-- col-lg-3 -->
-        <div class='col-lg-9'>
-            <div style='display: inline' t:render="frontpage"/>
-        </div><!-- col-lg-9 -->
-    </div><!-- row-fluid -->
-    <div class='row-fluid'>
-        <div class='col-lg-12'>
-            <h4><t:slot name="connect"/>.</h4>
-            <br/>(<t:slot name="click"/>.)
-            <p/>
-            <br/><t:slot name="experimental"/>.
-            <div style="display: inline" t:render="frontend"/>
-        </div>
+    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+        <h3><b><t:slot name="learn"/>.</b></h3>
     </div>
+    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+        <!-- Menu -->
+        <ol class="carousel-indicators">
+            <li data-target="#carousel" data-slide-to="0" class="active"></li>
+            <li data-target="#carousel" data-slide-to="1"></li>
+            <li data-target="#carousel" data-slide-to="2"></li>
+        </ol>
+        
+        <!-- Items -->
+        <div style='width=100%' class="carousel-inner" t:render="pages"/>
+
+        <a href="#carousel" class="left carousel-control" data-slide="prev">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+        </a>
+        <a href="#carousel" class="right carousel-control" data-slide="next">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+        </a>
+    </div>
+
+    <div style="width: 90%; margin: 0 auto;">
+        <h4><b><t:slot name="offline"/>.</b></h4>
+        <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
+        <p/>
+        <br/>
+        <div t:render="mobilelinks"/>
+        <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
+    </div><!-- centered -->
 </div>
