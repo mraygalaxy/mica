@@ -4,10 +4,7 @@
     <div t:render="translations"/>
     <div t:render="modals"/>
     <div data-role='panel' data-display="reveal" id='settings'>
-        <table t:render="cloudnav"/>
-        <ul data-role='listview' data-inset='true'>
-            <li><a href="#uploadModal" data-toggle="model" data-backdrop="static" data-keyboard = "false"><i class='glyphicon gliphicon-upload'></i>**translateme** **Upload New Story**</a></li>  
-        </ul>
+        <div t:render="cloudnav"/>
     </div>
     <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>
     <div data-role='page' id='chat'><div data-role='content' id='chat_content'>temp</div></div>
