@@ -2134,7 +2134,7 @@ class MICA(object):
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                     
-                    untrans.append("<a href='/home?delete=1&#38;uuid=" + story['uuid'] + "&#38;name=" + myquote(story["name"]) + "' title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-trash'></i></a>")
+                    untrans.append("<a rel='external' href='/home?delete=1&#38;uuid=" + story['uuid'] + "&#38;name=" + myquote(story["name"]) + "' title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-trash'></i></a>")
 
                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
                     untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
@@ -2154,10 +2154,10 @@ class MICA(object):
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure.append("\n<a href='/home?forget=1&#38;uuid=" + story['uuid'] + "' title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-remove'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
-                notsure.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
+                    notsure.append("\n<a rel='external' href='/home?forget=1&#38;uuid=" + story['uuid'] + "' title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-remove'></i></a>")
+                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
+                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
+                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
 
                 if finished :
                    finish += notsure
@@ -4123,153 +4123,36 @@ class MICA(object):
             # Same as before, but specifically for an application running on the website 
             out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
 
-        out += "<p/><h4><b>" + _("Account") + ": " + username + "</b></h4><br/>"
-
-        if mobile :
-            out += "<h4><b>" + _("Dictionaries") + "?</b></h4>"
-        else :
-            # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
-            out += "<h4><b>" + _("Send Dictionaries to your devices?") + "</b></h4>"
-        out += "<h5>(" + _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each") + ".)</h5>"
-
-        out += "<table>"
-        for pair, readable in supported.iteritems() :
-            out += "<tr><td>"
-            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-            dname = "dict" + pair.replace("-", "")
-            out += "<input type='hidden' name='tofrom' value='" + pair + "'/>\n"
-
-            out += "<button id='" + dname + "' name='downloaddictionary' type='submit' class='btn btn-default btn-primary"
-
-            downloaded = False 
-
-            if "filters" in user and pair in user["filters"]["files"] :
-                downloaded = True
-
-            remove = False
-            if not downloaded :
-                # The next few messages appear on mobile devices and allow the user to control the synchronization status
-                # of the story they want to use. For example, if a story (or a dictionary) is on the website,
-                # but not yet synchronized with the device, we show a series of messages as the user indicates
-                # which ones to download/synchronize and which ones not to.
-                out += "'>" + _("Download")
-            else :
-                all_found = True
-
-                lgp = self.processors[pair]
-                for f in lgp.get_dictionaries() :
-                    fname = params["scratch"] + f
-
-                    if not os_path.isfile(fname) :
-                        all_found = False
-                        break
-
-                remove = True
-                if all_found :
-                    out += "'>" + _("Stop downloading")
-                else :
-                    #out += " btn-disabled' disabled"
-                    out += "'"
-                    out += ">" + _("Downloading") + "..."
-
-            out += "</button>"
-
-            if remove :
-                out += "<input type='hidden' name='remove' value='1'/>\n"
-            else :
-                out += "<input type='hidden' name='remove' value='0'/>\n"
-
-            out += "</form>"
-            out += "</td><td>"
-            out += "&#160;" + _(readable) + "<br/>"
-            out += "</td></tr>"
-        out += "</table>"
+        req.default_zoom = str(user["default_app_zoom" if mobile else "default_web_zoom"])
+        req.chars_per_line = str(user["app_chars_per_line"] if mobile else user["web_chars_per_line"])
+        req.supported = supported
+        req.user = user
+        req.processors = self.processors
+        req.scratch = params["scratch"]
+        req.softlangs = []
+        for l, readable in lang.iteritems() :
+            locale = l.split("-")[0]
+            if locale not in softlangs :
+                req.softlangs.append((locale, readable))
 
         try :
-            # the zoom level or characters-per-line limit
-            out += "<h4><b>" + _("Change Viewing configuration") + "</b>?</h4>"
-            out += "<table>"
-            out += "<tr><td>&#160;" + _("Characters per line") + ":</td><td>"
-            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-            out += "<input type='text' name='" + ("setappchars" if mobile else "setwebchars")
-            out += "' value='" + str(user["app_chars_per_line" if mobile else "web_chars_per_line"]) + "'/>"
-            out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
-            out += "</form>"
-            out += "</td></tr>"
-            out += "</table>"
-            out += "<table>"
-            out += "<tr><td><h5>&#160;" + _("Default zoom level") + ": </h5></td><td>"
-            out += "<form action='/account' method='post' enctype='multipart/form-data'>"
-            out += "<input type='text' name='" + ("setappzoom" if mobile else "setwebzoom")
-            out += "' value='" + str(user["default_app_zoom" if mobile else "default_web_zoom"]) + "'/>"
-            out += "</td><tr><td><button name='submit' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change") + "</button></td></tr>"
-            out += "</form>"
-            out += "</td></tr>"
-            out += "</table>"
+            out += run_template(req, AccountElement)
         except KeyError, e :
             merr("Keep having this problem: " + str(user) + " " + str(e))
             raise e
 
-        out += "<h4><b>" + _("Language") + "</b>?</h4>"
-        out += """
-            <form action='/account' method='post' enctype='multipart/form-data'>
-            <select name="language">
-        """
-        softlangs = []
-        for l, readable in lang.iteritems() :
-            locale = l.split("-")[0]
-            if locale not in softlangs :
-                softlangs.append((locale, readable))
-
-        for l, readable in softlangs :
-            out += "<option value='" + l + "'"
-            if l == user["language"] :
-                out += "selected"
-            out += ">" + _(readable) + "</option>\n"
-        out += """
-            </select>
-            <br/>
-            <br/>
-        """
-        out += "<button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Language") + "</button></form>"
-
-        out += "<h4><b>" + _("Learning Language") + "</b>?</h4>"
-        out += """
-            <form action='/account' method='post' enctype='multipart/form-data'>
-            <select name="learnlanguage">
-        """
-        softlangs = []
-        for l, readable in lang.iteritems() :
-            locale = l.split("-")[0]
-            if locale not in softlangs :
-                softlangs.append((locale, readable))
-
-        for l, readable in softlangs :
-            out += "<option value='" + l + "'"
-            if "learnlanguage" in user and l == user["learnlanguage"] :
-                out += "selected"
-            out += ">" + _(readable) + "</option>\n"
-        out += """
-            </select>
-            <br/>
-            <br/>
-        """
-        out += "<button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Learning Language") + "</button></form>"
-
-        out += """
-                <a onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});;"
-                """
-
-        out += " class='btn btn-default btn-primary' href='/account?pack=1'>" + _("Compact databases") + "</a>"
-
         if username == "demo" :
             return self.bootstrap(req, out)
-         
-        out += "<p/><h4><b>" + _("Change Password") + "?</b></h4>"
+
+        out += run_template(req, PostAccountElement)
+
+        out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
         if not mobile :
-            out += run_template(req, PasswordElement)
+           out += """
+           <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary" value='1'>""" + _("Delete Account?") + """</button>
+           """
         else :
-            out += _("Please change your password on the website. Will support mobile in a future version.")
+            out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
 
         if self.userdb :
             if not mobile and req.session.value["isadmin"] :
@@ -4284,21 +4167,6 @@ class MICA(object):
                     out += "</tr>"
                 out += "</table>"
 
-        if not mobile :
-            out += "<h4><b>" + _("Email Address") + "</b>?</h4>"
-            out += """
-                <form action='/account' method='post' enctype='multipart/form-data'>
-            """
-            out += "<input type='text' name='email' value='" + (user["email"] if "email" in user else _("Please Provide")) + "'/>"
-            out += "<br/><br/><button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'>" + _("Change Email") + "</button></form>"
-        else :
-            out += _("Please change your email address on the website. Will support mobile in a future version.")
-
-        out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
-        if not mobile :
-            out += run_template(req, DeleteAccountElement)
-        else :
-            out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
 
         return self.bootstrap(req, out)
                     

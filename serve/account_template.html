@@ -1,0 +1,45 @@
+<div lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="accountslots">
+<p/>
+<h4>
+<b><t:slot name='account'/>: <t:slot name='username'/></b>
+</h4>
+<br/>
+<h4><b t:render='dicts'/></h4>
+<h5>(<t:slot name='offline'/>.)</h5>
+<table t:render='databases'/>
+<h4><b><t:slot name='changeview'/></b>?</h4>
+<table>
+    <tr><td>&#160;<t:slot name ='charperline'/>:</td></tr>
+    <tr>
+    <td>
+        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <input type='text'><t:attr name='name'><t:slot name='setchars'/></t:attr><t:attr name='value'><t:slot name='perline'/></t:attr></input>
+        <button data-role='none' name='submit' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='change'/></button>
+        </form>
+    </td></tr>
+    <tr><td><h5>&#160;<t:slot name='zoom'/>: </h5></td></tr>
+    <tr>
+    <td>
+        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <input type='text'><t:attr name='name'><t:slot name='setzoom'/></t:attr><t:attr name='value'><t:slot name='defaultzoom'/></t:attr></input>
+        <button data-role='none' rel='external' name='submit' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='zoomchange'/></button>
+    </form>
+    </td></tr><tr><td>
+        <h4><b><t:slot name='language'/></b>?</h4>
+        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <select name="language" t:render='languages'/>
+        <button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='changelang'/></button>
+        <br/>
+        <br/>
+        </form>
+    </td></tr><tr><td>
+        <h4><b><t:slot name='learninglanguage'/></b>?</h4>
+        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <select name="learnlanguage" t:render='learnlanguages'/>
+        <button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='changelearnlang'/></button>
+        </form>
+        <br/>
+        <br/>
+    </td></tr>
+</table>
+</div>

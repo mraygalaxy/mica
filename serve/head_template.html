@@ -2,8 +2,12 @@
   <head t:render="head"/>
   <body id='cbody'>
     <div t:render="translations"/>
-    <div t:render="modals"/>
     <div data-role='panel' data-display="reveal" id='settings'>
+        <ul data-role='listview' data-inset='true'>
+            <li><a rel='external' href='/home'><t:slot name='reviewmode'/></a></li>
+            <li><a rel='external' href='/read'><t:slot name='readmode'/></a></li>
+            <li><a rel='external' href='/edit'><t:slot name='editmode'/></a></li>
+        </ul>
         <div t:render="cloudnav"/>
     </div>
     <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>
@@ -37,5 +41,6 @@
     BOOTSCRIPTHEAD 
     </script>
     <script t:render="scriptswitch"/>
+    <div t:render="modals"/>
   </body>
 </html>
