@@ -167,7 +167,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         return self.db.put_attachment(doc, contents, filename)
 
     def get_attachment(self, name, filename) :
-        return self.db.get_attachment(name, filename)
+        obj = self.db.get_attachment(name, filename)
+        if obj is not None :
+            return obj.read()
+        else :
+            raise CommunicationError("No such attachment: " + name + " => " + filename)
+            
 
     def get_attachment_meta(self, name, filename) :
         return self.__getitem__(name)["_attachments"][filename]

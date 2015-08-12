@@ -1,0 +1,14 @@
+<div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="postaccount">
+<button data-role='none' onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});" class='btn btn-default btn-primary' href='/account?pack=1'><t:slot name='compact'/></button>
+<p/>
+<h4><b><t:slot name='changepass'/>?</b></h4>
+<div t:render='password'/>
+
+<h4><b><t:slot name='changeemail'/></b>?</h4>
+<form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+<input type='text' name='email'><t:attr name='value'><t:slot name='email'/></t:attr></input>
+<button name='changeemail' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='changemail'/></button>
+</form>
+<br/>
+<br/>
+</div>

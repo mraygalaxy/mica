@@ -414,7 +414,7 @@ function process_edits(uuid, operation, batch) {
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      out += "<form method='post' action='/edit'>"
+      out += "<form data-ajax='false' method='post' action='/edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -464,7 +464,7 @@ function process_edits(uuid, operation, batch) {
   	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n";
   	  out += "<p/><p/>";
   	  if (editcount > 1) {
-	      out += "<input class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
+	      out += "<input data-role='none' rel='external' class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
 	  } else {
 	      out += local("seeabove");
   	  	
@@ -631,7 +631,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form method='post' action='/home'>"
+      form += "<form data-ajax='false' method='post' action='/home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -650,7 +650,7 @@ function process_reviews(uuid, batch) {
       out += "</ol>";
       form += "<input type='hidden' name='count' value='" + count + "'/>\n";
       
-      form += "<input class='btn btn-default btn-primary' name='bulkreview' type='submit' value='" + local("submit") + "'/>";
+      form += "<input data-role='none' rel='external' class='btn btn-default btn-primary' name='bulkreview' type='submit' value='" + local("submit") + "'/>";
       form += "</form>"
       out += form
 

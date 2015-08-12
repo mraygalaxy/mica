@@ -43,24 +43,32 @@ class CommonElement(Element) :
                 tag(option(_(readable)))
         return tag
 
-class DeleteAccountElement(Element) :
+class PostAccountElement(CommonElement) :
     def __init__(self, req) :
-        super(DeleteAccountElement, self).__init__() 
+        super(PostAccountElement, self).__init__(req)
         self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/deleteaccount_template.html').path)
+        self.loader = XMLFile(FilePath(cwd + 'serve/postaccount_template.html').path)
 
     @renderer
-    def delete(self, request, tag) :
-        tag.fillSlots(delete = _("Delete Account?"),
-                      deleteconfirm = _("Yes, delete my account."),
-                      suredelete = _("Are you sure you want to delete your account? This is IRREVERSIBLE."),
-                      username = self.req.session.value["username"],
+    def password(self, request, tag) :
+        if not mobile :
+            return PasswordElement(self.req)
+        return _("Please change your password on the website. Will support mobile in a future version.")
+
+    @renderer
+    def postaccount(self, request, tag) :
+        tag.fillSlots(
+                        compact = _("Compact databases"),
+                        changepass = _("Change Password"),
+                        changeemail = _("Email Address"),
+                        email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
+                        changemail = _("Change Email"),
                       )
         return tag
 
-class PasswordElement(Element) :
+class PasswordElement(CommonElement) :
     def __init__(self, req) :
-        super(PasswordElement, self).__init__() 
+        super(PasswordElement, self).__init__(req) 
         self.req = req
         self.loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html').path)
 
@@ -278,7 +286,12 @@ class ModalsElement(CommonElement) :
                      # Compacting can also be translated as "cleaning" database.
                      compacting = _("Compacting database, Please wait"),
                      instant = _("Instant Translation"),
-                      )
+                     splitmerge = _("Split/Merge Words"),
+                     deleteconfirm = _("Yes, delete my account."),
+                     suredelete = _("Are you sure you want to delete your account? This is IRREVERSIBLE."),
+                     username = self.req.session.value["username"],
+                     delete = _("Delete Account?"),
+                     )
         return tag
 
 class LoginElement(Element) :
@@ -415,7 +428,6 @@ class EditHeaderElement(Element) :
     def edit_header(self, request, tag) :
         tag.fillSlots(editname = _("Legend"),
                       processedits = self.req.process_edits,
-                      splitmerge = _("Split/Merge Words"),
                       retrans = self.req.retrans,
                       previousmerge = _("These characters were previously merged into a word"),
                       previoussplit = _("This word was previously split into characters"),
@@ -805,6 +817,113 @@ class PrivacyElement(CommonElement):
     def privacy(self, request, tag) :
         return tag
 
+class DatabasesElement(CommonElement):
+    def __init__(self, req) :
+        super(DatabasesElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/databases_template.html').path)
+
+    @renderer
+    def databaseslots(self, request, tag) :
+        tag.fillSlots(
+                        readable = _(self.readable),
+                        remove = "1" if self.remove else "0", 
+                        tofrom = self.pair,
+                        dname = self.pair.replace("-", ""),
+                        state = self.state,
+                        )
+        return tag
+
+class AccountElement(CommonElement):
+    def __init__(self, req) :
+        super(AccountElement, self).__init__(req) 
+        self.req = req
+        self.loader = XMLFile(FilePath(cwd + 'serve/account_template.html').path)
+
+    @renderer
+    def dicts(self, request, tag) :
+        if mobile :
+            tag(_("Dictionaries") + "?")
+        else :
+            # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
+            tag(_("Send Dictionaries to your devices?"))
+        return tag
+
+    def common_lang(self, tag, key) :
+        for l, readable in self.req.softlangs :
+            attrs = {"value" : l}
+            if l == self.req.user[key] :
+                attrs["selected"] = "selected"
+            tag(tags.option(**attrs)(_(readable)))
+        return tag
+
+    @renderer
+    def languages(self, request, tag) :
+        return self.common_lang(tag, 'language')
+
+    @renderer
+    def learnlanguages(self, request, tag) :
+        return self.common_lang(tag, 'learnlanguage')
+
+    @renderer
+    def databases(self, request, tag) :
+        for pair, readable in self.req.supported.iteritems() :
+            e = DatabasesElement(self.req)
+            e.pair = pair
+            e.readable = readable
+            downloaded = False 
+            if "filters" in self.req.user and pair in self.req.user["filters"]["files"] :
+                downloaded = True
+
+            e.remove = False
+            if not downloaded :
+                # The next few messages appear on mobile devices and allow the user to control the synchronization status
+                # of the story they want to use. For example, if a story (or a dictionary) is on the website,
+                # but not yet synchronized with the device, we show a series of messages as the user indicates
+                # which ones to download/synchronize and which ones not to.
+                e.state = _("Download")
+            else :
+                all_found = True
+
+                lgp = self.req.processors[pair]
+                for f in lgp.get_dictionaries() :
+                    if not os_path.isfile(self.req.scratch + f) :
+                        all_found = False
+                        break
+
+                e.remove = True
+                if all_found :
+                    e.state = _("Stop downloading")
+                else :
+                    e.state = _("Downloading") + "..."
+
+            tag(e)
+        return tag
+
+    @renderer
+    def accountslots(self, request, tag) :
+        tag.fillSlots(
+                        account = _("Account"),
+                        username = self.req.session.value["username"],
+                        offline = _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each"),
+                        # the zoom level or characters-per-line limit
+                        changeview = _("Change Viewing configuration"),
+                        charperline = _("Characters per line"),
+                        setchars = "setappchars" if mobile else "setwebchars",
+                        perline = self.req.chars_per_line,
+                        change = _("Change"),
+                        zoom = _("Default zoom level"),
+                        setzoom = "setappzoom" if mobile else "setwebzoom",
+                        defaultzoom = self.req.default_zoom,
+                        zoomchange = _("Change"),
+                        language =_("Language"),
+                        changelang = _("Change Language"),
+                        learninglanguage = _("Learning Language"),
+                        changelearnlang = _("Change Learning Language"),
+
+                     )
+        return tag
+
 class HTMLElement(CommonElement):
     def __init__(self, req) :
         super(HTMLElement, self).__init__(req) 
@@ -1019,6 +1138,9 @@ class HeadElement(CommonElement):
                      password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
+                     readmode = _("Read"),
+                     reviewmode = _("Review"),
+                     editmode = _("Edit"),
                      
                      )
        return tag

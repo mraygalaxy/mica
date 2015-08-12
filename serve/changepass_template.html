@@ -1,5 +1,5 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="password">
-<form action='/account' method='post' enctype='multipart/form-data'>
+<form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
 <table>
 <tr><td><h5>&#160;<t:slot name="oldpassword"/>:</h5> </td><td><input type="password" name="oldpassword"/></td></tr>
 <tr><td><h5>&#160;<t:slot name="password"/>:</h5> </td><td><input type="password" name="password"/></td></tr>
@@ -9,7 +9,7 @@
 </td></tr>
 </table>
 </form>                                   
-<form action='/account' method='post' enctype='multipart/form-data'>
+<form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
 <button name='resetpassword' type="submit" class="btn btn-default btn-primary" value='1'><t:slot name="reset"/></button>
 </form>                                   
 </div>

@@ -40,7 +40,9 @@ function switchlist() {
 $("[data-role='header'],[data-role='footer']").toolbar();
 $("[data-role=panel]").panel().enhanceWithin();
 
-$(document).bind("mobileinit", function(){ $.extend(  $.mobile , { ajaxEnabled: false });});
+$(document).bind("mobileinit", function(){ 
+        $.extend(  $.mobile , { ajaxEnabled: false });
+});
 
 /*
 $.mobile.loading("hide");

@@ -11,13 +11,13 @@
                         <div class='col-lg-12 nopadding'>
                             <div data-spy='affix' data-offset-top='55' data-offset-bottom='0' id='readingheader'>
                                 <div id='translationstatus'></div>
-                                <table style="margin-bottom: 10px">
+                                <table data-role='none' style="margin-bottom: 10px; width: 100%">
                                    <tr><td><div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div></td></tr>
                                     <tr>
-                                        <td><button type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
-                                        <input id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
+                                        <td><button data-role='none' type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
+                                        <input data-role='none' id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
                                         <td>&#160;&#160;&#160;</td>
-                                        <td><div class='btn-group' t:render="view"></div></td>
+                                        <td t:render="view"/>
                                         <td>&#160;&#160;&#160;</td>
                                         <td><div id='pagenav'></div></td>
                                     </tr>
