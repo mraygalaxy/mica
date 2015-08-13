@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <title>Key events</title>
+        <script>
+</script>
+</head>
+<body style="width: 200px;">
+<input type="text" id="char" size="15" onblur="showKeyCode()" value="a">
+<input type="button" value="Show Key Code" onclick="showKeyCode();">
+<script>
+function showKeyCode()
+{
+        var character = document.getElementById ( "char" ).value.substr(this.length - 1);
+            var  code = character.charCodeAt();
+              
+              var stringall = document.getElementById ( "char" ).value;
+              var msg = "The Key Code for the \""+character+"\" character is "+code+".";
+              alert(msg);
+}
+</script>
+</body>
+</html>
+
