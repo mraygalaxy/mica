@@ -33,7 +33,18 @@ class CommonElement(Element) :
 
         conditionals["mobile"] = mobile
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials"] :
+        zoom_level = 1.0
+
+        if mobile :
+            if "default_app_zoom" in self.req.session.value :
+                zoom_level = self.req.session.value["default_app_zoom"]
+        else :
+            if "default_web_zoom" in self.req.session.value :
+                zoom_level = self.req.session.value["default_web_zoom"]
+
+        conditionals["zoom_level"] = zoom_level
+
+        for attrs in ["front_ads", "list_mode", "history", "credentials", "action"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -83,34 +94,6 @@ class HistoryElement(CommonElement) :
     @renderer
     def history(self, request, tag) :
         tag.fillSlots(onlineoffline = self.req.onlineoffline)
-        return tag
-
-    @renderer
-    def panel(self, request, tag) :
-        for x in self.req.history :
-            div = tags.div(**{"class" : "panel panel-default"})
-            idiv = tags.div(**{"class" : "panel-heading"})
-
-            char, total, spy, targ, tid = x
-            tid = str(tid)
-
-            if len(targ) and targ[0] == '/' :
-               targ = targ[1:-1]
-
-            a = tags.a(**{"class" : "panel-toggle", "style" : "display: inline", "data-toggle" : "collapse", "data-parent" : "#panelHistory" + tid, "href" : "#collapse" + tid})
-
-            i = tags.i(**{"class" : "glyphicon glyphicon-arrow-down", "style" : "size: 50%"})
-            i(" " + spy)
-            a(i)
-            idiv(char + " (" + str(int(float(total))) + "): ", a)
-            cdiv = tags.div(**{"class" : "panel-body collapse", "id" : "collapse" + tid})
-            icdiv = tags.div(**{"class" : "panel-inner"})
-            icdiv(targ.replace("\"", "\\\"").replace("\'", "\\\""))#.replace("/", " /<br/>"))
-            cdiv(icdiv)
-            div(idiv, cdiv)
-
-            tag(div)
-
         return tag
 
 class TranslationsElement(CommonElement) :
@@ -451,32 +434,6 @@ class LegendElement(CommonElement) :
                  )
         return tag
 
-class DynamicViewElement(CommonElement) :
-    @renderer
-    def dynamic_view(self, request, tag) :
-        uuid = 'bad_uuid'
-
-        splits = "process_edits('"
-        merges = "process_edits('"
-
-        if "current_story" in self.req.session.value :
-            uuid = self.req.session.value["current_story"]
-
-        splits += uuid
-        merges += uuid
-        splits += "', 'split', false)"
-        merges += "', 'merge', false)"
-
-        tag.fillSlots(processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"))
-        return tag
-
-class ReadingViewElement(CommonElement) :
-    @renderer
-    def reading_view(self, request, tag) :
-        tag.fillSlots(meaningclasstitle = _("show/hide translations"))
-        return tag
-
-
 def processinstantclick(req, request, tag) :
     if mobile :
         assert("password" in req.session.value)
@@ -492,9 +449,9 @@ def processinstantclick(req, request, tag) :
 
     return onclick
 
-class StaticViewElement(CommonElement) :
+class ViewElement(CommonElement) :
     @renderer
-    def static_view(self, request, tag) :
+    def topview(self, request, tag) :
         tclasses = dict(text = "", images = "", both = "")
 
         for which, unused in tclasses.iteritems() :
@@ -510,23 +467,6 @@ class StaticViewElement(CommonElement) :
             if self.req.session.value["meaning_mode"] == "true" :
                 tclasses["meaning"] += "active "
             tclasses["meaning"] += "btn btn-default"
-                
-        tag.fillSlots(textclass = tclasses["text"],
-                      imageclass = tclasses["images"],
-                      bothclass = tclasses["both"],
-                      processinstant = processinstantclick(self.req, request, tag),
-                      meaningclass = tclasses["meaning"],
-                      textclasstitle = _("show text only"),
-                      bothclasstitle = _("side-by-side text and image"),
-                      imageclasstitle = _("show image only"),
-                      processinstanttitle = _("instant translation of one or more words"),
-                      )
-
-        return tag
-
-class ViewElement(CommonElement) :
-    @renderer
-    def topview(self, request, tag) :
         stats = ""
 
         if self.req.action in ["read"] :
@@ -535,6 +475,19 @@ class ViewElement(CommonElement) :
             stats = tags.div(id='editslist')
         elif self.req.action == "home" :
             stats = LegendElement(self.req)
+
+        uuid = 'bad_uuid'
+
+        splits = "process_edits('"
+        merges = "process_edits('"
+
+        if "current_story" in self.req.session.value :
+            uuid = self.req.session.value["current_story"]
+
+        splits += uuid
+        merges += uuid
+        splits += "', 'split', false)"
+        merges += "', 'merge', false)"
 
         tag.fillSlots(storyname = self.req.story_name.replace("_", " "),
                       spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
@@ -545,17 +498,20 @@ class ViewElement(CommonElement) :
                       # 'Go' or 'Skip' ahead to a specific page in a book/story.
                       go = _("Go"),
                       # Skip ahead to a specific page in a book/story.
-                      gotitle = _("Skip to page"))
+                      gotitle = _("Skip to page"),
+                      textclass = tclasses["text"],
+                      imageclass = tclasses["images"],
+                      bothclass = tclasses["both"],
+                      processinstant = processinstantclick(self.req, request, tag),
+                      meaningclass = tclasses["meaning"],
+                      textclasstitle = _("show text only"),
+                      bothclasstitle = _("side-by-side text and image"),
+                      imageclasstitle = _("show image only"),
+                      processinstanttitle = _("instant translation of one or more words"),
+                      meaningclasstitle = _("show/hide translations"),
+                      processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
+                      )
         
-        return tag
-
-    @renderer
-    def view(self, request, tag) :
-        tag(StaticViewElement(self.req))
-        if self.req.action == "read" or self.req.action == "home" :
-            tag(ReadingViewElement(self.req))
-        if self.req.action == "edit" :
-            tag(DynamicViewElement(self.req))
         return tag
 
 class HelpElement(CommonElement):
@@ -697,17 +653,6 @@ class HTMLElement(CommonElement):
                      caret = self.req.mpath + "/chinese-ime/caret.js",
                     )
 
-        zoom_level = 1.0
-
-        if mobile :
-            if "default_app_zoom" in self.req.session.value :
-                zoom_level = self.req.session.value["default_app_zoom"]
-        else :
-            if "default_web_zoom" in self.req.session.value :
-                zoom_level = self.req.session.value["default_web_zoom"]
-
-        tag(tags.meta(name="viewport", content="width=device-width, initial-scale=" + str(zoom_level)))
-
         return tag
 
 class HeadElement(CommonElement):
@@ -731,15 +676,6 @@ class HeadElement(CommonElement):
             # Make a new account, a button inside the 'Account' section of the top-most navigation panel
             ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
             return tags.li(ttag)
-        return ""
-
-    @renderer
-    def upload(self, request, tag) :
-        if not mobile :
-            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-            ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
-            return tags.li(ttag)
-
         return ""
 
     @renderer
@@ -806,6 +742,7 @@ class HeadElement(CommonElement):
                      # The software's privacy policy, such as what user information we keep and do not keep.
                      privacy = _("Privacy"),
                      switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
+                     uploadstory = _("Upload New Story"),
                      )
         return tag
 

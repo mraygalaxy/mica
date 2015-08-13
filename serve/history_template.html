@@ -1,5 +1,22 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="history">
 <t:slot name='onlineoffline'/>
 <p/>
-<div class='panel-group' id='panelHistory' t:render="panel"/>
+<div class='panel-group' id='panelHistory'>
+    <!--(for x in history)-->
+    <!--char, total, spy, targ, tid = x-->
+    <div class='panel panel-default'>
+        <div class='panel-heading'>
+            @!x[0]!@ (@!str(int(float(x[1])))!@): 
+            <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelHistory@!str(x[4])!@' href='#collapse@!str(x[4])!@'>
+            <i class='glyphicon glyphicon-arrow-down' style='size: 50%'> @!str(x[2])!@</i>
+            </a>
+        </div>
+        <div class='panel-inner'>
+            <div class='panel-body collapse' id='collapse@!str(x[4])!@'>
+            @!(x[3][1:-1] if (len(x[3]) and x[3][0] == '/') else x[3]).replace("\"", "\\\"").replace("\'", "\\\"")!@
+            </div>
+        </div>
+    </div>
+    <!--(end)-->
+</div>
 </div>
