@@ -1,2 +1,60 @@
-<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="edit">
-</html>
+<div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="edit">
+<h5><t:slot name='editname'/>:</h5>
+<p/>
+<table>
+<tr><td class='mergetop mergebottom mergeleft mergeright' style='vertical-align: top'><t:slot name='previousmerge'/></td></tr>
+<tr><td><p/></td></tr>
+<tr><td class='splittop splitbottom splitleft splitright' style='vertical-align: top'><t:slot name='previoussplit'/></td></tr>
+</table>
+<p/>
+
+<a data-role='none' href='#' class='btn btn-info'><t:attr name='onclick'><t:slot name='processedits'/></t:attr><t:slot name='tryrecco'/></a><p/>
+<a data-role='none' class='btn btn-info'><t:attr name='href'><t:slot name='retrans'/></t:attr><t:slot name='repage'/></a>
+<p/>
+
+<!--(if list_mode)-->
+    <!--(if len(history) != 0)-->
+        <div class='panel-group' id='panelEdit'>
+        <!--(for x in history)-->
+            <div class='panel panel-default'>
+                <div class='panel-heading'>
+                <!--((char, total, spy, result, tid, op) = x)-->
+                    <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse@!str(x[4])!@'>
+                    <i class='glyphicon glyphicon-arrow-down' style='50%'/> @!x[2]!@
+                    </a>
+                    (@!str(x[1])!@): @!x[0]!@: 
+                <!--(if x[5] == "SPLIT")-->
+                    <div style='color: blue; display: inline'><t:slot name='split'/>   </div>
+                <!--(else)-->
+                    <div style='color: red; display: inline'><t:slot name='merge'/>   </div>
+                <!--(end)-->
+                </div>
+                <div class='panel-inner'>
+                    <div class='panel-body collapse' id='collapse@!str(x[4])!@'>
+                    <!--(if len(x[3]))-->
+                        <!--(if x[3][0] == '/')-->
+                           @!x[3][1:-1]!@
+                        <!--(else)-->
+                            <table class='table'>
+                            <!--(for row in x[3])-->
+                                <tr><td>
+                            @!row[0]!@
+                                </td><td>
+                            @!row[1]!@
+                                </td></tr>
+                            <!--(end)-->
+                            </table>
+                        <!--(end)-->
+                    <!--(end)-->
+                    </div>
+                </div>
+            </div>
+        <!--(end)-->
+        </div>
+    <!--(else)-->
+    <h4><t:slot name='noedits'/></h4>
+    <!--(end)-->
+<!--(else)-->
+  <h4><t:slot name='editdisabled'/></h4>
+<!--(end)-->
+</div>

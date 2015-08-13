@@ -3,19 +3,111 @@
 <body>
     <div class='row-fluid'>
         <div class='col-lg-3'>
-            <div style='display: inline' t:render="login"/>
+            <div style='display: inline'>
+                <table><tr>
+                <!--(if not mobile)-->
+                <td style='width: 10px; align: center'> </td>
+                <td style='width: 10px; align: center'><b><t:slot name='softwarename'/></b></td>
+                <td style='width: 10px; align: center'>  </td>
+                <td style='width: 10px; align: center'>|</td>
+                <td style='width: 10px; align: center'/>
+                <td><b><t:slot name='changelang'/></b></td>
+                <td style='width: 10px'/>
+                <td style='font-size: x-small' t:render='switchlangs'>
+                </td>
+                <!--(end)-->
+                </tr></table>
+                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8">
+                    <table>
+                        <tr><td>
+                            <t:slot name='username'/>: 
+                        </td></tr><tr><td>
+                            <div style='display:inline' t:render="username"/>
+                         </td></tr><tr><td>
+                            <t:slot name='password'/>:
+                         </td></tr><tr><td>
+                            <input type="password" id="password" name="password" placeholder="Password" />
+                        </td></tr><tr><td>
+                            <div class="slide1">
+                                <div class="tri1"></div>
+                                <u><t:slot name='address'/></u>
+                            </div>
+                            <div class="view1">
+                                <div style="display:inline" t:render="address"/>
+                            </div>
+                        </td></tr><tr><td>
+                            <label class="checkbox" t:render="remember"><t:slot name='rememberme'/></label>
+                        </td></tr><tr><td>
+                            <button onclick="$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+                        </td></tr><tr><td>
+                        <!--(if not mobile)-->
+                            <br/><b><t:slot name='signinwith'/>:</b><br/>
+                            <table>
+                            <tr t:render="thirdparty" style='display: inline'/>
+                            </table>
+                        <!--(end)-->
+                        </td></tr>
+                    </table>
+                </form>
+            </div>
         </div><!-- col-lg-3 -->
         <div class='col-lg-9'>
-            <div style='display: inline' t:render="frontpage"/>
+            <!--(if not mobile)-->    
+            <div style='display: inline'>
+                <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+                    <h3><b><t:slot name="learn"/>.</b></h3>
+                </div>
+                <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+                    <!-- Menu -->
+                    <ol class="carousel-indicators">
+                        <li data-target="#carousel" data-slide-to="0" class="active"></li>
+                        <li data-target="#carousel" data-slide-to="1"></li>
+                        <li data-target="#carousel" data-slide-to="2"></li>
+                    </ol>
+                    
+                    <!-- Items -->
+                    <div style='width=100%' class="carousel-inner" t:render="pages"/>
+
+                    <a href="#carousel" class="left carousel-control" data-slide="prev">
+                        <span class="glyphicon glyphicon-chevron-left"></span>
+                    </a>
+                    <a href="#carousel" class="right carousel-control" data-slide="next">
+                        <span class="glyphicon glyphicon-chevron-right"></span>
+                    </a>
+                </div>
+
+                <div style="width: 90%; margin: 0 auto;">
+                    <h4><b><t:slot name="offline"/>.</b></h4>
+                    <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
+                    <p/>
+                    <br/>
+                    <!--(if front_ads)-->    
+                    <div>
+                        <br/><t:slot name="feel"/>
+                        <br/>
+                        <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+                    </div>
+                    <!--(end)-->
+                    <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
+                </div><!-- centered -->
+            </div>
+            <!--(end)-->
         </div><!-- col-lg-9 -->
     </div><!-- row-fluid -->
     <div class='row-fluid'>
         <div class='col-lg-12'>
             <h4><t:slot name="connect"/>.</h4>
-            <br/>(<t:slot name="click"/>.)
             <p/>
             <br/><t:slot name="experimental"/>.
-            <div style="display: inline" t:render="frontend"/>
+            <div style="display: inline">
+            <!--(if mobile)-->    
+            <br/><t:slot name="feel"/>
+            <br/>
+            <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+            <!--(else)-->
+            <br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>.
+            <!--(end)-->
+            </div>
         </div>
     </div>
 </body>

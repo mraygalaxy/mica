@@ -9,6 +9,8 @@ from common import *
 from os import path as os_path
 from re import compile as re_compile
 
+import pyratemp
+
 softlangs = []
 for l, readable in lang.iteritems() :
     locale = l.split("-")[0]
@@ -22,8 +24,22 @@ if not mobile :
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
 class CommonElement(Element) :
-    def __init__(self, req) :
+    def __init__(self, req, template_name = False, conditionals = {}) :
         super(CommonElement, self).__init__() 
+        self.req = req
+        if not template_name :
+            template_name = self.__class__.__name__.replace("Element", "").lower()
+            template_name += "_template.html"
+
+        conditionals["mobile"] = mobile
+
+        for attrs in ["front_ads", "list_mode", "history", "credentials"] :
+            if hasattr(self.req, attrs) :
+                conditionals[attrs] = getattr(self.req, attrs)
+
+        pt = pyratemp.Template(filename = 'serve/' + template_name)
+        self.loader = XMLString(pt(**conditionals))
+        #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
     @renderer
     def languages(self, request, tag) :
@@ -44,50 +60,26 @@ class CommonElement(Element) :
         return tag
 
 class PostAccountElement(CommonElement) :
-    def __init__(self, req) :
-        super(PostAccountElement, self).__init__(req)
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/postaccount_template.html').path)
-
-    @renderer
-    def password(self, request, tag) :
-        if not mobile :
-            return PasswordElement(self.req)
-        return _("Please change your password on the website. Will support mobile in a future version.")
-
     @renderer
     def postaccount(self, request, tag) :
         tag.fillSlots(
-                        compact = _("Compact databases"),
-                        changepass = _("Change Password"),
-                        changeemail = _("Email Address"),
-                        email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
-                        changemail = _("Change Email"),
-                      )
-        return tag
-
-class PasswordElement(CommonElement) :
-    def __init__(self, req) :
-        super(PasswordElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/changepass_template.html').path)
-
-    @renderer
-    def password(self, request, tag) :
-        tag.fillSlots(oldpassword =_("Old Password / Token"),
+                      compact = _("Compact databases"),
+                      changepass = _("Change Password"),
+                      changeemail = _("Email Address"),
+                      email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
+                      changemail = _("Change Email"),
+                      deleteaccount = _("Delete Account?"),
+                      mobiledelete = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version."),
+                      oldpassword =_("Old Password / Token"),
                       password = _("New Password / Token"),
                       confirm = _("Confirm Password / Token"),
                       change = _("Change Password / Token"),
                       reset = _("Reset Password / Token"),
+                      passonline = _("Please change your password on the website. Will support mobile in a future version."),
                       )
         return tag
 
-class HistoryElement(Element) :
-    def __init__(self, req) :
-        super(HistoryElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/history_template.html').path)
-
+class HistoryElement(CommonElement) :
     @renderer
     def history(self, request, tag) :
         tag.fillSlots(onlineoffline = self.req.onlineoffline)
@@ -121,53 +113,7 @@ class HistoryElement(Element) :
 
         return tag
 
-class StaticNavElement(Element) :
-    def __init__(self, req) :
-        super(StaticNavElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/nav_template.html').path)
-
-    @renderer
-    def newaccount(self, request, tag) :
-        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
-            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
-            return tags.li(ttag)
-        return ""
-
-    @renderer
-    def upload(self, request, tag) :
-        if not mobile :
-            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-            ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
-            return tags.li(ttag)
-
-        return ""
-
-    @renderer
-    def accountslots(self, request, tag) :
-                      # Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
-        tag.fillSlots(preferences = _("Preferences"),
-                      # Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
-                      disconnect = _("Disconnect"),
-                      # About is a traditional description of the software package itself that you might find in other help menus of other programs.
-                      about = _("About"),
-                      # Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
-                      help = _("Help"),
-                      # The software's privacy policy, such as what user information we keep and do not keep.
-                      privacy = _("Privacy"),
-                      switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
-                      username = self.req.session.value["username"],
-                      )
-        return tag
-
 class TranslationsElement(CommonElement) :
-    def __init__(self, req) :
-        super(TranslationsElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/translations_template.html').path)
-
     @renderer
     def translationslots(self, request, tag) :
         tag.fillSlots(
@@ -228,11 +174,6 @@ class TranslationsElement(CommonElement) :
         return tag
 
 class ModalsElement(CommonElement) :
-    def __init__(self, req) :
-        super(ModalsElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/modals_template.html').path)
-
     @renderer
     def newaccountadmin(self, request, tag) :
         if self.req.session.value['connected'] and not self.req.pretend_disconnected :
@@ -294,245 +235,7 @@ class ModalsElement(CommonElement) :
                      )
         return tag
 
-class LoginElement(Element) :
-    def __init__(self, req) :
-        super(LoginElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/login_template.html').path)
-
-    @renderer
-    def remember(self, request, tag) :
-        if 'last_remember' in self.req.session.value :
-            return tag(tags.input(type='checkbox', name='remember', checked='checked'))
-        else :
-            return tag(tags.input(type='checkbox', name='remember'))
-
-    @renderer
-    def address(self, request, tag) :
-       address = self.req.session.value["address"] if ("address" in self.req.session.value and self.req.session.value["address"] is not None) else self.credentials()
-       return tag(tags.input(type="text", id="address", name="address", placeholder="Address", value=address))
-
-    @renderer
-    def username(self, request, tag) :
-       user = self.req.session.value['last_username'] if 'last_username' in self.req.session.value else ''
-       return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
-
-    @renderer
-    def loginslots(self, request, tag) :
-        tag.fillSlots(
-                     username = _("Account"),
-                     address = _("Address"),
-                     password = _("Password / Token"),
-                     signin = _("Login"),
-                     # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
-                     rememberme = _("Remember Me"),
-                      )
-        return tag
-
-    @renderer
-    def thirdparty(self, request, tag) :
-       if mobile or ("connected" in self.req.session.value and self.req.session.value["connected"]):
-           tag("")
-       else : 
-           tag(tags.br(), tags.b()(_("Sign in with")), ": ", tags.br())
-
-           tr = tags.tr()
-
-           for name, creds in self.req.oauth.iteritems() :
-               if name == "redirect" :
-                   continue
-               service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
-
-               if name == "facebook" :
-                   service = facebook_compliance_fix(service)
-
-               if name == "weibo" :
-                   service = weibo_compliance_fix(service)
-
-               authorization_url, state = service.authorization_url(creds["authorization_base_url"])
-
-               servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, **{"data-ajax" : "false"})
-               servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
-               tr(tags.td(servicetag))
-
-           tag(tags.table()(tr))
-
-       return tag
-
-class EditHistoryElement(Element) :
-    def __init__(self, req) :
-        super(EditHistoryElement, self).__init__() 
-        self.req = req
-        self.loader = XMLString("<html xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='edit_history'/>")
-
-    @renderer
-    def edit_history(self, request, tag) :
-        if self.req.list_mode :
-            if len(self.req.history) != 0 :
-                div = tags.div(**{"class" : "panel-group", "id" : "panelEdit"})
-                
-                for x in self.req.history :
-                    idiv = tags.div(**{"class" : "panel panel-default"})
-                    iidiv = tags.div(**{"class" : "panel-heading"})
-
-                    char, total, spy, result, tid, op = x
-                    tid = str(tid)
-
-                    if len(result) :
-                        if result[0] == '/' :
-                           result = result[1:-1]
-                        else :
-                            memberlist = tags.table(**{"class" : "table"})
-                            for row in result :
-                                memberlist(tags.tr(tags.td(row[0]), tags.td(row[1])))
-                            result = memberlist
-
-                    a = tags.a(**{"class" : "panel-toggle", "style" : "display: inline", "data-toggle" : "collapse", "data-parent" : "#panelEdit", "href": "#collapse" + tid})
-                    i = tags.i(**{"class" : "glyphicon glyphicon-arrow-down", "style" : "50%"})
-                    a(i, " ", spy)
-
-                    if op == "SPLIT" :
-                        # SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
-                        opstr = tags.div(style="color: blue; display: inline")(_("SPLIT") + "   ")
-                    else :
-                        # MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
-                        opstr = tags.div(style="color: red; display: inline")(_("MERGE") + "   ")
-
-                    iidiv(a, " (" + str(total) + "): " + char + ": ", opstr)
-
-                    idiv(iidiv)
-
-                    cdiv = tags.div(**{"class" : "panel-body collapse", "id" : "collapse" + tid})
-                    icdiv = tags.div(**{"class" : "panel-inner"})
-                    icdiv(result)
-                    cdiv(icdiv)
-                    idiv(cdiv)
-                    div(idiv)
-                tag(div)
-            else :
-                # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
-                tag(tags.h4(_("No edit history available.")))
-        else :
-                # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
-            tag(tags.h4(_("Edit history Disabled.")))
-
-        return tag
-
-class EditHeaderElement(Element) :
-    def __init__(self, req) :
-        super(EditHeaderElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/edit_header_template.html').path)
-
-    @renderer
-    def edit_header(self, request, tag) :
-        tag.fillSlots(editname = _("Legend"),
-                      processedits = self.req.process_edits,
-                      retrans = self.req.retrans,
-                      previousmerge = _("These characters were previously merged into a word"),
-                      previoussplit = _("This word was previously split into characters"),
-                      # These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
-                      tryrecco = _("Try Recommendations"),
-                      # Re-translate the current page that the user is reading right now.
-                      repage = _("Re-translate page"))
-        return tag
-
-class MobileAdvertElement(Element) :
-    def __init__(self, req) :
-        super(MobileAdvertElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/mobile_advert_template.html').path)
-
-    @renderer
-    def mobile(self, request, tag) :
-        tag.fillSlots(feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
-                      access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."))
-        return tag
-
-class ServerAdvertElement(Element) :
-    def __init__(self, req) :
-        super(ServerAdvertElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/server_advert_template.html').path)
-
-    @renderer
-    def server(self, request, tag) :
-        tag.fillSlots(contact = _("For assistance, Contact:"))
-        return tag
-
-class LinkAdvertElement(Element) :
-    def __init__(self, req) :
-        super(LinkAdvertElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/link_advert_template.html').path)
-
-    @renderer
-    def link(self, request, tag) :
-        tag.fillSlots(bitcoin = _("Please Donate To Bitcoin Address"))
-        return tag
-
-class MobileFrontElement(Element) :
-    def __init__(self, req) :
-        super(MobileFrontElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/advertise_template.html').path)
-
-    @renderer
-    def mobilelinks(self, request, tag) :
-        if self.req.front_ads :
-            tag(tags.table()(LinkAdvertElement(self.req)))
-        else :
-            tag("")
-        return tag
-
-    @renderer
-    def advertise(self, request, tag) :
-        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
-                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
-                      howitworks = _("Read about how it works"),
-                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
-                      # Beginning of a sentence
-                      mailinglist = _("Join the mailing list"))
-        return tag
-
-    @renderer
-    def pages(self, request, tag) :
-        pages = [
-            _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
-            _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
-            _("Why can't we use the <b>existing content</b> that's already out there?"),
-            _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
-            _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
-            _("When you read a new story, it <b>hides the words</b> you already know."),
-            _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
-            _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
-            _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
-        ]
-
-        first = True
-
-        for page in pages :
-            if first :
-                first = False
-                div = tags.div(**{"class" : "item active", "style" : "text-align: center"})
-            else :
-                div = tags.div(**{"class" : "item", "style" : "text-align: center"})
-
-            div(tags.br(), tags.br(), tags.br(), tags.br())
-            p = XMLString("<div>" + page + "</div>")
-            div(tags.h1(style="margin: 0 auto;")(p.load()))
-            div(tags.br(), tags.br(), tags.br(), tags.br())
-
-            tag(div)
-
-        return tag
-
 class ChatElement(CommonElement) :
-    def __init__(self, req) :
-        super(ChatElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/chat_template.html').path)
-
     @renderer
     def chat(self, request, tag) :
         tag.fillSlots(
@@ -572,66 +275,152 @@ class ChatElement(CommonElement) :
                      )
         return tag
 
-class FrontPageElement(Element) :
-    def __init__(self, req) :
-        super(FrontPageElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/frontpage_template.html').path)
+class FrontPageElement(CommonElement) :
+    @renderer
+    def switchlangs(self, request, tag) :
+        first = True
+        original_language = catalogs.language
+        for l, readable in softlangs :
+            if not first :
+                tag(" | ")
+            else :
+                first = False
+
+            self.req.mica.install_local_language(self.req, l)
+            tag(tags.a(href='/switchlang?lang=' + l)(_(readable)))
+
+        self.req.mica.install_local_language(self.req, original_language)
+        return tag
+
+    @renderer
+    def remember(self, request, tag) :
+        if 'last_remember' in self.req.session.value :
+            return tag(tags.input(type='checkbox', name='remember', checked='checked'))
+        else :
+            return tag(tags.input(type='checkbox', name='remember'))
+
+    @renderer
+    def address(self, request, tag) :
+       address = self.req.session.value["address"] if ("address" in self.req.session.value and self.req.session.value["address"] is not None) else self.req.credentials
+       return tag(tags.input(type="text", id="address", name="address", placeholder="Address", value=address))
+
+    @renderer
+    def username(self, request, tag) :
+       user = self.req.session.value['last_username'] if 'last_username' in self.req.session.value else ''
+       return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
+
+    @renderer
+    def thirdparty(self, request, tag) :
+       for name, creds in self.req.oauth.iteritems() :
+           if name == "redirect" :
+               continue
+           service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+
+           if name == "facebook" :
+               service = facebook_compliance_fix(service)
+
+           if name == "weibo" :
+               service = weibo_compliance_fix(service)
+
+           authorization_url, state = service.authorization_url(creds["authorization_base_url"])
+
+           servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, **{"data-ajax" : "false"})
+           servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+           tag(tags.td(servicetag))
+
+       return tag
 
     @renderer
     def head(self, request, tag) :
         return HTMLElement(self.req)
 
     @renderer
-    def frontend(self, request, tag) :
-        if mobile :
-            tag(MobileAdvertElement(self.req))
-        else :
-            tag(ServerAdvertElement(self.req))
-            
-        return tag
-
-    @renderer
-    def login(self, request, tag) :
-        tag(LoginElement(self.req))
-        return tag
-
-    @renderer
-    def frontpage(self, request, tag) :
-        if not mobile :
-            tag(MobileFrontElement(self.req))
-        else :
-            tag("")
-        return tag
-
-    @renderer
     def advertise(self, request, tag) :
-        # end of sentence.
-        tag.fillSlots(help = _("for additional help"),
+        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
+                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
+                      howitworks = _("Read about how it works"),
+                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
+                      # Beginning of a sentence
+                      mailinglist = _("Join the mailing list"),
+                      # end of sentence.
+                      help = _("for additional help"),
                       # i.e. signin or login
                       connect =_("You need to connect, first"),
-                      click =_("Click the little 'M' at the top"),
-                      experimental = _("This is experimental language-learning software"))
+                      experimental = _("This is experimental language-learning software"),
+                      bitcoin = _("Please Donate To Bitcoin Address"),
+                      feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
+                      access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."),
+                      contact = _("For assistance, Contact:"),
+                      username = _("Account"),
+                      address = _("Address"),
+                      password = _("Password / Token"),
+                      signin = _("Login"),
+                      # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
+                      rememberme = _("Remember Me"),
+                      softwarename = _("MICA Language Learning"),
+                      changelang = _("Change Language"),
+                      signinwith = _("Sign in with"),
+                      )
         return tag
-
-class EditElement(Element) :
-    def __init__(self, req) :
-        super(EditElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/edit_template.html').path)
 
     @renderer
-    def edit(self, request, tag) :
-        tag(EditHeaderElement(self.req))
-        tag(EditHistoryElement(self.req))
+    def pages(self, request, tag) :
+        pages = [
+            _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
+            _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
+            _("Why can't we use the <b>existing content</b> that's already out there?"),
+            _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
+            _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
+            _("When you read a new story, it <b>hides the words</b> you already know."),
+            _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
+            _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
+            _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
+        ]
+
+        first = True
+
+        for page in pages :
+            if first :
+                first = False
+                div = tags.div(**{"class" : "item active", "style" : "text-align: center"})
+            else :
+                div = tags.div(**{"class" : "item", "style" : "text-align: center"})
+
+            div(tags.br(), tags.br(), tags.br(), tags.br())
+            p = XMLString("<div>" + page + "</div>")
+            div(tags.h1(style="margin: 0 auto;")(p.load()))
+            div(tags.br(), tags.br(), tags.br(), tags.br())
+
+            tag(div)
+
         return tag
 
-class LegendElement(Element) :
-    def __init__(self, req) :
-        super(LegendElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/legend_template.html').path)
 
+class EditElement(CommonElement) :
+    @renderer
+    def edit(self, request, tag) :
+        tag.fillSlots(editname = _("Legend"),
+                      processedits = self.req.process_edits,
+                      retrans = self.req.retrans,
+                      previousmerge = _("These characters were previously merged into a word"),
+                      previoussplit = _("This word was previously split into characters"),
+                      # These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
+                      tryrecco = _("Try Recommendations"),
+                      # Re-translate the current page that the user is reading right now.
+                      repage = _("Re-translate page"),
+                      # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
+                      editdisabled = _("Edit history Disabled."),
+                      # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
+                      noedits = _("No edit history available."),
+                      # MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+                      merge = _("MERGE"),
+                      # SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+                      split = _("SPLIT"),
+                      
+                     )
+        return tag
+
+class LegendElement(CommonElement) :
     @renderer
     def legend(self, request, tag) :
                      # 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
@@ -662,12 +451,7 @@ class LegendElement(Element) :
                  )
         return tag
 
-class DynamicViewElement(Element) :
-    def __init__(self, req) :
-        super(DynamicViewElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/dynamic_view_template.html').path)
-
+class DynamicViewElement(CommonElement) :
     @renderer
     def dynamic_view(self, request, tag) :
         uuid = 'bad_uuid'
@@ -686,12 +470,7 @@ class DynamicViewElement(Element) :
         tag.fillSlots(processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"))
         return tag
 
-class ReadingViewElement(Element) :
-    def __init__(self, req) :
-        super(ReadingViewElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/reading_view_template.html').path)
-
+class ReadingViewElement(CommonElement) :
     @renderer
     def reading_view(self, request, tag) :
         tag.fillSlots(meaningclasstitle = _("show/hide translations"))
@@ -713,12 +492,7 @@ def processinstantclick(req, request, tag) :
 
     return onclick
 
-class StaticViewElement(Element) :
-    def __init__(self, req) :
-        super(StaticViewElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/static_view_template.html').path)
-
+class StaticViewElement(CommonElement) :
     @renderer
     def static_view(self, request, tag) :
         tclasses = dict(text = "", images = "", both = "")
@@ -750,12 +524,7 @@ class StaticViewElement(Element) :
 
         return tag
 
-class ViewElement(Element) :
-    def __init__(self, req) :
-        super(ViewElement, self).__init__() 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/view_template.html').path)
-
+class ViewElement(CommonElement) :
     @renderer
     def topview(self, request, tag) :
         stats = ""
@@ -791,9 +560,7 @@ class ViewElement(Element) :
 
 class HelpElement(CommonElement):
     def __init__(self, req) :
-        super(HelpElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/' + req.tutorial).path)
+        super(HelpElement, self).__init__(req, req.tutorial) 
 
     @renderer
     def head(self, request, tag) :
@@ -804,11 +571,6 @@ class HelpElement(CommonElement):
         return tag
 
 class PrivacyElement(CommonElement):
-    def __init__(self, req) :
-        super(PrivacyElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/privacy_template.html').path)
-
     @renderer
     def head(self, request, tag) :
         return HTMLElement(self.req)
@@ -818,11 +580,6 @@ class PrivacyElement(CommonElement):
         return tag
 
 class DatabasesElement(CommonElement):
-    def __init__(self, req) :
-        super(DatabasesElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/databases_template.html').path)
-
     @renderer
     def databaseslots(self, request, tag) :
         tag.fillSlots(
@@ -835,11 +592,6 @@ class DatabasesElement(CommonElement):
         return tag
 
 class AccountElement(CommonElement):
-    def __init__(self, req) :
-        super(AccountElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/account_template.html').path)
-
     @renderer
     def dicts(self, request, tag) :
         if mobile :
@@ -850,7 +602,7 @@ class AccountElement(CommonElement):
         return tag
 
     def common_lang(self, tag, key) :
-        for l, readable in self.req.softlangs :
+        for l, readable in softlangs :
             attrs = {"value" : l}
             if l == self.req.user[key] :
                 attrs["selected"] = "selected"
@@ -925,11 +677,6 @@ class AccountElement(CommonElement):
         return tag
 
 class HTMLElement(CommonElement):
-    def __init__(self, req) :
-        super(HTMLElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/html_template.html').path)
-
     @renderer
     def html(self, request, tag) :
         tag.fillSlots(
@@ -964,32 +711,9 @@ class HTMLElement(CommonElement):
         return tag
 
 class HeadElement(CommonElement):
-    def __init__(self, req) :
-        super(HeadElement, self).__init__(req) 
-        self.req = req
-        self.loader = XMLFile(FilePath(cwd + 'serve/head_template.html').path)
-
     @renderer
-    def modals(self, request, tag) :
-        return ModalsElement(self.req)
-
-    @renderer
-    def translations(self, request, tag) :
-        return TranslationsElement(self.req)
-
-    @renderer
-    def headnavparent(self, request, tag) :
-        if not self.req.session.value['connected'] :
-            return tag("")
-
-        topul = tags.ul() 
-
-        navcontents = ""
-        navactive = self.req.action
-
-        if navactive == 'home' or navactive == 'index' :
-            navactive = 'home'
-
+    def newaccount(self, request, tag) :
+        # unused right now, just here to save the icon information and comments
         menu = [ 
                  ("storylist" , ("/storylist", "book", _("Stories"))), 
                  # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
@@ -1002,117 +726,33 @@ class HeadElement(CommonElement):
                  ("chat" , ("/chat", "comment", _("Chat"))),
             ]
 
-        for (key, value) in menu :
-            (url, icon, display) = value 
-            itag = tags.i(**{"class":'glyphicon glyphicon-' + icon})
-            if navactive == key :
-                if mobile :
-                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});")(itag, " ", display)
-                else :
-                    atag = tags.a(href=url)(itag, " ", display)
-                itemtag = tags.li(**{"class":"active"})
-                topul(itemtag(atag))
-            else :
-                if mobile :
-                    atag = tags.a(href=url, onclick = "$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});")(itag, " ", display)
-                else :
-                    atag = tags.a(href=url)(itag, " ", display)
-                topul(tags.li(atag))
+        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
+            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
+            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
+            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
+            return tags.li(ttag)
+        return ""
 
-        tag(topul)
-        return tag
+    @renderer
+    def upload(self, request, tag) :
+        if not mobile :
+            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#uploadModal", "data-backdrop" : "static", "data-keyboard" : "false"})
+            ttag(tags.i(**{"class" : "glyphicon glyphicon-upload"}), " " + _("Upload New Story"))
+            return tags.li(ttag)
+
+        return ""
+
+    @renderer
+    def modals(self, request, tag) :
+        return ModalsElement(self.req)
+
+    @renderer
+    def translations(self, request, tag) :
+        return TranslationsElement(self.req)
 
     @renderer
     def scriptswitch(self, request, tag) :
          return tag("" if not self.req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in self.req.session.value and self.req.session.value['list_mode']) else "false") + ");\n"))
-
-    @renderer
-    def cloudnav(self, request, tag) :
-        row = tags.tr()
-
-        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
-            atag =  tags.a(href='#', id='offnav', onclick='togglecanvas()')
-        else :
-            atag = tags.a(href='#', id='offnav', onclick='')
-
-        if not self.req.session.value['connected'] :
-            atag(tags.img(id = "connectpop", src=self.req.mpath + '/icon-120x120.png', width='25px'))
-        else :
-            atag(tags.img(src=self.req.mpath + '/icon-120x120.png', width='25px'))
-
-        row(tags.td(atag))
-
-        row(tags.td(style='width: 2px')())
-
-        if mobile :
-            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-download"})))
-            row(tags.td(style='width: 2px')())
-            pull = self.req.db.pull_percent() if self.req.db else ""
-            if pull == "100.0" :
-                pull = "100"
-            row(tags.td(style='width: 2px')())
-            row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pullstat"})(pull)))
-            row(tags.td(style='width: 2px')())
-            row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-upload"})))
-            row(tags.td(style='width: 2px')())
-            push = self.req.db.push_percent() if self.req.db else ""
-            if push == "100.0" :
-                push = "100"
-            row(tags.td(style='width: 2px')())
-            row(tags.td()(tags.span(**{"class" : "badge pull-right", "id" : "pushstat"})(push)))
-            row(tags.td(style='width: 2px')())
-
-        if "connected" in self.req.session.value and self.req.session.value["connected"] :
-            rowcell = tags.td()
-            rowcell(tags.a(href=''))
-            viewstat = self.req.view_percent
-            if viewstat == "100.0" :
-                viewstat = "100"
-            rowcell(tags.span(**{"class" : "badge pull-right", "id" : "viewstat"})(viewstat))
-            row(rowcell)
-            row(tags.td(style='width: 2px')())
-
-            if not mobile :
-                row(tags.td()(tags.i(**{"class" : "glyphicon glyphicon-eye-open"})))
-
-            row(tags.td(style='width: 10px')())
-        else :
-            row(tags.td(style='width: 10px; align: center')(" "))
-            # The name of the software
-            row(tags.td()(tags.b()(_("MICA Language Learning"))))
-
-            if not mobile :
-                row(tags.td(style='width: 10px; align: center')(" "))
-                row(tags.td(style='width: 10px; align: center')("|"))
-                row(tags.td(style='width: 10px')())
-                row(tags.td()(tags.b()(_("Change Language"))))
-                row(tags.td(style='width: 10px')())
-
-                rowcell = tags.td(style="font-size: x-small")
-                       
-                first = True
-
-                original_language = catalogs.language
-
-                for l, readable in softlangs :
-                    if not first :
-                        rowcell(" | ")
-                    else :
-                        first = False
-
-                    self.req.mica.install_local_language(self.req, l)
-                    rowcell(tags.a(href='/switchlang?lang=' + l)(_(readable)))
-
-                row(rowcell)
-
-                self.req.mica.install_local_language(self.req, original_language)
-
-        tag(tags.table(row))
-
-        tag(StaticNavElement(self.req))
-
-        return tag
-
 
     @renderer
     def head(self, request, tag) :
@@ -1120,8 +760,17 @@ class HeadElement(CommonElement):
 
     @renderer
     def allslots(self, request, tag) :
+        pull = self.req.db.pull_percent() if self.req.db else ""
+        if pull == "100.0" :
+            pull = "100"
+        push = self.req.db.push_percent() if self.req.db else ""
+        if push == "100.0" :
+            push = "100"
+        viewstat = self.req.view_percent
+        if viewstat == "100.0" :
+            viewstat = "100"
 
-       tag.fillSlots(
+        tag.fillSlots(
                      notreviewed = _("Not Reviewed"),
                      chatting = _("Chat History"),
                      reading = _("Reading"),
@@ -1135,15 +784,30 @@ class HeadElement(CommonElement):
                      # Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
                      removespaces = _("Remove Spaces?"),
                      username = _("Account"),
+                     accountusername = self.req.session.value["username"],
                      password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
                      readmode = _("Read"),
                      reviewmode = _("Review"),
                      editmode = _("Edit"),
-                     
+                     mpath = self.req.mpath + '/icon-120x120.png',
+                     pull = pull,
+                     push = push,
+                     viewstat = viewstat,
+                     # Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
+                     preferences = _("Preferences"),
+                     # Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
+                     disconnect = _("Disconnect"),
+                     # About is a traditional description of the software package itself that you might find in other help menus of other programs.
+                     about = _("About"),
+                     # Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
+                     help = _("Help"),
+                     # The software's privacy policy, such as what user information we keep and do not keep.
+                     privacy = _("Privacy"),
+                     switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
                      )
-       return tag
+        return tag
 
 def run_template(req, which, content = False) :
     try :

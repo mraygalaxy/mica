@@ -8,7 +8,39 @@
             <li><a rel='external' href='/read'><t:slot name='readmode'/></a></li>
             <li><a rel='external' href='/edit'><t:slot name='editmode'/></a></li>
         </ul>
-        <div t:render="cloudnav"/>
+        <table>
+        <tr>
+        <td><img width='25px'><t:attr name='src'><t:slot name='mpath'/></t:attr></img></td>
+        <!--(if mobile)-->
+        <td style='width: 2px'/>
+        <td><i class='glyphicon glyphicon-download'/></td>
+        <td style='width: 2px'/>
+        <td style='width: 2px'/>
+        <td class='badge' id='pullstat'><t:slot name='pull'/></td>
+        <td style='width: 2px'/>
+        <td><i class='glyphicon glyphicon-upload'/></td>
+        <td style='width: 2px'/>
+        <td class='badge' id='pushstat'><t:slot name='push'/></td>
+        <!--(end)-->
+        <td style='width: 2px'/>
+        <td><a href=''><span class='badge' id='viewstat'><t:slot name='viewstat'/></span></a></td>
+        <td style='width: 2px'/>
+        <!--(if not mobile)-->
+        <td><i class='glyphicon glyphicon-eye-open'/></td>
+        <!--(end)-->
+        </tr>
+        </table>
+        <b><t:slot name='accountusername'/></b>
+        <ul data-role='listview' data-inset='true'>
+            <li t:render='newaccount'/>
+            <li><a href='/account'><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
+            <li><a href='#'><t:attr name='onclick'><t:slot name='switchclick'/></t:attr><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
+            <li><a href='/disconnect' rel="external" ><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
+            <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
+            <li><a href='/help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
+            <li><a href='/privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
+            <li t:render='upload'/>
+        </ul>
     </div>
     <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>
     <div data-role='page' id='chat'><div data-role='content' id='chat_content'>temp</div></div>
@@ -27,8 +59,7 @@
         </div>
     </div>
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
-        <!--<a href="#" class="ui-btn-right ui-btn u-btm-mini ui-btn-inline ui-mini ui-corner-all ui-btn-icon-right ui-icon-gear">Options</a>-->
-      <div data-role='navbar' data-icon-pos='right'> <!--  t:render="headnavparent" -->
+      <div data-role='navbar' data-icon-pos='right'>
       <ul>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#learn'>Learn</a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#chat'>Chat</a></li>
