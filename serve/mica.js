@@ -48,7 +48,7 @@ function local(msgid) {
       populateRefreshChoices();
   }
 
-  function go(id, url, getSpecificContent, error, writeSubcontent, callback, write){
+  function go(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
       jQuery.support.cors = true;
       jQuery.ajax({
         url: url,
@@ -82,8 +82,12 @@ function local(msgid) {
 	                data = response;
 	            }
 
-                if(callback != false)
-                   callback(data);
+                if(callback != false && callback != undefined) {
+                   if (opaque) 
+                       callback(data, opaque);
+                   else
+                       callback(data);
+                }
 
                 if(write || (!write && !writeSubcontent)) {
                         //have to replace script or else jQuery will remove them
@@ -135,7 +139,7 @@ function trans_wait_poll(uuid) {
 
 var first_time = false; 
 
-function trans_poll_finish(data, uuid, unused) {
+function trans_poll_finish(data, uuid) {
     var tmparr = data.split(" ");
     var result = tmparr[0];
     var percent = tmparr[1];
@@ -156,18 +160,16 @@ function trans_poll_finish(data, uuid, unused) {
 }
 
 function trans_poll(uuid) {
-   change('',
-       '/home?tstatus=1&uuid=' + uuid, 
+   go('', '/home?tstatus=1&uuid=' + uuid, 
        '#tstatusresult',
        unavailable, 
        false, 
        trans_poll_finish, 
        false,
-       uuid,
-       false);
+       uuid);
 } 
 
-function trans_stop(data, uuid, unused) {
+function trans_stop(data, uuid) {
     finish = false;
     do_refresh = false;
     $("#translationstatus" + uuid).html('Done! Please reload.');
@@ -186,15 +188,13 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   change('#translationstatus', 
-       '/home?translate=1&uuid=' + uuid, 
+   go('#translationstatus', '/home?translate=1&uuid=' + uuid, 
        '#translationstatusresult', 
        unavailable, 
        true, 
        trans_stop,
        true,
-       uuid,
-       false);
+       uuid);
 }
 
 function poll(s, finisher, monid) {
@@ -521,14 +521,13 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       change('#instantdestination', url,
+       go('#instantdestination', url,
           '#instantresult', 
           local("onlineoffline"),
           true, 
           offinstantspin,
           true,
-          $("html").scrollTop(),
-          false);
+          $("html").scrollTop());
        }
 }
 
@@ -549,56 +548,6 @@ function select_chat_option(select_idx) {
     $.receivePush(select_idx);
 }
 
-function change(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque1, opaque2) {
-      var cb = callback;
-      var o1 = opaque1;
-      var o2 = opaque2;
-      jQuery.support.cors = true;
-      jQuery.ajax({
-        url: url,
-        type: "GET",
-        dataType: "html",
-        error: function (XMLHttpRequest, ajaxOptions, thrownError) {
-              if(XMLHttpRequest.statusText == 'error') {
-                  $(id).html(error);
-              }
-             if(callback != false) {
-               callback(error);
-             }
-        },
-        success: function (response) {
-            var data = "none";
-            if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
-                $(id).html(response);
-            } else {
-	            if(getSpecificContent != '') {
-	                data = $(response).find(getSpecificContent).html();
-	                if(write) {
-	                    if(writeSubcontent)
-	                        $(id).html(data);
-	                    else
-	                        $(id).html(response);
-	                }
-	            } else {
-	                if(write)
-	                    $(id).html(response);
-	                data = response;
-	            }
-                if(write) {
-                        //have to replace script or else jQuery will remove them
-                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
-                            if (!$(this).attr('src')) {
-                                eval($(this).text());
-                            }
-                        });
-                }
-	            if(cb != false && cb != undefined)
-	               cb(data, o1, o2);
-            }
-        }
-      });
-}
-
 function multipopinstall(trans_id, unused) {
     $('#ttip' + trans_id).popover({placement: 'bottom',
     //$('#ttip' + trans_id).popover({placement: 'bottom-right',
@@ -609,22 +558,22 @@ function multipopinstall(trans_id, unused) {
                                    }});
 }
 
-function multipoprefresh(data, trans_id, spy) {
+function multipoprefresh(data, opaque) {
+    var trans_id = opaque[0];
+    var spy = opaque[1];
     $('#ttip' + trans_id).html(spy);
     $('#ttip' + trans_id).popover('hide');
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          change('#pop' + trans_id, 
-          '/home?view=1&uuid=' + uuid + '&multiple_select=1'
+          go('#pop' + trans_id, '/home?view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
           true, 
           multipoprefresh,
           true,
-          trans_id,
-          spy);
+          [trans_id, spy]);
 }
 
 function process_reviews(uuid, batch) {
@@ -682,13 +631,13 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go('#newaccountresultdestination', 
-        "/" + who + "?finish=1&code=" + code,
+    go('#newaccountresultdestination', "/" + who + "?finish=1&code=" + code,
         '', 
         'error', 
         true,
         false, 
-        true);
+        true,
+        false);
 }
 
 function view(mode, uuid, page) {
@@ -707,23 +656,23 @@ function view(mode, uuid, page) {
        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
-       go('#pagetext', 
-              url, 
+       go('#pagetext', url, 
               '#pageresult', 
               unavailable, 
               true, 
 	          false,
-              true);
+              true,
+              false);
 
        url += "&image=0";
 
-       go('#pageimg' + curr_img_num, 
-              url, 
+       go('#pageimg' + curr_img_num, url, 
               '#pageresult', 
               unavailable, 
               true, 
               false,
-              true);
+              true,
+              false);
    } else {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
@@ -734,13 +683,13 @@ function view(mode, uuid, page) {
        	
        }
        
-       go('#pagesingle', 
-              url, 
+       go('#pagesingle', url, 
               '#pageresult',
               unavailable, 
               true, 
               false,
-              true);
+              true,
+              false);
    }
 
    listreload(mode, uuid, page);
@@ -778,23 +727,21 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
     }
 }
 
-function memory_finish(data, opaque1, unused) {
-    var hash = opaque1;
+function memory_finish(data, opaque) {
+    var hash = opaque;
     toggle(hash, 0);
     toggle_specific('memory', hash, 0);
 }
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   change('#memory' + id, 
-          '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go('#memory' + id, '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
           memory_finish,
           false,
-          id,
-          false);
+          id);
 }
 
 function memorize(id, uuid, nb_unit, page) {
@@ -807,15 +754,13 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   change('#memory' + id, 
-          '/read?source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go('#memory' + id, '/read?source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           '#memoryresult',
           unavailable, 
           true, 
           memory_finish,
           false,
-          id,
-          false);
+          id);
 }
 
 function memorize_nostory(id, source, multiple_correct) {
@@ -868,7 +813,7 @@ if ($.browser.device == true) {
 }
 */
 
-function offinstantspin(data, curr, unused) {
+function offinstantspin(data, curr) {
     //var data = JSON.parse(data);
     $('#instantdestination').html(data);
     $('#instantspin').attr('style', 'display: none');
@@ -904,15 +849,13 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
-           change('#instantdestination', 
-              '/instant?source=' + st + "&lang=en", 
+           go('#instantdestination', '/instant?source=' + st + "&lang=en", 
               '#instantresult', 
               unavailable, 
               false, 
               offinstantspin,
               false,
-              $("html").scrollTop(),
-              false);
+              $("html").scrollTop());
       }
     }
 
@@ -955,33 +898,33 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#memolist', 
-              '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+           go('#memolist', '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
               unavailable, 
               true, 
               false,
-              true);
+              true,
+              false);
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#editslist', 
-                  '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+           go('#editslist', '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
                   unavailable, 
                   true, 
                   false,
-                  true);
+                  true,
+                  false);
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go('#history', 
-                  '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+           go('#history', '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
                   unavailable, 
                   true, 
                   false,
-                  true);
+                  true,
+                  false);
        }
 }
 
@@ -1003,12 +946,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
+	   go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/home?switchmode=images', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=images', '', unavailable, false, false, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -1021,12 +964,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/home?switchmode=both', '', unavailable, false, false, false);
+	       go('#pagetext', '/home?switchmode=both', '', unavailable, false, false, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -1035,7 +978,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false);
+      go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1053,12 +996,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go('#pagetext', '/read?meaningmode=false', '', unavailable, false, false, false);
+           go('#pagetext', '/read?meaningmode=false', '', unavailable, false, false, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go('#pagetext', '/read?meaningmode=true', '', unavailable, false, false, false);
+           go('#pagetext', '/read?meaningmode=true', '', unavailable, false, false, false, false);
            reveal_all(false);
        }
     });
@@ -1066,8 +1009,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go('#' + name, 
-        '/storylist?uuid=' + uuid + "&sync=1",
+    go('#' + name, '/storylist?uuid=' + uuid + "&sync=1",
         '', 
         'sync error', 
         false,
@@ -1075,13 +1017,13 @@ function syncstory(name, uuid) {
          document.getElementById(name).innerHTML = local('started');
          document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
         },
+        false,
         false);
 }
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go('#' + name, 
-        '/storylist?uuid=' + uuid + "&sync=0",
+    go('#' + name, '/storylist?uuid=' + uuid + "&sync=0",
         '', 
         'sync error', 
         false,
@@ -1089,6 +1031,7 @@ function unsyncstory(name, uuid) {
          document.getElementById(name).innerHTML = local('stopped');
          document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
         },
+        false,
         false);
 }
 
@@ -1104,32 +1047,32 @@ function finishedloading(unused) {
 function loadstories(unused) {
 
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go('#storypages', 
-        '/storylist?tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go('#storypages', '/storylist?tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         '#storylistresult', 
         unavailable, 
         true, 
         finishedloading,
-        true);
+        true,
+        false);
 }
 
 function reviewstory(uuid, which) {
-    go('#storypages', 
-        '/home?reviewed=' + which + '&uuid=' + uuid,
+    go('#storypages', '/home?reviewed=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
         loadstories,
+        false,
         false);
 }
 
 function finishstory(uuid, which) {
-    go('#storypages', 
-        '/home?finished=' + which + '&uuid=' + uuid,
+    go('#storypages', '/home?finished=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
         loadstories,
+        false,
         false);
 }
 
@@ -1354,13 +1297,13 @@ function newContact(who) {
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     url = "/chat?history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
-    go('#pagesingle', 
-          url, 
+    go('#pagesingle', url, 
           '#chathistoryresult',
           unavailable, 
           true, 
           handleConnectedLoaded,
-          true);
+          true,
+          false);
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 

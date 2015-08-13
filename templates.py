@@ -215,6 +215,8 @@ class ModalsElement(CommonElement) :
                      suredelete = _("Are you sure you want to delete your account? This is IRREVERSIBLE."),
                      username = self.req.session.value["username"],
                      delete = _("Delete Account?"),
+                      # This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
+                      reviews = _("Bulk Review Words"),
                      )
         return tag
 
@@ -426,8 +428,6 @@ class LegendElement(CommonElement) :
                       history = _("Change History"),
                       processreviews = self.req.process_reviews,
                       tryrecco = _("Try Recommendations"),
-                      # This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
-                      reviews = _("Bulk Review Words"),
                       reviewchange = _("Change"),
                       # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
                       norecommend = _("No review recommendations available."),
