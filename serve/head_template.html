@@ -13,12 +13,12 @@
         <td><img width='25px'><t:attr name='src'><t:slot name='mpath'/></t:attr></img></td>
         <!--(if mobile)-->
         <td style='width: 2px'/>
-        <td><i class='glyphicon glyphicon-download'/></td>
+        <td><i class='glyphicon glyphicon-download'></i></td>
         <td style='width: 2px'/>
         <td style='width: 2px'/>
         <td class='badge' id='pullstat'><t:slot name='pull'/></td>
         <td style='width: 2px'/>
-        <td><i class='glyphicon glyphicon-upload'/></td>
+        <td><i class='glyphicon glyphicon-upload'></i></td>
         <td style='width: 2px'/>
         <td class='badge' id='pushstat'><t:slot name='push'/></td>
         <!--(end)-->
@@ -26,7 +26,7 @@
         <td><a href=''><span class='badge' id='viewstat'><t:slot name='viewstat'/></span></a></td>
         <td style='width: 2px'/>
         <!--(if not mobile)-->
-        <td><i class='glyphicon glyphicon-eye-open'/></td>
+        <td><i class='glyphicon glyphicon-eye-open'></i></td>
         <!--(end)-->
         </tr>
         </table>
@@ -39,7 +39,9 @@
             <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
             <li><a href='/help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
             <li><a href='/privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
-            <li t:render='upload'/>
+            <!--(if not mobile)-->
+            <li><a href='#uploadModal' data-toggle='modal' data-backdrop='static' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
+            <!--(end)-->
         </ul>
     </div>
     <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>

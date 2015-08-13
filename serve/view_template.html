@@ -17,7 +17,21 @@
                                         <td><button data-role='none' type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
                                         <input data-role='none' id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
                                         <td>&#160;&#160;&#160;</td>
-                                        <td t:render="view"/>
+                                        <td>
+                                        <div style='display: inline' data-role='none' class='btn-group'>
+                                            <button data-role='none' type='button' id='textButton'><t:attr name='title'><t:slot name='textclasstitle'/></t:attr><t:attr name='class'><t:slot name='textclass'/></t:attr><i class='glyphicon glyphicon-font'></i></button>
+                                            <button data-role='none' type='button' id='sideButton'><t:attr name='title'><t:slot name='bothclasstitle'/></t:attr><t:attr name='class'><t:slot name='bothclass'/></t:attr><i class='glyphicon glyphicon-th-list'></i></button>
+                                            <button data-role='none' type='button' id='imageButton'><t:attr name='title'><t:slot name='imageclasstitle'/></t:attr><t:attr name='class'><t:slot name='imageclass'/></t:attr><i class='glyphicon glyphicon-picture'></i></button>
+                                            <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
+                                            <!--(if action == 'read' or action == 'home')-->
+                                            <button data-role='none' type='button' id='meaningButton'><t:attr name='title'><t:slot name='meaningclasstitle'/></t:attr><t:attr name='class'><t:slot name='meaningclass'/></t:attr><i class='glyphicon glyphicon-expand'></i></button>
+                                            <!--(end)-->
+                                            <!--(if action == 'edit')-->
+                                            <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processsplitstitle'/></t:attr><t:attr name='onclick'><t:slot name='processsplits'/></t:attr><i class='glyphicon glyphicon-resize-full'></i></button>
+                                            <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processmergestitle'/></t:attr><t:attr name='onclick'><t:slot name='processmerges'/></t:attr><i class='glyphicon glyphicon-resize-small'></i></button>
+                                            <!--(end)-->
+                                        </div>
+                                        </td>
                                         <td>&#160;&#160;&#160;</td>
                                         <td><div id='pagenav'></div></td>
                                     </tr>
