@@ -2989,6 +2989,8 @@ class MICA(object):
         self.install_local_language(req)
         if not mobile :
             req.oauth = params["oauth"]
+        req.mica = self
+        req.credentials = self.credentials()
         return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
 
     def common_switchlang(self, req) :
@@ -3833,7 +3835,7 @@ class MICA(object):
                     output += "<br/><br/>"
                     output += "<h4>"
                     # Beginning of a message
-                    output += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
                     # end of a message
                     output += _("please read the tutorial") + "</a>"
                     output += "</h4>"
@@ -4129,11 +4131,7 @@ class MICA(object):
         req.user = user
         req.processors = self.processors
         req.scratch = params["scratch"]
-        req.softlangs = []
-        for l, readable in lang.iteritems() :
-            locale = l.split("-")[0]
-            if locale not in softlangs :
-                req.softlangs.append((locale, readable))
+        req.userdb = self.userdb
 
         try :
             out += run_template(req, AccountElement)
@@ -4145,14 +4143,6 @@ class MICA(object):
             return self.bootstrap(req, out)
 
         out += run_template(req, PostAccountElement)
-
-        out += "<p/><h4><b>" + _("Delete Account?") + "</b></h4>"
-        if not mobile :
-           out += """
-           <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary" value='1'>""" + _("Delete Account?") + """</button>
-           """
-        else :
-            out += _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
 
         if self.userdb :
             if not mobile and req.session.value["isadmin"] :
@@ -4477,7 +4467,7 @@ class MICA(object):
             output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
 
             output += "<br/><br/>Save this Password: " + password
-            output += "<br/><br/>" + _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+            output += "<br/><br/>" + _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
             output += _("please read the tutorial") + "</a>"
             output += "<br/><br/>Happy Learning!</h4>"
 
@@ -4817,7 +4807,7 @@ class MICA(object):
         else :
             # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-            out += _("If this is your first time here") + ", <a class='btn btn-primary' href='/help'>"
+            out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
             out += _("please read the tutorial") + "</a>"
         return self.bootstrap(req, out)
 
@@ -4862,6 +4852,8 @@ class MICA(object):
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 if not mobile :
                     req.oauth = params["oauth"]
+                req.mica = self
+                req.credentials = self.credentials()
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
             self.common_logged_in_check(req)
