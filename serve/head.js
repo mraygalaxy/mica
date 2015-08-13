@@ -32,7 +32,8 @@ function switchinstall(initlist) {
 }
 
 function switchlist() {
-   go('#switchlisttext', '/home?switchlist=' + (list_mode ? '0' : '1'), '', unavailable, false, false, false);
+   go('#switchlisttext', '/home?switchlist=' + (list_mode ? '0' : '1'), 
+        '', unavailable, false, false, false);
    switchinstall(list_mode ? false : true);
    listreload(current_mode, current_uuid, current_page);
 }
@@ -64,7 +65,8 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go('#chat_content', '/chat', '#chat_content_result', unavailable, true, chat_success, true);
+                   go('#chat_content', '/chat', 
+                    '#chat_content_result', unavailable, true, chat_success, true);
                 }
         }
    }
