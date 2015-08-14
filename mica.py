@@ -4882,7 +4882,10 @@ class MICA(object):
                 
             self.render_logged_in_check(req)
 
-            for param in ["upload_file", "uploadtext", "chat_ime"] :
+            if req.action == "chat_ime" :
+                return self.render_chat_ime(req)
+
+            for param in ["upload_file", "uploadtext"] :
                 if req.http.params.get(param) :
                     return getattr(self, "render_" + param)(req)
 

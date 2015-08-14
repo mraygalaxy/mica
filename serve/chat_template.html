@@ -24,18 +24,18 @@
         <div class='row-fluid nopadding'>
         <div class='col-md-12 nopadding'>
             <div style='height: 20px; border: 3px solid grey' id="iStatus"></div>
-            <form id='sendForm' name="sendForm" action='path_to_nowhere'>
+            <form data-ajax='false' id='sendForm' name="sendForm" action='path_to_nowhere'>
                  <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
                 <div class="spaced">
                     <b><t:slot name='to'/>:</b>
-                    <input type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
+                    <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
                     <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
                     <button type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
                 </div>
                 <div class="spaced">
                     <div id='missing' style='display: none'><div style='display: inline; color: red'><t:slot name='provideaddress'/></div></div>
-                    <input type='text' class='form-control' name="msg" id='msgArea' rows="1" tabindex="2" autocomplete="off"/>
-                    <input type='submit' style='display: none'/>
+                    <input data-role='none' type='text' class='form-control' name="msg" id='msgArea' rows="1" tabindex="2" autocomplete="off"/>
+                    <input data-role='none' type='submit' style='display: none'/>
                 </div>
             </form>
             <div style='width: 100%; background: white; height: 50%; overflow-y: auto; border: 3px solid grey'>
@@ -48,11 +48,11 @@
     <audio id='soundNotify' type="audio/wav"><t:attr name="src"><t:slot name="beep"/></t:attr></audio>
 
     <div id="login_pane" style='display: none'>
-        <form style='display: none' name="loginForm" id="loginForm">
-            <input type="hidden" name="server" id="server" tabindex="3"><t:attr name="value"><t:slot name="server"/></t:attr></input>
-            <input type="hidden" name="domain" id="domain" tabindex="4"><t:attr name="value"><t:slot name="domain"/></t:attr></input>
-            <input type="hidden" name="username" id="username" tabindex="5"><t:attr name='value'><t:slot name='username'/></t:attr></input>
-            <input type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
+        <form data-ajax='false' style='display: none' name="loginForm" id="loginForm">
+            <input data-role='none' type="hidden" name="server" id="server" tabindex="3"><t:attr name="value"><t:slot name="server"/></t:attr></input>
+            <input data-role='none' type="hidden" name="domain" id="domain" tabindex="4"><t:attr name="value"><t:slot name="domain"/></t:attr></input>
+            <input data-role='none' type="hidden" name="username" id="username" tabindex="5"><t:attr name='value'><t:slot name='username'/></t:attr></input>
+            <input data-role='none' type="hidden" name="password" id="password" tabindex="6"><t:attr name='value'><t:slot name='temp_jabber_pw'/></t:attr></input>
         </form>
         <div id='chatLoading'><h4><t:slot name="spinner"/>&#160;<t:slot name='loading'/>...</h4></div>
     </div>
