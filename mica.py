@@ -3001,7 +3001,7 @@ class MICA(object):
 
     def common_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
-        if req.source != "127.0.0.1" :
+        if req.source not in params["allowed_jabber_hosts"] :
             return self.bootstrap(req, 'error', now = True)
 
         if not req.http.params.get("username") or not req.http.params.get("password") :
