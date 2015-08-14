@@ -623,7 +623,7 @@ class MICA(object):
             else :
                 if req.api :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] :
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3023,8 +3023,9 @@ class MICA(object):
 
     def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
-        if req.source != "127.0.0.1" :
-            return self.bootstrap(req, 'error', now = True)
+        if req.source not in params["allowed_jabber_hosts"] :
+            mdebug("Bad request from: " + req.source)
+            raise exc.HTTPBadRequest("you did a bad thing")
 
         if not req.http.params.get("username") or not req.http.params.get("password") :
             return self.bootstrap(req, 'error', now = True)
