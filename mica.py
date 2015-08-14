@@ -592,7 +592,7 @@ class MICA(object):
         filterparams["files"] = ",".join(files)
         return json_dumps(filterparams)
 
-    def run_common(self, req) :
+    def run_render(self, req) :
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
                 username = req.session.value["username"]
@@ -614,7 +614,7 @@ class MICA(object):
 
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
-                    resp = self.common(req)
+                    resp = self.render(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
                     self.clean_session(req)
@@ -625,9 +625,9 @@ class MICA(object):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
                 if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
                     self.install_local_language(req)
-                    resp = self.common(req)
+                    resp = self.render(req)
                 else :
-                    resp = self.common_frontpage(req)
+                    resp = self.render_frontpage(req)
 
         except exc.HTTPTemporaryRedirect, e :
             resp = e
@@ -670,7 +670,7 @@ class MICA(object):
             if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
                 req.front_ads = True
 
-            resp = self.safe_execute(self.run_common, args = [req])
+            resp = self.safe_execute(self.run_render, args = [req])
 
         except exc.HTTPUnauthorized, e :
             resp = e
@@ -2991,20 +2991,20 @@ class MICA(object):
 
         return False 
 
-    def common_disconnect(self, req) : 
+    def render_disconnect(self, req) : 
         self.clean_session(req)
         return self.bootstrap(req, "<script>window.location.href = '/';</script>")
-        #return self.common_frontpage(req)
+        #return self.render_frontpage(req)
 
-    def common_privacy(self, req) :
+    def render_privacy(self, req) :
         self.install_local_language(req)
         return "<!DOCTYPE html>\n" + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8')
 
-    def common_help(self, req) :
+    def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
         return "<!DOCTYPE html>\n" + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8'))
 
-    def common_frontpage(self, req) :
+    def render_frontpage(self, req) :
         self.install_local_language(req)
         if not mobile :
             req.oauth = params["oauth"]
@@ -3012,16 +3012,16 @@ class MICA(object):
         req.credentials = self.credentials()
         return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
 
-    def common_switchlang(self, req) :
+    def render_switchlang(self, req) :
         if not req.http.params.get("lang") :
             return self.bootstrap(req, 'error', now = True)
 
         req.session.value["language"] = req.http.params.get("lang")
         req.session.save()
 
-        return self.common_frontpage(req)
+        return self.render_frontpage(req)
 
-    def common_auth(self, req) :
+    def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
         if req.source != "127.0.0.1" :
             return self.bootstrap(req, 'error', now = True)
@@ -3046,7 +3046,7 @@ class MICA(object):
 
         return self.bootstrap(req, 'good', now = True)
 
-    def common_online(self, req) :
+    def render_online(self, req) :
         v = self.api_validate(req)
         if v :
             return v
@@ -3065,7 +3065,7 @@ class MICA(object):
 
         return self.api(req, out, False, wrap = False)
 
-    def common_instant(self, req) :
+    def render_instant(self, req) :
         human = True if int(req.http.params.get("human", "1")) else False
 
         v = self.api_validate(req, "1")
@@ -3295,7 +3295,7 @@ class MICA(object):
                 self.nb_pages(req, story, force = True)
             mverbose("Add complete")
 
-    def common_chat_ime(self, req) :
+    def render_chat_ime(self, req) :
         self.imemutex.acquire()
         try :
             self.install_local_language(req, req.http.params.get("lang"))
@@ -3437,7 +3437,7 @@ class MICA(object):
 
         return self.api(req, out, False) 
 
-    def common_uploadfile(self, req) :
+    def render_uploadfile(self, req) :
         fh = req.http.params.get("storyfile")
         filetype = req.http.params.get("filetype")
         langtype = req.http.params.get("languagetype")
@@ -3478,7 +3478,7 @@ class MICA(object):
         # A new story has been uploaded and is being processed in the background.
         return self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_").replace(";","_"), False, filetype, source_lang, target_lang, sourcepath])
 
-    def common_uploadtext(self, req) :
+    def render_uploadtext(self, req) :
         source = req.http.params.get("storytext") + "\n"
         filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_").replace(";","_")
         langtype = req.http.params.get("languagetype")
@@ -3487,7 +3487,7 @@ class MICA(object):
         # A new story has been uploaded and is being processed in the background.
         return self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, False, args = [req, filename, source, "txt", source_lang, target_lang, False])
 
-    def common_tstatus(self, req, story) :
+    def render_tstatus(self, req, story) :
         uuid = story["uuid"]
         out = "<div id='tstatusresult'>"
         if not req.db.doc_exist(self.index(req, uuid)) :
@@ -3506,7 +3506,7 @@ class MICA(object):
         out += "</div>"
         return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
 
-    def common_finished(self, req, story) :
+    def render_finished(self, req, story) :
         name = story["name"]
         finished = True if req.http.params.get("finished") == "1" else False
         tmp_story = req.db[self.story(req, name)]
@@ -3515,7 +3515,7 @@ class MICA(object):
         # Finished reviewing a story in review mode.
         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
 
-    def common_reviewed(self, req, story) :
+    def render_reviewed(self, req, story) :
         name = story["name"]
         uuid = story["uuid"]
         reviewed = True if req.http.params.get("reviewed") == "1" else False
@@ -3544,7 +3544,7 @@ class MICA(object):
         req.db[self.story(req, name)] = tmp_story 
         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
 
-    def common_translate(self, req, story) :
+    def render_translate(self, req, story) :
         output = "<div id='translationstatusresult'>" + self.heromsg
         if story["translated"] :
             output += _("Story already translated. To re-translate, please select 'Forget'.")
@@ -3559,7 +3559,7 @@ class MICA(object):
         output += "</div></div>"
         return self.bootstrap(req, output, now = True)
 
-    def common_jobs(self, req, jobs) :
+    def render_jobs(self, req, jobs) :
         out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n"
         out += "<table class='table'>"
 
@@ -3597,7 +3597,7 @@ class MICA(object):
 
         return self.bootstrap(req, out)
 
-    def common_multiple_select(self, req, story) :
+    def render_multiple_select(self, req, story) :
         nb_unit = int(req.http.params.get("nb_unit"))
         mindex = int(req.http.params.get("index"))
         trans_id = int(req.http.params.get("trans_id"))
@@ -3608,7 +3608,7 @@ class MICA(object):
                                    self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page) + \
                                    "</div></div>", now = True)
 
-    def common_memorizednostory(self, req, story) :
+    def render_memorizednostory(self, req, story) :
         memorized = int(req.http.params.get("memorizednostory"))
         multiple_correct = int(req.http.params.get("multiple_correct"))
         source = req.http.params.get("source")
@@ -3629,7 +3629,7 @@ class MICA(object):
         return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
                                    str(nshash) + "</div></div>", now = True)
 
-    def common_memorized(self, req, story) :
+    def render_memorized(self, req, story) :
         memorized = int(req.http.params.get("memorized"))
         nb_unit = int(req.http.params.get("nb_unit"))
         page = req.http.params.get("page")
@@ -3655,7 +3655,7 @@ class MICA(object):
         return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
                                    unit["hash"] + "</div></div>", now = True)
 
-    def common_storyupgrade(self, req, story) :
+    def render_storyupgrade(self, req, story) :
         name = story["name"]
         if mobile :
             return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
@@ -3716,7 +3716,7 @@ class MICA(object):
         mdebug("Upgrade thread started.")
         return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
 
-    def common_memolist(self, req, story) :
+    def render_memolist(self, req, story) :
         list_mode = self.get_list_mode(req)
         page = req.http.params.get("page")
         output = []
@@ -3775,7 +3775,7 @@ class MICA(object):
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
 
-    def common_view(self, req, uuid, from_third_party, start_page) :
+    def render_view(self, req, uuid, from_third_party, start_page) :
         view_mode = "text"
         if "view_mode" in req.session.value :
             view_mode = req.session.value["view_mode"]
@@ -3862,7 +3862,7 @@ class MICA(object):
 
         return self.bootstrap(req, output)
 
-    def common_stories(self, req, story) :
+    def render_stories(self, req, story) :
         ftype = "txt" if "filetype" not in story else story["filetype"]
         if ftype != "txt" :
             # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
@@ -3881,7 +3881,7 @@ class MICA(object):
             final = req.db[self.story(req, story["name"]) + ":final"]["0"]
             return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
 
-    def common_account(self, req, story) :
+    def render_account(self, req, story) :
         out = ""
 
         username = req.session.value["username"].lower()
@@ -4179,7 +4179,7 @@ class MICA(object):
 
         return self.bootstrap(req, out)
                     
-    def common_chat(self, req, unused_story) :
+    def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
             req.session.value["jabber_key"] = binascii_hexlify(os_urandom(4))
             req.session.save()
@@ -4256,7 +4256,7 @@ class MICA(object):
         out = run_template(req, ChatElement)
         return self.bootstrap(req, out, now = True)
 
-    def common_storylist(self, req, unused_story) :
+    def render_storylist(self, req, unused_story) :
         if req.http.params.get("sync") :
             sync = int(req.http.params.get("sync"))
             tmpuuid = req.http.params.get("uuid")
@@ -4344,13 +4344,13 @@ class MICA(object):
 
         return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
 
-    def common_phistory(self, req, story) :
+    def render_phistory(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
                                    # statistics in review mode are disabled
                                    (self.history(req, story, req.http.params.get("page")) if self.get_list_mode(req) else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
                                    "</div></div>", now = True)
 
-    def common_editslist(self, req, story) :
+    def render_editslist(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
                                    self.edits(req, story, req.http.params.get("page")) + \
                                    "</div></div>", now = True)
@@ -4375,7 +4375,7 @@ class MICA(object):
         session.register_compliance_hook('access_token_response', _compliance_fix)
         return session
 
-    def common_oauth(self, req) :
+    def render_oauth(self, req) :
         from_third_party = False
         self.install_local_language(req)
         who = req.action
@@ -4501,7 +4501,7 @@ class MICA(object):
 
         return from_third_party
 
-    def common_connect(self, req, from_third_party) :
+    def render_connect(self, req, from_third_party) :
         password = False
         username = False
 
@@ -4705,7 +4705,7 @@ class MICA(object):
 
         return False
 
-    def common_logged_in_check(self, req) :
+    def render_logged_in_check(self, req) :
         username = req.session.value['username'].lower()
 
         if "app_chars_per_line" not in req.session.value :
@@ -4770,7 +4770,7 @@ class MICA(object):
 
             self.first_request[username] = True 
 
-    def common_bulkreview(self, req, name) :
+    def render_bulkreview(self, req, name) :
         count = int(req.http.params.get("count"))
 
         mdebug("Going to perform reviews for " + str(count) + " words.")
@@ -4784,7 +4784,7 @@ class MICA(object):
             mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
             self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
 
-    def common_oprequest(self, req, story) :
+    def render_oprequest(self, req, story) :
         oprequest = req.http.params.get("oprequest");
         edits = json_loads(oprequest) 
         offset = 0
@@ -4818,7 +4818,7 @@ class MICA(object):
 
         return False
 
-    def common_rest(self, req, from_third_party) :
+    def render_rest(self, req, from_third_party) :
         if from_third_party and "output" in from_third_party :
             return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
         elif from_third_party and "redirect" in from_third_party :
@@ -4842,27 +4842,27 @@ class MICA(object):
 
         return list_mode
 
-    def common(self, req) :
+    def render(self, req) :
         global times
         try :
             if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
-                func = getattr(self, "common_" + req.action)
+                func = getattr(self, "render_" + req.action)
                 return func(req)
 
             if req.action == "auth" and not mobile :
-                return self.common_auth(req)
+                return self.render_auth(req)
 
             from_third_party = False
 
             if not mobile and req.action in params["oauth"].keys() :
-                oauth_result = self.common_oauth(req)
+                oauth_result = self.render_oauth(req)
                 if isinstance(oauth_result, str) or isinstance(oauth_result, unicode) :
                     return oauth_result 
 
                 from_third_party = oauth_result
 
             if req.http.params.get("connect") or from_third_party != False :
-                connect_result = self.common_connect(req, from_third_party)
+                connect_result = self.render_connect(req, from_third_party)
                 if connect_result :
                     return connect_result
                 return self.bootstrap(req, "<script>window.location.href = '/';</script>")
@@ -4879,16 +4879,11 @@ class MICA(object):
                 req.credentials = self.credentials()
                 return self.bootstrap(req, run_template(req, FrontPageElement))
                 
-            self.common_logged_in_check(req)
+            self.render_logged_in_check(req)
 
-            if req.action == "chat" and req.http.params.get("ime") :
-                return self.common_chat_ime(req)
-
-            if req.http.params.get("uploadfile") :
-                return self.common_uploadfile(req)
-
-            if req.http.params.get("uploadtext") :
-                return self.common_uploadtext(req)
+            for param in ["upload_file", "uploadtext", "chat_ime"] :
+                if req.http.params.get(param) :
+                    return getattr(self, "render_" + param)(req)
 
             start_page = "0"
             uuid = False
@@ -4945,7 +4940,7 @@ class MICA(object):
 
             for param in ["tstatus", "finished", "reviewed", "translate"] :
                 if req.http.params.get(param) :
-                    return getattr(self, "common_" + param)(req, story)
+                    return getattr(self, "render_" + param)(req, story)
 
             if req.http.params.get("forget") :
                 # Resetting means that we are dropping the translate contents of the original story. We are
@@ -4975,7 +4970,7 @@ class MICA(object):
             jobs = req.db.try_get("MICA:jobs")
 
             if jobs and len(jobs["list"]) > 0 :
-                return self.common_jobs(req, jobs)
+                return self.render_jobs(req, jobs)
 
             # Functions only go here if they are actions against the currently reading story
             # Functions above here can happen on any story
@@ -5011,10 +5006,10 @@ class MICA(object):
                 
             for param in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
                 if req.http.params.get(param) :
-                    return getattr(self, "common_" + param)(req, story)
+                    return getattr(self, "render_" + param)(req, story)
 
             if req.http.params.get("oprequest") :
-                oprequest_result = self.common_oprequest(req, story)
+                oprequest_result = self.render_oprequest(req, story)
                 if oprequest_result :
                     return oprequest_result
  
@@ -5026,16 +5021,16 @@ class MICA(object):
                     return self.warn_not_replicated(req)
                 
             if req.http.params.get("bulkreview") :
-                self.common_bulkreview(req, name)
+                self.render_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
-                return self.common_view(req, uuid, from_third_party, start_page)
+                return self.render_view(req, uuid, from_third_party, start_page)
 
             if req.action in ["stories", "storylist", "account", "chat"] :
-                func = getattr(self, "common_" + req.action)
+                func = getattr(self, "render_" + req.action)
                 return func(req, story)
 
-            return self.common_rest(req, from_third_party)
+            return self.render_rest(req, from_third_party)
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
