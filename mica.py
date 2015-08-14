@@ -1406,7 +1406,9 @@ class MICA(object):
                 howmany_diff = self.current_period(period) - int(howmany)
                 mdebug("howmany diff: " + str(howmany_diff))
                 print_period = period[:-1] if howmany_diff == 1 else period
-                req.story_name = _("Chat") + " " + str(howmany_diff) + " " + print_period + " " + _("ago") + " " + " " + _("w/") + " " + peer
+                # 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
+                req.story_name = _("Chat")
+                req.story_name += " " + str(howmany_diff) + " " + print_period + " " + _("ago") + " " + " " + _("w/") + " " + peer
         else :
             req.story_name = story["name"]
 
