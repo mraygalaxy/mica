@@ -188,8 +188,16 @@ class Params(object) :
         self.pid = "none"
         self.http = Request(environ)  
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
+        self.api = False
         if self.action is None or self.action == "":
             self.action = "index"
+
+        if self.action == "api" :
+            operation = self.http.params.get("alien", False)
+            if not operation :
+                raise exc.HTTPBadRequest("you did a bad thing")
+            self.api = True
+            self.action = operation 
 
         self.session = session
         
@@ -613,6 +621,8 @@ class MICA(object):
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
+                if req.api :
+                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
                 if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
                     self.install_local_language(req)
                     resp = self.common(req)
@@ -622,6 +632,8 @@ class MICA(object):
         except exc.HTTPTemporaryRedirect, e :
             resp = e
             resp.location = req.dest + resp.location
+        except exc.HTTPUnauthorized, e:
+            resp = e
         except exc.HTTPException, e:
             resp = e
         except couch_adapter.ResourceNotFound, e :
@@ -660,6 +672,10 @@ class MICA(object):
 
             resp = self.safe_execute(self.run_common, args = [req])
 
+        except exc.HTTPUnauthorized, e :
+            resp = e
+        except exc.HTTPBadRequest, e :
+            resp = e
         except Exception, e :
             merr("BAD MICA ********\nException:")
             for line in format_exc().splitlines() :
@@ -4850,6 +4866,9 @@ class MICA(object):
             self.install_local_language(req)
 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
+                if req.api :
+                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
+
                 if not mobile :
                     req.oauth = params["oauth"]
                 req.mica = self
@@ -5016,6 +5035,10 @@ class MICA(object):
 
         except exc.HTTPTemporaryRedirect, e :
             raise e
+        except exc.HTTPUnauthorized, e :
+            raise e
+        except exc.HTTPBadRequest, e :
+            raise e
         except couch_adapter.ResourceNotFound, e :
             return self.warn_not_replicated(req)
 
@@ -5044,6 +5067,7 @@ class MICA(object):
                 for line in format_exc().splitlines() :
                     merr("OTHER MICA ********" + line)
             return out
+
 
 class IDict(Interface):
     value = Attribute("Dictionary for holding session keys and values.")

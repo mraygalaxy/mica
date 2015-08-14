@@ -48,6 +48,15 @@ function local(msgid) {
       populateRefreshChoices();
   }
 
+  function go_callback(callback, data, opaque) {
+        if(callback != false && callback != undefined) {
+           if (opaque) 
+               callback(data, opaque);
+           else
+               callback(data);
+        }
+  }
+
   function go(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
       jQuery.support.cors = true;
       jQuery.ajax({
@@ -55,11 +64,15 @@ function local(msgid) {
         type: "GET",
         dataType: "html",
         error: function (XMLHttpRequest, ajaxOptions, thrownError) {
-              if(XMLHttpRequest.statusText == 'error') {
-                  $(id).html("<div class='hero-unit' style='padding: 5px'><h4>" + spinner + "&nbsp;&nbsp;" + error + "</h4></div>");
+              console.log("AJAX Status code: " + XMLHttpRequest.status);
+              if (XMLHttpRequest.status == 401) {
+                    window.location.href = "/";
+              } else {
+                  if(XMLHttpRequest.statusText == 'error') {
+                      $(id).html("<div class='hero-unit' style='padding: 5px'><h4>" + spinner + "&nbsp;&nbsp;" + error + "</h4></div>");
+                  }
+                 go_callback(callback, error, opaque);
               }
-             if(callback != false)
-               callback(error);
         },
         success: function (response) {
             var data = "none";
@@ -82,12 +95,7 @@ function local(msgid) {
 	                data = response;
 	            }
 
-                if(callback != false && callback != undefined) {
-                   if (opaque) 
-                       callback(data, opaque);
-                   else
-                       callback(data);
-                }
+                go_callback(callback, data, opaque);
 
                 if(write || (!write && !writeSubcontent)) {
                         //have to replace script or else jQuery will remove them
@@ -160,7 +168,7 @@ function trans_poll_finish(data, uuid) {
 }
 
 function trans_poll(uuid) {
-   go('', '/home?tstatus=1&uuid=' + uuid, 
+   go('', '/api?alien=read&tstatus=1&uuid=' + uuid, 
        '#tstatusresult',
        unavailable, 
        false, 
@@ -188,7 +196,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go('#translationstatus', '/home?translate=1&uuid=' + uuid, 
+   go('#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
        '#translationstatusresult', 
        unavailable, 
        true, 
@@ -514,7 +522,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
         $('#instantspin').attr('style', 'display: inline');
         $('#instantdestination').html("");
 
-       var url = '/instant?source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
+       var url = '/api?alien=instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
        if (username)
            url += "&username=" + username
@@ -566,7 +574,7 @@ function multipoprefresh(data, opaque) {
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go('#pop' + trans_id, '/home?view=1&uuid=' + uuid + '&multiple_select=1'
+          go('#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
@@ -631,7 +639,7 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go('#newaccountresultdestination', "/" + who + "?finish=1&code=" + code,
+    go('#newaccountresultdestination', "/api?alien=" + who + "&finish=1&code=" + code,
         '', 
         'error', 
         true,
@@ -643,7 +651,7 @@ function finish_new_account(code, who) {
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
-   var url = '/' + mode + '?view=1&uuid=' + uuid + '&page=' + page;
+   var url = '/api?alien=' + mode + '&view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
    if (show_both) {
@@ -677,10 +685,9 @@ function view(mode, uuid, page) {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
-	       $("#pagesingle").html(spinner + "&nbsp;" + local("loadingimage") + "...");
+           $("#pagesingle").html(spinner + "&nbsp;" + local("loadingimage") + "...");
        } else {
-	       $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext") + "...");
-       	
+           $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext") + "...");
        }
        
        go('#pagesingle', url, 
@@ -735,7 +742,7 @@ function memory_finish(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go('#memory' + id, '/read?uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go('#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -754,7 +761,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go('#memory' + id, '/read?source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go('#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           '#memoryresult',
           unavailable, 
           true, 
@@ -849,7 +856,7 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
-           go('#instantdestination', '/instant?source=' + st + "&lang=en", 
+           go('#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
               '#instantresult', 
               unavailable, 
               false, 
@@ -898,7 +905,7 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#memolist', '/read?uuid=' + uuid + '&memolist=1&page=' + page, 
+           go('#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
               unavailable, 
               true, 
@@ -908,7 +915,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#editslist', '/edit?uuid=' + uuid + '&editslist=1&page=' + page, 
+           go('#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
                   unavailable, 
                   true, 
@@ -918,7 +925,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go('#history', '/read?uuid=' + uuid + '&phistory=1&page=' + page, 
+           go('#history', '/api?alien=read&uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
                   unavailable, 
                   true, 
@@ -946,12 +953,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
+	   go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/home?switchmode=images', '', unavailable, false, false, false, false);
+	       go('#pagetext', '/api?alien=home&switchmode=images', '', unavailable, false, false, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -964,12 +971,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
+	       go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/home?switchmode=both', '', unavailable, false, false, false, false);
+	       go('#pagetext', '/api?alien=home&switchmode=both', '', unavailable, false, false, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -978,7 +985,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go('#pagetext', '/home?switchmode=text', '', unavailable, false, false, false, false);
+      go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -996,12 +1003,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go('#pagetext', '/read?meaningmode=false', '', unavailable, false, false, false, false);
+           go('#pagetext', '/api?alien=read&meaningmode=false', '', unavailable, false, false, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go('#pagetext', '/read?meaningmode=true', '', unavailable, false, false, false, false);
+           go('#pagetext', '/api?alien=read&meaningmode=true', '', unavailable, false, false, false, false);
            reveal_all(false);
        }
     });
@@ -1009,7 +1016,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go('#' + name, '/storylist?uuid=' + uuid + "&sync=1",
+    go('#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
         '', 
         'sync error', 
         false,
@@ -1023,7 +1030,7 @@ function syncstory(name, uuid) {
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go('#' + name, '/storylist?uuid=' + uuid + "&sync=0",
+    go('#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
         '', 
         'sync error', 
         false,
@@ -1047,7 +1054,7 @@ function finishedloading(unused) {
 function loadstories(unused) {
 
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go('#storypages', '/storylist?tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go('#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         '#storylistresult', 
         unavailable, 
         true, 
@@ -1057,7 +1064,7 @@ function loadstories(unused) {
 }
 
 function reviewstory(uuid, which) {
-    go('#storypages', '/home?reviewed=' + which + '&uuid=' + uuid,
+    go('#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
@@ -1067,7 +1074,7 @@ function reviewstory(uuid, which) {
 }
 
 function finishstory(uuid, which) {
-    go('#storypages', '/home?finished=' + which + '&uuid=' + uuid,
+    go('#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
@@ -1295,7 +1302,7 @@ function newContact(who) {
 
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
-    url = "/chat?history=" + peer + "&tzoffset=" + tzoffset;
+    url = "/api?alien=chat&history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
     go('#pagesingle', url, 
           '#chathistoryresult',
