@@ -228,7 +228,7 @@ var _callbacks_ = {
 	     }
 	    }
 
-	    $("#msgArea").on( "keyup", self.enter);
+	    $("#msgArea").one( "keyup", self.enter);
 	    $("#msgArea").bind('input propertychange', self.keyPress);
 	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
@@ -341,7 +341,7 @@ var _callbacks_ = {
                     //self.sendText();
                 self.updateDialog();
             }
-	    console.log("Finished with keypress now.");
+            console.log("Finished with keypress now.");
             return false;
         };
 
@@ -433,7 +433,9 @@ var _callbacks_ = {
                                 collision: "none"});
         }
 
+        self.last_api = '';
         self.updateDialog = function(){
+                
             if (!self.last_key_was_backspace && self.currentText.length > 0) {
 
                 var pair = getPairs(); 
@@ -448,6 +450,16 @@ var _callbacks_ = {
                     var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
                 }
 		*/
+                    var chat_language = chat_target_language;
+                     
+                    var micaurl = "/api?alien=chat_ime&ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+
+                    if (micaurl == self.last_api) {
+                        console.log("Ignoring duplicate api request from wierd keypress");
+                        return false;
+                    }
+
+                    self.last_api = micaurl;
 
                 //if (true || options && options.length){
                     var $box = $('#chinese-ime');
@@ -458,39 +470,36 @@ var _callbacks_ = {
                         $('body').append($box);
                     }
                     //$box.find('.typing').text(self.currentText);
-                    var lis = [];
 
                     /* For now, assume that the target language
                      * is the same as the language the user's native
                      * language. We can fix this later. 
                      */
-                    var chat_language = chat_target_language;
-                     
-                    var micaurl = "/api=chat_ime&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
-                    $.get(micaurl, "", $.proxy(function(response, success){
-                        console.log("Response: " + response); 
-			var data = JSON.parse(response);
-			if(data.success)  {
-				if (!$.wordDatabase.hasWord(data.result.word, 10)){
-					$.wordDatabase.addWord(data.result.word, 10);
-					$.wordDatabase.setChoices(data.result.word, data.result.chars, data.result.lens);
-				}
+                    go('', micaurl, '', unavailable, false,   
+                        function(response, opaque){
+                            console.log("Response: " + response); 
+                            var data = JSON.parse(response);
+                            if(data.success)  {
+                                if (!$.wordDatabase.hasWord(data.result.word, 10)){
+                                    $.wordDatabase.addWord(data.result.word, 10);
+                                    $.wordDatabase.setChoices(data.result.word, data.result.chars, data.result.lens);
+                                }
 
-				$box.find('ul').html(data.result.human);
-			} else {
-				$box.find('ul').html(data.desc);
-				//self.callAjax(self.currentText, self.currentPage);
-			}
+                                $box.find('ul').html(data.result.human);
+                            } else {
+                                $box.find('ul').html(data.desc);
+                                //self.callAjax(self.currentText, self.currentPage);
+                            }
 
-                        $box.show();
-                        var caretPosition = self.$el.getCaretPosition();
-                        $box.css({
-                            position: 'absolute',
-                            left: self.$el.offset().left + caretPosition.left,
-                            top: self.$el.offset().top - (4 * caretPosition.top)
-                        });
-                    }, {}), 'html');
+                            $box.show();
+                            var caretPosition = self.$el.getCaretPosition();
+                            $box.css({
+                                position: 'absolute',
+                                left: self.$el.offset().left + caretPosition.left,
+                                top: self.$el.offset().top - (4 * caretPosition.top)
+                            });
+                    }, false, false);
 
             } else {
                 var $box = $('#chinese-ime').hide();
