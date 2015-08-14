@@ -53,19 +53,26 @@ def authenticate(username, password, auth_url) :
 while True:
     request = from_ejabberd()
     size = pack('>h', len(request))
+    log.write("Request start: " + request + "\n")
 
     values = request.split(":")
     action = values[0]
-    location = "http://localhost:" + str(parameters["port"])
+    domain = values[2]
+    if parameters["sslport"] != -1 :
+        location = "https://" 
+	port = int(parameters["sslport"])
+    else :
+        location = "http://" 
+	port = int(parameters["port"])
+    location += domain + ":" + str(port)
+    log.write("Location: " + location + "\n")
     if action == "auth" :
         user = values[1]
-        domain = values[2]
  	pw = values[3]
         log.write("Request: " + action + " user " + user + " domain " + domain + "\n")
         result, reason = authenticate(user, pw, location)
         log.write("Authenticate to location " + location + ": " + user + " result: " + str(result) + " reason: " + str(reason) + "\n")
     elif action == "isuser" :
-        log.write("Request: " + request + "\n")
         result = 1
     else :
         result = 0
