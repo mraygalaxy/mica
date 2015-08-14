@@ -466,7 +466,7 @@ var _callbacks_ = {
                      */
                     var chat_language = chat_target_language;
                      
-                    var micaurl = "/chat?ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+                    var micaurl = "/api=chat_ime&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
                     $.get(micaurl, "", $.proxy(function(response, success){
                         console.log("Response: " + response); 
