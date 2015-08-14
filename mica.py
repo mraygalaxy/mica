@@ -2993,7 +2993,8 @@ class MICA(object):
 
     def common_disconnect(self, req) : 
         self.clean_session(req)
-        return self.common_frontpage(req)
+        return self.bootstrap(req, "<script>window.location.href = '/';</script>")
+        #return self.common_frontpage(req)
 
     def common_privacy(self, req) :
         self.install_local_language(req)
@@ -3853,7 +3854,7 @@ class MICA(object):
                     output += "<br/><br/>"
                     output += "<h4>"
                     # Beginning of a message
-                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
+                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='/help'>"
                     # end of a message
                     output += _("please read the tutorial") + "</a>"
                     output += "</h4>"
@@ -4864,6 +4865,7 @@ class MICA(object):
                 connect_result = self.common_connect(req, from_third_party)
                 if connect_result :
                     return connect_result
+                return self.bootstrap(req, "<script>window.location.href = '/';</script>")
                 
             self.install_local_language(req)
 
