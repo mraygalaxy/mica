@@ -32,6 +32,7 @@ class CommonElement(Element) :
             template_name += "_template.html"
 
         conditionals["mobile"] = mobile
+        conditionals["req"] = req
 
         zoom_level = 1.0
 
@@ -158,14 +159,6 @@ class TranslationsElement(CommonElement) :
 
 class ModalsElement(CommonElement) :
     @renderer
-    def newaccountadmin(self, request, tag) :
-        if self.req.session.value['connected'] and not self.req.pretend_disconnected :
-            if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-                # Admin account, that is
-                tag(tags.h5(" ", tags.input(type="checkbox", name="isadmin"), " " + _("Admin")))
-        return tag
-
-    @renderer
     def user_languages(self, request, tag) :
         for l, readable in softlangs :
             option = tags.option(value=l)
@@ -175,9 +168,10 @@ class ModalsElement(CommonElement) :
     @renderer
     def modalslots(self, request, tag) :
         tag.fillSlots(
+                     admin = _("Admin"),
                      # This is one of the 'Account' menu items that describes the author of the software.
                      aboutsoftware = _("About this software"),
-                     newaccount = _("Create New Account"),
+                     createnewaccount = _("Create New Account"),
                      # Create account button
                      create = _("Create"),
                      uploadstory = _("Upload Story"),
@@ -276,23 +270,6 @@ class FrontPageElement(CommonElement) :
 
         self.req.mica.install_local_language(self.req, original_language)
         return tag
-
-    @renderer
-    def remember(self, request, tag) :
-        if 'last_remember' in self.req.session.value :
-            return tag(tags.input(type='checkbox', name='remember', checked='checked'))
-        else :
-            return tag(tags.input(type='checkbox', name='remember'))
-
-    @renderer
-    def address(self, request, tag) :
-       address = self.req.session.value["address"] if ("address" in self.req.session.value and self.req.session.value["address"] is not None) else self.req.credentials
-       return tag(tags.input(type="text", id="address", name="address", placeholder="Address", value=address))
-
-    @renderer
-    def username(self, request, tag) :
-       user = self.req.session.value['last_username'] if 'last_username' in self.req.session.value else ''
-       return tag(tags.input(type="text", id="username", name="username", placeholder="Username", value=user))
 
     @renderer
     def thirdparty(self, request, tag) :
@@ -657,38 +634,12 @@ class HTMLElement(CommonElement):
 
 class HeadElement(CommonElement):
     @renderer
-    def newaccount(self, request, tag) :
-        # unused right now, just here to save the icon information and comments
-        menu = [ 
-                 ("storylist" , ("/storylist", "book", _("Stories"))), 
-                 # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
-                 ("home" , ("/home", "home", _("Review"))), 
-                 # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
-                 ("edit" , ("/edit", "pencil", _("Edit"))), 
-                 # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
-                 ("read" , ("/read", "book", _("Read"))),
-                 # 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
-                 ("chat" , ("/chat", "comment", _("Chat"))),
-            ]
-
-        if not mobile and "isadmin" in self.req.session.value and self.req.session.value["isadmin"] :
-            ttag = tags.a(**{"data-toggle" : "modal", "href" : "#newAccountModal", "data-backdrop" : "static", "data-keyboard" : "false"})
-            # Make a new account, a button inside the 'Account' section of the top-most navigation panel
-            ttag(tags.i(**{"class" : "glyphicon glyphicon-plus-sign"}), " " + _("New Account"))
-            return tags.li(ttag)
-        return ""
-
-    @renderer
     def modals(self, request, tag) :
         return ModalsElement(self.req)
 
     @renderer
     def translations(self, request, tag) :
         return TranslationsElement(self.req)
-
-    @renderer
-    def scriptswitch(self, request, tag) :
-         return tag("" if not self.req.session.value["connected"] else ("switchinstall(" + ("true" if ('list_mode' in self.req.session.value and self.req.session.value['list_mode']) else "false") + ");\n"))
 
     @renderer
     def head(self, request, tag) :
@@ -724,8 +675,11 @@ class HeadElement(CommonElement):
                      password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
+                     # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
                      readmode = _("Read"),
+                     # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                      reviewmode = _("Review"),
+                     # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
                      editmode = _("Edit"),
                      mpath = self.req.mpath + '/icon-120x120.png',
                      pull = pull,
@@ -743,6 +697,8 @@ class HeadElement(CommonElement):
                      privacy = _("Privacy"),
                      switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
                      uploadstory = _("Upload New Story"),
+                     # Make a new account, a button inside the 'Account' section of the top-most navigation panel
+                     newaccount = _("New Account"),
                      )
         return tag
 
