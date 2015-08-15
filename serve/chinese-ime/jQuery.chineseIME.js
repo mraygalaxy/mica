@@ -199,8 +199,7 @@ var _callbacks_ = {
         self.clearOld(-2);
         document.getElementById("msgArea").focus();
         //self.options = [];
-        self.html = '<ul class="options"></ul>';
-        self.url = '//www.google.com/inputtools/request?ime=pinyin&ie=utf-8&oe=utf-8&app=translate&uv'
+        self.html = "<ul data-role='none' class='options'></ul>";
         self.paramNames = {'text': 'text',
                            'num': 'num',
                            'callback': 'cb'}
@@ -215,21 +214,20 @@ var _callbacks_ = {
             return false; 
         }
         self.init = function(){
-            
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-	     self.enter = function( event ) {
+	    self.enter = function( event ) {
 		
-		    if(event.which ==13)  //13 is for enterkey
-	     {
-		 event.preventDefault();
-	      	 console.log("GOT ENTER EVENT!!!!!!"); 
-		 self.keyPress(event);
-	     }
+                if(event.which ==13)  //13 is for enterkey
+                 {
+                     event.preventDefault();
+                     console.log("GOT ENTER EVENT!!!!!!"); 
+                     self.keyPress(event);
+                 }
 	    }
 
 	    $("#msgArea").one( "keyup", self.enter);
-	    $("#msgArea").bind('input propertychange', self.keyPress);
+	    $("#msgArea").unbind().bind('input propertychange', self.keyPress);
 	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
@@ -541,9 +539,7 @@ var _callbacks_ = {
                     self.currentText = text;
                     self.updateDialog();
                 } else {
-                    //$.get(self.url, params, $.proxy(function(response, success){
                         self.updateDialog();
-                    //}, {'text': text, 'page': page, 'num': num, 'callback': callback}), 'script');
                 }
             }
         };
