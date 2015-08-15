@@ -41,9 +41,10 @@ function switchlist() {
 $("[data-role='header'],[data-role='footer']").toolbar();
 $("[data-role=panel]").panel().enhanceWithin();
 
-$(document).bind("mobileinit", function(){ 
-        $.extend(  $.mobile , { ajaxEnabled: false });
-});
+//$.mobile.ignoreContentEnabled = true;
+//$(document).bind("mobileinit", function(){ 
+//        $.extend(  $.mobile , { ajaxEnabled: false });
+//});
 
 /*
 $.mobile.loading("hide");
@@ -65,8 +66,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go('#chat_content', '/api?alien=chat', 
-                    '#chat_content_result', unavailable, true, chat_success, true);
+                   go('#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
                 }
         }
    }

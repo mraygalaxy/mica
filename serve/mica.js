@@ -97,7 +97,7 @@ function local(msgid) {
 
                 go_callback(callback, data, opaque);
 
-                if(write || (!write && !writeSubcontent)) {
+                if((write || (!write && !writeSubcontent)) && response.indexOf('<script') != -1) {
                         //have to replace script or else jQuery will remove them
                         $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
                             if (!$(this).attr('src')) {

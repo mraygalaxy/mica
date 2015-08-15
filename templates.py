@@ -621,6 +621,7 @@ class HTMLElement(CommonElement):
                      favicon = self.req.mpath + "/icon-120x120.png",
                      imecss = self.req.mpath + "/chinese-ime/ime.css",
                      jquery = self.req.mpath + "/jquery-1.11.3.min.js",
+                     jquery_full = self.req.mpath + "/jquery-1.11.3.js",
                      micajs = self.req.mpath + "/mica.js",
                      bootminjs = self.req.bootstrappath + "/js/bootstrap.min.js",
                      jqmjs = self.req.mpath + "/jquery.mobile-1.4.5.min.js",
