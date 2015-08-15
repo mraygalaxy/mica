@@ -465,7 +465,7 @@ var _callbacks_ = {
                         $box = $(document.createElement('div')).
                                 attr({'id': 'chinese-ime'}).
                                 html(self.html)
-                        $('body').append($box);
+                        $('#chat_content').append($box);
                     }
                     //$box.find('.typing').text(self.currentText);
 
@@ -495,7 +495,7 @@ var _callbacks_ = {
                             $box.css({
                                 position: 'absolute',
                                 left: self.$el.offset().left + caretPosition.left,
-                                top: self.$el.offset().top - (4 * caretPosition.top)
+                                top: self.$el.offset().top + caretPosition.top
                             });
                     }, false, false);
 

@@ -1583,7 +1583,7 @@ class MICA(object):
                 line_out.append("""
                         <tr><td>                
                             <div style='width: 100%'>
-                                <span class='badge """ + msgclass + """' style='background-color: """ + ('#f0f0f0' if not history else 'white') + """; border: 1px solid grey'>
+                                <span class='badge """ + msgclass + """' style='background-color: """ + ('#f0f0f0' if not history else 'white') + """; border: 1px solid grey; color: black'>
                                     <table><tr><td>&nbsp</td><td>
                 """)
 

@@ -1177,7 +1177,7 @@ var chat_username = false;
 function appendBox(who, ts, msg, msgclass, reverse) {
         var html = '<tr><td>';
         var id = ("" + who).split("@");
-        html += "<div style='width: 100%'><span class='badge " + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey'><table><tr><td>&nbsp</td>";
+        html += "<div style='width: 100%'><span class='badge " + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black'><table><tr><td>&nbsp</td>";
         sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
         sendtime += "<td style='vertical-align: top'>";
         sendtime += "&nbsp;" + make_date(ts) + "</td>";
