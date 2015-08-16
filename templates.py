@@ -23,6 +23,16 @@ if not mobile :
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
+class MessagesElement(Element) :
+    def __init__(self, req) :
+        super(MessagesElement, self).__init__() 
+        self.req = req
+        self.loader = XMLString(req.messages)
+
+    @renderer
+    def messages(self, request, tag) :
+        return tag
+
 class CommonElement(Element) :
     def __init__(self, req, template_name = False, conditionals = {}) :
         super(CommonElement, self).__init__() 
@@ -155,6 +165,8 @@ class TranslationsElement(CommonElement) :
                      started = _("Started (stop?)"),
                      stopping = _("Stopping"),
                      stopped = _("Stopped (start?)"),
+                     startsync = _("Start Syncing"),
+                     stopsync = _("Stop Syncing"),
                         )
         return tag
 
@@ -636,6 +648,10 @@ class HTMLElement(CommonElement):
 
 class HeadElement(CommonElement):
     @renderer
+    def messages(self, request, tag) :
+        return MessagesElement(self.req)
+
+    @renderer
     def modals(self, request, tag) :
         return ModalsElement(self.req)
 
@@ -719,6 +735,8 @@ class HeadElement(CommonElement):
                      uploadstory = _("Upload New Story"),
                      # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                      newaccount = _("New Account"),
+                     chat = _("Chat"),
+                     learn = _("Learn"),
                      )
         return tag
 

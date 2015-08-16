@@ -1551,7 +1551,7 @@ function start_learning_finished(data, reloadstories) {
 
 var exploded_uuid = false;
 var exploded_name = false;
-function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized) {
+function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus) {
     exploded_uuid = uuid;
     exploded_name = name;
     $.mobile.navigate('#explode');
@@ -1588,6 +1588,12 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     } else {
         $("#deleteoption").attr('style', 'display: block');
         $("#translateoption").attr('style', 'display: block');
+    }
+
+    if (syncstatus) {
+        $("#syncstatus").html("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('startsync') + "</a>");
+    } else {
+        $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
     }
 }
 

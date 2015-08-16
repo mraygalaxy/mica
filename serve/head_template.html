@@ -4,9 +4,9 @@
     <div t:render="translations"/>
     <div data-role='panel' data-display="reveal" id='settings'>
         <ul data-role='listview' data-inset='true'>
-            <li><a onclick="start_learning('home', 'view', false, false)"><t:slot name='reviewmode'/></a></li>
-            <li><a onclick="start_learning('read', 'view', false, false)"><t:slot name='readmode'/></a></li>
-            <li><a onclick="start_learning('edit', 'view', false, false)"><t:slot name='editmode'/></a></li>
+            <li><a onclick="start_learning('home', 'view', false, false)"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+            <li><a onclick="start_learning('edit', 'view', false, false)"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+            <li><a onclick="start_learning('read', 'view', false, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
         </ul>
         <table>
         <tr>
@@ -34,7 +34,7 @@
         <ul data-role='listview' data-inset='true'>
             <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
             <li>
-                <a data-toggle='modal' href='#newAccountModal' data-backdrop='static' data-keyboard='false'>
+                <a onclick="$('#settings').panel('close');" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
                     <i class='glyphicon glyphicon-plus-sign'/> <t:slot name='newaccount'/>
                 </a>
             </li>
@@ -46,7 +46,7 @@
             <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
             <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
             <!--(if not mobile)-->
-            <li><a href='#uploadModal' data-toggle='modal' data-backdrop='static' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
+            <li><a href='#uploadModal' onclick="$('#settings').panel('close');" data-toggle='modal' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
             <!--(end)-->
         </ul>
     </div>
@@ -60,9 +60,11 @@
     <div data-role='page' id='account'><div data-role='content' id='account_content'></div></div>
     <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
     <div data-role='page' id='privacy'><div data-role='content' id='privacy_content'></div></div>
+    <div data-role='page' id='messages'><div data-role='content'><div t:render="messages"/></div></div>
     <div data-role='page' id='stories'>
         <div data-role='content'>
 		<div id='storypages'></div>
+		<div id='uploadresult'></div>
 		<br/>
 		<ul data-role='listview' data-inset='true'>
 		    <li><a href='#reading'><t:slot name='reading'/></a></li>
@@ -78,6 +80,7 @@
         <h4>&#160;&#160;<b id='explodedstory'/></h4>
         <div data-role='content' id='explode_content'>
 		<ul data-role='listview' data-inset='true'>
+                        
 		    <li><a onclick="start_learning('read', 'view', exploded_uuid, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
 		    <li><a onclick="start_learning('home', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
 		    <li><a onclick="start_learning('edit', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
@@ -86,6 +89,10 @@
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
 		    <li id='reviewedoption'><a onclick="reviewstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-arrow-up'></i> <t:slot name='reviewed'/></a></li>
 		    <li id='romanizedoption'><a id='romanizedlink' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
+                    <!--(if mobile)-->
+                    <li id='syncstatus'></li>
+                    <!--(end)-->
+
                     <!--(if not mobile)-->
                     <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
 		    <li><a id='originaloption' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
@@ -99,10 +106,10 @@
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
       <div data-role='navbar' data-icon-pos='right'>
       <ul>
-      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-gear' href='#settings'>Account</a></li>
-      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#learn'>Learn</a></li>
-      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-comment' href='#chat'>Chat</a></li>
-      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all ui-btn-icon-left ui-icon-home' href='#stories'><t:slot name='stories'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#settings'><i class='glyphicon glyphicon-user'></i> <t:slot name='username'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#learn'><i class='glyphicon glyphicon-book'></i> <t:slot name='learn'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#chat'><i class='glyphicon glyphicon-comment'></i> <t:slot name='chat'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#stories'><i class='glyphicon glyphicon-folder-open'></i> <t:slot name='stories'/></a></li>
       </ul>
       </div>
     </div>
