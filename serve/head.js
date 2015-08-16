@@ -103,4 +103,4 @@ $(document).on("pagecreate", function () {
         $(".ui-panel-wrapper").css("height", height + 1);
     });
 });
-$.mobile.navigate('#learn');
+//$.mobile.navigate('#learn');

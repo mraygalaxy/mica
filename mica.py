@@ -187,6 +187,7 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
+        self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         self.api = False
         if self.action is None or self.action == "":
@@ -619,7 +620,7 @@ class MICA(object):
                     merr("Must re-login: " + str(e))
                     self.clean_session(req)
                     # The user has completed logging out / signing out already - then this message appears.
-                    resp = self.bootstrap(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
+                    resp = self.message(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
                 if req.api :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
@@ -715,26 +716,15 @@ class MICA(object):
             if wrap:
                 out += "</div></div>"
 
-            return self.bootstrap(req, out, now = True)
+            return self.bootstrap(req, out)
         else :
-            return self.bootstrap(req, json_dumps(json), now = True)
+            return self.bootstrap(req, json_dumps(json))
 
-    def bootstrap(self, req, body, now = False) :
+    def bootstrap(self, req, body) :
         if isinstance(body, str) :
             body = body.decode("utf-8")
-
-        if now :
-            contents = body
-        else :
-            req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-            req.user = req.db.try_get(self.acct(req.session.value['username']))
-            req.mica = self
-            contents = run_template(req, HeadElement)
-            fh = open(cwd + 'serve/head.js')
-            contents = contents.replace(u"BOOTSCRIPTHEAD", fh.read())
-            fh.close()
-    
-        return contents if now else (u"<!DOCTYPE html>\n" + contents)
+        contents = body
+        return u"<!DOCTYPE html>\n" + body 
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -2097,6 +2087,7 @@ class MICA(object):
             notsure.append(", " + ('true' if finished else 'false'))
             notsure.append(", " + ('true' if reviewed else 'false'))
             notsure.append(", " + ('true' if "filetype" in story and story["filetype"] == "chat" else 'false'))
+            notsure.append(", " + ('true' if "download" not in story or not story["download"] else 'false'))
 
             if not mobile and not gp.already_romanized and (finished or reviewed) :
                 notsure.append(", 'true'")
@@ -2105,31 +2096,25 @@ class MICA(object):
 
             notsure.append(");\" title='" + _("Open") + "' style='font-size: x-small' class='btn-default'>")
 
+            notsure.append("<table width='100%'><tr><td>")
+
             if "source_language" in story :
                 notsure.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
 
-            notsure.append("<b> " + rname + "</b>")
+            notsure.append("<b style='word-break: break-all;'> " + rname + "</b>")
 
-            '''
             if (finished or reviewed or story["translated"]) and "pr" in story :
                 pr = story["pr"]
+                notsure.append("</td><td style='width: 20%; padding-right: 10px; vertical-align: middle'>")
                 notsure.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-                notsure.append(pr + "%;'> (" + pr + "%)</div></div>")
-                
-            if mobile :
-                if "download" not in story or not story["download"] :
-                    syncing = _("Syncing")
-                    notsure.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Start Syncing") + "</a>")
-                else :
-                    notsure.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Stop Syncing") + "</a>")
-            '''
+                notsure.append(pr + "%;'> (" + pr + "%)</div></div></td><td>")
 
+            closing = "</td></tr></table></a></li>"
 
             if not story["translated"] : 
                 untrans_count += 1
                 untrans += notsure
 
-                '''
                 if not mobile :
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
@@ -2142,24 +2127,23 @@ class MICA(object):
 
                 if "translating" in story and story["translating"] :
                     untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
-                '''
-                untrans.append("</a></li>")
+                untrans.append(closing)
             else : 
                 if finished :
                    finish += notsure
-                   finish.append("</a></li>")
+                   finish.append(closing)
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
                        chatting[period_mapping[period]] += notsure
-                       chatting[period_mapping[period]].append("</a></li>")
+                       chatting[period_mapping[period]].append(closing)
                    else :
                        reading_count += 1
                        reading += notsure
-                       reading.append("</a></li>")
+                       reading.append(closing)
                 else :
                    noreview += notsure
-                   noreview.append("</a></li>")
+                   noreview.append(closing)
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
     
@@ -2350,7 +2334,7 @@ class MICA(object):
         if filetype == "chat" :
             assert(not req.db.doc_exist(self.story(req, filename)))
         elif req.db.doc_exist(self.story(req, filename)) :
-            return self.bootstrap(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
+            return self.message(req, self.heromsg + "\n" + _("Upload Failed! Story already exists") + ": " + filename + "</div>")
         
         mdebug("Received new story name: " + filename)
 
@@ -2867,7 +2851,7 @@ class MICA(object):
             out += str(e)
 
         mdebug("Submitted: " + str(job))
-        return self.bootstrap(req, out)
+        return self.message(req, out)
             
     def forgetstory(self, req, uuid, name) :
         tmp_story = req.db[self.story(req, name)]
@@ -2973,7 +2957,7 @@ class MICA(object):
 
     def render_switchlang(self, req) :
         if not req.http.params.get("lang") :
-            return self.bootstrap(req, 'error', now = True)
+            return self.bootstrap(req, 'error')
 
         req.session.value["language"] = req.http.params.get("lang")
         req.session.save()
@@ -2987,7 +2971,7 @@ class MICA(object):
             raise exc.HTTPBadRequest("you did a bad thing")
 
         if not req.http.params.get("username") or not req.http.params.get("password") :
-            return self.bootstrap(req, 'error', now = True)
+            return self.bootstrap(req, 'error')
 
         username = req.http.params.get("username").lower()
         password = req.http.params.get("password")
@@ -2998,13 +2982,13 @@ class MICA(object):
             auth_user, reason = self.authenticate(username, password, self.credentials())
 
             if not auth_user :
-                return self.bootstrap(req, 'bad', now = True)
+                return self.bootstrap(req, 'bad')
             else :
                 mdebug("Success jabber auth w/ password: " + username)
         else :
             mdebug("Success jabber auth w/ token: " + username)
 
-        return self.bootstrap(req, 'good', now = True)
+        return self.bootstrap(req, 'good')
 
     def render_online(self, req) :
         v = self.api_validate(req)
@@ -3397,6 +3381,27 @@ class MICA(object):
 
         return self.api(req, out, False) 
 
+    def message(self, req, msg, pageid = "#messages") :
+        req.messages += "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + msg + "</div>"
+        body = u"\n$.mobile.navigate('" + pageid + u"');\n"
+
+        if isinstance(body, str) :
+            body = body.decode("utf-8")
+
+        req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
+        req.user = req.db.try_get(self.acct(req.session.value['username']))
+        req.mica = self
+        if req.messages == "" :
+            req.messages = "<div></div>"
+        contents = run_template(req, HeadElement)
+        fh = open(cwd + 'serve/head.js')
+        bootscript = fh.read()
+        fh.close()
+        bootscript += body
+        contents = contents.replace(u"BOOTSCRIPTHEAD", bootscript)
+    
+        return u"<!DOCTYPE html>\n" + contents
+
     def render_uploadfile(self, req) :
         fh = req.http.params.get("storyfile")
         filetype = req.http.params.get("filetype")
@@ -3431,7 +3436,8 @@ class MICA(object):
             # This appears when the user tries to upload a story document that is too large.
             # At the end of the message will appear something like '30 MB', or whatever is
             # the current maximum file size allowed by the system.
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB.</h4></div>")
+            msg = self.heromsg + "\n<h4>" + _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB.</h4></div>"
+            return self.message(req, msg)
 
         mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
@@ -3464,7 +3470,7 @@ class MICA(object):
                 out += (" " + str(story["translating_pages"])) if "translating_pages" in story else "1"
                 
         out += "</div>"
-        return self.bootstrap(req, self.heromsg + "\n" + out + "</div>", now = True)
+        return self.bootstrap(req, self.heromsg + "\n" + out + "</div>")
 
     def render_finished(self, req, story) :
         name = story["name"]
@@ -3473,7 +3479,7 @@ class MICA(object):
         tmp_story["finished"] = finished 
         req.db[self.story(req, name)] = tmp_story 
         # Finished reviewing a story in review mode.
-        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>", now = True)
+        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Finished") + ".</h4></div>")
 
     def render_reviewed(self, req, story) :
         name = story["name"]
@@ -3502,7 +3508,7 @@ class MICA(object):
                     
                 req.db[self.story(req, name) + ":final"] = final
         req.db[self.story(req, name)] = tmp_story 
-        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>", now = True)
+        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Reviewed") + ".</h4></div>")
 
     def render_translate(self, req, story) :
         output = "<div id='translationstatusresult'>" + self.heromsg
@@ -3517,7 +3523,7 @@ class MICA(object):
             except Exception, e :
                 output += _("Failed to translate story") + ": " + str(e)
         output += "</div></div>"
-        return self.bootstrap(req, output, now = True)
+        return self.bootstrap(req, output)
 
     def render_jobs(self, req, jobs) :
         out = self.heromsg + "\n<h4>" + _("MICA is busy processing the following. Please wait") + ":</h4></div>\n"
@@ -3555,7 +3561,7 @@ class MICA(object):
                 del jobs["list"][job["uuid"]]
             req.db["MICA:jobs"] = jobs
 
-        return self.bootstrap(req, out)
+        return self.message(req, out)
 
     def render_multiple_select(self, req, story) :
         nb_unit = int(req.http.params.get("nb_unit"))
@@ -3566,7 +3572,7 @@ class MICA(object):
 
         return self.bootstrap(req, self.heromsg + "\n<div id='multiresult'>" + \
                                    self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page) + \
-                                   "</div></div>", now = True)
+                                   "</div></div>")
 
     def render_memorizednostory(self, req, story) :
         memorized = int(req.http.params.get("memorizednostory"))
@@ -3587,7 +3593,7 @@ class MICA(object):
                 del req.db[self.memorized(req, nshash)]
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
-                                   str(nshash) + "</div></div>", now = True)
+                                   str(nshash) + "</div></div>")
 
     def render_memorized(self, req, story) :
         memorized = int(req.http.params.get("memorized"))
@@ -3613,36 +3619,36 @@ class MICA(object):
                 del req.db[self.memorized(req, unit["hash"])]
             
         return self.bootstrap(req, self.heromsg + "\n<div id='memoryresult'>" + _("Memorized!") + " " + \
-                                   unit["hash"] + "</div></div>", now = True)
+                                   unit["hash"] + "</div></div>")
 
     def render_storyupgrade(self, req, story) :
         name = story["name"]
         if mobile :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
+            return self.message(req, self.heromsg + "\n<h4>" + _("Story upgrades not allowed on mobile devices.") + ".</h4></div>")
 
         version = int(req.http.params.get("version"))
 
         original = 0
         if "format" not in story or story["format"] == 1 :
             if version != 2 :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 1") + " =>" + str(version) + ".</h4></div>")
             original = 1
 
         # Add new story upgrades to this list here, like this:
         #elif "format" in story and story["format"] == 2 :
         #    if version != 3 :
-        #        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 2") + " =>" + str(version) + ".</h4></div>")
+        #        return self.message(req, self.heromsg + "\n<h4>" + _("Invalid upgrade parameters 2") + " =>" + str(version) + ".</h4></div>")
         #    original = 2
         #    mdebug("Will upgrade from version 2 to 3")
 
         elif "format" in story and story["format"] == story_format and (not "upgrading" in story or not story["upgrading"]) :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
+            return self.message(req, self.heromsg + "\n<h4>" + _("Upgrade complete") + ".</h4></div>")
         else :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
+            return self.message(req, self.heromsg + "\n<h4>" + _("Invalid request.") + ".</h4></div>")
 
         if version > story_format :
             # 'format' referring to the database format the we are upgrading to
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
+            return self.message(req, self.heromsg + "\n<h4>" + _("No such story format") + " :" + str(version) + ".</h4></div>")
 
         if "upgrading" in story and story["upgrading"] :
             curr_page = story["upgrade_page"] if "upgrade_page" in story else 0
@@ -3658,7 +3664,7 @@ class MICA(object):
                 del story["last_error"]
                 req.db[self.story(req, name)] = story
                 story = req.db[self.story(req, name)]
-            return self.bootstrap(req, out)
+            return self.message(req, out)
 
         if "last_error" in story :
             mdebug("Clearing out last error message.")
@@ -3674,7 +3680,7 @@ class MICA(object):
         ut.daemon = True
         ut.start()
         mdebug("Upgrade thread started.")
-        return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
+        return self.message(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
 
     def render_memolist(self, req, story) :
         list_mode = self.get_list_mode(req)
@@ -3733,7 +3739,7 @@ class MICA(object):
             # statistics in reading mode are disabled
             output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
 
-        return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>", now = True)
+        return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>")
 
     def render_view(self, req, uuid, from_third_party, start_page) :
         view_mode = "text"
@@ -3758,7 +3764,7 @@ class MICA(object):
             gp = self.processors[self.tofrom(story)]
  
             if req.action == "edit" and gp.already_romanized :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
             
             if req.http.params.get("page") and not req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -3785,7 +3791,7 @@ class MICA(object):
                        # end of thes sentence, indicating that a particular image number doesn't exist.
                        output += _("not available on this page")
                     output += "</div></div>"
-                    return self.bootstrap(req, output, now = True)
+                    return self.bootstrap(req, output)
                 else :
                     output = ""
                     chat = history = True if ("filetype" in story and story["filetype"] == "chat") else False 
@@ -3794,14 +3800,14 @@ class MICA(object):
                     output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
                     if chat :
                         output += "</table>"
-                    return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>", now = True)
+                    return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>")
             output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
             output = ""
             if from_third_party and "output" in from_third_party :
-                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>")
             elif from_third_party and "redirect" in from_third_party :
-                return self.bootstrap(req, from_third_party["redirect"], now = True)
+                return self.bootstrap(req, from_third_party["redirect"])
 
             else :
                 # Beginning of a message.
@@ -3819,14 +3825,15 @@ class MICA(object):
                     output += _("please read the tutorial") + "</a>"
                     output += "</h4>"
                 output += "</div>"
+                return self.bootstrap(req, output)
 
-        return self.bootstrap(req, output, now = True)
+        return self.bootstrap(req, output)
 
     def render_stories(self, req, story) :
         ftype = "txt" if "filetype" not in story else story["filetype"]
         if ftype != "txt" :
             # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + \
+            return self.message(req, self.heromsg + "\n<h4>" + _("Story is a") + " " + \
                        # Tho original story format as it was imported, that is
                        ftype + ". " + _("Viewing original not yet implemented") + ".</h4></div>\n")
         
@@ -3836,10 +3843,10 @@ class MICA(object):
         if which == "original" :
             original = self.heromsg + _("Here is the original story. Choose from one of the options in the above navigation bar to begin learning with this story.") + "</div>"
             original += req.db[self.story(req, story["name"]) + ":original"]["value"]
-            return self.bootstrap(req, original.encode("utf-8").replace("\n","<br/>"))
+            return self.message(req, original.encode("utf-8").replace("\n","<br/>"))
         elif which == "pinyin" :
             final = req.db[self.story(req, story["name"]) + ":final"]["0"]
-            return self.bootstrap(req, final.encode("utf-8").replace("\n","<br/>"))
+            return self.message(req, final.encode("utf-8").replace("\n","<br/>"))
 
     def render_account(self, req, story) :
         out = ""
@@ -3871,18 +3878,18 @@ class MICA(object):
                 # The next handful of mundane phrases are associated with the creation
                 # and management of user accounts in the software program and the relevant
                 # errors that can occur while performing operations on a user's account.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
             oldpassword = req.http.params.get("oldpassword")
             newpassword = req.http.params.get("password")
             newpasswordconfirm = req.http.params.get("confirm")
 
             if len(newpassword) < 8 :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
             if newpassword != newpasswordconfirm :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
             auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
             if not auth_user :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
             try :
                 auth_user['password'] = newpassword
                 del self.dbs[username]
@@ -3891,19 +3898,19 @@ class MICA(object):
                 del self.dbs[username]
                 self.verify_db(req, req.session.value["database"], newpassword)
             except Exception, e :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                 
             out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
 
         elif req.http.params.get("resetpassword") :
             if mobile :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
 
             newpassword = binascii_hexlify(os_urandom(4))
 
             auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
             if not auth_user :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
 
             try :
                 auth_user['password'] = newpassword
@@ -3917,14 +3924,14 @@ class MICA(object):
                 for line in format_exc().splitlines() :
                     out += line + "\n"
                 merr(out)
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
                 
             out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
 
         elif req.http.params.get("newaccount") :
             if not self.userdb : 
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
             newusername = req.http.params.get("username").lower()
             newpassword = req.http.params.get("password")
@@ -3934,37 +3941,37 @@ class MICA(object):
             language = req.http.params.get("language")
 
             if newusername == "mica_admin" :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
 
             if len(newpassword) < 8 :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
             if newpassword != newpasswordconfirm :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
 
             if not req.session.value["isadmin"] :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
 
             if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
 
             if newusername.count(":") or newusername.count(";") :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
 
             self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
 
             out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
             if mobile :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
 
             username = req.http.params.get("username").lower()
 
             if not self.userdb : 
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
 
             if not self.userdb.doc_exist("org.couchdb.user:" + username) :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
 
             auth_user = self.userdb["org.couchdb.user:" + username]
 
@@ -3972,11 +3979,11 @@ class MICA(object):
             if req.session.value["username"] != username :
                 if not req.session.value["isadmin"] :
                     # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
+                    return self.message(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
                 role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
 
                 if role_length == 0 :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
+                    return self.message(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
 
             dbname = auth_user["mica_database"]
             mdebug("Confirming database before delete: " + dbname)
@@ -3990,7 +3997,7 @@ class MICA(object):
                 out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
             else :
                 self.clean_session(req)
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
 
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
@@ -4015,7 +4022,7 @@ class MICA(object):
                 email_user['email'] = email 
                 self.userdb["org.couchdb.user:" + username] = email_user
             except Exception, e :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
             user["email"] = email 
             req.db[self.acct(username)] = user
             req.session.save()
@@ -4024,7 +4031,7 @@ class MICA(object):
             chars_per_line = int(req.http.params.get("setappchars"))
             if chars_per_line > 1000 or chars_per_line < 5 :
                 # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
             user["app_chars_per_line"] = chars_per_line
             req.db[self.acct(username)] = user
             req.session.value["app_chars_per_line"] = chars_per_line 
@@ -4037,7 +4044,7 @@ class MICA(object):
 
             if tofrom not in processor_map :
                 # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
 
             if "filters" not in user :
                user["filters"] = {'files' : [], 'stories' : [] }
@@ -4055,7 +4062,7 @@ class MICA(object):
                 req.db.stop_replication()
 
                 if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
+                    return self.message(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
 
             req.db[self.acct(username)] = user
             req.session.save()
@@ -4074,7 +4081,7 @@ class MICA(object):
         elif req.http.params.get("setwebchars") :
             chars_per_line = int(req.http.params.get("setwebchars"))
             if chars_per_line > 1000 or chars_per_line < 5:
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
             user["web_chars_per_line"] = chars_per_line
             req.db[self.acct(username)] = user
             req.session.value["web_chars_per_line"] = chars_per_line 
@@ -4085,7 +4092,7 @@ class MICA(object):
             zoom = float(req.http.params.get("setappzoom"))
             if zoom > 3.0 or zoom < 0.5 :
                 # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
             user["default_app_zoom"] = zoom 
             req.db[self.acct(username)] = user
             req.session.value["default_app_zoom"] = zoom
@@ -4096,7 +4103,7 @@ class MICA(object):
             zoom = float(req.http.params.get("setwebzoom"))
             if zoom > 3.0 or zoom < 0.5 :
                 # Same as before, but specifically for an application running on the website 
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
+                return self.message(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
             user["default_web_zoom"] = zoom 
             req.db[self.acct(username)] = user
             req.session.value["default_web_zoom"] = zoom
@@ -4119,11 +4126,11 @@ class MICA(object):
             raise e
 
         if username == "demo" :
-            return self.bootstrap(req, out)
+            return self.message(req, out)
 
         out += run_template(req, PostAccountElement)
 
-        return self.bootstrap(req, out, now = True)
+        return self.bootstrap(req, out)
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
@@ -4179,7 +4186,7 @@ class MICA(object):
                         break
 
             out += "\n</table></div>"
-            return self.bootstrap(req, out, now = True)
+            return self.bootstrap(req, out)
 
         req.main_server = params["main_server"]
 
@@ -4193,14 +4200,14 @@ class MICA(object):
         }
 
         if self.tofrom(story) not in self.processors :
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."), now = True)
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
 
 
         req.gp = self.processors[self.tofrom(story)]
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
         out = run_template(req, ChatElement)
-        return self.bootstrap(req, out, now = True)
+        return self.bootstrap(req, out)
 
     def render_storylist(self, req, unused_story) :
         if req.http.params.get("sync") :
@@ -4224,13 +4231,13 @@ class MICA(object):
             if mobile :
                 req.db.stop_replication()
                 if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Failed to change synchronization. Please try again") + ": " + tofrom + ".</h4></div>")
+                    return self.message(req, self.heromsg + "\n<h4>" + _("Failed to change synchronization. Please try again") + ": " + tofrom + ".</h4></div>")
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
             req.session.save()
 
-            return self.bootstrap(req, "changed", now = True)
+            return self.bootstrap(req, "changed")
 
         if not req.http.params.get("tzoffset") :
             return self.bootstrap(req, "<script>loadstories(false, false);</script>")
@@ -4242,7 +4249,7 @@ class MICA(object):
         result = repeat(self.makestorylist, args = [req, tzoffset], kwargs = {})
         
         if not result[0] and len(result) > 1 :
-            return self.bootstrap(req, result[1])
+            return self.message(req, result[1])
         
         untrans_count, reading, noreview, untrans, finish, reading_count, chatting = result[1:]
         
@@ -4288,18 +4295,18 @@ class MICA(object):
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
 
-        return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>", now = True)
+        return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>")
 
     def render_phistory(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
                                    # statistics in review mode are disabled
                                    (self.history(req, story, req.http.params.get("page")) if self.get_list_mode(req) else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
-                                   "</div></div>", now = True)
+                                   "</div></div>")
 
     def render_editslist(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
                                    self.edits(req, story, req.http.params.get("page")) + \
-                                   "</div></div>", now = True)
+                                   "</div></div>")
 
     def baidu_compliance_fix(self, session):
         self.fixed = False
@@ -4341,18 +4348,18 @@ class MICA(object):
                 desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                 if reason == "user_denied" :
                     # User denied our request to create their account using social networking. Apologize and move on.
-                    return self.bootstrap(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
+                    return self.message(req, self.heromsg + "<h4>" +  _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.") + "</h4></div>")
                 else :
                     # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                    return self.bootstrap(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
+                    return self.message(req, self.heromsg + "<h4>" + _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ").</h4></div>")
             else :
                 # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
-                return self.bootstrap(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
+                return self.message(req, self.heromsg + "<h4>" + _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + ".</h4></div>")
 
         code = req.http.params.get("code")
 
         if not req.http.params.get("finish") :
-            return self.bootstrap(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
+            return self.message(req, "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>")
 
 
         service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
@@ -4385,14 +4392,14 @@ class MICA(object):
             assert(creds["verified_key"] in values)
 
             if not values[creds["verified_key"]] :
-                return self.bootstrap(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
+                return self.message(self.heromsg + "<h4>" + _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.") + "</h4></div>")
 
         if creds["email_key"] and creds["email_key"] not in values :
             authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
             out = self.heromsg + "<h4>" + _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
             out += authorization_url
             out += "'>" + _("You're welcome to try again") + "</a>" + "</h4></div>"
-            return self.bootstrap(req, out)
+            return self.message(req, out)
 
         password = binascii_hexlify(os_urandom(4))
         if "locale" not in values :
@@ -4418,11 +4425,9 @@ class MICA(object):
         if creds["email_key"] :
             from_third_party["username"] = values["email"]
 
-        #return self.bootstrap(req, "User info fetched: " + str(from_third_party))  
-
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
-                return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
+                return self.message(req, self.heromsg + "<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mdebug("Language: " + language)
@@ -4443,7 +4448,7 @@ class MICA(object):
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
-                return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
+                return self.message(req, self.heromsg + "<h4>" + _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again") + "</h4></div>")
 
         return from_third_party
 
@@ -4458,7 +4463,7 @@ class MICA(object):
             req.session.value["from_third_party"] = False 
             if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                return self.bootstrap(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
+                return self.message(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
             username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
 
@@ -4491,7 +4496,7 @@ class MICA(object):
 
         if not auth_user :
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            return self.bootstrap(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
+            return self.message(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
@@ -4511,7 +4516,7 @@ class MICA(object):
                appuser = req.db["MICA:appuser"]
                if appuser["username"] != username :
                     # Beginning of a message 
-                    return self.bootstrap(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                    return self.message(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
                         # next part of the same message 
                         appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
                          # next part of the same message 
@@ -4530,7 +4535,7 @@ class MICA(object):
                 req.session.save()
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                return self.bootstrap(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
+                return self.message(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
 
         req.action = "home"
         req.session.value['connected'] = True 
@@ -4752,7 +4757,7 @@ class MICA(object):
                 return self.warn_not_replicated(req)
             
             if not result[0] and len(result) > 1 :
-                return self.bootstrap(req, result[1])
+                return self.message(req, result[1])
             
             ret = result[1:]
             success = ret[0]
@@ -4760,21 +4765,21 @@ class MICA(object):
             
             if not success :
                 # This occurs in Edit mode when a merge/split request failed.
-                return self.bootstrap(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
+                return self.message(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
 
         return False
 
     def render_rest(self, req, from_third_party) :
         if from_third_party and "output" in from_third_party :
-            return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>", now = True)
+            return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>")
         elif from_third_party and "redirect" in from_third_party :
-            return self.bootstrap(req, from_third_party["redirect"], now = True)
+            return self.bootstrap(req, from_third_party["redirect"])
         else :
             # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
             out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
             out += _("please read the tutorial") + "</a>"
-        return self.bootstrap(req, out)
+        return self.message(req, out)
 
 
     def get_list_mode(self, req) :
@@ -4816,7 +4821,6 @@ class MICA(object):
                 if connect_result :
                     return connect_result
                 return "<html><body><script>window.location.href = '/';</script></body></html>"
-                #return self.bootstrap(req, "<script>window.location.href = '/';</script>")
                 
             self.install_local_language(req)
 
@@ -4835,7 +4839,7 @@ class MICA(object):
             if req.action == "chat_ime" :
                 return self.render_chat_ime(req)
 
-            for param in ["upload_file", "uploadtext"] :
+            for param in ["uploadfile", "uploadtext"] :
                 if req.http.params.get(param) :
                     return getattr(self, "render_" + param)(req)
 
@@ -4890,7 +4894,7 @@ class MICA(object):
                 if not req.db.doc_exist(self.index(req, uuid)) :
                     self.clear_story(req)
                     # The user tried to access a story that does not exist (probably because they deleted it), but because they navigated to an old webpage address, they provide the software with a UUID (identifier) of a non-existent story by accident due to the browser probably having cached the address in the browser's history. 
-                    return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
+                    return self.message(req, self.heromsg + "\n<h4>" + _("Invalid story uuid") + ": " + uuid + "</h4></div>")
 
             for param in ["tstatus", "finished", "reviewed", "translate"] :
                 if req.http.params.get(param) :
@@ -4906,18 +4910,18 @@ class MICA(object):
                 req.session.value["view_mode"] = req.http.params.get("switchmode")
                 req.session.save()
                 # The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>")
 
             if req.http.params.get("meaningmode") :
                 req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
                 req.session.save()
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Mode changed") + ".</h4></div>")
 
             if req.http.params.get("switchlist") :
                 req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
                 req.session.save()
                 # This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>", now = True)
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("List statistics mode changed") + ".</h4></div>")
 
             # We want the job list to appear before using any story-related functions
             # User must wait.
@@ -5014,7 +5018,7 @@ class MICA(object):
                     req.session.value["connected"] = False
                     req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
-                                            + resp + "</div>", now = True)
+                                            + resp + "</div>")
             except Exception, e :
                 merr("OTHER MICA ********Exception:")
                 for line in format_exc().splitlines() :
