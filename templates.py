@@ -679,6 +679,24 @@ class HeadElement(CommonElement):
                      confirmpass = _("Confirm"),
                      # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
                      readmode = _("Read"),
+                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
+                     forget = _("Forget"),
+                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
+                     notfinished = _("Not finished"),
+                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
+                     finishedoption = _("Finished reading"),
+                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
+                     notreviewedoption = _("Review not complete"),
+                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
+                     reviewed = _("Review Complete"),
+                     # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
+                     romanized = _("Download Romanization"),
+                     # 'original' refers to the original text of the story that the user provided for language learning.
+                     original = _("Download Original"),
+                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
+                     delete = _("Delete"),
+                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
+                     translate = _("Translate"),
                      # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                      reviewmode = _("Review"),
                      # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel

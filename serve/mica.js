@@ -1045,15 +1045,18 @@ function unsyncstory(name, uuid) {
         false);
 }
 
+var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated"];
+
 function finishedloading(storylist, navto) {
-   var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated"];
 
    var obj = $(storylist);
    for(var y = 0; y < names.length; y++) {
         var name = "#content_collapse" + names[y];
+        var listname = "#listview_collapse" + names[y];
         var objresult = obj.find(name);
         var data = objresult.html();
         $(name).html(data);
+        $(listname).listview().listview("refresh");
    }
 
    $(storylist.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
@@ -1546,6 +1549,47 @@ function start_learning_finished(data, reloadstories) {
     }
 }
 
+var exploded_uuid = false;
+var exploded_name = false;
+function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized) {
+    exploded_uuid = uuid;
+    exploded_name = name;
+    $.mobile.navigate('#explode');
+    $("#explodedstory").html(rname);
+    $("#forgetoption").attr('style', 'display: none');
+    $("#finishedoption").attr('style', 'display: none');
+    $("#notfinishedoption").attr('style', 'display: none');
+    $("#reviewedoption").attr('style', 'display: none');
+    $("#notreviewedoption").attr('style', 'display: none');
+    $("#deleteoption").attr('style', 'display: none');
+    $("#translateoption").attr('style', 'display: none');
+    $("#romanizedoption").attr('style', 'display: none');
+
+    if (romanized) {
+        $("#romanizedlink").prop('href', '/stories?type=pinyin&uuid=' + uuid);
+        $("#romanizedoption").attr('style', 'display: block');
+    }
+
+    $("#originaloption").prop('href', '/stories?type=original&uuid=' + uuid);
+
+    if (translated) {
+        $("#forgetoption").attr('style', 'display: block');
+        
+        if (finished) {
+            $("#notfinishedoption").attr('style', 'display: block');
+        } else if(reviewed) {
+            if (!ischat) {
+                $("#notreviewedoption").attr('style', 'display: block');
+                $("#finishedoption").attr('style', 'display: block');
+            }
+        } else {
+            $("#reviewedoption").attr('style', 'display: block');
+        }
+    } else {
+        $("#deleteoption").attr('style', 'display: block');
+        $("#translateoption").attr('style', 'display: block');
+    }
+}
 
 function start_learning(mode, action, uuid, name) {
     $('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});
