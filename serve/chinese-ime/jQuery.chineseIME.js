@@ -487,7 +487,6 @@ var _callbacks_ = {
                                 $box.find('ul').html(data.result.human);
                             } else {
                                 $box.find('ul').html(data.desc);
-                                //self.callAjax(self.currentText, self.currentPage);
                             }
 
                             $box.show();
@@ -519,31 +518,6 @@ var _callbacks_ = {
             return false; // we need to call ajax first
         };
         
-        self.callAjax = function(text, page, num, callback){
-            var params = {};
-            num = (typeof num == 'undefined' ? self.defaultNum : num);
-            num = num + parseInt(Math.floor(page / 2)) * num;
-            params[self.paramNames['text']] = text;
-            params[self.paramNames['num']] = num; // assuming page length is 10 here
-
-            if (typeof callback != 'undefined') {
-                params[self.paramNames['callback']] = callback;
-            } else {
-                params[self.paramNames['callback']] = '_callbacks_.loadWords';
-            }
-            if (!$.wordDatabase.hasWord(text, num)){
-                $.wordDatabase.addWord(text, num);
-                var pairs = getPairs();
-                if (pairs[1] == "zh" || pairs[1] == "zh-CHS") { 
-
-                    self.currentText = text;
-                    self.updateDialog();
-                } else {
-                        self.updateDialog();
-                }
-            }
-        };
-
         // Run initializer
         self.init();
     };

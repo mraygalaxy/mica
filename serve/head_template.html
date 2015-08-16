@@ -4,9 +4,9 @@
     <div t:render="translations"/>
     <div data-role='panel' data-display="reveal" id='settings'>
         <ul data-role='listview' data-inset='true'>
-            <li><a rel='external' href='/home'><t:slot name='reviewmode'/></a></li>
-            <li><a rel='external' href='/read'><t:slot name='readmode'/></a></li>
-            <li><a rel='external' href='/edit'><t:slot name='editmode'/></a></li>
+            <li><a onclick="start_learning('home', 'view', false, false)"><t:slot name='reviewmode'/></a></li>
+            <li><a onclick="start_learning('read', 'view', false, false)"><t:slot name='readmode'/></a></li>
+            <li><a onclick="start_learning('edit', 'view', false, false)"><t:slot name='editmode'/></a></li>
         </ul>
         <table>
         <tr>
@@ -39,31 +39,48 @@
                 </a>
             </li>
             <!--(end)-->
-            <li><a href='/account'><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
+            <li><a href='#account'><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
             <li><a href='#'><t:attr name='onclick'><t:slot name='switchclick'/></t:attr><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
             <li><a href='/disconnect' rel="external" ><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
             <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
-            <li><a href='/help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
-            <li><a href='/privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
+            <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
+            <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
             <!--(if not mobile)-->
             <li><a href='#uploadModal' data-toggle='modal' data-backdrop='static' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
             <!--(end)-->
         </ul>
     </div>
-    <div data-role='page' id='learn'><div data-role='content'>BOOTBODY</div></div>
+    <div data-role='page' id='learn'><div data-role='content' id='learn_content'/></div>
     <div data-role='page' id='chat'><div data-role='content' id='chat_content'></div></div>
+    <div data-role='page' id='reading'><div data-role='content' id='content_collapseReading'></div></div>
+    <div data-role='page' id='chatting'><div data-role='content' id='content_collapseChatting'></div></div>
+    <div data-role='page' id='finished'><div data-role='content' id='content_collapseFinished'></div></div>
+    <div data-role='page' id='reviewing'><div data-role='content' id='content_collapseReviewing'></div></div>
+    <div data-role='page' id='untranslated'><div data-role='content' id='content_collapseUntranslated'></div></div>
+    <div data-role='page' id='account'><div data-role='content' id='account_content'></div></div>
+    <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
+    <div data-role='page' id='privacy'><div data-role='content' id='privacy_content'></div></div>
     <div data-role='page' id='stories'>
         <div data-role='content'>
 		<div id='storypages'></div>
 		<br/>
 		<ul data-role='listview' data-inset='true'>
-		    <li><a href='#collapseReading'><t:slot name='reading'/></a></li>
-		    <li><a href='#collapseChatting'><t:slot name='chatting'/></a></li>
-		    <li><a href='#collapseReviewing'><t:slot name='notreviewed'/></a></li>
-		    <li><a href='#collapseUntranslated'><t:slot name='untranslated'/></a></li>
-		    <li><a href='#collapseFinished'><t:slot name='finished'/></a></li>
+		    <li><a href='#reading'><t:slot name='reading'/></a></li>
+		    <li><a href='#chatting'><t:slot name='chatting'/></a></li>
+		    <li><a href='#reviewing'><t:slot name='notreviewed'/></a></li>
+		    <li><a href='#untranslated'><t:slot name='untranslated'/></a></li>
+		    <li><a href='#finished'><t:slot name='finished'/></a></li>
 		</ul>
 	    <br/>
+        </div>
+    </div>
+    <div data-role='page' id='explode'>
+        <div data-role='content' id='explode_content'>
+		<ul data-role='listview' data-inset='true'>
+		    <li><a href='#collapseReading'><t:slot name='readmode'/></a></li>
+		    <li><a href='#collapseChatting'><t:slot name='reviewmode'/></a></li>
+		    <li><a href='#collapseReviewing'><t:slot name='editmode'/></a></li>
+		</ul>
         </div>
     </div>
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>

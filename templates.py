@@ -45,7 +45,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action"] :
+        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -88,6 +88,7 @@ class PostAccountElement(CommonElement) :
                       change = _("Change Password / Token"),
                       reset = _("Reset Password / Token"),
                       passonline = _("Please change your password on the website. Will support mobile in a future version."),
+                      accounts = _("Accounts"),
                       )
         return tag
 
