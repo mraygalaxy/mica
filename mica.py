@@ -713,7 +713,7 @@ class MICA(object):
             sideout.append("<b>" + rname + "</b>")
         else :
             # 'original' refers to the original text of the story that the user provided for language learning.
-            sideout.append("\n<a onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
+            sideout.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
             sideout.append(story["uuid"])
             sideout.append("\">")
             sideout.append(rname)
@@ -728,17 +728,17 @@ class MICA(object):
         if mobile :
             if "download" not in story or not story["download"] :
                 syncing = _("Syncing")
-                sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Start Syncing") + "</a>")
+                sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Start Syncing") + "</a>")
             else :
-                sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default btn-xs'>" + _("Stop Syncing") + "</a>")
+                sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Stop Syncing") + "</a>")
 
         sideout.append("</td><td>")
 
         if not mobile and not gp.already_romanized :
             if finished or reviewed :
                 # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
-                sideout.append("\n<a title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" class='btn-default btn-xs' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
-                sideout.append("<i class='glyphicon glyphicon-download-alt'></i></a>")
+                sideout.append("\n<button rel='external' title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" class='btn-default' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
+                sideout.append("<i class='glyphicon glyphicon-download-alt'></i></button>")
     
         return sideout
 
@@ -766,37 +766,22 @@ class MICA(object):
         else :
             return self.bootstrap(req, json_dumps(json), now = True)
 
-    def bootstrap(self, req, body, now = False, pretend_disconnected = False, nodecode = False) :
-
-        if isinstance(body, str) and not nodecode :
+    def bootstrap(self, req, body, now = False) :
+        if isinstance(body, str) :
             body = body.decode("utf-8")
-
-        if not mobile and "username" in req.session.value and req.session.value["username"] == "demo" :
-            # The demo account is provided for users who want to give the software a try without committing to it.
-            body = self.heromsg + "<h4>" + _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account.") + "</h4></div>"
 
         if now :
             contents = body
         else :
-            if req.session.value["connected"] :
-                req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-            else :
-                req.view_percent = "0.0"
-            req.pretend_disconnected = pretend_disconnected
-
-            if req.session.value['connected'] and not pretend_disconnected :
-                req.user = req.db.try_get(self.acct(req.session.value['username']))
-
+            req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
+            req.user = req.db.try_get(self.acct(req.session.value['username']))
             req.mica = self
             contents = run_template(req, HeadElement)
-
-        if not nodecode :
-            contents = contents.replace("BOOTBODY", body)
             fh = open(cwd + 'serve/head.js')
-            contents = contents.replace("BOOTSCRIPTHEAD", fh.read())
+            contents = contents.replace(u"BOOTSCRIPTHEAD", fh.read())
             fh.close()
     
-        return contents if now else ("<!DOCTYPE html>\n" + contents)
+        return contents if now else (u"<!DOCTYPE html>\n" + contents)
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -2006,7 +1991,7 @@ class MICA(object):
 
         if recommendations :
             # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
-            output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output 
+            output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output
 
         mverbose("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
@@ -2110,15 +2095,15 @@ class MICA(object):
     def storyTemplate(self, name) :
         return """
         <div data-role='page' id='collapse""" + name + """'>
-            <div data-role='content'>
+            <div data-role='content' id='content_collapse""" + name + """'>
               <table class='table table-hover table-striped'>
               """
 
     def makestorylist(self, req, tzoffset):
         untrans_count = 0
         reading_count = 0
-        reading = [self.storyTemplate("Reading")]
         chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
+        reading = [self.storyTemplate("Reading")]
         noreview = [self.storyTemplate("Reviewing")]
         untrans = [self.storyTemplate("Untranslated")]
         finish = [self.storyTemplate("Finished")]
@@ -2152,10 +2137,10 @@ class MICA(object):
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                     # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                     
-                    untrans.append("<a rel='external' href='/home?delete=1&#38;uuid=" + story['uuid'] + "&#38;name=" + myquote(story["name"]) + "' title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-trash'></i></a>")
+                    untrans.append("<button onclick=\"start_learning('home', 'delete', '" + story["uuid"] + "'" + myquote(story["name"]) + "')\" title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default'><i class='glyphicon glyphicon-trash'></i></button>")
 
                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
-                    untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
+                    untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
@@ -2172,15 +2157,16 @@ class MICA(object):
                 notsure.append("")
                 if not mobile :
                     # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure.append("\n<a rel='external' href='/home?forget=1&#38;uuid=" + story['uuid'] + "' title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs'><i class='glyphicon glyphicon-remove'></i></a>")
-                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/home?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-search'></i></a>")
-                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Edit") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/edit?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-pencil'></i></a>")
-                notsure.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Read") + "' style='font-size: x-small' class='btn-default btn-xs' href=\"/read?view=1&#38;uuid=" + story['uuid'] + "\"><i class='glyphicon glyphicon-book'></i></a>")
+                    notsure.append("\n<button onclick=\"start_learning('home', 'forget', '" + story['uuid'] + "', false)\" title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-defaults'><i class='glyphicon glyphicon-remove'></i></button>")
+
+                notsure.append("\n<button onclick=\"start_learning('home', 'view', '" + story['uuid'] + "', false);\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-search'></i></button>")
+                notsure.append("\n<button onclick=\"start_learning('edit', 'view', '" + story['uuid'] + "', false);\" title='" + _("Edit") +   "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-pencil'></i></button>")
+                notsure.append("\n<button onclick=\"start_learning('read', 'view', '" + story['uuid'] + "', false);\" title='" + _("Read") +   "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-book'></i></button>")
 
                 if finished :
                    finish += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
-                   finish.append("\n<a title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></a>")
+                   finish.append("\n<button title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></button>")
                    finish.append("</td></tr>")
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
@@ -2191,14 +2177,14 @@ class MICA(object):
                        reading_count += 1
                        reading += notsure
                         # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                       reading.append("\n<a title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></a>")
+                       reading.append("\n<button title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></button>")
                         # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                       reading.append("<a title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default btn-xs' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></a>")
+                       reading.append("<button title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></button>")
                        reading.append("</td></tr>")
                 else :
                    noreview += notsure
                     # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
-                   noreview.append("\n<a title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default btn-xs' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></a>")
+                   noreview.append("\n<button title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></button>")
                    noreview.append("</td></tr>")
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
@@ -2993,8 +2979,7 @@ class MICA(object):
 
     def render_disconnect(self, req) : 
         self.clean_session(req)
-        return self.bootstrap(req, "<script>window.location.href = '/';</script>")
-        #return self.render_frontpage(req)
+        return "<html><body><script>window.location.href = '/';</script></body></html>"
 
     def render_privacy(self, req) :
         self.install_local_language(req)
@@ -3539,7 +3524,7 @@ class MICA(object):
                     minfo("Page " + str(page) + "...")
                     final[str(page)] = self.view_page(req, uuid, name, \
                         story, req.action, "", str(page), \
-                        req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, disk = True)
+                        req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], req.session.value["meaning_mode"], disk = True)
                     
                 req.db[self.story(req, name) + ":final"] = final
         req.db[self.story(req, name)] = tmp_story 
@@ -3751,7 +3736,7 @@ class MICA(object):
                             target = target[1:-1]
                         tid = unit["hash"] if py else trans_id 
 
-                        output.append("<a style='cursor: pointer' class='trans btn-default btn-xs' onclick=\"forget('" + \
+                        output.append("<a style='cursor: pointer' class='trans btn-default' onclick=\"forget('" + \
                                 str(tid) + "', '" + story["uuid"] + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
                                 "<i class='glyphicon glyphicon-remove'></i></a>")
 
@@ -3799,7 +3784,7 @@ class MICA(object):
             gp = self.processors[self.tofrom(story)]
  
             if req.action == "edit" and gp.already_romanized :
-                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n")
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + _("Edit mode is only supported for learning character-based languages") + ".</h4></div>\n", now = True)
             
             if req.http.params.get("page") and not req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -3855,13 +3840,13 @@ class MICA(object):
                     output += "<br/><br/>"
                     output += "<h4>"
                     # Beginning of a message
-                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='/help'>"
+                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='#help'>"
                     # end of a message
                     output += _("please read the tutorial") + "</a>"
                     output += "</h4>"
                 output += "</div>"
 
-        return self.bootstrap(req, output)
+        return self.bootstrap(req, output, now = True)
 
     def render_stories(self, req, story) :
         ftype = "txt" if "filetype" not in story else story["filetype"]
@@ -4164,21 +4149,7 @@ class MICA(object):
 
         out += run_template(req, PostAccountElement)
 
-        if self.userdb :
-            if not mobile and req.session.value["isadmin"] :
-                out += "<h4><b>" + _("Accounts") + "</b>:</h4>"
-                out += "<table>"
-                for result in self.userdb.view('accounts/all') :
-                    tmp_doc = result["key"]
-                    out += "<tr><td>" + tmp_doc["name"] + "</td><td>&#160;&#160;"
-                    out += (tmp_doc["email"] if "email" in tmp_doc else "no email =(") + "</td>"
-                    out += "<td>Source: " + (tmp_doc["source"] if "source" in tmp_doc else "mica") + "</td>"
-                    out += "<td><a href='/account?deleteaccount=1&username=" + tmp_doc["name"] + "'>Delete</a></td>"
-                    out += "</tr>"
-                out += "</table>"
-
-
-        return self.bootstrap(req, out)
+        return self.bootstrap(req, out, now = True)
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
@@ -4288,7 +4259,7 @@ class MICA(object):
             return self.bootstrap(req, "changed", now = True)
 
         if not req.http.params.get("tzoffset") :
-            return self.bootstrap(req, "<script>loadstories(false);</script>")
+            return self.bootstrap(req, "<script>loadstories(false, false);</script>")
 
         tzoffset = int(req.http.params.get("tzoffset"))
 
@@ -4320,13 +4291,13 @@ class MICA(object):
         if untrans_count :
             storylist += untrans + reading + chat_all + noreview + finish
             # make JQM go to the right sub-menu first by switching to the right page
-            #scripts.append("<script>$('#collapseUntranslated').collapse('show');</script>")
+            scripts.append("<script>firstload = '#untranslated';</script>")
         elif reading_count :
             storylist += reading + chat_all + untrans + noreview + finish
-            #scripts.append("<script>$('#collapseReading').collapse('show');</script>")
+            scripts.append("<script>firstload = '#reading';</script>")
         else :
             storylist += noreview + reading + chat_all + untrans + finish
-            #scripts.append("<script>$('#collapseReviewing').collapse('show');</script>")
+            scripts.append("<script>firstload = '#reviewing';</script>")
 
         scripts.append("""
                     
@@ -4487,7 +4458,7 @@ class MICA(object):
             output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
 
             output += "<br/><br/>Save this Password: " + password
-            output += "<br/><br/>" + _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
+            output += "<br/><br/>" + _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
             output += _("please read the tutorial") + "</a>"
             output += "<br/><br/>Happy Learning!</h4>"
 
@@ -4827,7 +4798,7 @@ class MICA(object):
         else :
             # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-            out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='/help'>"
+            out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
             out += _("please read the tutorial") + "</a>"
         return self.bootstrap(req, out)
 
@@ -4863,10 +4834,15 @@ class MICA(object):
                 from_third_party = oauth_result
 
             if req.http.params.get("connect") or from_third_party != False :
+                if not mobile and req.http.params.get("username") and  req.http.params.get("username") == "demo" :
+                    # The demo account is provided for users who want to give the software a try without committing to it.
+                    raise exc.HTTPBadRequest(_("Demo Account is readonly. You must install the mobile application for interactive use of the demo account."))
+
                 connect_result = self.render_connect(req, from_third_party)
                 if connect_result :
                     return connect_result
-                return self.bootstrap(req, "<script>window.location.href = '/';</script>")
+                return "<html><body><script>window.location.href = '/';</script></body></html>"
+                #return self.bootstrap(req, "<script>window.location.href = '/';</script>")
                 
             self.install_local_language(req)
 

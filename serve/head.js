@@ -59,15 +59,31 @@ function chat_success(data) {
     chat_loaded = true;
 }
 
+learn_loaded = false;
+
+function learn_success(data) {
+    learn_loaded = true;
+}
+
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
         if (where == 'stories') {
-            loadstories(false);
+            loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
                    go('#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
                 }
+        } else if (where == 'learn') {
+                if (!learn_loaded) {
+                   go('#learn_content', '/api?alien=home', '', unavailable, false, learn_success, true, false);
+                }
+        } else if (where == 'account') {
+               go('#account_content', '/api?alien=account', '', unavailable, false, false, true, false);
+        } else if (where == 'help') {
+               go('#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
+        } else if (where == 'privacy') {
+               go('#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
         }
    }
     /*
@@ -87,3 +103,4 @@ $(document).on("pagecreate", function () {
         $(".ui-panel-wrapper").css("height", height + 1);
     });
 });
+$.mobile.navigate('#learn');

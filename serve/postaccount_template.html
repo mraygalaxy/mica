@@ -38,4 +38,18 @@
 <!--(else)-->
 <t:slot name='mobiledelete'/>
 <!--(end)-->
+<p/>
+<!--(if userdb and not mobile and req.session.value["isadmin"])-->
+<h4><b><t:slot name='accounts'/></b></h4>
+    <table>
+    <!--(for result in userdb.view('accounts/all'))-->
+        <tr>
+            <td>@!result["key"]["name"]!@</td>
+            <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
+            <td>&#160;&#160;Source:@!result["key"]["source"] if "source" in result["key"] else "mica"!@</td>
+            <td>&#160;&#160;<a href="/account?deleteaccount=1&amp;username=@!result['key']['name']!@">Delete</a></td>
+        </tr>
+    <!--(end)-->
+    </table>
+<!--(end)-->
 </div>
