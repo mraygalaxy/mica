@@ -695,53 +695,6 @@ class MICA(object):
 
         return r
     
-    def sidestart(self, req, name, username, story, reviewed, finished, gp, tzoffset = 0) :
-        rname = name.replace(".txt","").replace("\n","").replace("_", " ")
-        if "filetype" in story and story["filetype"] == "chat" :
-            [x, period, howmany, peer] = story["name"].split(";")
-            rname = peer + " ("
-            if period != "days" :
-                rname += "From "
-            rname += datetime_datetime.fromtimestamp((((int(howmany) * counts[period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
-        sideout = []
-        sideout.append("\n<tr>")
-        sideout.append("<td>" )
-        if "source_language" in story :
-            sideout.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
-
-        if mobile :
-            sideout.append("<b>" + rname + "</b>")
-        else :
-            # 'original' refers to the original text of the story that the user provided for language learning.
-            sideout.append("\n<a rel='external' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" title='" + _("Download Original") + "' href=\"/stories?type=original&#38;uuid=")
-            sideout.append(story["uuid"])
-            sideout.append("\">")
-            sideout.append(rname)
-            sideout.append("</a>")
-        
-        if (finished or reviewed or story["translated"]) and "pr" in story :
-            sideout.append("</td><td>")
-            pr = story["pr"]
-            sideout.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-            sideout.append(pr + "%;'> (" + pr + "%)</div></div>")
-            
-        if mobile :
-            if "download" not in story or not story["download"] :
-                syncing = _("Syncing")
-                sideout.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Start Syncing") + "</a>")
-            else :
-                sideout.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Stop Syncing") + "</a>")
-
-        sideout.append("</td><td>")
-
-        if not mobile and not gp.already_romanized :
-            if finished or reviewed :
-                # The romanization is the processed (translated), romanized version of the original story text that was provided by the user for language learning.  
-                sideout.append("\n<button rel='external' title='" + _("Download Romanization") + "' onclick=\"$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});\" class='btn-default' href=\"/stories?type=pinyin&#38;uuid=" + story["uuid"]+ "\">")
-                sideout.append("<i class='glyphicon glyphicon-download-alt'></i></button>")
-    
-        return sideout
-
     def template(self, template_prefix) :
         contents_fh = open(cwd + relative_prefix + "/" + template_prefix + "_template.html", "r")
         contents = contents_fh.read()
@@ -2096,7 +2049,8 @@ class MICA(object):
         return """
         <div data-role='page' id='collapse""" + name + """'>
             <div data-role='content' id='content_collapse""" + name + """'>
-              <table class='table table-hover table-striped'>
+              <h4><b>""" + name + """</b></h4>
+              <ul id='listview_collapse""" + name + """' data-role='listview' data-inset='true'>
               """
 
     def makestorylist(self, req, tzoffset):
@@ -2121,26 +2075,63 @@ class MICA(object):
 
             reviewed = not ("reviewed" not in story or not story["reviewed"])
             finished = not ("finished" not in story or not story["finished"])
+
             if isinstance(story['uuid'], tuple) :
                 uuid = story['uuid']
                 mdebug("skipping UUID: " + uuid[0])
                 continue
 
-            notsure = self.sidestart(req, name, username, story, reviewed, finished, gp, tzoffset)
+            rname = name.replace(".txt","").replace("\n","").replace("_", " ")
+            if "filetype" in story and story["filetype"] == "chat" :
+                [x, period, howmany, peer] = story["name"].split(";")
+                rname = peer + " ("
+                if period != "days" :
+                    rname += "From "
+
+                rname += datetime_datetime.fromtimestamp((((int(howmany) * counts[period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
+            notsure = []
+            notsure.append("\n<li><a onclick=\"explode('")
+            notsure.append(story['uuid'] + "', '" + story['name'] + "'")
+            notsure.append(", '" + rname + "'")
+            notsure.append(", " + ('true' if story["translated"] else 'false'))
+            notsure.append(", " + ('true' if finished else 'false'))
+            notsure.append(", " + ('true' if reviewed else 'false'))
+            notsure.append(", " + ('true' if "filetype" in story and story["filetype"] == "chat" else 'false'))
+
+            if not mobile and not gp.already_romanized and (finished or reviewed) :
+                notsure.append(", 'true'")
+            else :
+                notsure.append(", 'false'")
+
+            notsure.append(");\" title='" + _("Open") + "' style='font-size: x-small' class='btn-default'>")
+
+            if "source_language" in story :
+                notsure.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
+
+            notsure.append("<b> " + rname + "</b>")
+
+            '''
+            if (finished or reviewed or story["translated"]) and "pr" in story :
+                pr = story["pr"]
+                notsure.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
+                notsure.append(pr + "%;'> (" + pr + "%)</div></div>")
+                
+            if mobile :
+                if "download" not in story or not story["download"] :
+                    syncing = _("Syncing")
+                    notsure.append("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Start Syncing") + "</a>")
+                else :
+                    notsure.append("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + story['uuid'] + "')\" class='btn btn-default'>" + _("Stop Syncing") + "</a>")
+            '''
+
 
             if not story["translated"] : 
                 untrans_count += 1
                 untrans += notsure
-                untrans.append("\n")
 
+                '''
                 if not mobile :
                     untrans.append("<div id='transbutton" + story['uuid'] + "'>")
-                    # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
-                    
-                    untrans.append("<button onclick=\"start_learning('home', 'delete', '" + story["uuid"] + "'" + myquote(story["name"]) + "')\" title='" + _("Delete") + "' style='font-size: x-small; cursor: pointer' class='btn-default'><i class='glyphicon glyphicon-trash'></i></button>")
-
-                    # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
-                    untrans.append("\n<a style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"trans('" + story['uuid'] + "')\">" + _("Translate") + "</a>")
                     if "last_error" in story and not isinstance(story["last_error"], str) :
                         for err in story["last_error"] :
                             untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
@@ -2151,41 +2142,24 @@ class MICA(object):
 
                 if "translating" in story and story["translating"] :
                     untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
-                untrans.append("</td>")
-                untrans.append("</tr>")
+                '''
+                untrans.append("</a></li>")
             else : 
-                notsure.append("")
-                if not mobile :
-                    # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
-                    notsure.append("\n<button onclick=\"start_learning('home', 'forget', '" + story['uuid'] + "', false)\" title='" + _("Forget") + "' style='font-size: x-small; cursor: pointer' class='btn-defaults'><i class='glyphicon glyphicon-remove'></i></button>")
-
-                notsure.append("\n<button onclick=\"start_learning('home', 'view', '" + story['uuid'] + "', false);\" title='" + _("Review") + "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-search'></i></button>")
-                notsure.append("\n<button onclick=\"start_learning('edit', 'view', '" + story['uuid'] + "', false);\" title='" + _("Edit") +   "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-pencil'></i></button>")
-                notsure.append("\n<button onclick=\"start_learning('read', 'view', '" + story['uuid'] + "', false);\" title='" + _("Read") +   "' style='font-size: x-small' class='btn-default'><i class='glyphicon glyphicon-book'></i></button>")
-
                 if finished :
                    finish += notsure
-                    # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
-                   finish.append("\n<button title='" + _("Not finished") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"finishstory('" + story['uuid'] + "', 0)\"><i class='glyphicon glyphicon-thumbs-down'></i></button>")
-                   finish.append("</td></tr>")
+                   finish.append("</a></li>")
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
                        chatting[period_mapping[period]] += notsure
-                       chatting[period_mapping[period]].append("</td></tr>")
+                       chatting[period_mapping[period]].append("</a></li>")
                    else :
                        reading_count += 1
                        reading += notsure
-                        # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are not finished reviewing a story. This will move the story back into the 'Reviewing' section. 
-                       reading.append("\n<button title='" + _("Review not complete") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"reviewstory('" + story['uuid'] + "',0)\"><i class='glyphicon glyphicon-arrow-down'></i></button>")
-                        # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished with a story and do not want to see it at the top of the list anymore. This will move the story back into the 'Finished' section. 
-                       reading.append("<button title='" + _("Finished reading") + "' style='font-size: x-small; cursor: pointer' class='btn-default' onclick=\"finishstory('" + story['uuid'] + "',1)\"><i class='glyphicon glyphicon-thumbs-up'></i></button>")
-                       reading.append("</td></tr>")
+                       reading.append("</a></li>")
                 else :
                    noreview += notsure
-                    # This appears in the left-hand pop-out side panel and allows the user to indicate that they have finished reviewing a story for accuracy. This will move the story into the 'Reading' section. 
-                   noreview.append("\n<button title='" + _("Review Complete") + "' style='font-size: x-small' class='btn btn-default' onclick=\"reviewstory('" + story['uuid'] + "', 1)\"><i class='glyphicon glyphicon-arrow-up'></i></button>")
-                   noreview.append("</td></tr>")
+                   noreview.append("</a></li>")
                    
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
     
@@ -4272,19 +4246,19 @@ class MICA(object):
         
         untrans_count, reading, noreview, untrans, finish, reading_count, chatting = result[1:]
         
-        reading.append("</table></div></div>\n")
-        noreview.append("</table></div></div>\n")
-        untrans.append("</table></div></div>\n")
-        finish.append("</table></div></div>\n")
+        reading.append("\n</ul></div></div>\n")
+        noreview.append("\n</ul></div></div>\n")
+        untrans.append("\n</ul></div></div>\n")
+        finish.append("\n</ul></div></div>\n")
 
         chat_all = [self.storyTemplate("Chatting")]
 
         for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :
-                chat_all.append("<tr><td>" + _("Recent") + " " + translated_periods[period] + ":</td></tr>")
+                chat_all.append("<li>" + _("Recent") + " " + translated_periods[period] + ":</li>")
                 chat_all += chatting[period]
 
-        chat_all.append("</table></div></div>\n")
+        chat_all.append("\n</ul></div></div>\n")
 
         scripts = [""]
 
