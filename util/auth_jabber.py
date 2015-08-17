@@ -27,8 +27,8 @@ log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
 
 def authenticate(username, password, auth_url) :
     try :
-
-        req = urllib2_Request(auth_url + "/auth?username=" + username + "&password=" + password)
+        url = auth_url + "/auth?username=" + username + "&password=" + password
+        req = urllib2_Request(url)
         res = urllib2_urlopen(req).read()
 
         if res == "good" :
@@ -60,10 +60,10 @@ while True:
     domain = values[2]
     if parameters["sslport"] != -1 :
         location = "https://" 
-	port = int(parameters["sslport"])
+        port = int(parameters["sslport"])
     else :
         location = "http://" 
-	port = int(parameters["port"])
+        port = int(parameters["port"])
     location += domain + ":" + str(port)
     log.write("Location: " + location + "\n")
     if action == "auth" :

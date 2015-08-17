@@ -124,14 +124,16 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
+            '''
             out = ""
             for line in format_exc().splitlines() :
                 out += line + "\n"
             mwarn(out)
+            mwarn(name + ":" + str(e))
+            '''
             if false_if_not_found :
                 return False
             else :
-                mwarn(name + ":" + str(e))
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
 
     def __delitem__(self, name) :
