@@ -63,6 +63,7 @@ learn_loaded = false;
 
 function learn_success(data) {
     learn_loaded = true;
+    $('#readingheader').affix();
 }
 
 $(document).on("pagecontainerbeforechange", function (e, data) {
@@ -76,7 +77,11 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                 }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
-                   go('#learn_content', '/api?alien=home', '', unavailable, false, learn_success, true, false);
+                   var pageid = "home";
+                   var lastmode = $("#lastmode");
+                   if (lastmode != undefined)
+                        pageid = lastmode.html();
+                   go('#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
                 }
         } else if (where == 'account') {
                go('#account_content', '/api?alien=account', '', unavailable, false, false, true, false);

@@ -81,9 +81,9 @@
         <div data-role='content' id='explode_content'>
 		<ul data-role='listview' data-inset='true'>
                         
-		    <li><a onclick="start_learning('read', 'view', exploded_uuid, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
-		    <li><a onclick="start_learning('home', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-		    <li><a onclick="start_learning('edit', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+		    <li id='readoption'><a onclick="start_learning('read', 'view', exploded_uuid, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+		    <li id='reviewoption'><a onclick="start_learning('home', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+		    <li id='editoption'><a onclick="start_learning('edit', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
 		    <li id='notfinishedoption'><a onclick="finishstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-thumbs-down'></i> <t:slot name='notfinished'/></a></li>
 		    <li id='finishedoption'><a onclick="finishstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-thumbs-up'></i> <t:slot name='finishedoption'/></a></li>
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
