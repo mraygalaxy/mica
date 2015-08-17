@@ -265,6 +265,7 @@ class ChatElement(CommonElement) :
                       notauthorized = _("Disconnected: You have probably logged in from a different web-browser. To resume your chat please sign-out an then sign-in again. Thank you."),
                       chaterror = _("An error occured"),
                       secsleft = _("Seconds left to reconnect"),
+                      refreshtitle = _("Refresh"),
                      )
         return tag
 
@@ -336,6 +337,8 @@ class FrontPageElement(CommonElement) :
                       softwarename = _("MICA Language Learning"),
                       changelang = _("Change Language"),
                       signinwith = _("Sign in with"),
+                      error = self.req.front_error if self.req.front_error else "",
+                      error_visible = 'display: block; padding: 10px' if self.req.front_error else 'display: none',
                       )
         return tag
 
