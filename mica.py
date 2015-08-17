@@ -1173,7 +1173,10 @@ class MICA(object):
         try :
             page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
         except couch_adapter.ResourceNotFound, e :
-            return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
+            if not self.get_list_mode(req) :
+                return ("<h4>" + _("Statistics Disabled") + ".</h4>")
+            else :
+                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
         units = page_dict["units"]
 
         tone_keys = self.view_keys(req, "tonechanges", units) 
@@ -1226,7 +1229,10 @@ class MICA(object):
             try :
                 page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
             except couch_adapter.ResourceNotFound, e :
-                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
+                if not self.get_list_mode(req) :
+                    return ("<h4>" + _("Statistics Disabled") + ".</h4>")
+                else :
+                    return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
             units = page_dict["units"]
 
             merge_keys = self.view_keys(req, "mergegroups", units) 
@@ -1311,7 +1317,7 @@ class MICA(object):
             if mobile :
                 out += _("Unfortunately, this can only be performed with the online version. Please login to your account online to perform the upgrade. The changes will then be synchronized to all your devices. Thank you.")
             else :
-                out += "<br/><a class='btn btn-default btn-primary' href='/" + req.action + "?storyupgrade=1&uuid=" + uuid + "&version=" + str(upgrade_needed) + "'>" + _("Start Upgrade") + "</a>" 
+                out += "<br/><a rel='external' class='btn btn-default btn-primary' href='/" + req.action + "?storyupgrade=1&uuid=" + uuid + "&version=" + str(upgrade_needed) + "'>" + _("Start Upgrade") + "</a>" 
 
             if "last_error" in story and not isinstance(story["last_error"], str) :
                 out + "Last upgrade Exception:<br/>"
@@ -2551,7 +2557,7 @@ class MICA(object):
             req.db[self.story(req, story["name"])] = tmp_story
 
 
-    def warn_not_replicated(self, req, bootstrap = True, now = False) :
+    def warn_not_replicated(self, req, bootstrap = True) :
         self.clear_story(req)
 
         if mobile :
@@ -2567,7 +2573,7 @@ class MICA(object):
 
         if bootstrap :
             mwarn("bootstrapping: " + msg)
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>", now = now)
+            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
         else :
             mwarn("raw: " + msg)
             return msg
@@ -2842,7 +2848,7 @@ class MICA(object):
             # This happens when a user uploads a new story, or performs other long-running actions that
             # cannot be completed in a single click. The request goes into a background job and is
             # processed in the background.
-            out = self.heromsg + "\n<h4>" + _("Request submitted. Please refresh later. Thank You.") + "<script>window.location.href='/home';</script></h4></div>"
+            out = self.heromsg + "\n<h4>" + _("Request submitted (" + description + "). Please refresh later. Thank You.") + "</h4></div>"
                 
         except Exception, e :
             # If a background request that was submitted (like uploading a new story) fails to complete,
@@ -2851,7 +2857,7 @@ class MICA(object):
             out += str(e)
 
         mdebug("Submitted: " + str(job))
-        return self.message(req, out)
+        return self.message(req, out, gohome = True)
             
     def forgetstory(self, req, uuid, name) :
         tmp_story = req.db[self.story(req, name)]
@@ -2874,12 +2880,15 @@ class MICA(object):
         return _("Forgotten")
 
     def deletestory(self, req, uuid, name) : 
+        mdebug("Checking for " + self.story(req, name) + " existence")
         story_found = False if not name else req.db.doc_exist(self.story(req, name))
         if name and not story_found :
             mdebug(name + " does not exist. =(")
         else :
+            mdebug(name + " was found. Looking up.")
             if name :
                 tmp_story = req.db[self.story(req, name)]
+                mdebug(name + " looked up. Flushing pages.")
                 self.flush_pages(req, name)
                 if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
                     mdebug("Deleting txt original contents.")
@@ -2906,12 +2915,13 @@ class MICA(object):
                            jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
                            req.db["MICA:jobs"] = jobs
                     mdebug("Deleted.")
-
                 
             if name and story_found :
+                mdebug("Deleting story.")
                 del req.db[self.story(req, name)]
             
             if req.db.doc_exist(self.index(req, uuid)) :
+                mdebug("Deleting index.")
                 del req.db[self.index(req, uuid)]
                 
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
@@ -3381,9 +3391,14 @@ class MICA(object):
 
         return self.api(req, out, False) 
 
-    def message(self, req, msg, pageid = "#messages") :
-        req.messages += "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + msg + "</div>"
-        body = u"\n$.mobile.navigate('" + pageid + u"');\n"
+    def message(self, req, msg, pageid = "#messages", gohome = False) :
+        if req.messages == "" and msg :
+            req.messages = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + msg + "</div>"
+
+        if gohome :
+            body = u"\nwindow.location.href = '/';\n"
+        else :
+            body = u"\n$.mobile.navigate('" + pageid + u"');\n"
 
         if isinstance(body, str) :
             body = body.decode("utf-8")
@@ -3734,10 +3749,10 @@ class MICA(object):
                 else :
                     output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
             else :
-                output.append(_("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device."))
+                output.append("<h4>" + _("Statistics Disabled") + ".</h4>")
         else :
             # statistics in reading mode are disabled
-            output.append("<h4>" + _("Memorization History List Disabled") + ".</h4>")
+            output.append("<h4>" + _("Statistics Disabled") + ".</h4>")
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>")
 
@@ -3797,7 +3812,10 @@ class MICA(object):
                     chat = history = True if ("filetype" in story and story["filetype"] == "chat") else False 
                     if chat :
                         output += "<table style='width: 100%'>\n"
+                    req.session.value["last_view_mode"] = req.action
+                    req.session.save();
                     output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
+                    self.set_page(req, story, page)
                     if chat :
                         output += "</table>"
                     return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>")
@@ -3805,18 +3823,18 @@ class MICA(object):
         else :
             output = ""
             if from_third_party and "output" in from_third_party :
-                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>")
+                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><b>" + _("Start learning!") + "</b></div>")
             elif from_third_party and "redirect" in from_third_party :
                 return self.bootstrap(req, from_third_party["redirect"])
 
             else :
                 # Beginning of a message.
-                output += self.heromsg + "<h4>" + _("No story loaded. Choose a story to read from the sidebar by clicking the 'M' at the top.")
+                output += self.heromsg + "<h4>" + _("No story loaded. Choose a story above")
                 if mobile :
                     output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
                 else :
                     # end of a message
-                    output += "<br/>" + _("or create one by clicking on Account icon at the top") + ".</h4>"
+                    output += "<br/>" + _("or create one by going to Account => Upload New Story") + ".</h4>"
                     output += "<br/><br/>"
                     output += "<h4>"
                     # Beginning of a message
@@ -4300,7 +4318,7 @@ class MICA(object):
     def render_phistory(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
                                    # statistics in review mode are disabled
-                                   (self.history(req, story, req.http.params.get("page")) if self.get_list_mode(req) else "<h4>" + _("Review History List Disabled") + ".</h4>") + \
+                                   (self.history(req, story, req.http.params.get("page")) if self.get_list_mode(req) else "<h4>" + _("Statistics Disabled") + ".</h4>") + \
                                    "</div></div>")
 
     def render_editslist(self, req, story) :
@@ -4443,7 +4461,7 @@ class MICA(object):
 
             from_third_party["output"] = output
         else :
-            from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/home';</script>" 
+            from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>" 
             auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
@@ -4735,6 +4753,8 @@ class MICA(object):
             mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
             self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
 
+        return self.message(req, False, gohome = True)
+
     def render_oprequest(self, req, story) :
         oprequest = req.http.params.get("oprequest");
         edits = json_loads(oprequest) 
@@ -4770,8 +4790,9 @@ class MICA(object):
         return False
 
     def render_rest(self, req, from_third_party) :
+        pageid = "#messages"
         if from_third_party and "output" in from_third_party :
-            return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><a href='/home' class='btn btn-default btn-primary'>" + _("Start learning!") + "</a></div>")
+            return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><b>" + _("Start learning!") + "</b></div>")
         elif from_third_party and "redirect" in from_third_party :
             return self.bootstrap(req, from_third_party["redirect"])
         else :
@@ -4779,7 +4800,13 @@ class MICA(object):
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
             out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
             out += _("please read the tutorial") + "</a>"
-        return self.message(req, out)
+            if "last_view_mode" in req.session.value :
+                pageid = "#learn"
+
+        if "last_view_mode" in req.session.value :
+            out += "<div id='lastmode'>" + req.session.value["last_view_mode"] + "</div>"
+
+        return self.message(req, out, pageid = pageid)
 
 
     def get_list_mode(self, req) :
@@ -4959,8 +4986,6 @@ class MICA(object):
                 if "current_page" in tmp_story :
                     start_page = tmp_story["current_page"]
                     mdebug("Loading start page: " + str(start_page))
-                else :
-                    self.set_page(req, tmp_story, start_page)
                 
             for param in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
                 if req.http.params.get(param) :
@@ -4979,7 +5004,7 @@ class MICA(object):
                     return self.warn_not_replicated(req)
                 
             if req.http.params.get("bulkreview") :
-                self.render_bulkreview(req, name)
+                return self.render_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
                 return self.render_view(req, uuid, from_third_party, start_page)

@@ -26,6 +26,7 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
+        mdebug("Going to render: " + req.messages)
         self.req = req
         self.loader = XMLString(req.messages)
 

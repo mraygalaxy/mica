@@ -184,7 +184,7 @@ function trans_stop(data, uuid) {
     finish = false;
     do_refresh = false;
     $("#translationstatus" + uuid).html('Done! Please reload.');
-    loadstories(false, false);
+    loadstories(false, "#reviewing");
 }
 
 function trans_start(uuid) {
@@ -193,6 +193,7 @@ function trans_start(uuid) {
     first_time = true;
     finish = trans_poll;
     trans_poll(uuid);
+    $.mobile.navigate("#untranslated");
     $("#translationstatus").html(spinner + "&nbsp;" + local("storiestranslating") + "...");
     $("#translationstatus" + uuid).html(spinner + "&nbsp;" + local("translating") + "...");
 }
@@ -601,8 +602,6 @@ function process_reviews(uuid, batch) {
         form += "<input type='hidden' name='index" + count + "' value='" + $(this).attr('index') + "'/>\n";
         form += "<input type='hidden' name='nbunit" + count + "' value='" + $(this).attr('nbunit') + "'/>\n";
         form += "<input type='hidden' name='page" + count + "' value='" + $(this).attr('page') + "'/>\n";
-        //form += "<input type='hidden' name='target" + count + "' value='" + $(this).attr('target') + "'/>\n";
-        //form += "<input type='hidden' name='source" + count + "' value='" + $(this).attr('source') + "'/>\n";
 
         count += 1;
       });
@@ -660,7 +659,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
+       $("#pagecontent").html("<br/><br/><div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
     
        $('#pageimg' + curr_img_num).affix();
        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -685,7 +684,7 @@ function view(mode, uuid, page) {
               true,
               false);
    } else {
-       $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
+       $("#pagecontent").html("<br/><br/><div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
            $("#pagesingle").html(spinner + "&nbsp;" + local("loadingimage") + "...");
@@ -707,6 +706,7 @@ function view(mode, uuid, page) {
    current_page = page;
    current_mode = mode;
    current_uuid = uuid;
+   //$('#readingheader').affix('checkposition');
 }
 
 function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
@@ -1556,6 +1556,9 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     exploded_name = name;
     $.mobile.navigate('#explode');
     $("#explodedstory").html(rname);
+    $("#readoption").attr('style', 'display: none');
+    $("#reviewoption").attr('style', 'display: none');
+    $("#editoption").attr('style', 'display: none');
     $("#forgetoption").attr('style', 'display: none');
     $("#finishedoption").attr('style', 'display: none');
     $("#notfinishedoption").attr('style', 'display: none');
@@ -1565,14 +1568,17 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     $("#translateoption").attr('style', 'display: none');
     $("#romanizedoption").attr('style', 'display: none');
 
-    if (romanized) {
-        $("#romanizedlink").prop('href', '/stories?type=pinyin&uuid=' + uuid);
-        $("#romanizedoption").attr('style', 'display: block');
-    }
-
     $("#originaloption").prop('href', '/stories?type=original&uuid=' + uuid);
 
     if (translated) {
+        if (romanized) {
+            $("#romanizedlink").prop('href', '/stories?type=pinyin&uuid=' + uuid);
+            $("#romanizedoption").attr('style', 'display: block');
+        }
+
+        $("#readoption").attr('style', 'display: block');
+        $("#reviewoption").attr('style', 'display: block');
+        $("#editoption").attr('style', 'display: block');
         $("#forgetoption").attr('style', 'display: block');
         
         if (finished) {
@@ -1608,4 +1614,5 @@ function start_learning(mode, action, uuid, name) {
        url += "&name=" + name;
 
    go('#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
+    $('#settings').panel('close');
 }

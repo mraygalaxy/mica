@@ -3,6 +3,7 @@ from common import *
 from json import loads, dumps
 from uuid import uuid4
 from time import sleep
+from traceback import format_exc
 
 try :
     from couchdb import Server
@@ -123,10 +124,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
+            out = ""
+            for line in format_exc().splitlines() :
+                out += line + "\n"
+            mwarn(out)
             if false_if_not_found :
                 return False
             else :
-                mwarn(str(e))
+                mwarn(name + ":" + str(e))
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
 
     def __delitem__(self, name) :
