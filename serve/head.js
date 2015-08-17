@@ -63,7 +63,6 @@ learn_loaded = false;
 
 function learn_success(data) {
     learn_loaded = true;
-    $('#readingheader').affix();
 }
 
 $(document).on("pagecontainerbeforechange", function (e, data) {
