@@ -716,15 +716,15 @@ class MICA(object):
             if wrap:
                 out += "</div></div>"
 
-            return self.bootstrap(req, out)
+            return self.bootstrap(req, out, nodoctype = True)
         else :
-            return self.bootstrap(req, json_dumps(json))
+            return self.bootstrap(req, json_dumps(json), nodoctype = True)
 
-    def bootstrap(self, req, body) :
+    def bootstrap(self, req, body, nodoctype = False) :
         if isinstance(body, str) :
             body = body.decode("utf-8")
         contents = body
-        return u"<!DOCTYPE html>\n" + body 
+        return (u"<!DOCTYPE html>\n" if not nodoctype else u"") + body 
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -2981,7 +2981,7 @@ class MICA(object):
             raise exc.HTTPBadRequest("you did a bad thing")
 
         if not req.http.params.get("username") or not req.http.params.get("password") :
-            return self.bootstrap(req, 'error')
+            return self.bootstrap(req, 'error', nodoctype = True)
 
         username = req.http.params.get("username").lower()
         password = req.http.params.get("password")
@@ -2992,13 +2992,13 @@ class MICA(object):
             auth_user, reason = self.authenticate(username, password, self.credentials())
 
             if not auth_user :
-                return self.bootstrap(req, 'bad')
+                return self.bootstrap(req, 'bad', nodoctype = True)
             else :
                 mdebug("Success jabber auth w/ password: " + username)
         else :
             mdebug("Success jabber auth w/ token: " + username)
 
-        return self.bootstrap(req, 'good')
+        return self.bootstrap(req, 'good', nodoctype = True)
 
     def render_online(self, req) :
         v = self.api_validate(req)
@@ -4995,6 +4995,7 @@ class MICA(object):
                 oprequest_result = self.render_oprequest(req, story)
                 if oprequest_result :
                     return oprequest_result
+                return self.message(req, False, gohome = True)
  
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -5002,6 +5003,7 @@ class MICA(object):
                     self.parse(req, story, page = page)
                 except OSError, e :
                     return self.warn_not_replicated(req)
+                return self.message(req, False, gohome = True)
                 
             if req.http.params.get("bulkreview") :
                 return self.render_bulkreview(req, name)
