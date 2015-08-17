@@ -3532,6 +3532,7 @@ class MICA(object):
         else :
             try :
                 self.parse(req, story)
+                self.nb_pages(req, story, force = True)
                 output += self.heromsg + _("Translation complete!")
             except OSError, e :
                 output += self.warn_not_replicated(req, bootstrap = False)
@@ -3789,7 +3790,7 @@ class MICA(object):
 
                 if req.http.params.get("image") :
                     nb_image = req.http.params.get("image")
-                    output = "<div><div id='pageresult'>"
+                    output = "<div><div id='pageresult'><br/><br/>"
                     image_found = False
                     if "filetype" in story and story["filetype"] != "txt" :
                         attach_raw = req.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
@@ -3818,7 +3819,7 @@ class MICA(object):
                     self.set_page(req, story, page)
                     if chat :
                         output += "</table>"
-                    return self.bootstrap(req, "<div><div id='pageresult'>" + output + "</div></div>")
+                    return self.bootstrap(req, "<div><div id='pageresult'><br/><br/>" + output + "</div></div>")
             output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
             output = ""
@@ -5001,6 +5002,7 @@ class MICA(object):
                 page = req.http.params.get("page")
                 try :
                     self.parse(req, story, page = page)
+                    self.nb_pages(req, story, force = True)
                 except OSError, e :
                     return self.warn_not_replicated(req)
                 return self.message(req, False, gohome = True)

@@ -637,7 +637,7 @@ function change_pageimg_width() {
 }
 
 function restore_pageimg_width() {
-    $('#pageimg' + curr_img_num).css('width', '100%');
+    return false;
 }
 
 function finish_new_account(code, who) {
@@ -659,7 +659,7 @@ function view(mode, uuid, page) {
    if (show_both) {
        curr_img_num += 1;
 
-       $("#pagecontent").html("<br/><br/><div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div id='pagetext' class='col-md-7 nopadding'>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
+       $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
     
        $('#pageimg' + curr_img_num).affix();
        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
@@ -670,7 +670,7 @@ function view(mode, uuid, page) {
               '#pageresult', 
               unavailable, 
               true, 
-	      false,
+              false,
               true,
               false);
 
@@ -684,12 +684,12 @@ function view(mode, uuid, page) {
               true,
               false);
    } else {
-       $("#pagecontent").html("<br/><br/><div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
+       $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
            url += "&image=0";
-           $("#pagesingle").html(spinner + "&nbsp;" + local("loadingimage") + "...");
+           $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...");
        } else {
-           $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext") + "...");
+           $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
        }
        
        go('#pagesingle', url, 
@@ -706,7 +706,23 @@ function view(mode, uuid, page) {
    current_page = page;
    current_mode = mode;
    current_uuid = uuid;
-   //$('#readingheader').affix('checkposition');
+   $('#loadingModal').modal('hide');
+
+   /* 
+    * For some strange reason, each time JQM tries
+    * to show the page, bootstrap receives some kind
+    * of trigger event to remove the affix properties
+    * of the div, so it turns off the affixed behavior.
+    * So, just add it back below, and it seems OK.
+    */
+   $('#readingheader').affix();
+   $('#readingheader').on('affix.bs.affix', function() {
+            console.log("affix callback");
+        }); 
+   $('#readingheader').on('affix-top.bs.affix', function() {
+            console.log("affix-top callback");
+            return false;
+        }); 
 }
 
 function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
@@ -1543,6 +1559,7 @@ function start_learning_finished(data, reloadstories) {
         $.mobile.navigate('#stories');
         loadstories(false, false);
     } else {
+        $('#readingheader').affix();
         $('#learn_content').html(data);
         $('#loadingModal').modal('hide');
         $.mobile.navigate('#learn');

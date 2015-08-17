@@ -501,6 +501,7 @@ class ViewElement(CommonElement) :
                       processinstanttitle = _("instant translation of one or more words"),
                       meaningclasstitle = _("show/hide translations"),
                       processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
+                      refreshtitle = _("Refresh"),
                       )
         
         return tag
