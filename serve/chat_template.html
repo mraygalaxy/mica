@@ -31,6 +31,8 @@
                     <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
                     <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
                     <button data-role='none' type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
+                    <button data-role='none' type='button' class='btn
+                    btn-default' onclick='reconnect()'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
                 </div>
                 <div class="spaced">
                     <div id='missing' style='display: none'><div style='display: inline; color: red'><t:slot name='provideaddress'/></div></div>

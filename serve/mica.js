@@ -1382,19 +1382,28 @@ function handlePresence(oJSJaCPacket) {
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
-function handleError(e) {
-    document.getElementById('login_pane').style.display = '';
-    document.getElementById('sendmsg_pane').style.display = 'none';
-    $("#chatLoading").attr("style", "display: none");
+var first_reconnect = true;
 
-    if (e.firstChild.nodeName == "not-authorized") {
-        $("#err").html(local("notauthorized"));
+function handleError(e) {
+    if (first_reconnect) {
+            first_reconnect = false;
+            CountBack("reconnect", false, 0, false);
+            if (con.connected())
+                con.disconnect();
     } else {
-        var secs = 5;
-        $("#err").html(local("chaterror") + ":<br/>" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\n" + local("secsleft")).htmlEnc() + ": <div style='display: inline' id='reconnect'>" + secs + "</div>");
-        finish = reconnect;
-        do_refresh = true;
-        CountBack("reconnect", false, secs, false);
+        document.getElementById('login_pane').style.display = '';
+        document.getElementById('sendmsg_pane').style.display = 'none';
+        $("#chatLoading").attr("style", "display: none");
+
+        if (e.firstChild.nodeName == "not-authorized") {
+            $("#err").html(local("notauthorized"));
+        } else {
+            var secs = 5;
+            $("#err").html(local("chaterror") + ":<br/>" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\n" + local("secsleft")).htmlEnc() + ": <div style='display: inline' id='reconnect'>" + secs + "</div>");
+            finish = reconnect;
+            do_refresh = true;
+            CountBack("reconnect", false, secs, false);
+        }
     }
 
     if (con.connected())
@@ -1434,8 +1443,12 @@ function getPairs() {
     return pair;
 }
 
+var con = false;
+
 function reconnect(unused) {
-    document.getElementById('login_pane').style.display = 'block';
+    if (con && con.connected())
+        con.disconnect();
+    $("#login_pane").attr("style", "display: block");
     $("#chatLoading").attr("style", "display: block");
     doLogin(document.getElementById('loginForm'));
     finish = false;
@@ -1460,8 +1473,6 @@ function doLogin(oForm) {
     // reset
  
     try {
-        
-        httpbase = 'http://' + server + ':5280/http-bind/';
         if (window.location.protocol !== "https:"){
             httpbase = 'http://' + server + ':5280/http-bind/';
         } else {

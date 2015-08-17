@@ -187,6 +187,7 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
+        self.front_error = False;
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         self.api = False
@@ -2557,7 +2558,7 @@ class MICA(object):
             req.db[self.story(req, story["name"])] = tmp_story
 
 
-    def warn_not_replicated(self, req, bootstrap = True) :
+    def warn_not_replicated(self, req, bootstrap = True, frontpage = False) :
         self.clear_story(req)
 
         if mobile :
@@ -2573,7 +2574,10 @@ class MICA(object):
 
         if bootstrap :
             mwarn("bootstrapping: " + msg)
-            return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
+            if frontpage :
+                return self.message(req, msg, frontpage = True)
+            else :
+                return self.bootstrap(req, self.heromsg + "\n<h4>" + msg + "</h4></div>")
         else :
             mwarn("raw: " + msg)
             return msg
@@ -3391,7 +3395,7 @@ class MICA(object):
 
         return self.api(req, out, False) 
 
-    def message(self, req, msg, pageid = "#messages", gohome = False) :
+    def message(self, req, msg, pageid = "#messages", gohome = False, frontpage = False) :
         if req.messages == "" and msg :
             req.messages = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + msg + "</div>"
 
@@ -3403,17 +3407,23 @@ class MICA(object):
         if isinstance(body, str) :
             body = body.decode("utf-8")
 
-        req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-        req.user = req.db.try_get(self.acct(req.session.value['username']))
-        req.mica = self
         if req.messages == "" :
-            req.messages = "<div></div>"
-        contents = run_template(req, HeadElement)
-        fh = open(cwd + 'serve/head.js')
-        bootscript = fh.read()
-        fh.close()
-        bootscript += body
-        contents = contents.replace(u"BOOTSCRIPTHEAD", bootscript)
+            eeq.messages = "<div></div>"
+
+
+        if frontpage :
+            req.front_error = msg
+            contents = self.render_frontpage(req)
+        else :
+            req.mica = self
+            req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
+            req.user = req.db.try_get(self.acct(req.session.value['username']))
+            contents = run_template(req, HeadElement)
+            fh = open(cwd + 'serve/head.js')
+            bootscript = fh.read()
+            fh.close()
+            bootscript += body
+            contents = contents.replace(u"BOOTSCRIPTHEAD", bootscript)
     
         return u"<!DOCTYPE html>\n" + contents
 
@@ -4482,7 +4492,7 @@ class MICA(object):
             req.session.value["from_third_party"] = False 
             if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                return self.message(req, self.heromsg + "<h4>" + _("To login for the first time and begin synchronization with the website, you must activate internet access.") + "</h4></div>")
+                return self.message(req, _("To login for the first time and begin synchronization with the website, you must activate internet access."), frontpage = True)
             username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
 
@@ -4515,7 +4525,7 @@ class MICA(object):
 
         if not auth_user :
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            return self.message(req, self.heromsg + "<h4>" + str(reason) + "</h4></div>")
+            return self.message(req, str(reason), frontpage = True)
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
@@ -4535,13 +4545,13 @@ class MICA(object):
                appuser = req.db["MICA:appuser"]
                if appuser["username"] != username :
                     # Beginning of a message 
-                    return self.message(req, self.heromsg + "<h4>" + _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                    return self.message(req, _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
                         # next part of the same message 
                         appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
                          # next part of the same message 
                         _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
                          # end of the message 
-                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.") + "</h4></div>")
+                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks."), frontpage = True)
             else :
                mdebug("First time user. Reserving this device: " + username)
                appuser = {"username" : username}
@@ -4554,7 +4564,7 @@ class MICA(object):
                 req.session.save()
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                return self.message(req, self.heromsg + "<h4>" + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.") + "</h4></div>")
+                return self.message(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."), frontpage = True)
 
         req.action = "home"
         req.session.value['connected'] = True 
@@ -4575,7 +4585,7 @@ class MICA(object):
 
         user = req.db.try_get(self.acct(username))
         if not user :
-            return self.warn_not_replicated(req)
+            return self.warn_not_replicated(req, frontpage = True)
 
         if not mobile :
             jobs = req.db.try_get("MICA:jobs")
@@ -4856,11 +4866,7 @@ class MICA(object):
                 if req.api :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if not mobile :
-                    req.oauth = params["oauth"]
-                req.mica = self
-                req.credentials = self.credentials()
-                return self.bootstrap(req, run_template(req, FrontPageElement))
+                return self.render_frontpage(req)
                 
             self.render_logged_in_check(req)
 
