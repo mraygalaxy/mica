@@ -26,7 +26,6 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
-        mdebug("Going to render: " + req.messages)
         self.req = req
         self.loader = XMLString(req.messages)
 
@@ -80,27 +79,6 @@ class CommonElement(Element) :
                 else :
                     option = tags.option(value=l)
                 tag(option(_(readable)))
-        return tag
-
-class PostAccountElement(CommonElement) :
-    @renderer
-    def postaccount(self, request, tag) :
-        tag.fillSlots(
-                      compact = _("Compact databases"),
-                      changepass = _("Change Password"),
-                      changeemail = _("Email Address"),
-                      email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
-                      changemail = _("Change Email"),
-                      deleteaccount = _("Delete Account?"),
-                      mobiledelete = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version."),
-                      oldpassword =_("Old Password / Token"),
-                      password = _("New Password / Token"),
-                      confirm = _("Confirm Password / Token"),
-                      change = _("Change Password / Token"),
-                      reset = _("Reset Password / Token"),
-                      passonline = _("Please change your password on the website. Will support mobile in a future version."),
-                      accounts = _("Accounts"),
-                      )
         return tag
 
 class HistoryElement(CommonElement) :
@@ -168,7 +146,8 @@ class TranslationsElement(CommonElement) :
                      stopped = _("Stopped (start?)"),
                      startsync = _("Start Syncing"),
                      stopsync = _("Stop Syncing"),
-                        )
+                     requestfailed = _("Failed to issue request. We're sorry. Please report what you tried to do to the author. Thank you."),
+                )
         return tag
 
 class ModalsElement(CommonElement) :
@@ -612,17 +591,32 @@ class AccountElement(CommonElement):
                         # the zoom level or characters-per-line limit
                         changeview = _("Change Viewing configuration"),
                         charperline = _("Characters per line"),
-                        setchars = "setappchars" if mobile else "setwebchars",
                         perline = self.req.chars_per_line,
                         change = _("Change"),
                         zoom = _("Default zoom level"),
-                        setzoom = "setappzoom" if mobile else "setwebzoom",
                         defaultzoom = self.req.default_zoom,
                         zoomchange = _("Change"),
                         language =_("Language"),
                         changelang = _("Change Language"),
                         learninglanguage = _("Learning Language"),
                         changelearnlang = _("Change Learning Language"),
+                        compact = _("Compact databases"),
+                        changepass = _("Change Password"),
+                        changeemail = _("Email Address"),
+                        email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
+                        changemail = _("Change Email"),
+                        deleteaccount = _("Delete Account?"),
+                        mobiledelete = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version."),
+                        oldpassword =_("Old Password / Token"),
+                        password = _("New Password / Token"),
+                        confirm = _("Confirm Password / Token"),
+                        passchange = _("Change Password / Token"),
+                        reset = _("Reset Password / Token"),
+                        passonline = _("Please change your password on the website. Will support mobile in a future version."),
+                        accounts = _("Accounts"),
+                        resultshow = 'display: block; padding: 10px' if self.req.resultshow else 'display: none',
+                        result = (self.req.resultshow + ".") if self.req.resultshow else '',
+                        delete = _("Delete"),
 
                      )
         return tag
@@ -695,6 +689,7 @@ class HeadElement(CommonElement):
                      removespaces = _("Remove Spaces?"),
                      username = _("Account"),
                      accountusername = self.req.session.value["username"],
+                     account = _("Username"),
                      password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
@@ -737,7 +732,7 @@ class HeadElement(CommonElement):
                      # The software's privacy policy, such as what user information we keep and do not keep.
                      privacy = _("Privacy"),
                      switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
-                     uploadstory = _("Upload New Story"),
+                     uploadstory = _("New Story"),
                      # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                      newaccount = _("New Account"),
                      chat = _("Chat"),

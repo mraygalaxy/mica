@@ -1,4 +1,6 @@
 <div lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="accountslots">
+<div id='accountresult'>
+<div class='img-rounded jumbotron' style='padding: 5px'><t:attr name='style'><t:slot name='resultshow'/></t:attr><t:slot name='result'/></div>
 <p/>
 <h4>
 <b><t:slot name='account'/>: <t:slot name='username'/></b>
@@ -12,34 +14,110 @@
     <tr><td>&#160;<t:slot name ='charperline'/>:</td></tr>
     <tr>
     <td>
-        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
-        <input type='text'><t:attr name='name'><t:slot name='setchars'/></t:attr><t:attr name='value'><t:slot name='perline'/></t:attr></input>
-        <button data-role='none' name='submit' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='change'/></button>
+        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <!--(if mobile)-->
+        <input type='text' name='setappchars'>
+        <!--(else)-->
+        <input type='text' name='setwebchars'>
+        <!--(end)-->
+        <t:attr name='value'><t:slot name='perline'/></t:attr>
+        </input>
+        <button data-role='none' type='submit' class='btn btn-default btn-primary'><t:slot name='change'/></button>
         </form>
     </td></tr>
     <tr><td><h5>&#160;<t:slot name='zoom'/>: </h5></td></tr>
     <tr>
     <td>
-        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
-        <input type='text'><t:attr name='name'><t:slot name='setzoom'/></t:attr><t:attr name='value'><t:slot name='defaultzoom'/></t:attr></input>
-        <button data-role='none' rel='external' name='submit' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='zoomchange'/></button>
+        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <!--(if mobile)-->
+        <input type='text' name='setappzoom'>
+        <!--(else)-->
+        <input type='text' name='setwebzoom'>
+        <!--(end)-->
+        <t:attr name='value'><t:slot name='defaultzoom'/></t:attr>
+        </input>
+        <button data-role='none' type='submit' class='btn btn-default btn-primary'><t:slot name='zoomchange'/></button>
     </form>
     </td></tr><tr><td>
         <h4><b><t:slot name='language'/></b>?</h4>
-        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
         <select name="language" t:render='languages'/>
-        <button name='changelanguage' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='changelang'/></button>
+        <input type='hidden' name='changelanguage' value='1'/>
+        <button type='submit' class='btn btn-default btn-primary'><t:slot name='changelang'/></button>
         <br/>
         <br/>
         </form>
     </td></tr><tr><td>
         <h4><b><t:slot name='learninglanguage'/></b>?</h4>
-        <form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
         <select name="learnlanguage" t:render='learnlanguages'/>
-        <button name='changelearnlanguage' type='submit' class='btn btn-default btn-primary' value='1'><t:slot name='changelearnlang'/></button>
+        <input type='hidden' name='changelearnlanguage' value='1'/>
+        <button type='submit' class='btn btn-default btn-primary'><t:slot name='changelearnlang'/></button>
         </form>
         <br/>
         <br/>
     </td></tr>
 </table>
+<!--(if req.session.value["username"] != "demo")-->
+    <form class='ajaxform' data-ajax='false' action='/account'>
+        <input type='hidden' name='pack' value='1'/>
+        <button data-role='none' onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});" class='btn btn-default btn-primary'><t:slot name='compact'/></button>
+    </form>
+    <p/>
+    <h4><b><t:slot name='changepass'/>?</b></h4>
+
+    <!--(if not mobile)-->
+    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <table>
+            <tr><td><h5>&#160;<t:slot name="oldpassword"/>:</h5> </td><td><input type="password" name="oldpassword"/></td></tr>
+            <tr><td><h5>&#160;<t:slot name="password"/>:</h5> </td><td><input type="password" name="password"/></td></tr>
+            <tr><td><h5>&#160;<t:slot name="confirm"/>:</h5> </td><td><input type="password" name="confirm"/></td></tr>
+            <tr><td>
+            <input type='hidden' name='changepassword' value='1'/>
+            <button type="submit" class="btn btn-default btn-primary"><t:slot name="passchange"/></button>
+            </td></tr>
+        </table>
+    </form>                                   
+
+    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <input type='hidden' name='resetpassword' value='1'/>
+        <button type="submit" class="btn btn-default btn-primary"><t:slot name="reset"/></button>
+    </form>                                   
+    <!--(else)-->
+    <t:slot name='passonline'/>
+    <!--(end)-->
+
+    <h4><b><t:slot name='changeemail'/></b>?</h4>
+    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <input type='text' name='email'><t:attr name='value'><t:slot name='email'/></t:attr></input>
+        <input name='changeemail' type='hidden' value='1'/>
+        <button type='submit' class='btn btn-default btn-primary'><t:slot name='changemail'/></button>
+    </form>
+    <br/>
+    <br/>
+    <p/>
+    <h4><b><t:slot name='deleteaccount'/></b></h4>
+    <!--(if not mobile)-->
+    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
+    <t:slot name='deleteaccount'/>
+    </button>
+    <!--(else)-->
+    <t:slot name='mobiledelete'/>
+    <!--(end)-->
+    <p/>
+    <!--(if userdb and not mobile and req.session.value["isadmin"])-->
+    <h4><b><t:slot name='accounts'/></b></h4>
+        <table>
+        <!--(for result in userdb.view('accounts/all'))-->
+            <tr>
+                <td>@!result["key"]["name"]!@</td>
+                <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
+                <td>&#160;&#160;Source:@!result["key"]["source"] if "source" in result["key"] else "mica"!@&#160;&#160;</td>
+                <td><form class='ajaxform' data-ajax='false' action='/account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
+            </tr>
+        <!--(end)-->
+        </table>
+    <!--(end)-->
+<!--(end)-->
+</div>
 </div>

@@ -32,7 +32,7 @@ function switchinstall(initlist) {
 }
 
 function switchlist() {
-   go('#switchlisttext', '/api?alien=home&switchlist=' + (list_mode ? '0' : '1'), 
+   go(false, '#switchlisttext', '/api?alien=home&switchlist=' + (list_mode ? '0' : '1'), 
         '', unavailable, false, false, false);
    switchinstall(list_mode ? false : true);
    listreload(current_mode, current_uuid, current_page);
@@ -65,6 +65,27 @@ function learn_success(data) {
     learn_loaded = true;
 }
 
+// For this form to work, the submit button
+// of the form has to have an id of 'foobutton'
+// and the parent form has to have an id of 'foo'
+function form_loaded(data, do_forms) {
+    $.mobile.silentScroll(0);
+    $('#compactModal').modal('hide');
+    if (do_forms) {
+        $("form.ajaxform").each(function() {
+            $(this).on("submit", function(event, form) {
+                event.preventDefault();
+                go(form, '#account_content', 'url_comes_from_form', '#accountresult', unavailable, true, form_loaded, true, true);
+            });
+            $(this).find(":submit").click(function(event) {
+                    event.preventDefault();
+                    myform = $(this).closest("form");
+                    myform.trigger('submit', myform);
+                });
+        });
+    }
+}
+
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
@@ -72,7 +93,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go('#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
+                   go(false, '#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
                 }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
@@ -80,14 +101,14 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go('#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
+                   go(false, '#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
                 }
         } else if (where == 'account') {
-               go('#account_content', '/api?alien=account', '', unavailable, false, false, true, false);
+               go(false, '#account_content', '/api?alien=account', '', unavailable, false, form_loaded, true, true);
         } else if (where == 'help') {
-               go('#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
+               go(false, '#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
         } else if (where == 'privacy') {
-               go('#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
+               go(false, '#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
         }
    }
     /*
