@@ -1,6 +1,6 @@
 <tr lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="databaseslots">
 <td>
-<form data-ajax='false' action='/account' method='post' enctype='multipart/form-data'>
+<form class='ajaxform' data-ajax='false' action='/account' method='post'>
 <input type='hidden' name='remove'><t:attr name='value'><t:slot name='remove'/></t:attr></input>
 <input type='hidden' name='tofrom'><t:attr name='value'><t:slot name='tofrom'/></t:attr></input>
 <button data-role='none' name='downloaddictionary' type='submit' class='btn btn-default btn-primary'><t:attr name='id'><t:slot name='dname'/></t:attr><t:slot name='state'/></button>

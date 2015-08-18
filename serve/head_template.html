@@ -34,7 +34,7 @@
                     <li><a onclick="start_learning('read', 'view', false, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
                     <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
                     <li>
-                        <a onclick="$('#settings').panel('close');" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
+                        <a onclick="$.mobile.navigate('#account'); $('#settings').panel('close');" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
                             <i class='glyphicon glyphicon-plus-sign'/> <t:slot name='newaccount'/>
                         </a>
                     </li>

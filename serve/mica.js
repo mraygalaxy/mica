@@ -2,7 +2,7 @@ var last_data = '';
 var first_time = true;
 var debug = false;
 //var debug = true; 
-var unavailable = "error!";
+var unavailable = "<div class='img-rounded jumbotron style='padding: 10px'>" + local('requestfailed') + "</div>";
 var prmstr = window.location.search.substr(1);
 var prmarr = prmstr.split ("&");
 var params = {};
@@ -60,32 +60,28 @@ function local(msgid) {
         }
   }
 
-  function go(id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
-      jQuery.support.cors = true;
-      jQuery.ajax({
-        url: url,
-        type: "GET",
-        dataType: "html",
-        error: function (XMLHttpRequest, ajaxOptions, thrownError) {
-              console.log("AJAX Status code: " + XMLHttpRequest.status);
-              if (XMLHttpRequest.status == 401) {
-                    window.location.href = "/";
-              } else {
-                  if(XMLHttpRequest.statusText == 'error') {
-                      $(id).html("<div class='hero-unit' style='padding: 5px'><h4>" + spinner + "&nbsp;&nbsp;" + error + "</h4></div>");
-                  }
-                 go_callback(callback, error, opaque);
+  function go(form, id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
+    function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
+          console.log("AJAX Status code: " + XMLHttpRequest.status);
+          if (XMLHttpRequest.status == 401) {
+                window.location.href = "/";
+          } else {
+              if(XMLHttpRequest.statusText == 'error') {
+                  $(id).html(error);
               }
-        },
-        success: function (response) {
+             go_callback(callback, error, opaque);
+          }
+    }
+
+    function go_success(response) {
             var data = "none";
             if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
 	            if(getSpecificContent != '') {
-                    obj = $(response)
-                    objresult = obj.find(getSpecificContent)
-	                data = objresult.html();
+                        var obj = $(response);
+                        var objresult = obj.find(getSpecificContent);
+	                var data = objresult.html();
 	                if(write) {
 	                    if(writeSubcontent) {
 	                        $(id).html(data);
@@ -109,8 +105,28 @@ function local(msgid) {
                         });
                 }
             }
-        }
-      });
+      }
+
+      jQuery.support.cors = true;
+      if (form) {
+            var formData = $(form).serialize();
+
+            $.ajax({
+                type: 'POST',
+                url: $(form).attr('action'),
+                data: formData,
+                success: go_success,
+                error: go_fail
+            });
+      } else {
+            $.ajax({
+                url: url,
+                type: "GET",
+                dataType: "html",
+                success: go_success,
+                error: go_fail
+           });
+      }
   }
 
   function CountBack(id, barid, left, opaque) {
@@ -171,7 +187,7 @@ function trans_poll_finish(data, uuid) {
 }
 
 function trans_poll(uuid) {
-   go('#storypages', '/api?alien=read&tstatus=1&uuid=' + uuid, 
+   go(false, '#storypages', '/api?alien=read&tstatus=1&uuid=' + uuid, 
        '#tstatusresult',
        unavailable, 
        false, 
@@ -200,7 +216,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go('#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
+   go(false, '#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
        '#translationstatusresult', 
        unavailable, 
        true, 
@@ -533,7 +549,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       go('#instantdestination', url,
+       go(false, '#instantdestination', url,
           '#instantresult', 
           local("onlineoffline"),
           true, 
@@ -578,7 +594,7 @@ function multipoprefresh(data, opaque) {
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go('#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
+          go(false, '#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
           '#multiresult', 
           unavailable, 
@@ -641,7 +657,7 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go('#newaccountresultdestination', "/api?alien=" + who + "&finish=1&code=" + code,
+    go(false, '#newaccountresultdestination', "/api?alien=" + who + "&finish=1&code=" + code,
         '', 
         'error', 
         true,
@@ -666,7 +682,7 @@ function view(mode, uuid, page) {
        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
-       go('#pagetext', url, 
+       go(false, '#pagetext', url, 
               '#pageresult', 
               unavailable, 
               true, 
@@ -676,7 +692,7 @@ function view(mode, uuid, page) {
 
        url += "&image=0";
 
-       go('#pageimg' + curr_img_num, url, 
+       go(false, '#pageimg' + curr_img_num, url, 
               '#pageresult', 
               unavailable, 
               true, 
@@ -692,7 +708,7 @@ function view(mode, uuid, page) {
            $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
        }
        
-       go('#pagesingle', url, 
+       go(false, '#pagesingle', url, 
               '#pageresult',
               unavailable, 
               true, 
@@ -761,7 +777,7 @@ function memory_finish(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go('#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go(false, '#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           '#memoryresult', 
           unavailable, 
           true, 
@@ -780,7 +796,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go('#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go(false, '#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           '#memoryresult',
           unavailable, 
           true, 
@@ -875,7 +891,7 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $('#instantdestination').html("");
-           go('#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
+           go(false, '#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
               '#instantresult', 
               unavailable, 
               false, 
@@ -924,7 +940,7 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
+           go(false, '#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
               '#memolistresult', 
               unavailable, 
               true, 
@@ -934,7 +950,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go('#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+           go(false, '#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   '#editsresult', 
                   unavailable, 
                   true, 
@@ -944,7 +960,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go('#history', '/api?alien=read&uuid=' + uuid + '&phistory=1&page=' + page, 
+           go(false, '#history', '/api?alien=read&uuid=' + uuid + '&phistory=1&page=' + page, 
                   '#historyresult', 
                   unavailable, 
                   true, 
@@ -972,12 +988,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	   go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/api?alien=home&switchmode=images', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=images', '', unavailable, false, false, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -990,12 +1006,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go('#pagetext', '/api?alien=home&switchmode=both', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=both', '', unavailable, false, false, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -1004,7 +1020,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go('#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+      go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1022,12 +1038,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go('#pagetext', '/api?alien=read&meaningmode=false', '', unavailable, false, false, false, false);
+           go(false, '#pagetext', '/api?alien=read&meaningmode=false', '', unavailable, false, false, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go('#pagetext', '/api?alien=read&meaningmode=true', '', unavailable, false, false, false, false);
+           go(false, '#pagetext', '/api?alien=read&meaningmode=true', '', unavailable, false, false, false, false);
            reveal_all(false);
        }
     });
@@ -1035,7 +1051,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go('#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
+    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
         '', 
         'sync error', 
         false,
@@ -1049,7 +1065,7 @@ function syncstory(name, uuid) {
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go('#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
+    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
         '', 
         'sync error', 
         false,
@@ -1093,7 +1109,7 @@ function finishedloading(storylist, navto) {
 function loadstories(unused_data, navto) {
 
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go('#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go(false, '#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         '#storylistresult', 
         unavailable, 
         true, 
@@ -1103,7 +1119,7 @@ function loadstories(unused_data, navto) {
 }
 
 function reviewstory(uuid, which) {
-    go('#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
+    go(false, '#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
@@ -1113,7 +1129,7 @@ function reviewstory(uuid, which) {
 }
 
 function finishstory(uuid, which) {
-    go('#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
+    go(false, '#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
         '', 
         unavailable, 
         false, 
@@ -1343,7 +1359,7 @@ function newContact(who) {
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     url = "/api?alien=chat&history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
-    go('#pagesingle', url, 
+    go(false, '#pagesingle', url, 
           '#chathistoryresult',
           unavailable, 
           true, 
@@ -1641,6 +1657,7 @@ function start_learning(mode, action, uuid, name) {
    if (name) 
        url += "&name=" + name;
 
-   go('#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
+   go(false, '#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
     $('#settings').panel('close');
 }
+

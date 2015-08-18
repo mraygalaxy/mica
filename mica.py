@@ -3882,11 +3882,13 @@ class MICA(object):
 
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
+        req.resultshow = False
 
         if not user :
             return self.warn_not_replicated(req)
         
         if req.http.params.get("pack") :
+            mdebug("Compacting...")
             req.db.compact()
             req.db.cleanup()
             design_docs = ["memorized", "stories", "mergegroups",
@@ -3901,133 +3903,138 @@ class MICA(object):
                     req.db.compact(name)
 
             # The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
-            out += self.heromsg + "\n<h4>" + _("Database compaction complete for your account") + ".</h4></div>\n"
+            req.resultshow = _("Database compaction complete for your account")
         elif req.http.params.get("changepassword") :
             if mobile :
                 # The next handful of mundane phrases are associated with the creation
                 # and management of user accounts in the software program and the relevant
                 # errors that can occur while performing operations on a user's account.
-                return self.message(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
-            oldpassword = req.http.params.get("oldpassword")
-            newpassword = req.http.params.get("password")
-            newpasswordconfirm = req.http.params.get("confirm")
+                req.resultshow = _("Please change your password on the website, first")
+            else :
+                oldpassword = req.http.params.get("oldpassword")
+                newpassword = req.http.params.get("password")
+                newpasswordconfirm = req.http.params.get("confirm")
 
-            if len(newpassword) < 8 :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
-            if newpassword != newpasswordconfirm :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-            auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
-            if not auth_user :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Old passwords don't match! Try again") + ": " + str(reason) + ".</h4></div>")
-            try :
-                auth_user['password'] = newpassword
-                del self.dbs[username]
-                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                req.db["org.couchdb.user:" + username] = auth_user
-                del self.dbs[username]
-                self.verify_db(req, req.session.value["database"], newpassword)
-            except Exception, e :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
-                
-            out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".</h4></div>"
-
+                if len(newpassword) < 8 :
+                    req.resultshow = _("Password must be at least 8 characters! Try again")
+                else :
+                    if newpassword != newpasswordconfirm :
+                        req.resultshow = _("Passwords don't match! Try again")
+                    else :
+                        auth_user, reason = self.authenticate(username, oldpassword, req.session.value["address"])
+                        if not auth_user :
+                            req.resultshow = _("Old passwords don't match! Try again") + ": " + str(reason)
+                        else :
+                            try :
+                                auth_user['password'] = newpassword
+                                del self.dbs[username]
+                                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                                req.db["org.couchdb.user:" + username] = auth_user
+                                del self.dbs[username]
+                                self.verify_db(req, req.session.value["database"], newpassword)
+                                req.resultshow = _("Success!") + " " + _("User") + " " + username + " " + _("password changed")
+                            except Exception, e :
+                                req.resultshow = _("Password change failed") + ": " + str(e)
         elif req.http.params.get("resetpassword") :
             if mobile :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Please change your password on the website, first") + ".</h4></div>")
+                req.resultshow = _("Please change your password on the website, first")
+            else :
+                newpassword = binascii_hexlify(os_urandom(4))
 
-            newpassword = binascii_hexlify(os_urandom(4))
-
-            auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
-            if not auth_user :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Could not lookup your account! Try again") + ": " + str(reason) + ".</h4></div>")
-
-            try :
-                auth_user['password'] = newpassword
-                del self.dbs[username]
-                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
-                req.db["org.couchdb.user:" + username] = auth_user
-                del self.dbs[username]
-                self.verify_db(req, req.session.value["database"], newpassword)
-            except Exception, e :
-                out = ""
-                for line in format_exc().splitlines() :
-                    out += line + "\n"
-                merr(out)
-                return self.message(req, self.heromsg + "\n<h4>" + _("Password change failed") + ": " + str(e) + "</h4></div>")
-                
-            out += self.heromsg + "\n<h4>" + _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ".<br/><br/>" + _("Please write (or change) it") + ": <b>" + newpassword + "</b><br/><br/>" + _("You will need it to login to your mobile device") + ".</h4></div>"
-
+                auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
+                if not auth_user :
+                    req.resultshow = _("Could not lookup your account! Try again") + ": " + str(reason)
+                else :
+                    try :
+                        auth_user['password'] = newpassword
+                        del self.dbs[username]
+                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                        req.db["org.couchdb.user:" + username] = auth_user
+                        del self.dbs[username]
+                        self.verify_db(req, req.session.value["database"], newpassword)
+                        req.resultshow = _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ": " + newpassword
+                    except Exception, e :
+                        out = ""
+                        for line in format_exc().splitlines() :
+                            out += line + "\n"
+                        merr(out)
+                        req.resultshow = _("Password change failed") + ": " + str(e)
         elif req.http.params.get("newaccount") :
             if not self.userdb : 
                 # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                return self.message(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
+                req.resultshow = _("Server not configured correctly. Can't make accounts")
+            else :
+                newusername = req.http.params.get("username").lower()
+                newpassword = req.http.params.get("password")
+                newpasswordconfirm = req.http.params.get("confirm")
+                admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
+                email = req.http.params.get("email")
+                language = req.http.params.get("language")
 
-            newusername = req.http.params.get("username").lower()
-            newpassword = req.http.params.get("password")
-            newpasswordconfirm = req.http.params.get("confirm")
-            admin = True if req.http.params.get("isadmin", 'off') == 'on' else False
-            email = req.http.params.get("email")
-            language = req.http.params.get("language")
+                if newusername == "mica_admin" :
+                    req.resultshow = _("Invalid account name! Try again")
+                else :
+                    if len(newpassword) < 8 :
+                        req.resultshow = _("Password must be at least 8 characters! Try again")
+                    else :
+                        if newpassword != newpasswordconfirm :
+                            req.resultshow = _("Passwords don't match! Try again")
+                        else :
+                            if not req.session.value["isadmin"] :
+                                req.resultshow = _("Non-admin users can't create admin accounts. What are you doing?!")
+                            else :
+                                if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
+                                    req.resultshow = _("Account already exists! Try again")
+                                else :
+                                    if newusername.count(":") or newusername.count(";") :
+                                        req.resultshow = _("We're sorry, but you cannot have colon ':' characters in your account name or email address.")
+                                    else :
+                                        # FIXME: This complains if an account was created, then deleted, then created again
+                                        # because the old revision is still in couchdb
+                                        self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
 
-            if newusername == "mica_admin" :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Invalid account name! Try again") + ".</h4></div>")
-
-            if len(newpassword) < 8 :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Password must be at least 8 characters! Try again") + ".</h4></div>")
-            if newpassword != newpasswordconfirm :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Passwords don't match! Try again") + ".</h4></div>")
-
-            if not req.session.value["isadmin"] :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Non-admin users can't create admin accounts. What are you doing?!") + "</h4></div>")
-
-            if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Account already exists! Try again") + ".</h4></div>")
-
-            if newusername.count(":") or newusername.count(";") :
-                return self.message(req, self.heromsg + "\n<h4>" + _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + "</h4></div>")
-
-            self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
-
-            out += self.heromsg + "\n<h4>" + _("Success! New user was created") + ": " + newusername + ".</h4></div>"
+                                        req.resultshow = _("Success! New user was created") + ": " + newusername
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
             if mobile :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.") + ".</h4></div>")
-
-            username = req.http.params.get("username").lower()
-
-            if not self.userdb : 
-                # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
-                return self.message(req, self.heromsg + "\n<h4>" + _("Server not configured correctly. Can't make accounts") + ".</h4></div>")
-
-            if not self.userdb.doc_exist("org.couchdb.user:" + username) :
-                return self.message(req, self.heromsg + "\n<h4>" + _("No such account. Cannot delete it.") + ".</h4></div>")
-
-            auth_user = self.userdb["org.couchdb.user:" + username]
-
-
-            if req.session.value["username"] != username :
-                if not req.session.value["isadmin"] :
-                    # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
-                    return self.message(req, self.heromsg + "\n<h4>" + _("Go away and die.") + "</h4></div>")
-                role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
-
-                if role_length == 0 :
-                    return self.message(req, self.heromsg + "\n<h4>" + _("Admin accounts can't be deleted by other people. The admin must delete their own account.") + "</h4></div>")
-
-            dbname = auth_user["mica_database"]
-            mdebug("Confirming database before delete: " + dbname)
-
-            todelete = self.cs[dbname]
-
-            del self.userdb["org.couchdb.user:" + username]
-            del self.cs[dbname]
-
-            if req.session.value["username"] != username :
-                out += self.heromsg + "\n<h4>" + _("Success! Account was deleted") + ": " + username + "</h4></div>"
+                req.resultshow = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
             else :
-                self.clean_session(req)
-                return self.message(req, self.heromsg + "\n<h4>" + _("Your account has been permanently deleted.") + "</h4></div>")
+                username = req.http.params.get("username").lower()
 
+                if not self.userdb : 
+                    # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                    req.resultshow = _("Server not configured correctly. Can't make accounts")
+                else :
+                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                        req.resultshow = _("No such account. Cannot delete it.")
+                    else :
+                        auth_user = self.userdb["org.couchdb.user:" + username]
+
+                        bad_role_length = False
+                        if req.session.value["username"] != username :
+                            if not req.session.value["isadmin"] :
+                                # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
+                                req.resultshow = _("Go away and die.")
+                            else :
+                                role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
+
+                                if role_length == 0 :
+                                    bad_role_length = True
+                                    req.resultshow = _("Admin accounts can't be deleted by other people. The admin must delete their own account.")
+
+                        if not bad_role_length :
+                            dbname = auth_user["mica_database"]
+                            mdebug("Confirming database before delete: " + dbname)
+
+                            todelete = self.cs[dbname]
+
+                            del self.userdb["org.couchdb.user:" + username]
+                            del self.cs[dbname]
+
+                            if req.session.value["username"] != username :
+                                req.resultshow = _("Success! Account was deleted") + ": " + username
+                            else :
+                                self.clean_session(req)
+                                return self.message(req, _("Your account has been permanently deleted."), frontpage = True)
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
             user["language"] = language
@@ -4035,7 +4042,7 @@ class MICA(object):
             req.session.value["language"] = language
             req.session.save()
             self.install_local_language(req)
-            out += self.heromsg + "\n<h4>" + _("Success! Language changed") + ".</h4></div>"
+            req.resultshow = _("Success! Language changed")
         elif req.http.params.get("changelearnlanguage") :
             language = req.http.params.get("learnlanguage")
             user["learnlanguage"] = language
@@ -4043,102 +4050,106 @@ class MICA(object):
             req.session.save()
             req.db[self.acct(username)] = user
             self.install_local_language(req)
-            out += self.heromsg + "\n<h4>" + _("Success! Learning Language changed") + ".</h4></div>"
+            req.resultshow = _("Success! Learning Language changed")
         elif req.http.params.get("changeemail") :
             email = req.http.params.get("email")
-            try :
-                email_user = self.userdb["org.couchdb.user:" + username]
-                email_user['email'] = email 
-                self.userdb["org.couchdb.user:" + username] = email_user
-            except Exception, e :
-                return self.message(req, self.heromsg + "\n<h4>" + _("Email address change failed") + ": " + str(e) + "</h4></div>")
+            email_user = self.userdb["org.couchdb.user:" + username]
+            email_user['email'] = email 
+            self.userdb["org.couchdb.user:" + username] = email_user
             user["email"] = email 
             req.db[self.acct(username)] = user
             req.session.save()
-            out += self.heromsg + "\n<h4>" + _("Success! Email changed") + ".</h4></div>"
+            req.resultshow = _("Success! Email changed")
         elif req.http.params.get("setappchars") :
             chars_per_line = int(req.http.params.get("setappchars"))
             if chars_per_line > 1000 or chars_per_line < 5 :
                 # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
-                return self.message(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
-            user["app_chars_per_line"] = chars_per_line
-            req.db[self.acct(username)] = user
-            req.session.value["app_chars_per_line"] = chars_per_line 
-            req.session.save()
-            # Same as before, but specifically for a mobile device
-            out += self.heromsg + "\n<h4>" + _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
+                req.resultshow = _("Number of characters can't be greater than 1000 or less than 5")
+            else :
+                user["app_chars_per_line"] = chars_per_line
+                req.db[self.acct(username)] = user
+                req.session.value["app_chars_per_line"] = chars_per_line 
+                req.session.save()
+                # Same as before, but specifically for a mobile device
+                req.resultshow = _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line)
         elif req.http.params.get("tofrom") :
             tofrom = req.http.params.get("tofrom")
             remove = int(req.http.params.get("remove"))
 
             if tofrom not in processor_map :
                 # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
-                return self.message(req, self.heromsg + "\n<h4>" + _("No such dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
-
-            if "filters" not in user :
-               user["filters"] = {'files' : [], 'stories' : [] }
-
-            if remove == 0 :
-                if tofrom not in user["filters"]['files'] :
-                    user["filters"]['files'].append(tofrom)
+                req.resultshow = _("No such dictionary. Please try again") + ": " + tofrom
             else :
-                if tofrom in user["filters"]['files'] :
-                    user["filters"]['files'].remove(tofrom)
+                if "filters" not in user :
+                   user["filters"] = {'files' : [], 'stories' : [] }
 
-            req.session.value["filters"] = user["filters"]
-
-            if mobile :
-                req.db.stop_replication()
-
-                if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return self.message(req, self.heromsg + "\n<h4>" + _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom + ".</h4></div>")
-
-            req.db[self.acct(username)] = user
-            req.session.save()
-
-            if mobile :
                 if remove == 0 :
-                    out += self.heromsg + "\n<h4>" + _("Success! We will start downloading that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
+                    if tofrom not in user["filters"]['files'] :
+                        user["filters"]['files'].append(tofrom)
                 else :
-                    out += self.heromsg + "\n<h4>" + _("Success! We will no longer download that dictionary") + ": " + supported[tofrom] + ".</h4></div>"
-            else :
-                if remove == 0 :
-                    out += self.heromsg + "\n<h4>" + _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
-                else :
-                    out += self.heromsg + "\n<h4>" + _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom] + ".</h4></div>"
+                    if tofrom in user["filters"]['files'] :
+                        user["filters"]['files'].remove(tofrom)
+
+                req.session.value["filters"] = user["filters"]
+
+                replication_failed = False
+                if mobile :
+                    req.db.stop_replication()
+
+                    if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                        req.resultshow = _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom
+                        replication_failed = True
+
+                if not replication_failed :
+                    req.db[self.acct(username)] = user
+                    req.session.save()
+
+                    if mobile :
+                        if remove == 0 :
+                            req.resultshow = _("Success! We will start downloading that dictionary") + ": " + supported[tofrom]
+                        else :
+                            req.resultshow = _("Success! We will no longer download that dictionary") + ": " + supported[tofrom]
+                    else :
+                        if remove == 0 :
+                            req.resultshow = _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom]
+                        else :
+                            req.resultshow = _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom]
 
         elif req.http.params.get("setwebchars") :
             chars_per_line = int(req.http.params.get("setwebchars"))
             if chars_per_line > 1000 or chars_per_line < 5:
-                return self.message(req, self.heromsg + "\n<h4>" + _("Number of characters can't be greater than 1000 or less than 5") + ".</h4></div>")
-            user["web_chars_per_line"] = chars_per_line
-            req.db[self.acct(username)] = user
-            req.session.value["web_chars_per_line"] = chars_per_line 
-            req.session.save()
-            # Same as before, but specifically for a website 
-            out += self.heromsg + "\n<h4>" + _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line) + ".</h4></div>"
+                req.resultshow = _("Number of characters can't be greater than 1000 or less than 5")
+            else :
+                user["web_chars_per_line"] = chars_per_line
+                req.db[self.acct(username)] = user
+                req.session.value["web_chars_per_line"] = chars_per_line 
+                req.session.save()
+                # Same as before, but specifically for a website 
+                req.resultshow = _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line)
         elif req.http.params.get("setappzoom") :
             zoom = float(req.http.params.get("setappzoom"))
             if zoom > 3.0 or zoom < 0.5 :
                 # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
-                return self.message(req, self.heromsg + "\n<h4>" + _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
-            user["default_app_zoom"] = zoom 
-            req.db[self.acct(username)] = user
-            req.session.value["default_app_zoom"] = zoom
-            req.session.save()
-            # Same as before, but specifically for an application running on a mobile device
-            out += self.heromsg + "\n<h4>" + _("Success! App zoom level set to:") + " " + str(zoom) + ".</h4></div>"
+                req.resultshow = _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
+            else :
+                user["default_app_zoom"] = zoom 
+                req.db[self.acct(username)] = user
+                req.session.value["default_app_zoom"] = zoom
+                req.session.save()
+                # Same as before, but specifically for an application running on a mobile device
+                req.resultshow = _("Success! App zoom level set to:") + " " + str(zoom)
         elif req.http.params.get("setwebzoom") :
             zoom = float(req.http.params.get("setwebzoom"))
             if zoom > 3.0 or zoom < 0.5 :
                 # Same as before, but specifically for an application running on the website 
-                return self.message(req, self.heromsg + "\n<h4>" + _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5") + "</h4></div>")
-            user["default_web_zoom"] = zoom 
-            req.db[self.acct(username)] = user
-            req.session.value["default_web_zoom"] = zoom
-            req.session.save()
-            # Same as before, but specifically for an application running on the website 
-            out += self.heromsg + "\n<h4>" + _("Success! Web zoom level set to:") + " " + str(zoom) + ".</h4></div>"
+                req.resultshow = _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
+            else :
+                user["default_web_zoom"] = zoom 
+                req.db[self.acct(username)] = user
+                req.session.value["default_web_zoom"] = zoom
+                req.session.save()
+                # Same as before, but specifically for an application running on the website 
+                req.resultshow = _("Success! Web zoom level set to:") + " " + str(zoom)
 
         req.default_zoom = str(user["default_app_zoom" if mobile else "default_web_zoom"])
         req.chars_per_line = str(user["app_chars_per_line"] if mobile else user["web_chars_per_line"])
@@ -4147,19 +4158,7 @@ class MICA(object):
         req.processors = self.processors
         req.scratch = params["scratch"]
         req.userdb = self.userdb
-
-        try :
-            out += run_template(req, AccountElement)
-        except KeyError, e :
-            merr("Keep having this problem: " + str(user) + " " + str(e))
-            raise e
-
-        if username == "demo" :
-            return self.message(req, out)
-
-        out += run_template(req, PostAccountElement)
-
-        return self.bootstrap(req, out)
+        return self.bootstrap(req, out + run_template(req, AccountElement))
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
