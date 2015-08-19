@@ -8,8 +8,13 @@
 </table>
 <p/>
 
-<a data-role='none' href='#' class='btn btn-info'><t:attr name='onclick'><t:slot name='processedits'/></t:attr><t:slot name='tryrecco'/></a><p/>
-<a data-role='none' class='btn btn-info'><t:attr name='href'><t:slot name='retrans'/></t:attr><t:slot name='repage'/></a>
+<a data-role='none' href='#' class='btn btn-default'><t:attr name='onclick'><t:slot name='processedits'/></t:attr><t:slot name='tryrecco'/></a><p/>
+<form data-ajax='false' class='ajaxform' action='/edit' method='post'>
+<input type='hidden' name='retranslate' value='1'/>
+<input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
+<input type='hidden' name='uuid'><t:attr name='value'><t:slot name='uuid'/></t:attr></input>
+<button style='border: 2px solid black' data-role='none' class='btn btn-default' type='submit'><t:slot name='repage'/></button>
+</form>
 <p/>
 
 <!--(if list_mode)-->
