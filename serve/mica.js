@@ -442,7 +442,8 @@ function process_edits(uuid, operation, batch) {
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      out += "<form data-ajax='false' method='post' action='/edit'>"
+      // 'learn_' is not a typo. It's used in form_loaded() so as not to class with the id 'learn'
+      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -492,7 +493,7 @@ function process_edits(uuid, operation, batch) {
   	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n";
   	  out += "<p/><p/>";
   	  if (editcount > 1) {
-	      out += "<input data-role='none' rel='external' class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
+	      out += "<input data-role='none' class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
 	  } else {
 	      out += local("seeabove");
   	  	
@@ -500,6 +501,7 @@ function process_edits(uuid, operation, batch) {
       out += "</form>"
 
       $('#regroupdestination').html(out);
+      form_loaded(false, true);
       $('#regroupModal').modal('show');
 }
 
@@ -1104,6 +1106,8 @@ function finishedloading(storylist, navto) {
        firstload = false;  
        firstloaded = true;
    }
+
+    done();
 }
 
 function loadstories(unused_data, navto) {

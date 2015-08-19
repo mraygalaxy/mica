@@ -39,7 +39,7 @@ function switchlist() {
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
-$("[data-role=panel]").panel().enhanceWithin();
+$("[data-role='panel']").panel().enhanceWithin();
 
 //$.mobile.ignoreContentEnabled = true;
 //$(document).bind("mobileinit", function(){ 
@@ -57,6 +57,7 @@ chat_loaded = false;
 
 function chat_success(data) {
     chat_loaded = true;
+    done();
 }
 
 learn_loaded = false;
@@ -65,17 +66,20 @@ function learn_success(data) {
     learn_loaded = true;
 }
 
-// For this form to work, the submit button
-// of the form has to have an id of 'foobutton'
-// and the parent form has to have an id of 'foo'
 function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
-    $('#compactModal').modal('hide');
     if (do_forms) {
         $("form.ajaxform").each(function() {
             $(this).on("submit", function(event, form) {
                 event.preventDefault();
-                go(form, '#account_content', 'url_comes_from_form', '#accountresult', unavailable, true, form_loaded, true, true);
+                var closest = $(form).closest("[data-role='content']");
+                var destid = "#" + closest.attr('id');
+                if (destid == "#undefined")
+                    var destid = "#" + $(form).attr('id') + "content";
+                var fromid = destid + "_result"; 
+                go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded, true, true);
+                $('#compactModal').modal('hide');
+                $('#regroupModal').modal('hide');
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
@@ -84,15 +88,31 @@ function form_loaded(data, do_forms) {
                 });
         });
     }
+    done();
+}
+
+function loading() {
+    $.mobile.loading( "show", {
+        text: "Loading",
+        textVisible: true,
+        theme: "z",
+        html: ""
+    });
+}
+
+function done() {
+    $.mobile.loading('hide');
 }
 
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
         if (where == 'stories') {
+            loading();
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
+                   loading();
                    go(false, '#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
                 }
         } else if (where == 'learn') {
@@ -104,6 +124,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                    go(false, '#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
                 }
         } else if (where == 'account') {
+               loading();
                go(false, '#account_content', '/api?alien=account', '', unavailable, false, form_loaded, true, true);
         } else if (where == 'help') {
                go(false, '#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
@@ -111,14 +132,6 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                go(false, '#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
         }
    }
-    /*
-    var screen = $.mobile.getScreenHeight();
-    var header = $(".ui-header").hasClass("ui-header-fixed") ? $(".ui-header").outerHeight()  - 1 : $(".ui-header").outerHeight();
-    var footer = $(".ui-footer").hasClass("ui-footer-fixed") ? $(".ui-footer").outerHeight() - 1 : $(".ui-footer").outerHeight();
-    var contentCurrent = $(".ui-content").outerHeight() - $(".ui-content").height();
-    var content = screen - header - footer - contentCurrent;
-    $(".ui-content").height(content);
-    */
    return true;
 });
 
@@ -128,4 +141,3 @@ $(document).on("pagecreate", function () {
         $(".ui-panel-wrapper").css("height", height + 1);
     });
 });
-//$.mobile.navigate('#learn');
