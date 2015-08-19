@@ -1354,8 +1354,10 @@ class MICA(object):
         req.target_language = story["target_language"]
 
         req.process_reviews = "process_reviews('" + uuid + "', true)"
-        output = run_template(req, ViewElement)
+        req.page = str(start_page)
+        req.uuid = story['uuid']
 
+        output = run_template(req, ViewElement)
         return output
 
     def nb_pages(self, req, story, cached = True, force = False):
