@@ -188,6 +188,7 @@ class Params(object) :
         self.pid = "none"
         self.http = Request(environ)  
         self.front_error = False;
+        self.resultshow = False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         self.api = False
@@ -1286,7 +1287,8 @@ class MICA(object):
             history.sort( key=by_total, reverse = True )
 
         req.process_edits = "process_edits('" + story["uuid"] + "', 'all', true)"
-        req.retrans = "/" + req.action + "?retranslate=1&uuid=" + story['uuid'] + "&page=" + str(page)
+        req.page = str(page)
+        req.uuid = story['uuid']
         req.list_mode = list_mode
         if list_mode :
             req.history = history
@@ -3882,7 +3884,6 @@ class MICA(object):
 
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
-        req.resultshow = False
 
         if not user :
             return self.warn_not_replicated(req)
@@ -4762,8 +4763,7 @@ class MICA(object):
             
             mdebug("Review word: " + str(idx) + " index: " + str(mindex) + " unit " + str(nb_unit) + " id " + str(trans_id))
             self.multiple_select(req, False, nb_unit, mindex, trans_id, page, name)
-
-        return self.message(req, False, gohome = True)
+        req.resultshow = _("Bulk review complete")
 
     def render_oprequest(self, req, story) :
         oprequest = req.http.params.get("oprequest");
@@ -4795,7 +4795,7 @@ class MICA(object):
             
             if not success :
                 # This occurs in Edit mode when a merge/split request failed.
-                return self.message(req, self.heromsg + "\n" + _("Invalid Operation") + ": " + str(edit) + "</div>")
+                req.resultshow = _("Invalid Operation") + ": " + str(edit)
 
         return False
 
@@ -4997,11 +4997,14 @@ class MICA(object):
                 if req.http.params.get(param) :
                     return getattr(self, "render_" + param)(req, story)
 
+            # oprequest, retranslate, and bulkreview all
+            # all come from ajax forms, and should then
+            # re-render the whole page after completion.
+
             if req.http.params.get("oprequest") :
                 oprequest_result = self.render_oprequest(req, story)
                 if oprequest_result :
                     return oprequest_result
-                return self.message(req, False, gohome = True)
  
             if req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -5009,11 +5012,10 @@ class MICA(object):
                     self.parse(req, story, page = page)
                     self.nb_pages(req, story, force = True)
                 except OSError, e :
-                    return self.warn_not_replicated(req)
-                return self.message(req, False, gohome = True)
+                    req.resultshow = self.warn_not_replicated(req)
                 
             if req.http.params.get("bulkreview") :
-                return self.render_bulkreview(req, name)
+                self.render_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
                 return self.render_view(req, uuid, from_third_party, start_page)

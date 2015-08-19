@@ -362,7 +362,8 @@ class EditElement(CommonElement) :
     def edit(self, request, tag) :
         tag.fillSlots(editname = _("Legend"),
                       processedits = self.req.process_edits,
-                      retrans = self.req.retrans,
+                      nb_page = self.req.page,
+                      uuid = self.req.uuid,
                       previousmerge = _("These characters were previously merged into a word"),
                       previoussplit = _("This word was previously split into characters"),
                       # These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
@@ -487,6 +488,8 @@ class ViewElement(CommonElement) :
                       meaningclasstitle = _("show/hide translations"),
                       processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
                       refreshtitle = _("Refresh"),
+                      resultshow = 'display: block' if self.req.resultshow else 'display: none',
+                      result = (self.req.resultshow + ".") if self.req.resultshow else '',
                       )
         
         return tag

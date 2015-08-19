@@ -493,7 +493,7 @@ function process_edits(uuid, operation, batch) {
   	  out += "<input type='hidden' name='uuid' value='" + uuid + "'/>\n";
   	  out += "<p/><p/>";
   	  if (editcount > 1) {
-	      out += "<input data-role='none' class='btn btn-default btn-primary' name='submit' type='submit' value='" + local("submit") + "'/>";
+	      out += "<input data-role='none' class='btn btn-default' name='submit' type='submit' value='" + local("submit") + "'/>";
 	  } else {
 	      out += local("seeabove");
   	  	
@@ -610,7 +610,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form data-ajax='false' method='post' action='/home'>"
+      form += "<form class='ajaxform' data-ajax='false' method='post' action='/home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -627,7 +627,8 @@ function process_reviews(uuid, batch) {
       out += "</ol>";
       form += "<input type='hidden' name='count' value='" + count + "'/>\n";
       
-      form += "<input data-role='none' rel='external' class='btn btn-default btn-primary' name='bulkreview' type='submit' value='" + local("submit") + "'/>";
+      form += "<input type='hidden' name='bulkreview' value='1'/>";
+      form += "<button style='border: 2px solid black' data-role='none' style='border: 2px solid black' class='btn btn-default' type='submit'>" + local("submit") + "</button>";
       form += "</form>"
       out += form
 
@@ -635,6 +636,7 @@ function process_reviews(uuid, batch) {
           out = "<h4>" + local('norecommend') + "</h4>";
       }
       $('#reviewdestination').html(out);
+      form_loaded(false, true);
       $('#reviewModal').modal('show');
 }
 
@@ -734,11 +736,7 @@ function view(mode, uuid, page) {
     * So, just add it back below, and it seems OK.
     */
    $('#readingheader').affix();
-   $('#readingheader').on('affix.bs.affix', function() {
-            console.log("affix callback");
-        }); 
    $('#readingheader').on('affix-top.bs.affix', function() {
-            console.log("affix-top callback");
             return false;
         }); 
 }
@@ -937,6 +935,9 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 }
 
 var list_mode = true;
+function list_reload_finish(data, opaque) {
+      form_loaded(false, true);
+}
 
 function listreload(mode, uuid, page) {
        if (mode == "read") {
@@ -946,7 +947,7 @@ function listreload(mode, uuid, page) {
               '#memolistresult', 
               unavailable, 
               true, 
-              false,
+              list_reload_finish,
               true,
               false);
        } else if (mode == "edit") {
@@ -956,7 +957,7 @@ function listreload(mode, uuid, page) {
                   '#editsresult', 
                   unavailable, 
                   true, 
-                  false,
+                  list_reload_finish,
                   true,
                   false);
        } else if (mode == "home") {
@@ -966,7 +967,7 @@ function listreload(mode, uuid, page) {
                   '#historyresult', 
                   unavailable, 
                   true, 
-                  false,
+                  list_reload_finish,
                   true,
                   false);
        }

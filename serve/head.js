@@ -66,18 +66,23 @@ function learn_success(data) {
     learn_loaded = true;
 }
 
+function form_loaded_finish(data, opaque) {
+    done();
+    form_loaded(data, true);
+}
 function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
             $(this).on("submit", function(event, form) {
+                loading();
                 event.preventDefault();
                 var closest = $(form).closest("[data-role='content']");
                 var destid = "#" + closest.attr('id');
                 if (destid == "#undefined")
-                    var destid = "#" + $(form).attr('id') + "content";
+                    destid = "#" + $(form).attr('id') + "content";
                 var fromid = destid + "_result"; 
-                go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded, true, true);
+                go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded_finish, true, true);
                 $('#compactModal').modal('hide');
                 $('#regroupModal').modal('hide');
             });
