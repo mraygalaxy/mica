@@ -408,6 +408,9 @@ class LegendElement(CommonElement) :
                       reviewchange = _("Change"),
                       # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
                       norecommend = _("No review recommendations available."),
+                      nb_page = self.req.page,
+                      uuid = self.req.uuid,
+                      repage = _("Re-translate page"),
                  )
         return tag
 

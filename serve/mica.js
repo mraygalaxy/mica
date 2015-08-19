@@ -610,7 +610,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form class='ajaxform' data-ajax='false' method='post' action='/home'>"
+      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {

@@ -68,6 +68,9 @@ function learn_success(data) {
 
 function form_loaded_finish(data, opaque) {
     done();
+    $('#compactModal').modal('hide');
+    $('#regroupModal').modal('hide');
+    $('#reviewModal').modal('hide');
     form_loaded(data, true);
 }
 function form_loaded(data, do_forms) {
@@ -83,8 +86,6 @@ function form_loaded(data, do_forms) {
                     destid = "#" + $(form).attr('id') + "content";
                 var fromid = destid + "_result"; 
                 go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded_finish, true, true);
-                $('#compactModal').modal('hide');
-                $('#regroupModal').modal('hide');
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
