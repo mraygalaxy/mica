@@ -93,8 +93,9 @@ function form_loaded(data, do_forms) {
                     myform.trigger('submit', myform);
                 });
         });
+    } else {
+        done();
     }
-    done();
 }
 
 function loading() {
