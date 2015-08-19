@@ -2,8 +2,14 @@
   <head t:render="head"/>
   <body id='cbody'>
     <div t:render="translations"/>
+    <!--(if not mobile)-->
     <div data-role='panel' data-display="reveal" id='settings'>
+    <!--(else)-->
+    <div data-role='page' id='settings'>
+    <!--(end)-->
+	<!--(if not mobile)-->
         <div class="ui-panel-wrapper">
+	<!--(end)-->
             <div class="ui-content">
                 <table>
                 <tr>
@@ -39,7 +45,7 @@
                         </a>
                     </li>
                     <!--(end)-->
-                    <li><a href='#account'><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
+                    <li><a href='#account' onclick="$('#settings').panel('close')"><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
                     <li><a href='#'><t:attr name='onclick'><t:slot name='switchclick'/></t:attr><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
                     <li><a href='/disconnect' rel="external" ><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
@@ -50,7 +56,9 @@
                     <!--(end)-->
                 </ul>
             </div>
+	<!--(if not mobile)-->
         </div>
+	<!--(end)-->
     </div>
     <div data-role='page' id='learn'><div data-role='content' id='learn_content'/></div>
     <div data-role='page' id='chat'><div data-role='content' id='chat_content'></div></div>
@@ -108,10 +116,17 @@
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
       <div data-role='navbar' data-icon-pos='right'>
       <ul>
+      <!--(if mobile)-->
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' style='font-size: x-small' href='#settings'><i class='glyphicon glyphicon-user'></i> <t:slot name='username'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' style='font-size: x-small' href='#learn'><i class='glyphicon glyphicon-book'></i> <t:slot name='learn'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' style='font-size: x-small' href='#chat'><i class='glyphicon glyphicon-comment'></i> <t:slot name='chat'/></a></li>
+      <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' style='font-size: x-small' href='#stories'><i class='glyphicon glyphicon-folder-open'></i> <t:slot name='stories'/></a></li>
+      <!--(else)-->
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#settings'><i class='glyphicon glyphicon-user'></i> <t:slot name='username'/></a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#learn'><i class='glyphicon glyphicon-book'></i> <t:slot name='learn'/></a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#chat'><i class='glyphicon glyphicon-comment'></i> <t:slot name='chat'/></a></li>
       <li><a class='ui-btn ui-mini ui-btn-mini ui-btn-inline ui-shadow ui-corner-all' href='#stories'><i class='glyphicon glyphicon-folder-open'></i> <t:slot name='stories'/></a></li>
+      <!--(end)-->
       </ul>
       </div>
     </div>

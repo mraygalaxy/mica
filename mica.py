@@ -3408,7 +3408,7 @@ class MICA(object):
             body = body.decode("utf-8")
 
         if req.messages == "" :
-            eeq.messages = "<div></div>"
+            req.messages = "<div></div>"
 
 
         if frontpage :

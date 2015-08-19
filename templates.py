@@ -59,7 +59,10 @@ class CommonElement(Element) :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
-        pt = pyratemp.Template(filename = 'serve/' + template_name)
+        fh = open(cwd + 'serve/' + template_name, 'r')
+        f = fh.read()
+        fh.close()
+        pt = pyratemp.Template(f)
         self.loader = XMLString(pt(**conditionals))
         #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
