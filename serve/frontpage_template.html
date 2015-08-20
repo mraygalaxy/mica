@@ -88,13 +88,6 @@
                             <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
                             <p/>
                             <br/>
-                            <!--(if front_ads)-->    
-                            <div>
-                                <br/><t:slot name="feel"/>
-                                <br/>
-                                <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
-                            </div>
-                            <!--(end)-->
                             <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
                             </div>
                         </div>
@@ -127,5 +120,16 @@
             <!--(end)-->
         </div><!-- col-lg-9 -->
     </div><!-- row-fluid -->
+    <div class='row-fluid'>
+        <div class='col-lg-12' style='color: white'>
+	    <div>
+		<br/><t:slot name="feel"/>
+		<br/>
+		<br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+	    </div>
+	</div>
+    </div>
+    <!--(if front_ads)-->    
+    <!--(end)-->
 </body>
 </html>
