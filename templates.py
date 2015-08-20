@@ -55,7 +55,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb"] :
+        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb", "front_page"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -318,7 +318,7 @@ class FrontPageElement(CommonElement) :
                       rememberme = _("Remember Me"),
                       softwarename = _("MICA Language Learning"),
                       changelang = _("Change Language"),
-                      signinwith = _("Sign in with"),
+                      signinwith = _("OR Sign in with"),
                       error = self.req.front_error if self.req.front_error else "",
                       error_visible = 'display: block; padding: 10px' if self.req.front_error else 'display: none',
                       )
@@ -327,7 +327,7 @@ class FrontPageElement(CommonElement) :
     @renderer
     def pages(self, request, tag) :
         pages = [
-            _("<b>MICA</b> is a <b>new way</b> to learn a language, like Chinese."),
+            _("<b>MICA</b> is a <b>new way</b> to learn a language."),
             _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
             _("Why can't we use the <b>existing content</b> that's already out there?"),
             _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
@@ -347,10 +347,10 @@ class FrontPageElement(CommonElement) :
             else :
                 div = tags.div(**{"class" : "item", "style" : "text-align: center"})
 
-            div(tags.br(), tags.br(), tags.br(), tags.br())
+            div(tags.br(), tags.br(), tags.br())
             p = XMLString("<div>" + page + "</div>")
-            div(tags.h1(style="margin: 0 auto;")(p.load()))
-            div(tags.br(), tags.br(), tags.br(), tags.br())
+            div(tags.h1(style="margin: 0 auto; width: 70%")(p.load()))
+            div(tags.br(), tags.br(), tags.br())
 
             tag(div)
 

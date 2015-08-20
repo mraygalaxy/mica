@@ -187,8 +187,9 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
-        self.front_error = False;
+        self.front_error = False
         self.resultshow = False
+        self.front_page = False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         self.api = False
@@ -2971,6 +2972,7 @@ class MICA(object):
             req.oauth = params["oauth"]
         req.mica = self
         req.credentials = self.credentials()
+        req.front_page = True
         return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
 
     def render_switchlang(self, req) :
@@ -5053,8 +5055,9 @@ class MICA(object):
                 resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
                 if not out.count("SAXParseException") and not out.count("MissingRenderMethod") and "connected" in req.session.value and req.session.value["connected"] :
                     mwarn("Boo other, logging out user now.")
-                    req.session.value["connected"] = False
-                    req.session.save()
+                    if not mobile :
+                        req.session.value["connected"] = False
+                        req.session.save()
                 return self.bootstrap(req, self.heromsg + "\n<h4 id='gerror'>" + _("Error: Something bad happened") + ": " + str(msg) + "</h4>" \
                                             + resp + "</div>")
             except Exception, e :

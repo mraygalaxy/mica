@@ -216,17 +216,8 @@ var _callbacks_ = {
         self.init = function(){
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-	    self.enter = function( event ) {
-		
-                if(event.which ==13)  //13 is for enterkey
-                 {
-                     event.preventDefault();
-                     console.log("GOT ENTER EVENT!!!!!!"); 
-                     self.keyPress(event);
-                 }
-	    }
-
-	    $("#msgArea").one( "keyup", self.enter);
+            $("#msgArea").on( "keypress", self.keyPress);
+	    $("#msgArea").on( "keyup", self.keyPress);
 	    $("#msgArea").unbind().bind('input propertychange', self.keyPress);
 	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
@@ -262,7 +253,7 @@ var _callbacks_ = {
 
         self.keyPress = function(event){
             if (self.options.active) {
-                var beforeCheck = $("#msgArea").val();
+                var beforeCheck = $("#msgArea").val() || "";
                 var key = '';
                 var backspace = 0;
 		self.last_key_was_backspace = false;
@@ -278,6 +269,7 @@ var _callbacks_ = {
                     backspace = self.inputText.length - beforeCheck.length;
                 } else {
                     if (self.currentText.length == 0) {
+                        console.log("No new text. Sending what's left.")
                         self.sendText();
                     }
 		    console.log("Returning early. Booooooooooooo.");
@@ -474,7 +466,7 @@ var _callbacks_ = {
                      * language. We can fix this later. 
                      */
 
-                    go('', micaurl, '', unavailable, false,   
+                    go(false, '', micaurl, '', unavailable, false,   
                         function(response, opaque){
                             console.log("Response: " + response); 
                             var data = JSON.parse(response);
