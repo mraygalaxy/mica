@@ -57,7 +57,6 @@ chat_loaded = false;
 
 function chat_success(data) {
     chat_loaded = true;
-    done();
 }
 
 learn_loaded = false;
@@ -111,15 +110,21 @@ function done() {
     $.mobile.loading('hide');
 }
 
+$(document).on("pagecontainershow", function (e, data) {
+    done();
+});
+
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
-        var where = data.toPage.split("#")[1];
+       var where = data.toPage.split("#")[1];
+       var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
+       if (from != where) {
+           loading();
+       }
         if (where == 'stories') {
-            loading();
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   loading();
                    go(false, '#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
                 }
         } else if (where == 'learn') {
@@ -147,4 +152,13 @@ $(document).on("pagecreate", function () {
         var height = $.mobile.pageContainer.pagecontainer("getActivePage").outerHeight();
         $(".ui-panel-wrapper").css("height", height + 1);
     });
+});
+switchinstall(true);
+$(document).on('ready', function() {
+	$("div.view1").hide();
+
+	$("div.slide1").click(function(){
+		$("div.view1").slideToggle(400);
+		$("div.tri1").toggleClass("toggle1");
+	});
 });

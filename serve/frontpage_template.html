@@ -3,18 +3,18 @@
 <body>
     <div class='row-fluid'>
         <div class='col-lg-3'>
-            <div style='display: inline'>
+            <div style='display: inline; margin: 0 auto'>
                 <div class='img-rounded jumbotron' style='padding: 5px'><t:attr name='style'><t:slot name='error_visible'/></t:attr><t:slot name='error'/></div>
-                <table><tr>
-                <!--(if not mobile)-->
-                <td style='align: center'><b><t:slot name='softwarename'/></b></td>
-                </tr><tr>
-                <td style='font-size: x-small' t:render='switchlangs'>
-                </td>
-                <!--(end)-->
-                </tr></table>
-                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8">
-                    <table>
+                <br/>
+                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background: white'>
+                    <table class='badge' style='margin: 0 auto'>
+                        <!--(if not mobile)-->
+                        <tr>
+                        <td> <b><t:slot name='softwarename'/></b></td>
+                        </tr><tr>
+                        <td style='font-size: x-small; margin: 0 auto' t:render='switchlangs'></td>
+                        </tr>
+                        <!--(end)-->
                         <tr><td>
                             <t:slot name='username'/>: 
                         </td></tr><tr><td>
@@ -30,7 +30,7 @@
                         </td></tr><tr><td>
                             <div class="slide1">
                                 <div class="tri1"></div>
-                                <u><t:slot name='address'/></u>
+                                <u data-role='none'><t:slot name='address'/></u>
                             </div>
                             <div class="view1">
                                 <div style="display:inline">
@@ -42,7 +42,7 @@
                         </td></tr><tr><td>
                             <label>
                             <!--(if 'last_remember' in req.session.value)-->
-                            <input type='checkbox' name='remember' checked='checked'/>
+                            <input style='display: none' type='checkbox' name='remember' checked='checked'/>
                             <!--(else)-->
                             <input type='checkbox' name='remember'/>
                             <!--(end)-->
@@ -58,68 +58,74 @@
                             </table>
                         <!--(end)-->
                         </td></tr>
+                        <tr><td>
+                        <h4><t:slot name="connect"/>.</h4>
+                        <p/>
+                        <br/><t:slot name="experimental"/>.
+                        <div style="display: inline">
+                        <!--(if mobile)-->    
+                        <br/><t:slot name="feel"/>
+                        <br/>
+                        <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+                        <!--(else)-->
+                        <br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>.
+                        <!--(end)-->
+                        </div>
+                        </td></tr>
                     </table>
                 </form>
             </div>
         </div><!-- col-lg-3 -->
         <div class='col-lg-9'>
             <!--(if not mobile)-->    
-            <div style='display: inline'>
-                <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
-                    <h3><b><t:slot name="learn"/>.</b></h3>
-                </div>
-                <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
-                    <!-- Menu -->
-                    <ol class="carousel-indicators">
-                        <li data-target="#carousel" data-slide-to="0" class="active"></li>
-                        <li data-target="#carousel" data-slide-to="1"></li>
-                        <li data-target="#carousel" data-slide-to="2"></li>
-                    </ol>
-                    
-                    <!-- Items -->
-                    <div style='width=100%' class="carousel-inner" t:render="pages"/>
-
-                    <a href="#carousel" class="left carousel-control" data-slide="prev">
-                        <span class="glyphicon glyphicon-chevron-left"></span>
-                    </a>
-                    <a href="#carousel" class="right carousel-control" data-slide="next">
-                        <span class="glyphicon glyphicon-chevron-right"></span>
-                    </a>
-                </div>
-
-                <div style="width: 90%; margin: 0 auto;">
-                    <h4><b><t:slot name="offline"/>.</b></h4>
-                    <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
-                    <p/>
-                    <br/>
-                    <!--(if front_ads)-->    
-                    <div>
-                        <br/><t:slot name="feel"/>
-                        <br/>
-                        <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+                <div style='display: inline'>
+                    <div style="margin: 0 auto; padding: 40px">
+                        <div class='badge'>
+                            <h2 style='font-size: x-large'><t:slot name="learn"/>.</h2>
+                            <br/>
+                            <div style='font-size: medium'>
+                            <t:slot name="offline"/>.
+                            <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
+                            <p/>
+                            <br/>
+                            <!--(if front_ads)-->    
+                            <div>
+                                <br/><t:slot name="feel"/>
+                                <br/>
+                                <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+                            </div>
+                            <!--(end)-->
+                            <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
+                            </div>
+                        </div>
                     </div>
-                    <!--(end)-->
-                    <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
-                </div><!-- centered -->
-            </div>
+                    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+                        <!-- Menu -->
+                        <ol style='margin-top: 20px' class="carousel-indicators">
+                            <li data-target="#carousel" data-slide-to="0" class="active"></li>
+                            <li data-target="#carousel" data-slide-to="1"></li>
+                            <li data-target="#carousel" data-slide-to="2"></li>
+                            <li data-target="#carousel" data-slide-to="3"></li>
+                            <li data-target="#carousel" data-slide-to="4"></li>
+                            <li data-target="#carousel" data-slide-to="5"></li>
+                            <li data-target="#carousel" data-slide-to="6"></li>
+                            <li data-target="#carousel" data-slide-to="7"></li>
+                            <li data-target="#carousel" data-slide-to="8"></li>
+                        </ol>
+                        
+                        <!-- Items -->
+                        <div style='width=100%' class="carousel-inner" t:render="pages"/>
+
+                        <a href="#carousel" class="left carousel-control" data-slide="prev">
+                            <span class="glyphicon glyphicon-chevron-left"></span>
+                        </a>
+                        <a href="#carousel" class="right carousel-control" data-slide="next">
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                        </a>
+                    </div>
+                </div>
             <!--(end)-->
         </div><!-- col-lg-9 -->
     </div><!-- row-fluid -->
-    <div class='row-fluid'>
-        <div class='col-lg-12'>
-            <h4><t:slot name="connect"/>.</h4>
-            <p/>
-            <br/><t:slot name="experimental"/>.
-            <div style="display: inline">
-            <!--(if mobile)-->    
-            <br/><t:slot name="feel"/>
-            <br/>
-            <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
-            <!--(else)-->
-            <br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>.
-            <!--(end)-->
-            </div>
-        </div>
-    </div>
 </body>
 </html>
