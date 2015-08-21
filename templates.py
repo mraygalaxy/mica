@@ -746,6 +746,9 @@ class HeadElement(CommonElement):
                      newaccount = _("New Account"),
                      chat = _("Chat"),
                      learn = _("Learn"),
+                     instant = _("Instant Translation"),
+                     performingtranslation= _("Doing instant translation..."),
+                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
                      )
         return tag
 

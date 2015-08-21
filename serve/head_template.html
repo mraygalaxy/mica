@@ -2,7 +2,7 @@
   <head t:render="head"/>
   <body id='cbody'>
     <div t:render="translations"/>
-    <!--(if not mobile)-->
+    <!--(if False)-->
     <div data-role='panel' data-display="reveal" id='settings'>
     <!--(else)-->
     <div data-role='page' id='settings'>
@@ -75,11 +75,16 @@
     <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
     <div data-role='page' id='privacy'><div data-role='content' id='privacy_content'></div></div>
     <div data-role='page' id='messages'><div data-role='content'><div t:render="messages"/></div></div>
+    <div data-role='page' id='instant'><div data-role='content'>
+	   	<!--<tr><td><div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div></td></tr>-->
+                <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
+                <div id='instantdestination'></div>
+    </div></div>
     <div data-role='page' id='stories'>
         <div data-role='content'>
+		<h4><t:slot name='stories'/></h4>
 		<div id='storypages'></div>
 		<div id='uploadresult'></div>
-		<br/>
 		<ul data-role='listview' data-inset='true'>
 		    <li><a href='#reading'><t:slot name='reading'/></a></li>
 		    <li><a href='#chatting'><t:slot name='chatting'/></a></li>
@@ -91,7 +96,7 @@
         </div>
     </div>
     <div data-role='page' id='explode'>
-        <h4>&#160;&#160;<b id='explodedstory'/></h4>
+        <h4>&#160;&#160;<b style='color: white' id='explodedstory'/></h4>
         <div data-role='content' id='explode_content'>
 		<ul data-role='listview' data-inset='true'>
                         
