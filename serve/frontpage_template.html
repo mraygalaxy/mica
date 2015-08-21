@@ -4,9 +4,9 @@
     <div class='row-fluid'>
         <div class='col-lg-3'>
             <div style='display: inline; margin: 0 auto'>
-                <div class='img-rounded jumbotron' style='padding: 10px'><t:attr name='style'><t:slot name='error_visible'/></t:attr><t:slot name='error'/></div>
+                <div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto' t:render='error'><t:attr name='style'><t:slot name='error_visible'/></t:attr></div>
                 <br/>
-                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; padding: 5px'>
+                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
                     <table style='margin: 0 auto'>
                         <!--(if not mobile)-->
                         <tr>
@@ -14,6 +14,13 @@
                         </tr><tr>
                         <td style='font-size: x-small; margin: 0 auto' t:render='switchlangs'></td>
                         </tr>
+                        <tr><td>
+                            <br/><h4><b><t:slot name='signinwith'/>:</b></h4>
+                            <table>
+                            <tr t:render="thirdparty" style='display: inline'/>
+                            </table>
+                            <br/>
+                        </td></tr>
                         <!--(end)-->
                         <tr><td>
                             <t:slot name='username'/>: 
@@ -51,24 +58,18 @@
                         </td></tr><tr><td>
                             <button onclick="$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
                         </td></tr><tr><td>
-                        <!--(if not mobile)-->
-                            <br/><b><t:slot name='signinwith'/>:</b><br/>
-                            <table>
-                            <tr t:render="thirdparty" style='display: inline'/>
-                            </table>
-                        <!--(end)-->
-                        </td></tr>
-                        <tr><td>
+                        <!--
                         <h4><t:slot name="connect"/>.</h4>
                         <p/>
                         <br/><t:slot name="experimental"/>.
+                        -->
                         <div style="display: inline">
                         <!--(if mobile)-->    
                         <br/><t:slot name="feel"/>
                         <br/>
                         <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
                         <!--(else)-->
-                        <br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>.
+                        <!--<br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>-->.
                         <!--(end)-->
                         </div>
                         </td></tr>
@@ -78,10 +79,11 @@
         </div><!-- col-lg-3 -->
         <div class='col-lg-9'>
             <!--(if not mobile)-->    
+                <br/>
                 <div style='display: inline'>
-                    <div style="margin: 0 auto; padding: 40px">
+                    <div style="margin: 0 auto; padding-left: 40px; padding-bottom: 20px; padding-right: 40px;">
                         <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
-                            <h2 style='font-size: x-large'><t:slot name="learn"/>.</h2>
+                            <h2 style='font-size: x-large'><b><t:slot name="learn"/>.</b></h2>
                             <br/>
                             <div style='font-size: medium'>
                             <t:slot name="offline"/>.
