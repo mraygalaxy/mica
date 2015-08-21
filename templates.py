@@ -27,10 +27,11 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        self.loader = XMLString(req.messages)
+        self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + req.messages + "</div>")
 
     @renderer
     def messages(self, request, tag) :
+        tag("")
         return tag
 
 class CommonElement(Element) :
@@ -283,7 +284,7 @@ class FrontPageElement(CommonElement) :
 
            authorization_url, state = service.authorization_url(creds["authorization_base_url"])
 
-           servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, **{"data-ajax" : "false"})
+           servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, title=name, **{"data-ajax" : "false"})
            servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
            tag(tags.td(servicetag))
 
@@ -310,7 +311,7 @@ class FrontPageElement(CommonElement) :
                       feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
                       access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."),
                       contact = _("For assistance, Contact:"),
-                      username = _("Account"),
+                      username = _("OR Use a local account"),
                       address = _("Address"),
                       password = _("Password / Token"),
                       signin = _("Login"),
@@ -318,11 +319,14 @@ class FrontPageElement(CommonElement) :
                       rememberme = _("Remember Me"),
                       softwarename = _("MICA Language Learning"),
                       changelang = _("Change Language"),
-                      signinwith = _("OR Sign in with"),
-                      error = self.req.front_error if self.req.front_error else "",
+                      signinwith = _("Sign in with"),
                       error_visible = 'display: block; padding: 10px' if self.req.front_error else 'display: none',
                       )
         return tag
+
+    @renderer
+    def error(self, request, tag) :
+        return MessagesElement(self.req)
 
     @renderer
     def pages(self, request, tag) :

@@ -627,7 +627,7 @@ class MICA(object):
             else :
                 if req.api :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] :
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] + params["oauth"].keys():
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3407,7 +3407,7 @@ class MICA(object):
 
     def message(self, req, msg, pageid = "#messages", gohome = False, frontpage = False) :
         if req.messages == "" and msg :
-            req.messages = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + msg + "</div>"
+            req.messages = msg
 
         if gohome :
             body = u"\nwindow.location.href = '/';\n"
@@ -4386,23 +4386,20 @@ class MICA(object):
                 desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                 if reason == "user_denied" :
                     # User denied our request to create their account using social networking. Apologize and move on.
-                    req.front_error = _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.")
-                    return
+                    return _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.")
                 else :
                     # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                    req.front_error = _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ")."
-                    return
+                    return _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ")."
             else :
                 # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
-                req.front_error = _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
-                return
+                return _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
 
         code = req.http.params.get("code")
 
+        succeeded = False
+         
         if not req.http.params.get("finish") :
-            req.front_error = "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>"
-            return
-
+            req.messages = "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>"
 
         service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
 
@@ -4434,15 +4431,14 @@ class MICA(object):
             assert(creds["verified_key"] in values)
 
             if not values[creds["verified_key"]] :
-                req.front_error = _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
+                return _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
 
         if creds["email_key"] and creds["email_key"] not in values :
             authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
             out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
             out += authorization_url
             out += "'>" + _("You're welcome to try again") + "</a>"
-            req.front_error = out
-            return
+            return out
 
         password = binascii_hexlify(os_urandom(4))
         if "locale" not in values :
@@ -4470,7 +4466,7 @@ class MICA(object):
 
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
-                req.front_error = _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+                return _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mdebug("Language: " + language)
@@ -4491,10 +4487,9 @@ class MICA(object):
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
-                req.front_error = _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
-                return
+                return _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
-        return from_third_party
+        return from_third_party if not succeeded else succeeded
 
     def render_connect(self, req, from_third_party) :
         password = False
@@ -4860,6 +4855,7 @@ class MICA(object):
             if not mobile and req.action in params["oauth"].keys() :
                 oauth_result = self.render_oauth(req)
                 if isinstance(oauth_result, str) or isinstance(oauth_result, unicode) :
+                    req.messages = oauth_result
                     return self.render_frontpage(req)
 
                 from_third_party = oauth_result
@@ -4872,6 +4868,8 @@ class MICA(object):
                 connect_result = self.render_connect(req, from_third_party)
                 if connect_result :
                     return connect_result
+                if from_third_party :
+                    return self.render_frontpage(req)
                 return "<html><body><script>window.location.href = '/';</script></body></html>"
                 
             self.install_local_language(req)
