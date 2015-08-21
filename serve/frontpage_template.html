@@ -4,10 +4,10 @@
     <div class='row-fluid'>
         <div class='col-lg-3'>
             <div style='display: inline; margin: 0 auto'>
-                <div class='img-rounded jumbotron' style='padding: 5px'><t:attr name='style'><t:slot name='error_visible'/></t:attr><t:slot name='error'/></div>
+                <div class='img-rounded jumbotron' style='padding: 10px'><t:attr name='style'><t:slot name='error_visible'/></t:attr><t:slot name='error'/></div>
                 <br/>
-                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background: white'>
-                    <table class='badge' style='margin: 0 auto'>
+                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; padding: 5px'>
+                    <table style='margin: 0 auto'>
                         <!--(if not mobile)-->
                         <tr>
                         <td> <b><t:slot name='softwarename'/></b></td>
@@ -80,7 +80,7 @@
             <!--(if not mobile)-->    
                 <div style='display: inline'>
                     <div style="margin: 0 auto; padding: 40px">
-                        <div class='badge'>
+                        <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
                             <h2 style='font-size: x-large'><t:slot name="learn"/>.</h2>
                             <br/>
                             <div style='font-size: medium'>
@@ -92,7 +92,7 @@
                             </div>
                         </div>
                     </div>
-                    <div style="width: 90%; margin: 0 auto;" id="carousel" class="carousel slide" data-ride="carousel">
+                    <div style="width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
                         <!-- Menu -->
                         <ol style='margin-top: 20px' class="carousel-indicators">
                             <li data-target="#carousel" data-slide-to="0" class="active"></li>
@@ -122,7 +122,7 @@
     </div><!-- row-fluid -->
     <!--(if front_ads)-->    
     <div class='row-fluid'>
-        <div class='col-lg-12' style='color: white'>
+        <div class='col-lg-12'>
 		<br/>
 		<br/>
 		<table>
@@ -176,7 +176,7 @@
     <!--(end)-->
     <!--(if mobile)-->
     <div class='row-fluid'>
-        <div class='col-lg-12' style='color: white'>
+        <div class='col-lg-12'>
 		<br/><t:slot name="feel"/>
 		<br/>
 		<br/><t:slot name="access"/> @ <b>http://readalien.com</b>.

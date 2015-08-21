@@ -541,6 +541,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
      if (allchars == "") {
          alert(local("notselected"));
      } else {
+        $.mobile.navigate('#instant');
         $('#instantspin').attr('style', 'display: inline');
         $('#instantdestination').html("");
 
@@ -859,7 +860,7 @@ function offinstantspin(data, curr) {
     //var data = JSON.parse(data);
     $('#instantdestination').html(data);
     $('#instantspin').attr('style', 'display: none');
-    $('#instantModal').modal('show');
+    //$('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
 //    $(document).unbind("mouseleave");
 //    $(document).unbind("copy");
@@ -890,6 +891,7 @@ function install_highlight() {
       var st = Trans.Selector.getSelected();
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
+           $.mobile.navigate('#instant');
            $('#instantdestination').html("");
            go(false, '#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
               '#instantresult', 

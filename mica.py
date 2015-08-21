@@ -1528,7 +1528,11 @@ class MICA(object):
                 """)
 
             if not disk :
-                line_out.append("\n<table>")
+                line_out.append("\n<table")
+                if not chat and not history :
+                    line_out.append(" style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'")
+
+                line_out.append(">")
                 line_out.append("\n<tr>")
 
                 prev_merge = False

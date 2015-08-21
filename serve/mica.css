@@ -221,6 +221,14 @@ ul.pagination {
     padding: 0px;
 }
 
+select {
+    color: black;
+}
+
+input {
+    color: black;
+}
+
 .jumbotron {
     font-weight:bold;
     color: black; 
@@ -250,11 +258,22 @@ body {
 
 body {
     background-image: url("/serve/alien.jpg");
+}
+.ui-content {
+    background-image: url("/serve/alien.jpg");
     background-repeat:repeat-y;
     background-position:center center;
     background-attachment:scroll;
-    background-size:cover;
+    background-size: 100% auto;
+    color: white;
 }
+
+.ui-page {
+	background: #000;
+	background-image: url("/serve/alien.jpg");
+	background-size:cover;  
+}
+
 .ui-page {
     background: transparent;
 }
@@ -279,4 +298,30 @@ body {
 
 li {
     background-color: #dfdfdf;
+}
+
+.modal-dialog,
+.modal-content {
+    /* 80% of window height */
+    height: 90%;
+}
+
+.modal-body {
+    /* 100% = dialog height, 120px = header + footer */
+    max-height: calc(100% - 60px);
+    overflow-y: scroll;
+}
+
+h3.modal-header {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.modal-header {
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    top:15%;
+    outline: none;
 }

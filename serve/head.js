@@ -162,3 +162,18 @@ $(document).on('ready', function() {
 		$("div.tri1").toggleClass("toggle1");
 	});
 });
+
+
+function ScaleContentToDevice(){
+    scroll(0, 0);
+    var content = $.mobile.getScreenHeight() - $(".ui-header").outerHeight() - $(".ui-footer").outerHeight() - $(".ui-content").outerHeight() + $(".ui-content").height();
+    $(".ui-content").height(content);
+}
+
+$(document).on( "pagecontainershow", function(){
+//    ScaleContentToDevice();        
+});
+
+$(window).on("resize orientationchange", function(){
+ //   ScaleContentToDevice();
+});
