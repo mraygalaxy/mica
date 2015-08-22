@@ -286,7 +286,7 @@ class FrontPageElement(CommonElement) :
 
            authorization_url, state = service.authorization_url(creds["authorization_base_url"])
 
-           servicetag = tags.a(onclick = "$('#loginModal').modal({backdrop: 'static', keyboard: false, show: true});", href = authorization_url, title=name, **{"data-ajax" : "false"})
+           servicetag = tags.a(onclick = "loading()", href = authorization_url, title=name, **{"data-ajax" : "false"})
            servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
            tag(tags.td(servicetag))
 
@@ -322,6 +322,7 @@ class FrontPageElement(CommonElement) :
                       softwarename = _("MICA Language Learning"),
                       changelang = _("Change Language"),
                       signinwith = _("Sign in with"),
+                      headjs = self.req.mpath + "/head.js",
                       )
         return tag
 
