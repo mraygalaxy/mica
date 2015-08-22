@@ -27,11 +27,13 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'>" + req.messages + "</div>")
+        self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>")
 
     @renderer
     def messages(self, request, tag) :
-        tag("")
+        tag.fillSlots(
+                error_visible = "display: none" if self.req.messages == "" else "display: block" ,
+            )
         return tag
 
 class CommonElement(Element) :
@@ -56,7 +58,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb", "front_page"] :
+        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -320,7 +322,6 @@ class FrontPageElement(CommonElement) :
                       softwarename = _("MICA Language Learning"),
                       changelang = _("Change Language"),
                       signinwith = _("Sign in with"),
-                      error_visible = 'display: block; padding: 10px' if self.req.front_error else 'display: none',
                       )
         return tag
 

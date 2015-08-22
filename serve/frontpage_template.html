@@ -2,9 +2,8 @@
 <head t:render="head"/>
 <body>
     <div class='row-fluid'>
-        <div class='col-lg-3'>
+        <div class='col-lg-3' id='leftpane'>
             <div style='display: inline; margin: 0 auto'>
-                <div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto' t:render='error'><t:attr name='style'><t:slot name='error_visible'/></t:attr></div>
                 <br/>
                 <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
                     <table style='margin: 0 auto'>
@@ -78,48 +77,51 @@
             </div>
         </div><!-- col-lg-3 -->
         <div class='col-lg-9'>
-            <!--(if not mobile)-->    
-                <br/>
-                <div style='display: inline'>
-                    <div style="margin: 0 auto; padding-left: 40px; padding-bottom: 20px; padding-right: 40px;">
-                        <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
-                            <h2 style='font-size: x-large'><b><t:slot name="learn"/>.</b></h2>
-                            <br/>
-                            <div style='font-size: medium'>
-                            <t:slot name="offline"/>.
-                            <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
-                            <p/>
-                            <br/>
-                            <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
+            <br/>
+            <div id='newaccountresultdestination'><div t:render='error'/></div> 
+            <div id='maindisplay'>
+                <!--(if not mobile)--> 
+                    <div style='display: inline'>
+                        <div style="margin: 0 auto; padding-left: 40px; padding-bottom: 20px; padding-right: 40px;">
+                            <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
+                                <h2 style='font-size: x-large'><b><t:slot name="learn"/>.</b></h2>
+                                <br/>
+                                <div style='font-size: medium'>
+                                <t:slot name="offline"/>.
+                                <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
+                                <p/>
+                                <br/>
+                                <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div style="width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
-                        <!-- Menu -->
-                        <ol style='margin-top: 20px' class="carousel-indicators">
-                            <li data-target="#carousel" data-slide-to="0" class="active"></li>
-                            <li data-target="#carousel" data-slide-to="1"></li>
-                            <li data-target="#carousel" data-slide-to="2"></li>
-                            <li data-target="#carousel" data-slide-to="3"></li>
-                            <li data-target="#carousel" data-slide-to="4"></li>
-                            <li data-target="#carousel" data-slide-to="5"></li>
-                            <li data-target="#carousel" data-slide-to="6"></li>
-                            <li data-target="#carousel" data-slide-to="7"></li>
-                            <li data-target="#carousel" data-slide-to="8"></li>
-                        </ol>
-                        
-                        <!-- Items -->
-                        <div style='width=100%' class="carousel-inner" t:render="pages"/>
+                        <div style="width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
+                            <!-- Menu -->
+                            <ol style='margin-top: 20px' class="carousel-indicators">
+                                <li data-target="#carousel" data-slide-to="0" class="active"></li>
+                                <li data-target="#carousel" data-slide-to="1"></li>
+                                <li data-target="#carousel" data-slide-to="2"></li>
+                                <li data-target="#carousel" data-slide-to="3"></li>
+                                <li data-target="#carousel" data-slide-to="4"></li>
+                                <li data-target="#carousel" data-slide-to="5"></li>
+                                <li data-target="#carousel" data-slide-to="6"></li>
+                                <li data-target="#carousel" data-slide-to="7"></li>
+                                <li data-target="#carousel" data-slide-to="8"></li>
+                            </ol>
+                            
+                            <!-- Items -->
+                            <div style='width=100%' class="carousel-inner" t:render="pages"/>
 
-                        <a href="#carousel" class="left carousel-control" data-slide="prev">
-                            <span class="glyphicon glyphicon-chevron-left"></span>
-                        </a>
-                        <a href="#carousel" class="right carousel-control" data-slide="next">
-                            <span class="glyphicon glyphicon-chevron-right"></span>
-                        </a>
+                            <a href="#carousel" class="left carousel-control" data-slide="prev">
+                                <span class="glyphicon glyphicon-chevron-left"></span>
+                            </a>
+                            <a href="#carousel" class="right carousel-control" data-slide="next">
+                                <span class="glyphicon glyphicon-chevron-right"></span>
+                            </a>
+                        </div>
                     </div>
-                </div>
-            <!--(end)-->
+                <!--(end)-->
+            </div>
         </div><!-- col-lg-9 -->
     </div><!-- row-fluid -->
     <!--(if front_ads)-->    

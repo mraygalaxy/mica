@@ -662,9 +662,9 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go(false, '#newaccountresultdestination', "/api?alien=" + who + "&finish=1&code=" + code,
-        '', 
-        'error', 
+    go(false, '#newaccountresultdestination', "/api?alien=" + who + "&connect=1&finish=1&code=" + code,
+        '#newaccountresult', 
+        unavailable, 
         true,
         false, 
         true,
@@ -1665,6 +1665,6 @@ function start_learning(mode, action, uuid, name) {
        url += "&name=" + name;
 
    go(false, '#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
-    $('#settings').panel('close');
+   //$('#settings').panel('close');
 }
 
