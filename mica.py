@@ -38,6 +38,7 @@ uploads_enabled = True
 
 if not mobile :
     from oauthlib.common import to_unicode
+    from oauthlib.oauth2.rfc6749.errors import MissingTokenError
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
     try :
@@ -187,9 +188,7 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
-        self.front_error = False
         self.resultshow = False
-        self.front_page = False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         self.api = False
@@ -625,7 +624,7 @@ class MICA(object):
                     # The user has completed logging out / signing out already - then this message appears.
                     resp = self.message(req, self.heromsg + "\n<h4>" + _("Disconnected from MICA") + "</h4></div>")
             else :
-                if req.api :
+                if req.api and req.action not in params["oauth"].keys() :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
                 if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] + params["oauth"].keys():
                     self.install_local_language(req)
@@ -2976,7 +2975,6 @@ class MICA(object):
             req.oauth = params["oauth"]
         req.mica = self
         req.credentials = self.credentials()
-        req.front_page = True
         return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
 
     def render_switchlang(self, req) :
@@ -3422,7 +3420,7 @@ class MICA(object):
 
 
         if frontpage :
-            req.front_error = msg
+            req.messages = msg
             contents = self.render_frontpage(req)
         else :
             req.mica = self
@@ -3777,7 +3775,7 @@ class MICA(object):
 
         return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>")
 
-    def render_view(self, req, uuid, from_third_party, start_page) :
+    def render_view(self, req, uuid, start_page) :
         view_mode = "text"
         if "view_mode" in req.session.value :
             view_mode = req.session.value["view_mode"]
@@ -3842,29 +3840,21 @@ class MICA(object):
                     return self.bootstrap(req, "<div><div id='pageresult'><br/><br/>" + output + "</div></div>")
             output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
-            output = ""
-            if from_third_party and "output" in from_third_party :
-                return self.bootstrap(req, "<div id='newaccountresult'>" + from_third_party["output"] + "<br/><b>" + _("Start learning!") + "</b></div>")
-            elif from_third_party and "redirect" in from_third_party :
-                return self.bootstrap(req, from_third_party["redirect"])
-
+            # Beginning of a message.
+            output += self.heromsg + "<h4>" + _("No story loaded. Choose a story above")
+            if mobile :
+                output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
             else :
-                # Beginning of a message.
-                output += self.heromsg + "<h4>" + _("No story loaded. Choose a story above")
-                if mobile :
-                    output += "</h4><p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
-                else :
-                    # end of a message
-                    output += "<br/>" + _("or create one by going to Account => Upload New Story") + ".</h4>"
-                    output += "<br/><br/>"
-                    output += "<h4>"
-                    # Beginning of a message
-                    output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='#help'>"
-                    # end of a message
-                    output += _("please read the tutorial") + "</a>"
-                    output += "</h4>"
-                output += "</div>"
-                return self.bootstrap(req, output)
+                # end of a message
+                output += "<br/>" + _("or create one by going to Account => Upload New Story") + ".</h4>"
+                output += "<br/><br/>"
+                output += "<h4>"
+                # Beginning of a message
+                output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='#help'>"
+                # end of a message
+                output += _("please read the tutorial") + "</a>"
+                output += "</h4>"
+            output += "</div>"
 
         return self.bootstrap(req, output)
 
@@ -4043,7 +4033,7 @@ class MICA(object):
                                 req.resultshow = _("Success! Account was deleted") + ": " + username
                             else :
                                 self.clean_session(req)
-                                req.front_error = _("Your account has been permanently deleted.")
+                                req.messages = _("Your account has been permanently deleted.")
                                 return self.render_frontpage(req)
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
@@ -4396,12 +4386,16 @@ class MICA(object):
 
         code = req.http.params.get("code")
 
-        succeeded = False
-         
         if not req.http.params.get("finish") :
-            req.messages = "<div id='newaccountresultdestination' style='font-size: large'><img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...</div><script>finish_new_account('" + code + "', '" + who + "');</script>"
+            return "<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
 
-        service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
+        try :
+            service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
+        except MissingTokenError, e :
+            merr('Internal oauth error')
+            for line in format_exc().splitlines() :
+                merr(line)
+            return _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
 
         mdebug("Token fetched successfully: " + str(service.token))
 
@@ -4472,24 +4466,27 @@ class MICA(object):
             mdebug("Language: " + language)
 
             output = ""
-            output += "<h4>" + _("Congratulations. Your account is created") + ": " + values["email"] 
+            output += "<h4 style='color: white'>" + _("Congratulations. Your account is created") + ": " + values["email"] 
             output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
 
             output += "<br/><br/>Save this Password: " + password
-            output += "<br/><br/>" + _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
+            output += "<br/><br/>" + _("If this is your first time here") + ", <a rel='external' data-role='none' class='btn btn-default' href='/help'>"
             output += _("please read the tutorial") + "</a>"
             output += "<br/><br/>Happy Learning!</h4>"
+            output += "<br/><a rel='external' data-role='none' class='btn btn-default' href='/'>" + _("Start learning!") + "</a>" 
+            output += "<script>$('#maindisplay').attr('style', 'display: none');</script>"
+            output += "<script>$('#leftpane').attr('style', 'display: none');</script>"
 
-            from_third_party["output"] = output
+            req.messages = "<div id='newaccountresult'>" + output + "</div>"
         else :
-            from_third_party["redirect"] = "<h3>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>" 
             auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
                 return _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+            req.messages = "<div id='newaccountresult'><h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script></div>" 
 
-        return from_third_party if not succeeded else succeeded
+        return from_third_party
 
     def render_connect(self, req, from_third_party) :
         password = False
@@ -4855,9 +4852,16 @@ class MICA(object):
             if not mobile and req.action in params["oauth"].keys() :
                 oauth_result = self.render_oauth(req)
                 if isinstance(oauth_result, str) or isinstance(oauth_result, unicode) :
+                    # polled oauth provider successfully, but have not created
+                    # account in the system (which is slow). Need print the front
+                    # page again and wait for an ajax request to do that stuff.
+                    # There might also be an error here.
                     req.messages = oauth_result
                     return self.render_frontpage(req)
 
+                # This is a response to the ajax request that the account was
+                # finished being created (finish=1), but we have no yet set the
+                # user to 'connected' yet, which happens below.
                 from_third_party = oauth_result
 
             if req.http.params.get("connect") or from_third_party != False :
@@ -4865,17 +4869,26 @@ class MICA(object):
                     # The demo account is provided for users who want to give the software a try without committing to it.
                     raise exc.HTTPBadRequest(_("Demo Account is readonly. You must install the mobile application for interactive use of the demo account."))
 
+                # We could be connecting for both local accounts and oauth
                 connect_result = self.render_connect(req, from_third_party)
                 if connect_result :
-                    return connect_result
+                    # There was an error with anything
+                    req.messages = connect_result
+                    return self.render_frontpage(req)
+
+                # This is a response to an ajax request to complete the
+                # connection
                 if from_third_party :
                     return self.render_frontpage(req)
+                
+                # Local account creation. Just redirect to home.
                 return "<html><body><script>window.location.href = '/';</script></body></html>"
                 
             self.install_local_language(req)
 
             if 'connected' not in req.session.value or req.session.value['connected'] != True :
                 if req.api :
+                    mdebug("401 HTTPUnauthorized API request. Returning fail.")
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
                 return self.render_frontpage(req)
@@ -5031,7 +5044,7 @@ class MICA(object):
                 self.render_bulkreview(req, name)
 
             if req.action in ["home", "read", "edit" ] :
-                return self.render_view(req, uuid, from_third_party, start_page)
+                return self.render_view(req, uuid, start_page)
 
             if req.action in ["stories", "storylist", "account", "chat"] :
                 func = getattr(self, "render_" + req.action)
