@@ -3734,6 +3734,11 @@ class MICA(object):
 
             pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
             for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+
+
+            # TODO: Move this shit to the file 'read_template.html'
+
+
                 # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
                 output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
             # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
@@ -3745,7 +3750,7 @@ class MICA(object):
                 output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
 
                 if total_memorized :
-                    output.append("<div class='panel-group' id='panelMemorized'>\n")
+                    output.append("<div class='panel-group' id='panelMemorized' style='color: black'>\n")
                     for p in progress :
                         output.append("""
                                 <div class='panel panel-default'>
