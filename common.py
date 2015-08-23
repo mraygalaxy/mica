@@ -19,6 +19,8 @@ import xmlrpclib
 import sys
 import threading
 
+spinner = "jqmica/images/ajax-loader.gif"
+
 def timest() :
     return timestlocal() - timezone
 

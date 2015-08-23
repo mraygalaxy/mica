@@ -239,7 +239,7 @@ class ModalsElement(CommonElement) :
                      notimplemented = _("not implemented"),
                      uploadfile = _("Upload File"),
                      mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
-                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                     spinner = tags.img(src=self.req.mpath + '/'+ spinner, width='15px'),
                      # This appears on the front page when you login. It is the HTTP address of the website.
                      signing = _("Signing you in, Please wait"),
                      loading = _("Loading story, Please wait"),
@@ -262,7 +262,7 @@ class ChatElement(CommonElement) :
     def chat(self, request, tag) :
         tag.fillSlots(
                       temp_jabber_pw = self.req.session.value["temp_jabber_pw"] if not mobile else self.req.session.value["password"],
-                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                       # Indicates that the chat software is starting up... 
                       loading = _("Loading Chat"),
                       username = self.req.session.value["username"].replace("@", "%40"),
@@ -487,7 +487,7 @@ class ViewElement(CommonElement) :
         merges += "', 'merge', false)"
 
         tag.fillSlots(storyname = self.req.story_name.replace("_", " "),
-                      spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                       stats = stats,
                       installpages = self.req.install_pages,
                       # This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
@@ -766,7 +766,7 @@ class HeadElement(CommonElement):
                      learn = _("Learn"),
                      instant = _("Instant Translation"),
                      performingtranslation= _("Doing instant translation..."),
-                     spinner = tags.img(src=self.req.mpath + '/spinner.gif', width='15px'),
+                     spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                      )
         return tag
 
