@@ -619,6 +619,7 @@ class AccountElement(CommonElement):
                         changepass = _("Change Password"),
                         changeemail = _("Email Address"),
                         email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
+                        emailchange = _("Please change your email address on the website. Will support mobile in a future version"),
                         changemail = _("Change Email"),
                         deleteaccount = _("Delete Account?"),
                         mobiledelete = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version."),
