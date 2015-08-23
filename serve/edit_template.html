@@ -1,4 +1,5 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="edit">
+<div id='editsresult'>
 <h5><t:slot name='editname'/>:</h5>
 <p/>
 <table>
@@ -8,7 +9,7 @@
 </table>
 <p/>
 
-<a data-role='none' href='#' class='btn btn-default'><t:attr name='onclick'><t:slot name='processedits'/></t:attr><t:slot name='tryrecco'/></a><p/>
+<a data-role='none' href='#' class='btn btn-default' onclick="process_edits('@!story['uuid']!@', 'all', true);"><t:slot name='tryrecco'/></a><p/>
 <form data-ajax='false' class='ajaxform' action='/edit' method='post'>
 <input type='hidden' name='retranslate' value='1'/>
 <input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
@@ -62,4 +63,5 @@
 <!--(else)-->
   <h4><t:slot name='editdisabled'/></h4>
 <!--(end)-->
+</div>
 </div>

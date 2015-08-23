@@ -1165,7 +1165,7 @@ class MICA(object):
         
         return keys
         
-    def render_phistory(self, req, story) :
+    def render_reviewlist(self, req, story) :
         req.page = req.http.params.get("page")
         req.list_mode = self.get_list_mode(req)
         req.story = story
@@ -1229,78 +1229,78 @@ class MICA(object):
 
         return self.bootstrap(req, run_template(req, ReviewElement))
 
-    def edits(self, req, story, page) :
-        list_mode = self.get_list_mode(req)
-        if list_mode :
-            history = []
+    def render_editslist(self, req, story) :
+        req.page = str(req.http.params.get("page"))
+        req.list_mode = self.get_list_mode(req)
+        history = []
+
+        if req.list_mode :
             found = {}
             tid = 0
+            error = False
             try :
-                page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+                page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(req.page)]
             except couch_adapter.ResourceNotFound, e :
-                if not self.get_list_mode(req) :
-                    return ("<h4>" + _("Statistics Disabled") + ".</h4>")
-                else :
-                    return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
-            units = page_dict["units"]
+                mwarn("Rendering eidtslist failed to lookup story page: " + str(req.page) + " uuid " + story['uuid'])
+                error = True
 
-            merge_keys = self.view_keys(req, "mergegroups", units) 
-            split_keys = self.view_keys(req, "splits", units) 
-                
-            for unit in units :
-                char = "".join(unit["source"])
-                if char in self.processors[self.tofrom(story)].punctuation_without_letters or len(char.strip()) == 0:
-                    continue
-                if char in found :
-                    continue
+            if not error :
+                units = page_dict["units"]
 
-                changes = False if char not in split_keys else split_keys[char]
-                
-                if changes :
-                    if unit["hash"] not in changes["record"] :
-                        continue
-                    record = changes["record"][unit["hash"]]
-                    history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "SPLIT"])
-                else: 
-                    changes = False if char not in merge_keys else merge_keys[char]
+                merge_keys = self.view_keys(req, "mergegroups", units) 
+                split_keys = self.view_keys(req, "splits", units) 
                     
-                    if changes : 
-                        if "hash" not in unit :
-                            continue
+                for unit in units :
+                    char = "".join(unit["source"])
+                    if char in self.processors[self.tofrom(story)].punctuation_without_letters or len(char.strip()) == 0:
+                        continue
+                    if char in found :
+                        continue
+
+                    changes = False if char not in split_keys else split_keys[char]
+                    
+                    if changes :
                         if unit["hash"] not in changes["record"] :
                             continue
                         record = changes["record"][unit["hash"]]
-                        memberlist = []
-                        nb_singles = 0
-                        for key, member in record["members"].iteritems() :
-                            if len(key) == 1 :
-                                nb_singles += 1
+                        history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "SPLIT"])
+                    else: 
+                        changes = False if char not in merge_keys else merge_keys[char]
+                        
+                        if changes : 
+                            if "hash" not in unit :
                                 continue
-                            memberlist.append((member["romanization"], key))
-                        if nb_singles == len(record["members"]) :
+                            if unit["hash"] not in changes["record"] :
+                                continue
+                            record = changes["record"][unit["hash"]]
+                            memberlist = []
+                            nb_singles = 0
+                            for key, member in record["members"].iteritems() :
+                                if len(key) == 1 :
+                                    nb_singles += 1
+                                    continue
+                                memberlist.append((member["romanization"], key))
+                            if nb_singles == len(record["members"]) :
+                                continue
+                            history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "MERGE"])
+                        else :
                             continue
-                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "MERGE"])
-                    else :
-                        continue
 
-                if char not in found :
-                    found[char] = True
-                tid += 1
-            
-            # Add sort options here
-            def by_total( a ):
-                return int(float(a[1]))
+                    if char not in found :
+                        found[char] = True
+                    tid += 1
+                
+                # Add sort options here
+                def by_total( a ):
+                    return int(float(a[1]))
 
-            history.sort( key=by_total, reverse = True )
+                history.sort( key=by_total, reverse = True )
 
-        req.process_edits = "process_edits('" + story["uuid"] + "', 'all', true)"
-        req.page = str(page)
         req.uuid = story['uuid']
-        req.list_mode = list_mode
-        if list_mode :
-            req.history = history
+        req.story = story
+        req.history = history
 
-        return run_template(req, EditElement)
+        return self.bootstrap(req, run_template(req, EditElement))
 
     def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
@@ -4296,11 +4296,6 @@ class MICA(object):
 
         return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>")
 
-    def render_editslist(self, req, story) :
-        return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \
-                                   self.edits(req, story, req.http.params.get("page")) + \
-                                   "</div></div>")
-
     def baidu_compliance_fix(self, session):
         self.fixed = False
 
@@ -4984,7 +4979,7 @@ class MICA(object):
                     start_page = tmp_story["current_page"]
                     mdebug("Loading start page: " + str(start_page))
                 
-            for param in ["multiple_select", "phistory", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
+            for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
                 if req.http.params.get(param) :
                     return getattr(self, "render_" + param)(req, story)
 

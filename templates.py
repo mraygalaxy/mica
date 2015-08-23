@@ -411,7 +411,6 @@ class EditElement(CommonElement) :
     @renderer
     def edit(self, request, tag) :
         tag.fillSlots(editname = _("Legend"),
-                      processedits = self.req.process_edits,
                       nb_page = self.req.page,
                       uuid = self.req.uuid,
                       previousmerge = _("These characters were previously merged into a word"),
