@@ -1867,7 +1867,7 @@ class MICA(object):
                     line_out.append("\n<td style='vertical-align: bottom; text-align: center'>")
                     line_out.append("<table><tr>")
                     line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
-                    line_out.append("<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;")
+                    line_out.append("<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;")
                     line_out.append("</div></td>")
                     line_out.append("</tr><tr><td>")
                     if gp.already_romanized :
@@ -4347,7 +4347,7 @@ class MICA(object):
         code = req.http.params.get("code")
 
         if not req.http.params.get("finish") :
-            return "<img src='" + req.mpath + "/spinner.gif' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
+            return "<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
@@ -5447,7 +5447,7 @@ def second_splash() :
 <div class="inner2">
 """
     output += "<p><p><p>"
-    fh = open(cwd + "serve/spinner.gif", 'r')
+    fh = open(cwd + "serve/" + spinner, 'r')
     contents = fh.read() 
     encoded2 = base64_b64encode(contents)
     fh.close()
