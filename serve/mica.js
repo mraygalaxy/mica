@@ -965,7 +965,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '#history', '/api?alien=read&uuid=' + uuid + '&phistory=1&page=' + page, 
+           go(false, '#history', '/api?alien=read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   '#reviewresult', 
                   unavailable, 
                   true, 
