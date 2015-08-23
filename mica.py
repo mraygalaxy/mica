@@ -3894,8 +3894,8 @@ class MICA(object):
         
         if req.http.params.get("pack") :
             mdebug("Compacting...")
-            req.db.compact()
-            req.db.cleanup()
+            self.safe_execute(req.db.compact) 
+            self.safe_execute(req.db.cleanup)
             design_docs = ["memorized", "stories", "mergegroups",
                            "tonechanges", "accounts", "splits", "chats" ]
 
