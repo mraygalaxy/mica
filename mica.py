@@ -1165,62 +1165,69 @@ class MICA(object):
         
         return keys
         
-    def history(self, req, story, page) :
+    def render_phistory(self, req, story) :
+        req.page = req.http.params.get("page")
+        req.list_mode = self.get_list_mode(req)
+        req.story = story
         gp = self.processors[self.tofrom(story)]
         history = []
         found = {}
         tid = 0
         online = 0
         offline = 0
+
+        error = False
         try :
-            page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
+            page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(req.page)]
         except couch_adapter.ResourceNotFound, e :
-            if not self.get_list_mode(req) :
-                return ("<h4>" + _("Statistics Disabled") + ".</h4>")
-            else :
-                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
-        units = page_dict["units"]
+            mwarn("Page during review statistics history could not be found.")
+            error = True
 
-        tone_keys = self.view_keys(req, "tonechanges", units) 
-        
-        for unit in units :
-            char = "".join(unit["source"])
-            if char not in found :
-                if "punctuation" not in unit or not unit["punctuation"] :
-                    if "online" in unit and unit["online"] :
-                        online += 1
-                    else :
-                        offline += 1
-                        
-            changes = False if char not in tone_keys else tone_keys[char]
+        if not error :
+            units = page_dict["units"]
+
+            tone_keys = self.view_keys(req, "tonechanges", units) 
             
-            if not changes :
-                continue
-            if unit["hash"] not in changes["record"] :
-                continue
-            record = changes["record"][unit["hash"]]
-            if char not in found :
-                found[char] = True
-                if gp.already_romanized :
-                    history.append([char, str(changes["total"]), "", "<br/>".join(record["target"]), tid])
-                else :
-                    history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
-                        
-            tid += 1
-        
-        # Add sort options here
-        def by_total( a ):
-            return int(float(a[1]))
+            for unit in units :
+                char = "".join(unit["source"])
+                if char not in found :
+                    if "punctuation" not in unit or not unit["punctuation"] :
+                        if "online" in unit and unit["online"] :
+                            online += 1
+                        else :
+                            offline += 1
+                            
+                changes = False if char not in tone_keys else tone_keys[char]
+                
+                if not changes :
+                    continue
+                if unit["hash"] not in changes["record"] :
+                    continue
+                record = changes["record"][unit["hash"]]
+                if char not in found :
+                    found[char] = True
+                    if gp.already_romanized :
+                        history.append([char, str(changes["total"]), "", "<br/>".join(record["target"]), tid])
+                    else :
+                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
+                            
+                tid += 1
+            
+            # Add sort options here
+            def by_total( a ):
+                return int(float(a[1]))
 
-        history.sort( key=by_total, reverse = True )
-        req.history = history
+            history.sort( key=by_total, reverse = True )
+            req.history = history
+
         # This appears underneath the Review-mode legend: 'Breakdown' is a delineation of how many words in this story had to be translated using an offline dictionary or an online dictionary.
         req.onlineoffline = _("Breakdown")
         # Online indicates a count of how many words were translated over the internet
         req.onlineoffline += ": " + _("Online") + ": " + str(online) + ", "
         # Offline indicates a count of how many words were translated using an offline dictionary
         req.onlineoffline += _("Offline") + ": " + str(offline)
-        return run_template(req, HistoryElement)
+
+        return self.bootstrap(req, run_template(req, ReviewElement))
 
     def edits(self, req, story, page) :
         list_mode = self.get_list_mode(req)
@@ -1353,7 +1360,6 @@ class MICA(object):
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
 
-        req.process_reviews = "process_reviews('" + uuid + "', true)"
         req.page = str(start_page)
         req.uuid = story['uuid']
 
@@ -2187,11 +2193,12 @@ class MICA(object):
                 trans_id += 1
                 continue
             py, target = ret
+
             if unit["hash"] in memorized :
                 if unit["hash"] not in added :
-                    added[unit["hash"]] = unit
-                    progress.append([py, target, unit, x, trans_id, page])
+                    progress.append([py, target, unit, x, unit["hash"] if py else trans_id, page])
                     total_memorized += 1
+                    del memorized[unit["hash"]]
 
             if py and py not in self.processors[self.tofrom(story)].punctuation :
                 unique[unit["hash"]] = True
@@ -3723,68 +3730,21 @@ class MICA(object):
         return self.message(req, self.heromsg + "\n<h4>" + _("Story upgrade started. You may refresh to follow its status.") + "</h4></div>")
 
     def render_memolist(self, req, story) :
-        list_mode = self.get_list_mode(req)
-        page = req.http.params.get("page")
-        output = []
-                
-        result = self.memocount(req, story, page)
+        req.list_mode = self.get_list_mode(req)
+        req.page = req.http.params.get("page")
+        req.memresult = self.memocount(req, story, req.page)
+        req.memallcount = 0
+        req.story = story
 
-        if result :
-            total_memorized, total_unique, unique, progress = result
-
-            pr = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
+        if req.memresult :
             for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                req.memallcount = str(result['value'])
 
+            if req.list_mode :
+                total_memorized, total_unique, unique, progress = req.memresult
+                req.mempercent = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
 
-            # TODO: Move this shit to the file 'read_template.html'
-
-
-                # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
-                output.append(_("Memorized all stories") + ": " + str(result['value']) + "<br/>")
-            # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
-            output.append(_("Unique memorized page") + ": " + str(total_memorized) + "<br/>")
-            # A count of all the unique words on this page, not just the ones the user has memorized.
-            output.append(_("Unique words this page") + ": " + str(len(unique)) + "<br/>")
-            if list_mode :
-                output.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-                output.append(str(pr) + "%;'> (" + str(pr) + "%)</div></div>")
-
-                if total_memorized :
-                    output.append("<div class='panel-group' id='panelMemorized' style='color: black'>\n")
-                    for p in progress :
-                        output.append("""
-                                <div class='panel panel-default'>
-                                  <div class="panel-heading">
-                                  """)
-                        py, target, unit, nb_unit, trans_id, page_idx = p
-                        if len(target) and target[0] == '/' :
-                            target = target[1:-1]
-                        tid = unit["hash"] if py else trans_id 
-
-                        output.append("<a style='cursor: pointer' class='trans btn-default' onclick=\"forget('" + \
-                                str(tid) + "', '" + story["uuid"] + "', '" + str(nb_unit) + "', '" + str(page_idx) + "')\">" + \
-                                "<i class='glyphicon glyphicon-remove'></i></a>")
-
-                        output.append("&#160; " + "".join(unit["source"]) + ": ")
-                        output.append("<a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelMemorized' href='#collapse" + tid + "'>")
-
-                        output.append("<i class='glyphicon glyphicon-arrow-down' style='size: 50%'></i>&#160;" + py)
-                        output.append("</a>")
-                        output.append("</div>")
-                        output.append("<div id='collapse" + tid + "' class='panel-body collapse'>")
-                        output.append("<div class='panel-inner'>" + target.replace("/"," /") + "</div>")
-                        output.append("</div>")
-                        output.append("</div>")
-                    output.append("</div>")
-                else :
-                    output.append("<h4>" + _("No words memorized. Get to work!") + "</h4>")
-            else :
-                output.append("<h4>" + _("Statistics Disabled") + ".</h4>")
-        else :
-            # statistics in reading mode are disabled
-            output.append("<h4>" + _("Statistics Disabled") + ".</h4>")
-
-        return self.bootstrap(req, self.heromsg + "\n<div id='memolistresult'>" + "".join(output) + "</div></div>")
+        return self.bootstrap(req, run_template(req, ReadElement))
 
     def render_view(self, req, uuid, start_page) :
         view_mode = "text"
@@ -4335,12 +4295,6 @@ class MICA(object):
             merr("Storylist fill failed: " + str(e))
 
         return self.bootstrap(req, "<div><div id='storylistresult'>" + finallist + "</div></div>")
-
-    def render_phistory(self, req, story) :
-        return self.bootstrap(req, self.heromsg + "\n<div id='historyresult'>" + \
-                                   # statistics in review mode are disabled
-                                   (self.history(req, story, req.http.params.get("page")) if self.get_list_mode(req) else "<h4>" + _("Statistics Disabled") + ".</h4>") + \
-                                   "</div></div>")
 
     def render_editslist(self, req, story) :
         return self.bootstrap(req, self.heromsg + "\n<div id='editsresult'>" + \

@@ -22,7 +22,7 @@
         <div class='panel-group' id='panelEdit'>
         <!--(for x in history)-->
             <div class='panel panel-default'>
-                <div class='panel-heading'>
+                <div class='panel-heading' id='heading@!str(x[4])!@'>
                 <!--((char, total, spy, result, tid, op) = x)-->
                     <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelEdit' href='#collapse@!str(x[4])!@'>
                     <i class='glyphicon glyphicon-arrow-down' style='size: 50%'/> @!x[2]!@
@@ -34,8 +34,8 @@
                     <div style='color: red; display: inline'><t:slot name='merge'/>   </div>
                 <!--(end)-->
                 </div>
-                <div class='panel-inner'>
-                    <div class='panel-body collapse' id='collapse@!str(x[4])!@'>
+                <div class='panel-collapse collapse' id='collapse@!str(x[4])!@'>
+		    <div class='panel-body'>
                     <!--(if len(x[3]))-->
                         <!--(if x[3][0] == '/')-->
                            @!x[3][1:-1]!@
@@ -51,8 +51,8 @@
                             </table>
                         <!--(end)-->
                     <!--(end)-->
-                    </div>
-                </div>
+		    </div>
+	        </div>
             </div>
         <!--(end)-->
         </div>
