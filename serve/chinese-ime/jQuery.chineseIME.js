@@ -181,7 +181,7 @@
         self.clearOld(-2);
         document.getElementById("msgArea").focus();
         //self.options = [];
-        self.html = "<ul data-role='none' class='options'></ul>";
+        self.html = "<ul data-role='none' class='options' style='color: black'></ul>";
         self.paramNames = {'text': 'text',
                            'num': 'num',
                            'callback': 'cb'}
