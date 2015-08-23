@@ -7,10 +7,9 @@
                 <br/>
                 <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
                     <table style='margin: 0 auto'>
+                        <tr><td> <b><t:slot name='softwarename'/></b></td></tr>
                         <!--(if not mobile)-->
                         <tr>
-                        <td> <b><t:slot name='softwarename'/></b></td>
-                        </tr><tr>
                         <td style='font-size: x-small; margin: 0 auto' t:render='switchlangs'></td>
                         </tr>
                         <tr><td>
@@ -62,15 +61,6 @@
                         <p/>
                         <br/><t:slot name="experimental"/>.
                         -->
-                        <div style="display: inline">
-                        <!--(if mobile)-->    
-                        <br/><t:slot name="feel"/>
-                        <br/>
-                        <br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
-                        <!--(else)-->
-                        <!--<br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>-->.
-                        <!--(end)-->
-                        </div>
                         </td></tr>
                     </table>
                 </form>
@@ -178,15 +168,17 @@
 	</div>
     </div>
     <!--(end)-->
-    <!--(if mobile)-->
     <div class='row-fluid'>
-        <div class='col-lg-12'>
+        <div class='col-lg-12' style='color: white'>
+                <!--(if mobile)-->
 		<br/><t:slot name="feel"/>
 		<br/>
 		<br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+                <!--(else)-->
+                <!--<br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>-->.
+                <!--(end)-->
 	</div>
     </div>
-    <!--(end)-->
 </body>
 <script><t:attr name='src'><t:slot name='headjs'/></t:attr></script>
 </html>

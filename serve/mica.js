@@ -1478,8 +1478,10 @@ function reconnect(unused) {
     do_refresh = false;
 }
 
+var ci;
+
 function doLogin(oForm) {
-    $("#msgArea").chineseInput({
+    ci = $("#msgArea").chineseInput({
         debug: true,
         input: {
         initial: 'simplified',//'traditional', // or 'simplified'
