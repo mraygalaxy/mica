@@ -177,3 +177,17 @@ $(document).on( "pagecontainershow", function(){
 $(window).on("resize orientationchange", function(){
  //   ScaleContentToDevice();
 });
+
+$(document).ready(function () {
+	$(".modal").each(function() {
+	    $(this).on('shown.bs.modal', function() {
+		$(".affix").each(function() { $(this).removeClass('affix'); $(this).addClass('affix-top'); $(this).affix(); });
+		
+	    });
+	    $(this).on('hidden.bs.modal', function() {
+		$(".affix-top").each(function() { $(this).removeClass('affix-top'); $(this).addClass('affix'); $(this).affix(); });
+		
+	    });
+	});
+});
+

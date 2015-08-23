@@ -58,7 +58,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb"] :
+        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -87,10 +87,54 @@ class CommonElement(Element) :
                 tag(option(_(readable)))
         return tag
 
-class HistoryElement(CommonElement) :
+class ReviewElement(CommonElement) :
     @renderer
-    def history(self, request, tag) :
-        tag.fillSlots(onlineoffline = self.req.onlineoffline)
+    def review(self, request, tag) :
+        tag.fillSlots(
+                     onlineoffline = self.req.onlineoffline,
+                     # statistics in reading mode are disabled
+                     statdisabled = _("Statistics Disabled"),
+                     # 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
+                     title = _("Legend"),
+                     # This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
+                     legend1 = _("Correct for tone and meaning"),
+                     # This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
+                     legend1post = _("(No review necessary)"),
+                     # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed. 
+                     legend2 = _("Possibly wrong meaning"),
+                     # This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate. 
+                     legend2post = _("(but tone is correct)"),
+                     # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
+                     legend3 = _("Possibly wrong tone"),
+                     # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
+                     legend3post = _("(as well as meaning)"),
+                     # This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
+                     legend4 = _("Definitely wrong previously"),
+                     # This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
+                     history = _("Change History"),
+                     tryrecco = _("Try Recommendations"),
+                     reviewchange = _("Change"),
+                     # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
+                     norecommend = _("No review recommendations available."),
+                     nb_page = self.req.page,
+                     repage = _("Re-translate page"),
+                     )
+        return tag
+
+class ReadElement(CommonElement) :
+    @renderer
+    def read(self, request, tag) :
+        tag.fillSlots(
+                        # In 'Reading' mode, we record lots of statistics about the user's behavior, most importantly: which words they have memorized and which ones they have not. 'Memorized all stories' is a concise statement that show the user a sum total number of across all stories of the number of words they have memorized in all.
+                        memallstories = _("Memorized all stories"),
+                        # Same as previous, except the count only covers the page that the user is currently reading and does not include duplicate words
+                        memunique = _("Unique memorized page"),
+                        # A count of all the unique words on this page, not just the ones the user has memorized.
+                        uniquepage = _("Unique words this page"),
+                        # statistics in reading mode are disabled
+                        statdisabled = _("Statistics Disabled"),
+                        nowords = _("No words memorized. Get to work!"),
+                     )
         return tag
 
 class TranslationsElement(CommonElement) :
@@ -388,38 +432,6 @@ class EditElement(CommonElement) :
                      )
         return tag
 
-class LegendElement(CommonElement) :
-    @renderer
-    def legend(self, request, tag) :
-                     # 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
-        tag.fillSlots(title = _("Legend"),
-                      # This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
-                      legend1 = _("Correct for tone and meaning"),
-                      # This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
-                      legend1post = _("(No review necessary)"),
-                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified by the legend has multiple meanings and needs to be reviewed. 
-                      legend2 = _("Possibly wrong meaning"),
-                      # This appears in the 'Review'-mode legend while reading a story: It indicates that while this word needs to be reviewed for its meaning, the tone is still accurate. 
-                      legend2post = _("(but tone is correct)"),
-                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone.
-                      legend3 = _("Possibly wrong tone"),
-                      # This appears in the 'Review'-mode legend while reading a story: It indicates that a word of this color as identified needs to be reviewed for both its tone as well as its meaning.
-                      legend3post = _("(as well as meaning)"),
-                      # This appears in the 'Review'-mode legend while reading a story:  It indicates that a previously reviewed word was identified by (and auto-corrected by) the user's previous review history and may or may not need to be reviewed again.
-                      legend4 = _("Definitely wrong previously"),
-                      # This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
-                      history = _("Change History"),
-                      processreviews = self.req.process_reviews,
-                      tryrecco = _("Try Recommendations"),
-                      reviewchange = _("Change"),
-                      # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
-                      norecommend = _("No review recommendations available."),
-                      nb_page = self.req.page,
-                      uuid = self.req.uuid,
-                      repage = _("Re-translate page"),
-                 )
-        return tag
-
 def processinstantclick(req, request, tag) :
     if mobile :
         assert("password" in req.session.value)
@@ -460,7 +472,7 @@ class ViewElement(CommonElement) :
         elif self.req.action == "edit" :
             stats = tags.div(id='editslist')
         elif self.req.action == "home" :
-            stats = LegendElement(self.req)
+            stats = tags.div(id='history')
 
         uuid = 'bad_uuid'
 

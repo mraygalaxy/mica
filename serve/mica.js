@@ -966,7 +966,7 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
            go(false, '#history', '/api?alien=read&uuid=' + uuid + '&phistory=1&page=' + page, 
-                  '#historyresult', 
+                  '#reviewresult', 
                   unavailable, 
                   true, 
                   list_reload_finish,
@@ -1669,4 +1669,3 @@ function start_learning(mode, action, uuid, name) {
    go(false, '#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
    //$('#settings').panel('close');
 }
-

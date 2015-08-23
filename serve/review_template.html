@@ -1,0 +1,49 @@
+<div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="review">
+<div id='reviewresult'>
+<br/><t:slot name='title'/>:<br/>
+<table>
+<tr><td style='vertical-align: top'><div class='graysquare'></div></td><td>&#160;</td><td><t:slot name='legend1'/><br/><t:slot name='legend1post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='greensquare'></div></td><td>&#160;</td><td><t:slot name='legend2'/><br/><t:slot name='legend2post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='redsquare'></div></td><td>&#160;</td><td><t:slot name='legend3'/><br/><t:slot name='legend3post'/></td></tr>
+<tr><td style='vertical-align: top'><div class='blacksquare'></div></td><td>&#160;</td><td><t:slot name='legend4'/></td></tr>
+</table>
+<p/>
+<a class='btn btn-default' style='border: 2px solid black' onclick="process_reviews('@!story['uuid']!@', true)"><t:slot name='tryrecco'/></a>
+<p/>
+<form data-ajax='false' class='ajaxform' action='/home' method='post'>
+<input type='hidden' name='retranslate' value='1'/>
+<input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
+<input type='hidden' name="uuid" value="@!story['uuid']!@"/>
+<button style='border: 2px solid black' data-role='none' class='btn btn-default' type='submit'><t:slot name='repage'/></button>
+</form>
+<p/>
+<br/>
+<t:slot name='history'/>:<br/>
+<div style='display: none' id='reviewchange'><t:slot name='reviewchange'/></div>
+<div style='display: none' id='norecommend'><t:slot name='norecommend'/></div>
+<!--(if list_mode)-->
+    <t:slot name='onlineoffline'/>
+    <p/>
+    <div class='panel-group' id='panelReview'>
+        <!--(for x in history)-->
+        <!--char, total, spy, targ, tid = x-->
+        <div class='panel panel-default'>
+            <div class='panel-heading' id='heading@!str(x[4])!@'>
+                @!x[0]!@ (@!str(int(float(x[1])))!@): 
+                <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelReview' href='#collapse@!str(x[4])!@'>
+                <i class='glyphicon glyphicon-arrow-down' style='size: 50%'> @!str(x[2])!@</i>
+                </a>
+            </div>
+            <div class='panel-collapse collapse' id='collapse@!str(x[4])!@' style='color: black'>
+                 <div class='panel-body'>
+                 @!(x[3][1:-1] if (len(x[3]) and x[3][0] == '/') else x[3]).replace("\"", "\\\"").replace("\'", "\\\"")!@
+                 </div>
+            </div>
+        </div>
+        <!--(end)-->
+    </div>
+<!--(else)-->
+<h4><t:slot name='statdisabled'/>.</h4>
+<!--(end)-->
+</div>
+</div>

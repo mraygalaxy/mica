@@ -1,0 +1,46 @@
+<div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="read">
+<div id='memolistresult'>
+<!--(if memresult)-->
+    <!--total_memorized, total_unique, unique, progress = memresult -->
+    <t:slot name='memallstories'/>: @!memallcount!@ 
+    <br/>
+    <t:slot name='memunique'/>: @!memresult[0]!@ 
+    <br/>
+    <t:slot name='uniquepage'/>: @!len(memresult[2])!@ 
+    <br/>
+    <!--(if list_mode)-->
+        <div class='progress progress-success progress-striped'>
+            <div class='progress-bar' style='width: @!mempercent!@%;'>(@!mempercent!@%)</div>
+        </div>
+        <!--(if memresult[0])-->
+            <div class='panel-group' id='panelReading' style='color: black'>
+                <!--(for x in memresult[3])-->
+                    <!--py, target, unit, nb_unit, trans_id, page_idx = progress -->
+                    <div class='panel panel-default'>
+                        <div class='panel-heading'>
+                            <a style='cursor: pointer' class='trans btn-default' onclick="forget('@!str(x[4])!@', '@!story['uuid']!@', '@!x[3]!@)', '@!str(x[5])!@')">
+                            <i class='glyphicon glyphicon-remove'></i>
+                            </a>
+                            &#160; @!x[0]!@ @!"".join(x[2]['source'])!@: <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelReading' href='#collapse@!str(x[4])!@'>
+                                <i class='glyphicon glyphicon-arrow-down' style='size: 50%'>&#160; @!x[0]!@</i>
+                            </a>
+                        </div>
+                        <div class='panel-collapse collapse' id='collapse@!str(x[4])!@' style='color: black'>
+                            <div class='panel-body'>
+                                @!(x[1][1:-1] if (len(x[1]) and x[1][0] == '/') else x[1]).replace("/", " /")!@
+                            </div>
+                        </div>
+                    </div>
+                <!--(end)-->
+            </div>
+        <!--(else)-->
+            <h4><t:slot name='nowords'/></h4>
+        <!--(end)-->
+    <!--(else)-->
+        <h4><t:slot name='statdisabled'/>.</h4>
+    <!--(end)-->
+<!--(else)-->
+<h4><t:slot name='statdisabled'/>.</h4>
+<!--(end)-->
+</div>
+</div>

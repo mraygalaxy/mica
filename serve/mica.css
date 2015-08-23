@@ -299,29 +299,3 @@ body {
 li {
     background-color: #dfdfdf;
 }
-
-.modal-dialog,
-.modal-content {
-    /* 80% of window height */
-    height: 90%;
-}
-
-.modal-body {
-    /* 100% = dialog height, 120px = header + footer */
-    max-height: calc(100% - 60px);
-    overflow-y: scroll;
-}
-
-h3.modal-header {
-    margin-top: 10px;
-    margin-bottom: 5px;
-}
-
-.modal-header {
-    padding-left: 15px;
-    padding-right: 15px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    top:15%;
-    outline: none;
-}
