@@ -177,3 +177,9 @@ $(document).on( "pagecontainershow", function(){
 $(window).on("resize orientationchange", function(){
  //   ScaleContentToDevice();
 });
+
+function chatEnter() {
+    e = jQuery.Event("keypress");
+    e.which = 13; //choose the one you want
+    $("#msgArea").trigger(e);
+}

@@ -313,7 +313,7 @@ class FrontPageElement(CommonElement) :
                       feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
                       access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."),
                       contact = _("For assistance, Contact:"),
-                      username = _("OR Use a local account"),
+                      username = _("OR Use a local account") if not mobile else _("Account"),
                       address = _("Address"),
                       password = _("Password / Token"),
                       signin = _("Login"),

@@ -626,7 +626,7 @@ class MICA(object):
             else :
                 if req.api and req.action not in params["oauth"].keys() :
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] + params["oauth"].keys():
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3410,7 +3410,13 @@ class MICA(object):
         if gohome :
             body = u"\nwindow.location.href = '/';\n"
         else :
-            body = u"\n$.mobile.navigate('" + pageid + u"');\n"
+            body = u"""
+                if (window.location.hash == "") {
+                   $.mobile.navigate('""" + pageid + u"""');
+                } else {
+                   $.mobile.navigate(window.location.hash);
+                }
+            """
 
         if isinstance(body, str) :
             body = body.decode("utf-8")

@@ -1,21 +1,3 @@
-var _callbacks_ = {
-    'loadWords': function(rep){
-        var success = rep[0],
-            reply = rep[1][0],
-            word = reply[0],
-            words = reply[1],
-            lens = reply[2];
-
-        if (typeof lens == 'undefined') {
-            lens = new Array(words.length);
-            for (var i = 0; i < lens.length; i++) {
-                lens[i] = word.length;
-            }
-        }
-        $.wordDatabase.setChoices(word, words, lens);
-    }
-};
-
 (function($){
 
     function Word(name, choices, options){
