@@ -88,11 +88,15 @@
     <!--(end)-->
 
     <h4><b><t:slot name='changeemail'/></b>?</h4>
+    <!--(if not mobile)-->
     <form class='ajaxform' data-ajax='false' action='/account' method='post'>
         <input type='text' name='email'><t:attr name='value'><t:slot name='email'/></t:attr></input>
         <input name='changeemail' type='hidden' value='1'/>
         <button type='submit' class='btn btn-default btn-primary'><t:slot name='changemail'/></button>
     </form>
+    <!--(else)-->
+    <t:slot name='emailchange'/>
+    <!--(end)-->
     <br/>
     <br/>
     <p/>
