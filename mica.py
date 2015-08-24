@@ -21,16 +21,15 @@ from hashlib import md5 as hashlib_md5
 from json import loads as json_loads, dumps as json_dumps
 from base64 import b64encode as base64_b64encode
 from socket import timeout as socket_timeout
-from Queue import Queue as Queue_Queue, Empty as Queue_Empty
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
 from sys import settrace as sys_settrace
-
 
 import couch_adapter
 import processors
 from processors import * 
 from common import *
+from serializable import *
 from translator import *
 from templates import *
 
@@ -363,6 +362,7 @@ class MICA(object):
         return l
         
     def __init__(self, db_adapter):
+        self.serial = Serializable(params["serialize_couch_on_mobile"])
         self.general_processor = Processor(self, params)
         self.client = Translator(params["trans_id"], params["trans_secret"])
         self.mutex = Lock()
@@ -445,7 +445,7 @@ class MICA(object):
         mdebug("Runloop running.")
         sleep(5)
         while True :
-            self.safe_execute(self.db.runloop)
+            self.serial.safe_execute(self.db.runloop)
             sleep(1)
 
         self.db.detach_thread()
@@ -516,6 +516,7 @@ class MICA(object):
         self.check_all_views(req)
         req.db = savedb
 
+    @serial
     def view_runner(self, username, db) :
         # This only primes views for logged-in users.
         # Scaling the backgrounding for all users will need more thought.
@@ -549,37 +550,16 @@ class MICA(object):
 
         return _("Database optimized.")
 
-    def safe_execute_serial(self) :
-        (stuff, rq) = (yield)
-        (func, args, kwargs) = stuff
-
-        resp = func(*args, **kwargs)
-
-        rq.put(resp)
-        rq.task_done()
-
-    def safe_execute(self, func, args = [], kwargs = {}) :
-        if params["serialize_couch_on_mobile"] :
-            rq = Queue_Queue()
-            co = self.safe_execute_serial()
-            co.next()
-            params["q"].put((co, (func, args, kwargs), rq))
-            resp = rq.get()
-        else :
-            resp = func(*args, **kwargs)
-
-        return resp
-
     def view_runner_sched(self) :
         mdebug("Execute the view runner one time to get started...")
         for username, db in self.dbs.iteritems() :
-            self.safe_execute(self.view_runner, args = [username, db])
+            self.view_runner(username, db)
 
         while True :
             mdebug("View runner complete. Waiting until next time...")
             sleep(1800)
             for username, db in self.dbs.iteritems() :
-                self.safe_execute(self.view_runner, args = [username, db])
+                self.view_runner(username, db)
 
     def get_filter_params(self, req) :
         filterparams = {"name" : "download/mobile"}
@@ -595,6 +575,7 @@ class MICA(object):
         filterparams["files"] = ",".join(files)
         return json_dumps(filterparams)
 
+    @serial
     def run_render(self, req) :
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
@@ -673,7 +654,7 @@ class MICA(object):
             if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
                 req.front_ads = True
 
-            resp = self.safe_execute(self.run_render, args = [req])
+            resp = self.run_render(req)
 
         except exc.HTTPUnauthorized, e :
             resp = e
@@ -734,6 +715,7 @@ class MICA(object):
     def rehash_correct_polyphome(self, unit):
         unit["hash"] = self.get_polyphome_hash(unit["multiple_correct"], unit["source"])
 
+    @serial
     def test_dicts_handle(self, f) :
         fname = params["scratch"] + f 
         exported = False
@@ -751,6 +733,7 @@ class MICA(object):
 
         return exported
 
+    @serial
     def size_check(self, f, req = False) :
         fname = params["scratch"] + f
         size = os_path.getsize(fname)
@@ -781,10 +764,10 @@ class MICA(object):
                             all_found = False
 
                             mdebug("Replicated file " + f + " is missing at " + fname + ". Exporting...")
-                            if not self.safe_execute(self.test_dicts_handle, args=[f]) :
+                            if not self.test_dicts_handle(f) :
                                 break
                         else :
-                            if not self.safe_execute(self.size_check, args = [f]) :
+                            if not self.size_check(f) :
                                 mdebug("Mobile file is different from DB. Deleting and re-exporting: " + f)
                                 os_remove(fname)
                                 recheck = True
@@ -796,10 +779,12 @@ class MICA(object):
 
         for name, lgp in self.processors.iteritems() :
             try :
-                handle = lgp.parse_page_start()
-                lgp.test_dictionaries(handle, retest = True)
-                lgp.parse_page_stop(handle)
+                lgp.test_dictionaries(retest = True)
             except Exception, e :
+                err = ""
+                for line in format_exc().splitlines() :
+                    err += line + "\n"
+                merr(err)
                 merr("Error preloading dictionaries: " + str(e))
 
             for f in lgp.get_dictionaries() :
@@ -847,7 +832,7 @@ class MICA(object):
 
         assert("source_language" in story)
 
-        processor = getattr(processors, processor_map[self.tofrom(story)])(self, params)
+        processor = self.processors[self.tofrom(story)]
     
         page_inputs = 0
         if live or ("filetype" not in story or story["filetype"] == "txt") :
@@ -887,9 +872,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-        opaque = processor.parse_page_start(False if not live else story["source"])
-
-        processor.test_dictionaries(opaque)
+        processor.test_dictionaries()
 
         mverbose("Starting translation...")
         for iidx in range(page_start, page_inputs) :
@@ -914,7 +897,7 @@ class MICA(object):
                     page_input = eval(req.db.get_attachment(self.story(req, name) + ":original:" + str(iidx), "attach"))["contents"]
                 
             mverbose("Pre-parsing page " + str(iidx))
-            parsed = processor.pre_parse_page(opaque, page_input)
+            parsed = processor.pre_parse_page(page_input)
 
             mverbose("Parsed result: " + parsed + " for page: " + str(iidx) + " type: " + str(type(parsed)))
 
@@ -953,7 +936,7 @@ class MICA(object):
                     self.transmutex.release()
 
             try :
-                processor.parse_page(opaque, req, story, groups, str(iidx), progress = self.progress if not live else False)
+                processor.parse_page(req, story, groups, str(iidx), progress = self.progress if not live else False)
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -981,7 +964,6 @@ class MICA(object):
                     req.db[self.story(req, name)] = tmpstory
                     self.store_error(req, name, msg)
 
-                processor.parse_page_stop(opaque)
                 raise e
 
         if not live :
@@ -1010,7 +992,6 @@ class MICA(object):
                 self.transmutex.release()
 
         mverbose("Translation complete.")
-        processor.parse_page_stop(opaque)
 
     def get_parts(self, unit, tofrom) :
         gp = self.processors[tofrom]
@@ -2346,6 +2327,7 @@ class MICA(object):
         mdebug("Completed edit with offset: " + str(offset))
         return [True, offset]
 
+    @serial
     def add_story_from_source(self, req, filename, source, filetype, source_lang, target_lang, sourcepath) :
         if sourcepath :
             assert(source == False)
@@ -2798,6 +2780,7 @@ class MICA(object):
             self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
+    @serial
     def run_job_complete(self, req, cleanup, self_delete, job) :
         if cleanup :
             cleanup(*args, **kwargs)
@@ -2825,7 +2808,7 @@ class MICA(object):
         try :
             mdebug("Running job: " + str(job))
             req.job_uuid = job["uuid"]
-            job["result"] = self.safe_execute(func, args, kwargs)
+            job["result"] = func(*args, **kwargs)
             job["success"] = True
             mdebug("Complete job: " + str(job))
         except Exception, e :
@@ -2833,7 +2816,7 @@ class MICA(object):
             job["success"] = False
             job["result"] = str(e)
 
-        self.safe_execute(self.run_job_complete, args = [req, cleanup, self_delete, job])
+        self.run_job_complete(req, cleanup, self_delete, job)
 
         req.db.detach_thread()
 
@@ -2878,6 +2861,7 @@ class MICA(object):
         mdebug("Submitted: " + str(job))
         return self.message(req, out, gohome = True)
             
+    @serial
     def forgetstory(self, req, uuid, name) :
         tmp_story = req.db[self.story(req, name)]
         tmp_story["translated"] = False
@@ -2898,6 +2882,7 @@ class MICA(object):
         # 'Forgot' a story using the button in the side-panel.
         return _("Forgotten")
 
+    @serial
     def deletestory(self, req, uuid, name) : 
         mdebug("Checking for " + self.story(req, name) + " existence")
         story_found = False if not name else req.db.doc_exist(self.story(req, name))
@@ -3116,15 +3101,14 @@ class MICA(object):
             out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
 
         try :
-            opaque = gp.parse_page_start()
-            gp.test_dictionaries(opaque)
+            gp.test_dictionaries()
             try :
                 for idx in range(0, len(requests)) :
                     request = requests[idx]
                     if gp.already_romanized and len(requests) > 1 and idx == 0 :
                         continue
                     request_decoded = request.decode("utf-8")
-                    tar = gp.get_first_translation(opaque, request_decoded, False)
+                    tar = gp.get_first_translation(gp.handle, request_decoded, False)
                     if tar :
                         for target in tar :
                             ipa = gp.get_ipa(request_decoded)
@@ -3142,7 +3126,6 @@ class MICA(object):
                         else :
                             out["offline"].append({"request" : request, "ipa" : False, "target" : False})
 
-                gp.parse_page_stop(opaque)
             except OSError, e :
                 mdebug("Looking up target instant translation failed: " + str(e))
                 return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
@@ -3859,8 +3842,8 @@ class MICA(object):
         
         if req.http.params.get("pack") :
             mdebug("Compacting...")
-            self.safe_execute(req.db.compact) 
-            self.safe_execute(req.db.cleanup)
+            self.serial.safe_execute(req.db.compact) 
+            self.serial.safe_execute(req.db.cleanup)
             design_docs = ["memorized", "stories", "mergegroups",
                            "tonechanges", "accounts", "splits", "chats" ]
 
@@ -4620,7 +4603,7 @@ class MICA(object):
                         listing = req.db["MICA:filelisting_" + f]
                         fname = params["scratch"] + f 
 
-                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.safe_execute(self.size_check, args = [f], kwargs = {"req" : req}) :
+                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f, req = req) :
                             if os_path.isfile(fname) :
                                 minfo("Opening dict file: " + f)
                                 fh = open(fname, 'r')
@@ -4632,10 +4615,7 @@ class MICA(object):
                                 minfo("Cannot Upload " + f + ", not generated yet.")
                         else :
                             mdebug("File " + f + " already exists.")
-                            handle = lgp.parse_page_start()
-                            #lgp.test_dictionaries(handle, preload = True)
-                            lgp.test_dictionaries(handle, retest = True)
-                            lgp.parse_page_stop(handle)
+                            lgp.test_dictionaries(retest = True)
 
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
@@ -5333,8 +5313,6 @@ def go(p) :
 
         db_adapter = getattr(couch_adapter, params["couch_adapter_type"])
 
-        params["q"] = Queue_Queue()
-
         if not mobile :
             if int(params["sslport"]) == -1 :
                 if int(params["port"]) != 80:
@@ -5409,20 +5387,7 @@ def go(p) :
         rt.daemon = True
         rt.start()
 
-        while True :
-            while True :
-                try :
-                    (co, req, rq) = params["q"].get(timeout=10000)
-                    break
-                except Queue_Empty :
-                    pass
-            try :
-                co.send((req, rq))
-            except StopIteration :
-                params["q"].task_done()
-                continue
-
-            params["q"].task_done()
+        mica.serial.consume()
 
         rt.join()
 

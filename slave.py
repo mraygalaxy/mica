@@ -59,7 +59,7 @@ class MICASlave():
        return {"status" : 0, "msg" : msg, "result" : result }
 
     def error(self, status, msg, result) :
-       cberr(msg)
+       merr(msg)
        return {"status" : status, "msg" : msg, "result" : result }
     
     def get_functions(self):

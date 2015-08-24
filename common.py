@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 from logging.handlers import RotatingFileHandler 
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
