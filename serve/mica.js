@@ -1405,7 +1405,7 @@ function handlePresence(oJSJaCPacket) {
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
-var first_reconnect = true;
+var first_reconnect = false;
 
 function handleError(e) {
     if (first_reconnect) {
@@ -1481,6 +1481,10 @@ function reconnect(unused) {
 var ci;
 
 function doLogin(oForm) {
+    if (con != false) {
+        console.log("In the middle of a login already.");
+ 	return;
+    }
     ci = $("#msgArea").chineseInput({
         debug: true,
         input: {
