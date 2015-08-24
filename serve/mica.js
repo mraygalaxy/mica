@@ -1405,7 +1405,7 @@ function handlePresence(oJSJaCPacket) {
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
-var first_reconnect = false;
+var first_reconnect = true;
 
 function handleError(e) {
     if (first_reconnect) {
