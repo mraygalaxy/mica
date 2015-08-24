@@ -10,6 +10,7 @@ from copy import deepcopy
 from re import compile as re_compile, IGNORECASE
 from unicodedata import normalize, category
 from os.path import exists as path_exists
+from serializable import *
 import codecs
 
 if not mobile :
@@ -67,10 +68,14 @@ class MyListener(PoolListener):
 
 class Processor(object) :
     def __init__(self, mica, params) :
+        self.serial = Serializable(True)
+        self.serial.start()
         self.already_romanized = True
         self.params = params
         self.mica = mica
         self.accented_source = False
+        self.initialized = False
+        self.handle = False
 
         self.punctuation = {}
         self.punctuation_without_newlines = {}
@@ -102,7 +107,8 @@ class Processor(object) :
     def get_ipa(self, source) :
         return False
     
-    def parse_page(self, opaque, req, story, groups, page, temp_units = False, progress = False, error = False) :
+    @serial
+    def parse_page(self, req, story, groups, page, temp_units = False, progress = False, error = False) :
         if temp_units :
             story["temp_units"] = []
         else :
@@ -111,26 +117,23 @@ class Processor(object) :
             story["pages"][page] = {}
             story["pages"][page]["units"] = []
 
-        if not opaque :
-            handle = self.parse_page_start()
-        else :
-            handle = opaque
+        if not self.handle :
+            self.parse_page_start()
 
-        self.parse_page_groups(req, story, groups, handle, progress, temp_units, page)
-
-        if not opaque :
-            self.parse_page_stop(handle)
+        self.parse_page_groups(req, story, groups, progress, temp_units, page)
 
     def parse_page_start(self, hint_strinput = False) : 
-        return True
+        self.handle = True
 
-    def parse_page_stop(self, opaque) :
-        return True
+    def parse_page_stop(self) :
+        self.handle = False
 
-    def pre_parse_page(self, opaque, page_input_unicode) :
+    def pre_parse_page(self, page_input_unicode) :
+        if not self.handle :
+            self.handle = True
         return page_input_unicode.encode("utf-8")
 
-    def parse_page_groups(self, req, story, groups, opaque, progress, temp_units, page) :
+    def parse_page_groups(self, req, story, groups, progress, temp_units, page) :
         unigroups = []
         unikeys = []
 
@@ -143,8 +146,6 @@ class Processor(object) :
             except UnicodeDecodeError, e :
                 if error :
                     self.mica.store_error(req, story['name'], "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
-                if not handle :
-                    self.parse_page_stop(opaque)
                 raise e
 
             if not self.all_punct(uni) :
@@ -161,7 +162,7 @@ class Processor(object) :
         mverbose("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
 
         for idx in range(0, len(unigroups)) :
-            self.recursive_translate(req, story, opaque, unigroups[idx], temp_units, page, tone_keys)
+            self.recursive_translate(req, story, unigroups[idx], temp_units, page, tone_keys)
             if progress :
                 progress(req, story, idx, len(groups), page)
 
@@ -253,19 +254,19 @@ class Processor(object) :
             unit["multiple_correct"] = selector 
 
 
-    def recursive_translate_start(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+    def recursive_translate_start(self, req, story, uni, temp_units, page, tone_keys) :
         if self.all_punct(uni) :
             units = []
             units.append(self.add_unit([uni], uni, [uni], punctuation = True))
         else :
-            units = self.recursive_translate_lang(req, story, opaque, uni, temp_units, page, tone_keys)
+            units = self.recursive_translate_lang(req, story, uni, temp_units, page, tone_keys)
         return units
 
-    def recursive_translate(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+    def recursive_translate(self, req, story, uni, temp_units, page, tone_keys) :
         found = False
         mverbose("Requested: " + uni)
 
-        units = self.recursive_translate_start(req, story, opaque, uni, temp_units, page, tone_keys)
+        units = self.recursive_translate_start(req, story, uni, temp_units, page, tone_keys)
         if len(units) :
             found = True
 
@@ -284,10 +285,10 @@ class Processor(object) :
 
         return found
 
-    def online_cross_reference(self, req, story, uni, opaque) :
+    def online_cross_reference(self, req, story, uni) :
         online_units = False
         if not self.params["mobileinternet"] or self.params["mobileinternet"].connected() != "none" :
-            online_units = self.online_cross_reference_lang(req, story, uni, opaque)
+            online_units = self.online_cross_reference_lang(req, story, uni)
         return online_units
 
     def all_punct(self, uni, exclude = []) :
@@ -297,6 +298,14 @@ class Processor(object) :
                 all = False
                 break
         return all
+
+    def test_dictionaries(self, preload = False, retest = False) :
+        if not self.handle :
+            self.parse_page_start()
+
+    @serial
+    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
+        return self.get_first_translation_lang(opaque, source, reading, none_if_not_found, debug)
 
 class RomanizedSource(Processor) :
     def __init__(self, mica, params) :
@@ -312,7 +321,8 @@ class RomanizedSource(Processor) :
         flistvalues.append(self.dbname)
         return flistvalues
 
-    def test_dictionaries(self, opaque, preload = False, retest = False) :
+    def test_dictionaries(self, preload = False, retest = False) :
+        super(RomanizedSource, self).test_dictionaries(preload = preload, retest = retest)
         if not self.srcdb :
             self.srcdb = {}
             db = create_engine('sqlite:///' + self.params["scratch"] + self.dbname, listeners= [MyListener()])
@@ -341,9 +351,8 @@ class RomanizedSource(Processor) :
                 full_files[name] = self.params["scratch"] + f
             self.dictionary = load_dictionary(self.srcdb, full_files)
 
-    def online_cross_reference_lang(self, req, story, all_source, opaque) :
+    def online_cross_reference_lang(self, req, story, all_source) :
         mdebug("Going online...")
-        #opaque is not yet used for Romanized sources 
         name = story['name']
 
         minfo("translating source to target....")
@@ -366,13 +375,7 @@ class RomanizedSource(Processor) :
         unit["match_romanization"] = []
         return [unit]
 
-    def parse_page_start(self, hint_strinput = False) : 
-        return False
-
-    def parse_page_stop(self, opaque) :
-        d = opaque
-
-    def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+    def recursive_translate_lang(self, req, story, uni, temp_units, page, tone_keys) :
         units = []
 
         if uni.count(u"-") :
@@ -384,7 +387,7 @@ class RomanizedSource(Processor) :
                 else :
                     units.append(self.add_unit([u"-"], u"-", [u"-"], punctuation = True))
 
-                res = self.recursive_translate_start(req, story, opaque, part, temp_units, page, tone_keys)
+                res = self.recursive_translate_start(req, story, part, temp_units, page, tone_keys)
                 if len(res) :
                     units = units + res
             return units
@@ -445,12 +448,12 @@ class RomanizedSource(Processor) :
 
         try_source = uni 
         # Names sometimes need to avoid being lowercased
-        targ = self.get_first_translation(opaque, uni, False, none_if_not_found = False)
+        targ = self.get_first_translation_lang(self.handle, uni, False, none_if_not_found = False)
 
         # Then try lowercasing...
         if not targ :
             try_source = uni.lower()
-            targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
+            targ = self.get_first_translation_lang(self.handle, try_source, False, none_if_not_found = False)
 
         for combo, replacement in self.matches.iteritems() :
             x = len(combo)
@@ -459,24 +462,24 @@ class RomanizedSource(Processor) :
                 if replacement :
                     search += replacement
                 try_source = search
-                targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
+                targ = self.get_first_translation_lang(self.handle, try_source, False, none_if_not_found = False)
 
                 # Try lowercase
                 if not targ :
                     try_source = search.lower()
-                    targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
+                    targ = self.get_first_translation_lang(self.handle, try_source, False, none_if_not_found = False)
 
                 # Try repeating without accented characters
                 if not targ and self.accented_source :
                     unsource = ''.join((c for c in normalize('NFD', search) if category(c) != 'Mn'))
 
                     try_source = unsource 
-                    targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
+                    targ = self.get_first_translation_lang(self.handle, try_source, False, none_if_not_found = False)
 
                     # And again, unaccented lowercase
                     if not targ :
                         try_source = unsource.lower()
-                        targ = self.get_first_translation(opaque, try_source, False, none_if_not_found = False)
+                        targ = self.get_first_translation_lang(self.handle, try_source, False, none_if_not_found = False)
 
                 if targ :
                     break
@@ -509,7 +512,7 @@ class RomanizedSource(Processor) :
                 unit["ipa_role"] = False
             units.append(unit)
         else :
-            online_units = self.online_cross_reference(req, story, uni, opaque)
+            online_units = self.online_cross_reference(req, story, uni)
 
             if not online_units or not len(online_units) :
                 mwarn("Uh oh. No translation =(. ")
@@ -531,7 +534,7 @@ class RomanizedSource(Processor) :
 
         return units
 
-    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False) :
+    def get_first_translation_lang(self, opaque, source, reading, none_if_not_found = True, debug = False) :
         result = self.dictionary.get_dict_by_word(source)
 
         targ = [] 
@@ -640,8 +643,9 @@ class EnglishSource(RomanizedSource) :
                 })
 
     # Setup all english sources with phonetic IPA
-    def test_dictionaries(self, opaque, preload = False, retest = False) :
-        super(EnglishSource, self).test_dictionaries(opaque, preload = preload, retest = retest)
+    @serial
+    def test_dictionaries(self, preload = False, retest = False) :
+        super(EnglishSource, self).test_dictionaries(preload = preload, retest = retest)
 
         mdebug("Testing EnglishSource IPA database...")
 
@@ -688,6 +692,7 @@ class EnglishSource(RomanizedSource) :
 
             trans.commit()
 
+    @serial
     def get_ipa(self, source) :
         if "ipa" in self.srcdb :
             s = self.srcdb["ipa"].select().where(self.srcdb["ipa"].c.word_str == source)
@@ -735,10 +740,12 @@ class ChineseSimplifiedToEnglish(Processor) :
     def get_dictionaries(self) :
         return ["cjklib.db", "cedict.db", "tones.db", "jieba.db", "pinyin.db"]
 
-    def test_dictionaries(self, opaque, preload = False, retest = False) :
-        cjk, d, hold = opaque 
+    @serial
+    def test_dictionaries(self, preload = False, retest = False) :
+        super(ChineseSimplifiedToEnglish, self).test_dictionaries(preload = preload, retest = retest)
 
         '''
+        cjk, d, hold = self.handle 
         for x in self.getFor(d, u'白鹭'.decode('utf-8')) :
             mdebug(str(x))
         for x in cjk.getReadingForCharacter(u'白','Pinyin') :
@@ -751,10 +758,9 @@ class ChineseSimplifiedToEnglish(Processor) :
         metadata = MetaData(db)
         self.tonedb["conn"] = db.connect()
 
-        self.tonedb["tones"] = Table('tones', metadata,
-            Column('word', String, primary_key=True),
-            Column('tone', String),
-        )
+        word_column = Column('word', String, primary_key=True)
+        tone_column = Column('tone', String)
+        self.tonedb["tones"] = Table('tones', metadata, word_column, tone_column)
 
         self.tonedb["tones"].create(checkfirst=True)
 
@@ -865,6 +871,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             else :
                 mverbose("Skipping pinyin ime database preload.")
 
+    @serial
     def get_chars(self, wordall, limit = 8, preload = False, retest = True) :
         if not hasattr(self, "imedb") :
             mdebug("imedb still not allocated from get_chars")
@@ -1046,15 +1053,16 @@ class ChineseSimplifiedToEnglish(Processor) :
         return all_two_chars_or_less
 
     def parse_page_start(self, hint_strinput = False) : 
-        big_enough = not hint_strinput or not self.all_two_chars_or_less(hint_strinput)
-        if big_enough and not ictc_available :
-            mverbose("Opening jieba......")
-            self.jieba_open()
+        if not self.handle :
+            big_enough = not hint_strinput or not self.all_two_chars_or_less(hint_strinput)
+            if big_enough and not ictc_available :
+                mverbose("Opening jieba......")
+                self.jieba_open()
 
-        return self.get_cjk_handle(big_enough = big_enough)
+            self.handle = self.get_cjk_handle(big_enough = big_enough)
 
-    def parse_page_stop(self, opaque) :
-        (cjk, d, hold) = opaque 
+    def parse_page_stop(self) :
+        (cjk, d, hold) = self.handle 
         cjk.db.connection.close()
         d.db.connection.close()
         if not ictc_available :
@@ -1063,7 +1071,12 @@ class ChineseSimplifiedToEnglish(Processor) :
             self.imedb["conn"].close()
             del self.imedb["conn"]
 
-    def pre_parse_page(self, opaque, page_input_unicode) :
+    @serial
+    def pre_parse_page(self, page_input_unicode) :
+
+        if not self.handle :
+            self.parse_page_start()
+
         strinput = page_input_unicode.encode("utf-8")
 
         if self.all_two_chars_or_less(page_input_unicode) :
@@ -1084,10 +1097,10 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         except Exception, e :
             merr("Failed to cut: " + str(e))
-            self.parse_page_stop(opaque)
+            self.parse_page_stop(self.handle)
             raise e
 
-    def get_first_translation(self, opaque, source, reading, none_if_not_found = True, debug = False, temp_r = False) :
+    def get_first_translation_lang(self, opaque, source, reading, none_if_not_found = True, debug = False, temp_r = False) :
         cjk, d, hold = opaque 
         targ = []
         if hold :
@@ -1112,12 +1125,12 @@ class ChineseSimplifiedToEnglish(Processor) :
         
         return targ 
 
-    def online_cross_reference_lang(self, req, story, all_source, opaque) :
+    def online_cross_reference_lang(self, req, story, all_source) :
         if len(all_source) <= 1 : 
             return False
 
         mdebug("Going online...")
-        (cjk, d, hold) = opaque 
+        (cjk, d, hold) = self.handle
         name = story['name']
         ms = []
         targ = []
@@ -1387,10 +1400,10 @@ class ChineseSimplifiedToEnglish(Processor) :
                  
         return new_results
 
-    def recursive_translate_lang(self, req, story, opaque, uni, temp_units, page, tone_keys) :
+    def recursive_translate_lang(self, req, story, uni, temp_units, page, tone_keys) :
         units = []
 
-        cjk, d, hold = opaque 
+        cjk, d, hold = self.handle
         trans = []
         targ = []
         results = self.getFor(d, uni)
@@ -1432,7 +1445,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                     check_whole = True
                     mverbose("Trying: " +  try_uni)
 
-                    sub_units = self.recursive_translate_start(req, story, opaque, try_uni, temp_units, page, tone_keys)
+                    sub_units = self.recursive_translate_start(req, story, try_uni, temp_units, page, tone_keys)
 
                     mverbose("Sub units: " + str(len(sub_units)))
 
@@ -1469,7 +1482,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             assert(len(readings) > 0)
 
             if uni not in self.punctuation and uni :
-                online_units = self.online_cross_reference(req, story, uni, opaque)
+                online_units = self.online_cross_reference(req, story, uni)
                 online_len = 0
                 
                 # If the reverse engineered pinyin cross-referencing yields a different number of original characters
@@ -1485,10 +1498,10 @@ class ChineseSimplifiedToEnglish(Processor) :
                 if not online_units or not len(online_units) or online_len == -1 :
                     temp_r = self.getFor(d, uni)
                     tmp_opaque = (cjk, d, temp_r)
-                    targ = self.get_first_translation(tmp_opaque, uni, readings[0])
+                    targ = self.get_first_translation_lang(tmp_opaque, uni, readings[0])
                     unit = self.add_unit([readings[0]], uni, [targ[0]])
                     for x in readings :
-                        targ = self.get_first_translation(tmp_opaque, uni, x, False)
+                        targ = self.get_first_translation_lang(tmp_opaque, uni, x, False)
                         if not targ :
                             continue
                         for e in targ :
@@ -1507,7 +1520,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                            continue
                        units.append(unit)
             else :
-                targ = self.get_first_translation(opaque, uni, readings[0])
+                targ = self.get_first_translation_lang(self.handle, uni, readings[0])
                 units.append(self.add_unit(readings[0].split(" "), uni, [targ[0]]))
 
         return units
