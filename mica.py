@@ -4471,7 +4471,7 @@ class MICA(object):
 
         if not auth_user :
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            return self.message(req, str(reason), frontpage = True)
+            return str(reason)
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
