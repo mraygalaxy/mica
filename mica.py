@@ -197,7 +197,8 @@ class Params(object) :
         if self.action == "api" :
             operation = self.http.params.get("alien", False)
             if not operation :
-                raise exc.HTTPBadRequest("you did a bad thing")
+                mwarn("Parameters initialization bad request")
+                raise exc.HTTPBadRequest("init: you did a bad thing")
             self.api = True
             self.action = operation 
 
@@ -2979,9 +2980,10 @@ class MICA(object):
 
     def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
+        mdebug("Auth request from source: " + req.source)
         if req.source not in params["allowed_jabber_hosts"] :
-            mdebug("Bad request from: " + req.source)
-            raise exc.HTTPBadRequest("you did a bad thing")
+            mwarn("Bad request from: " + req.source)
+            raise exc.HTTPBadRequest("auth: you did a bad thing")
 
         if not req.http.params.get("username") or not req.http.params.get("password") :
             return self.bootstrap(req, 'error', nodoctype = True)
@@ -4802,6 +4804,7 @@ class MICA(object):
             if req.http.params.get("connect") or from_third_party != False :
                 if not mobile and req.http.params.get("username") and  req.http.params.get("username") == "demo" :
                     # The demo account is provided for users who want to give the software a try without committing to it.
+                    mwarn("Demo account bad request.")
                     raise exc.HTTPBadRequest(_("Demo Account is readonly. You must install the mobile application for interactive use of the demo account."))
 
                 # We could be connecting for both local accounts and oauth
