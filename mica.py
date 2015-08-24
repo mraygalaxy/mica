@@ -872,8 +872,6 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-        processor.test_dictionaries()
-
         mverbose("Starting translation...")
         for iidx in range(page_start, page_inputs) :
             page_key = self.story(req, name) + ":pages:" + str(iidx)
@@ -1046,7 +1044,7 @@ class MICA(object):
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
         gp = self.processors[self.tofrom(story)]
-        out = ""
+        out = "<div style='color: black'>"
         # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
         if gp.already_romanized :
             out += "\n" + _("This word") + " ("
@@ -1061,7 +1059,8 @@ class MICA(object):
             out += ") " + _("has more than one meaning") + ":<br>"
         else :
             out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
-        out += "<table class='table table-hover table-striped' style='font-size: x-small'>"
+        out += "</div>"
+        out += "<table class='table table-hover table-striped' style='font-size: x-small; color: black'>"
         out += "<tr>"
         if len(unit["multiple_sromanization"]) :
             # Pinyin means the romanization of a character-based word, such as Chinese
@@ -1809,7 +1808,7 @@ class MICA(object):
                     line_out.append("<br/>")
 
                     if action == "home" and py and len(unit["multiple_target"]) :
-                        line_out.append("<div style='display: none' id='pop" + str(trans_id) + "'>")
+                        line_out.append("<div style='color: black; display: none' id='pop" + str(trans_id) + "'>")
                         line_out.append(self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page))
                         line_out.append("</div>")
                         line_out.append("<script>")
@@ -3101,36 +3100,31 @@ class MICA(object):
             out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
 
         try :
-            gp.test_dictionaries()
-            try :
-                for idx in range(0, len(requests)) :
-                    request = requests[idx]
-                    if gp.already_romanized and len(requests) > 1 and idx == 0 :
-                        continue
-                    request_decoded = request.decode("utf-8")
-                    tar = gp.get_first_translation(gp.handle, request_decoded, False)
-                    if tar :
-                        for target in tar :
-                            ipa = gp.get_ipa(request_decoded)
+            for idx in range(0, len(requests)) :
+                request = requests[idx]
+                if gp.already_romanized and len(requests) > 1 and idx == 0 :
+                    continue
+                request_decoded = request.decode("utf-8")
+                tar = gp.get_first_translation(gp.handle, request_decoded, False)
+                if tar :
+                    for target in tar :
+                        ipa = gp.get_ipa(request_decoded)
 
-                            if human :
-                                out += "<br/>(" + request
-                                if ipa :
-                                    out += ", " + str(ipa[0])
-                                out += "): " + target.encode("utf-8")
-                            else :
-                                out["offline"].append({"request" : request, "ipa" : ipa, "target" : target.encode("utf-8")})
-                    else :
                         if human :
-                            out += "<br/>(" + request + ") " + _("No instant translation found.")
+                            out += "<br/>(" + request
+                            if ipa :
+                                out += ", " + str(ipa[0])
+                            out += "): " + target.encode("utf-8")
                         else :
-                            out["offline"].append({"request" : request, "ipa" : False, "target" : False})
+                            out["offline"].append({"request" : request, "ipa" : ipa, "target" : target.encode("utf-8")})
+                else :
+                    if human :
+                        out += "<br/>(" + request + ") " + _("No instant translation found.")
+                    else :
+                        out["offline"].append({"request" : request, "ipa" : False, "target" : False})
 
-            except OSError, e :
-                mdebug("Looking up target instant translation failed: " + str(e))
-                return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
-        except Exception, e :
-            mdebug("Instant test failed: " + str(e))
+        except OSError, e :
+            mdebug("Looking up target instant translation failed: " + str(e))
             return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
 
         if human :
@@ -4616,6 +4610,7 @@ class MICA(object):
                         else :
                             mdebug("File " + f + " already exists.")
                             lgp.test_dictionaries(retest = True)
+
 
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
