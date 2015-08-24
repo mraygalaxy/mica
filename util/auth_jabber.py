@@ -8,12 +8,19 @@ from struct import *
 from subprocess import *
 from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
 from time import sleep
+from sys import getdefaultencoding
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 import sys
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters
+
+log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
+
+if getdefaultencoding() != "utf-8" :
+    log.write("Correcting the default encoding back to UTF-8 from " + getdefaultencoding() + "\n")
+    reload(sys).setdefaultencoding("utf-8")
 
 def myquote(val):
     if isinstance(val, unicode) :
@@ -26,7 +33,6 @@ def myquote(val):
 
     return val_unquoted
 
-log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
 
 def from_ejabberd():
     input_length = sys.stdin.read(2)
@@ -41,10 +47,10 @@ def to_ejabberd(answer):
 
 def authenticate(username, password, auth_url) :
     try :
-        username_unquoted = myquote(username)
+        username_unquoted = myquote(username.replace("%40", "@"))
         password_unquoted = myquote(password)
-        #url = auth_url + u"/auth?username=" + username_unquoted + u"&password=" + password_unquoted
-        url = auth_url + u"/auth?username=" + username + u"&password=" + password
+        url = auth_url + u"/auth?username=" + username_unquoted + u"&password=" + password_unquoted
+	#log.write("URL: " + url + "\n")
         req = urllib2_Request(url)
         res = urllib2_urlopen(req).read()
 
