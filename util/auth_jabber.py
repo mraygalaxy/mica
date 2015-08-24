@@ -12,6 +12,7 @@ import sys
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters
+from common import *
 
 def from_ejabberd():
     input_length = sys.stdin.read(2)
@@ -27,7 +28,9 @@ log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
 
 def authenticate(username, password, auth_url) :
     try :
-        url = auth_url + "/auth?username=" + username + "&password=" + password
+        username_unquoted = myquote(username)
+        password_unquoted = myquote(password)
+        url = auth_url + "/auth?username=" + username_unquoted + "&password=" + password_unquoted
         req = urllib2_Request(url)
         res = urllib2_urlopen(req).read()
 
