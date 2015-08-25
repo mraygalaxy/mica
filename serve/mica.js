@@ -1206,6 +1206,7 @@ var oDbg, con;
 var start_trans_id = 0;
 
 function handleIQ(oIQ) {
+    console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
     $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
@@ -1442,6 +1443,21 @@ function handleConnected() {
     if ($('#sendTo').val() != "") {
         newContact($('#sendTo').val());
     }
+    var roster = new JSJaCIQ(jid); 
+    // 'roster_1' is just some kind of unique ID in the message protocol. Can be anything, I guess.
+    roster.setIQ(null, 'get', 'roster_1');
+    roster.setQuery(NS_ROSTER);
+    //con.sendIQ(roster);
+    con.sendIQ(roster, {result_handler: function(aIq, arg) {
+        var node = aIq.getQuery();
+        console.log("HANDLE ROSTER: "  + aIq.xml());
+	if (node.hasChildNodes()) {
+	      for(x = 0; x < node.childNodes.length; x++) {
+	          console.log("Buddy: "  + node.childNodes.item(x).attributes.jid.value);
+              }
+	}
+        
+    }});
 }
 
 function handleDisconnected() {
@@ -1467,6 +1483,7 @@ function getPairs() {
 }
 
 var con = false;
+var jid = false;
 
 function reconnect(unused) {
     if (con && con.connected())
@@ -1524,6 +1541,7 @@ function doLogin(oForm) {
         oArgs.resource = 'mica' + local('jabber_key');
         oArgs.pass = oForm.password.value;
         oArgs.register = false;
+	jid = chat_username + "@" + oArgs.domain; 
         con.connect(oArgs);
     } catch (e) {
         document.getElementById('err').innerHTML = e.toString();
