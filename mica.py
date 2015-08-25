@@ -1393,7 +1393,10 @@ class MICA(object):
             try :
                 page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
             except couch_adapter.ResourceNotFound, e :
-                return _("If you would like to read this story, please select 'Start Syncing' from the side panel first and wait for it to replicate to your device.")
+                mwarn("Problem before warn_not_replicated:")
+                for line in format_exc().splitlines() :
+                    mwarn(line)
+                return self.warn_not_replicated(req, bootstrap = False)
         else :
             page_dict = story["pages"]["0"]
 
