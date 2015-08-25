@@ -24,7 +24,6 @@ except ImportError, e :
         mdebug("pyjnius and pyobjus not available. Probably on a server.")
 
 
-
 def couchdb_pager(db, view_name='_all_docs',
                   startkey=None, startkey_docid=None,
                   endkey=None, endkey_docid=None, bulk=5000, stale = False):
@@ -93,6 +92,27 @@ class NotImplementedError(Exception) :
 
     def __str__(self) :
         return self.msg
+
+class repeatable(object):
+    def __init__(self, retries = 3):
+        self.retries = retries 
+
+    def __call__(self, f):
+        def wrapped_f(*args):
+            tries = self.retries
+            while True :
+                try :
+                    return f(*args)
+                except ResourceConflict, e : 
+                    for line in format_exc().splitlines() :
+                        mwarn(line)
+                    tries = tries - 1
+                    if tries == 0 :
+                        merr("Ran out of tries =(")
+                        raise e
+                    mwarn("atomic Tries left: " + str(tries))
+                
+        return wrapped_f
 
 class MicaDatabase(object) :
     def try_get(self, name) :
