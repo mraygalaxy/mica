@@ -3188,16 +3188,21 @@ class MICA(object):
 
         return origkey, pagekey
 
+    def add_period_story(self, req, period_key, peer, current_day, story) :
+        if not req.db.try_get(self.chat_period(req, period_key, peer, current_day)) :
+            mdebug("Adding new story for period " + period_key + " and peer" + peer)
+            self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
+        mverbose("Looking up story for period " + period_key + " and peer" + peer)
+        story = req.db[self.chat_period(req, period_key, peer, current_day)]
+        req.session.value["chats"][period_key][peer] = story 
+        req.session.save()
+
+        return story
+
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
             if peer not in req.session.value["chats"][period_key] :
                 mverbose("Peer not in session. Checking for story...")
-                if not req.db.try_get(self.chat_period(req, period_key, peer, current_day)) :
-                    mdebug("Adding new story for period " + period_key + " and peer" + peer)
-                    self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
-                mverbose("Looking up story for period " + period_key + " and peer" + peer)
-                story = req.db[self.chat_period(req, period_key, peer, current_day)]
-                req.session.value["chats"][period_key][peer] = story 
-                req.session.save()
+                story = self.add_period_story(req, period_key, peer, current_day, story)
 
             csession = req.session.value["chats"][period_key][peer]
 
@@ -3234,6 +3239,7 @@ class MICA(object):
                         mwarn("Orig exists? " + "yes" if req.db.try_get(origkey) else "no")
                         mwarn("Page exists? " + "yes" if req.db.try_get(pagekey) else "no")
                         story["name"] = self.chat_period_name(period_key, peer, current_day)
+                        story = self.add_period_story(req, period_key, peer, current_day, story)
                         try :
                             page = str(self.nb_pages(req, story, force = True) - 1)
                         except Exception, e :
