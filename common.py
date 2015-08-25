@@ -14,6 +14,7 @@ from gettext import install as gettext_install, GNUTranslations, NullTranslation
 from urllib2 import quote
 from time import time as timest
 from traceback import extract_stack
+from sys import _getframe
 
 import __builtin__
 import xmlrpclib
@@ -159,43 +160,52 @@ tutorials = {
 verbose = False
 #verbose = True
 
+def prefix() :
+   f = _getframe(2)
+   log_prefix = f.f_code.co_filename.split('/')[-1] + '/'
+   if 'self' in f.f_locals :
+       log_prefix += f.f_locals['self'].__class__.__name__ + '.'
+   log_prefix += f.f_code.co_name + ":" + str(f.f_lineno)
+   log_prefix += " "
+   return log_prefix
+
 def minfo(msg) :
    if micalogger :
-       micalogger.info(msg)
+       micalogger.info(prefix() + msg)
    else :
-       print msg
+       print prefix() + msg
    if duplicate_logger and String :
-      duplicate_logger.info(String(msg))
+      duplicate_logger.info(String(prefix() + msg))
 
 def mverbose(msg) :
     if verbose :
-        mdebug(msg)
+        mdebug(prefix() + msg)
 
 def mdebug(msg) :
    if micalogger :
-       micalogger.debug(msg)
-       #micalogger.debug(threading.current_thread().name + ": " + msg)
+       micalogger.debug(prefix() + msg)
+       #micalogger.debug(threading.current_thread().name + ": " + prefix() + msg)
    else :
-       print msg
+       print prefix() + msg
 
    if duplicate_logger and String :
-      duplicate_logger.debug(String(msg))
+      duplicate_logger.debug(String(prefix() + msg))
 
 def mwarn(msg) :
    if micalogger :
-       micalogger.warn(msg)
+       micalogger.warn(prefix() + msg)
    else :
-       print msg
+       print prefix() + msg
    if duplicate_logger and String :
-      duplicate_logger.warn(String(msg))
+      duplicate_logger.warn(String(prefix() + msg))
 
 def merr(msg) :
    if micalogger :
-       micalogger.error(msg)
+       micalogger.error(prefix() + msg)
    else :
-       print msg
+       print prefix() + msg
    if duplicate_logger and String :
-      duplicate_logger.err(String(msg))
+      duplicate_logger.err(String(prefix() + msg))
 
 mobile = True 
 
