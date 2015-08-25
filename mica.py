@@ -3223,9 +3223,13 @@ class MICA(object):
 
                     origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
                     if req.db.try_get(origkey) or req.db.try_get(pagekey) :
-                        mwarn("There is a discrepancy between cached pages and db pages. Resetting.")
+                        mwarn("There is a discrepancy between cached pages and db pages. Resetting: orig exists? " + str(req.db.try_get(pagekey)) + " page exists? " + str(req.db.try_get(pagekey)))
                         story["name"] = self.chat_period_name(period_key, peer, current_day)
-                        page = str(self.nb_pages(req, story, force = True) - 1)
+                        try :
+                            page = str(self.nb_pages(req, story, force = True) - 1)
+                        except Exception, e :
+                            merr("Failed to force recount pages: " + story["name"] + ": " + str(e))
+                            raise e
 
                     continue
                 break
