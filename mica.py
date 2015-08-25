@@ -2565,9 +2565,9 @@ class MICA(object):
     def warn_not_replicated(self, req, bootstrap = True, frontpage = False, harmless = False) :
         self.clear_story(req)
 
-        if mobile and not harmless :
+        if mobile :
             msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
-        else :
+        elif not harmless :
             if "connected" in req.session.value and req.session.value["connected"] :
                 mwarn("Setting to disconnected!")
                 req.session.value["connected"] = False
