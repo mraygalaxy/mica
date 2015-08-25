@@ -2567,11 +2567,12 @@ class MICA(object):
 
         if mobile :
             msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
-        elif not harmless :
-            if "connected" in req.session.value and req.session.value["connected"] :
-                mwarn("Setting to disconnected!")
-                req.session.value["connected"] = False
-                req.session.save()
+        else :
+            if not harmless :
+                if "connected" in req.session.value and req.session.value["connected"] :
+                    mwarn("Setting to disconnected!")
+                    req.session.value["connected"] = False
+                    req.session.save()
 
             # Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website. 
             msg = _("Synchronization error. Please report this to the author. Thank you.")
