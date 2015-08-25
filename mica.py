@@ -1396,7 +1396,7 @@ class MICA(object):
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req, bootstrap = False)
+                return self.warn_not_replicated(req, harmless = True, bootstrap = False)
         else :
             page_dict = story["pages"]["0"]
 
@@ -2562,10 +2562,10 @@ class MICA(object):
             req.db[self.story(req, story["name"])] = tmp_story
 
 
-    def warn_not_replicated(self, req, bootstrap = True, frontpage = False) :
+    def warn_not_replicated(self, req, bootstrap = True, frontpage = False, harmless = False) :
         self.clear_story(req)
 
-        if mobile :
+        if mobile and not harmless :
             msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if "connected" in req.session.value and req.session.value["connected"] :
