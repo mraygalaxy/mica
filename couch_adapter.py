@@ -99,6 +99,7 @@ class repeatable(object):
 
     def __call__(self, f):
         def wrapped_f(*args):
+            mdebug("Repeating function " + f.__name__ + " " + str(self.retries) + " times.")
             tries = self.retries
             while True :
                 try :
