@@ -2550,6 +2550,7 @@ class MICA(object):
             del req.session.value["current_story"]
             req.session.save()
 
+    @couch_adapter.repeatable
     def set_page(self, req, story, page) :
         if "current_page" not in story or story["current_page"] != str(page) :
             mdebug("Setting story " + story["name"] + " to page: " + str(page))
