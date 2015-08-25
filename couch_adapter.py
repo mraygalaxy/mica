@@ -7,7 +7,7 @@ from traceback import format_exc
 
 try :
     from couchdb import Server
-    from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ServerError
+    from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ServerError, ResourceConflict as couch_ResourceConflict
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.") 
 
@@ -115,6 +115,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
             raise ResourceNotFound(str(e), e)
+        except couch_ResourceConflict, e :
+            raise ResourceConflict(str(e), e)
         except ServerError, e :
             raise CommunicationError("MICA Unvalidated: " + str(e))
 

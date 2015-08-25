@@ -3183,6 +3183,9 @@ class MICA(object):
     def period_keys(self, req, period_key, current_day, peer, page) :
         origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
         pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)
+        req.db.doc_exist(origkey, true_if_deleted = True)
+        req.db.doc_exist(pagekey, true_if_deleted = True)
+
         return origkey, pagekey
 
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
@@ -3205,11 +3208,6 @@ class MICA(object):
                 origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
                 mdebug("Adding message period " + period_key + " to page key: " + pagekey)
 
-                req.db.doc_exist(origkey, true_if_deleted = True)
-                req.db.doc_exist(pagekey, true_if_deleted = True)
-
-                mdebug("Old pages potentially cleared. Moving along...")
-
                 chat_orig = req.db.try_get(origkey)
                 chat_page = False 
 
@@ -3230,6 +3228,7 @@ class MICA(object):
                     page = int(page) + 1 
 
                     origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
+
                     if req.db.try_get(origkey) or req.db.try_get(pagekey) :
                         mwarn("There is a discrepancy between cached pages and db pages. Resetting")
                         mwarn("Orig exists? " + "yes" if req.db.try_get(origkey) else "no")
