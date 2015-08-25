@@ -3202,6 +3202,11 @@ class MICA(object):
                 origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
                 mdebug("Adding message period " + period_key + " to page key: " + pagekey)
 
+                req.db.doc_exist(origkey, true_if_deleted = True)
+                req.db.doc_exist(pagekey, true_if_deleted = True)
+
+                mdebug("Old pages potentially cleared. Moving along...")
+
                 chat_orig = req.db.try_get(origkey)
                 chat_page = False 
 
