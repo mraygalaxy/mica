@@ -9,7 +9,7 @@ from datetime import datetime as datetime_datetime
 import threading
 from copy import deepcopy
 from cStringIO import StringIO
-from traceback import format_exc
+from traceback import format_exc, print_stack
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from shutil import rmtree as shutil_rmtree
@@ -622,6 +622,9 @@ class MICA(object):
         except exc.HTTPException, e:
             resp = e
         except couch_adapter.ResourceNotFound, e :
+            mwarn("Problem before warn_not_replicated:")
+            for line in format_exc().splitlines() :
+                mwarn(line)
             resp = "<h4>" + self.warn_not_replicated(req, bootstrap = False) + "</h4>"
         except Exception, e :
             # This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
@@ -3385,9 +3388,15 @@ class MICA(object):
 
         except OSError, e :
             merr("OSError: " + str(e))
+            mwarn("Problem before warn_not_replicated:")
+            for line in format_exc().splitlines() :
+                mwarn(line)
             out["result"] = self.warn_not_replicated(req, bootstrap = False)
         except processors.NotReady, e :
             merr("Translation processor is not ready: " + str(e))
+            mwarn("Problem before warn_not_replicated:")
+            for line in format_exc().splitlines() :
+                mwarn(line)
             out["result"] = self.warn_not_replicated(req, bootstrap = False)
         except Exception, e :
             err = ""
@@ -3556,6 +3565,9 @@ class MICA(object):
                 self.nb_pages(req, story, force = True)
                 output += self.heromsg + _("Translation complete!")
             except OSError, e :
+                mwarn("Problem before warn_not_replicated:")
+                for line in format_exc().splitlines() :
+                    mwarn(line)
                 output += self.warn_not_replicated(req, bootstrap = False)
             except Exception, e :
                 output += _("Failed to translate story") + ": " + str(e)
@@ -3845,6 +3857,8 @@ class MICA(object):
         user = req.db.try_get(self.acct(username))
 
         if not user :
+            mwarn("Problem before warn_not_replicated:")
+            print_stack()
             return self.warn_not_replicated(req)
         
         if req.http.params.get("pack") :
@@ -4542,6 +4556,8 @@ class MICA(object):
 
         user = req.db.try_get(self.acct(username))
         if not user :
+            mwarn("Problem before warn_not_replicated:")
+            print_stack()
             return self.warn_not_replicated(req, frontpage = True)
 
         if not mobile :
@@ -4737,8 +4753,14 @@ class MICA(object):
             try :
                 result = repeat(self.operation, args = [req, story, edit, offset], kwargs = {})
             except OSError, e :
+                mwarn("Problem before warn_not_replicated:")
+                for line in format_exc().splitlines() :
+                    mwarn(line)
                 return self.warn_not_replicated(req)
             except AttributeError, e :
+                mwarn("Problem before warn_not_replicated:")
+                for line in format_exc().splitlines() :
+                    mwarn(line)
                 return self.warn_not_replicated(req)
             
             if not result[0] and len(result) > 1 :
@@ -4962,6 +4984,7 @@ class MICA(object):
                     if not tmp_story :
                         self.clear_story(req)
                         mwarn("Could not lookup: " + self.story(req, name))
+                        print_stack()
                         return self.warn_not_replicated(req)
                         
                 if "current_page" in tmp_story :
@@ -4987,6 +5010,9 @@ class MICA(object):
                     self.parse(req, story, page = page)
                     self.nb_pages(req, story, force = True)
                 except OSError, e :
+                    mwarn("Problem before warn_not_replicated:")
+                    for line in format_exc().splitlines() :
+                        mwarn(line)
                     req.resultshow = self.warn_not_replicated(req)
                 
             if req.http.params.get("bulkreview") :
@@ -5008,6 +5034,9 @@ class MICA(object):
         except exc.HTTPBadRequest, e :
             raise e
         except couch_adapter.ResourceNotFound, e :
+            mwarn("Problem before warn_not_replicated:")
+            for line in format_exc().splitlines() :
+                mwarn(line)
             return self.warn_not_replicated(req)
 
         except Exception, msg:
