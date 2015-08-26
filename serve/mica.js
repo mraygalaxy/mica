@@ -60,7 +60,7 @@ function local(msgid) {
         }
   }
 
-  function go(form, id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
+  function go(form, id, url, callback, opaque){
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
           console.log("AJAX Status code: " + XMLHttpRequest.status);
           if (XMLHttpRequest.status == 401) {
@@ -78,25 +78,14 @@ function local(msgid) {
             if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
-	            if(getSpecificContent != '') {
-                        var obj = $(response);
-                        var objresult = obj.find(getSpecificContent);
-	                var data = objresult.html();
-	                if(write) {
-	                    if(writeSubcontent) {
-	                        $(id).html(data);
-	                    } else
-	                        $(id).html(response);
-	                }
-	            } else {
-	                if(write)
-	                    $(id).html(response);
-	                data = response;
-	            }
+	        if(getSpecificContent != '') {
+		    $(id).html(response);
+	            data = response;
+	        }
 
-                go_callback(callback, data, opaque);
+                go_callback(callback, response, opaque);
 
-                if((write || (!write && !writeSubcontent)) && response.indexOf('<script') != -1) {
+                if(getSpecificContent != '' && response.indexOf('<script') != -1) {
                         //have to replace script or else jQuery will remove them
                         $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
                             if (!$(this).attr('src')) {
@@ -188,11 +177,8 @@ function trans_poll_finish(data, uuid) {
 
 function trans_poll(uuid) {
    go(false, '#storypages', '/api?alien=read&tstatus=1&uuid=' + uuid, 
-       '#tstatusresult',
-       unavailable, 
-       false, 
+       unavailable,
        trans_poll_finish, 
-       false,
        uuid);
 } 
 
@@ -217,11 +203,8 @@ function trans_start(uuid) {
 function trans(uuid) {
    trans_start(uuid);
    go(false, '#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
-       '#translationstatusresult', 
        unavailable, 
-       true, 
        trans_stop,
-       true,
        uuid);
 }
 
@@ -553,11 +536,8 @@ function process_instant(with_spaces, lang, source, target, username, password) 
            url += "&password=" + password
 
        go(false, '#instantdestination', url,
-          '#instantresult', 
           local("onlineoffline"),
-          true, 
           offinstantspin,
-          true,
           $("html").scrollTop());
        }
 }
@@ -599,12 +579,9 @@ function multipoprefresh(data, opaque) {
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
           go(false, '#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
-          '#multiresult', 
-          unavailable, 
-          true, 
-          multipoprefresh,
-          true,
-          [trans_id, spy]);
+		  unavailable, 
+		  multipoprefresh,
+		  [trans_id, spy]);
 }
 
 function process_reviews(uuid, batch) {
@@ -663,11 +640,8 @@ function restore_pageimg_width() {
 
 function finish_new_account(code, who) {
     go(false, '#newaccountresultdestination', "/api?alien=" + who + "&connect=1&finish=1&code=" + code,
-        '#newaccountresult', 
         unavailable, 
-        true,
         false, 
-        true,
         false);
 }
 
@@ -688,21 +662,15 @@ function view(mode, uuid, page) {
        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
        go(false, '#pagetext', url, 
-              '#pageresult', 
               unavailable, 
-              true, 
               false,
-              true,
               false);
 
        url += "&image=0";
 
        go(false, '#pageimg' + curr_img_num, url, 
-              '#pageresult', 
               unavailable, 
-              true, 
               false,
-              true,
               false);
    } else {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
@@ -714,11 +682,8 @@ function view(mode, uuid, page) {
        }
        
        go(false, '#pagesingle', url, 
-              '#pageresult',
               unavailable, 
-              true, 
               false,
-              true,
               false);
    }
 
@@ -779,11 +744,8 @@ function memory_finish(data, opaque) {
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
    go(false, '#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
-          '#memoryresult', 
           unavailable, 
-          true, 
           memory_finish,
-          false,
           id);
 }
 
@@ -798,11 +760,8 @@ function forget(id, uuid, nb_unit, page) {
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
    go(false, '#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
-          '#memoryresult',
           unavailable, 
-          true, 
           memory_finish,
-          false,
           id);
 }
 
@@ -858,7 +817,6 @@ if ($.browser.device == true) {
 
 function offinstantspin(data, curr) {
     //var data = JSON.parse(data);
-    $('#instantdestination').html(data);
     $('#instantspin').attr('style', 'display: none');
     //$('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
@@ -894,11 +852,8 @@ function install_highlight() {
            $.mobile.navigate('#instant');
            $('#instantdestination').html("");
            go(false, '#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
-              '#instantresult', 
               unavailable, 
-              false, 
               offinstantspin,
-              false,
               $("html").scrollTop());
       }
     }
@@ -946,31 +901,22 @@ function listreload(mode, uuid, page) {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
            go(false, '#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
-              '#memolistresult', 
               unavailable, 
-              true, 
               list_reload_finish,
-              true,
               false);
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
            go(false, '#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
-                  '#editsresult', 
                   unavailable, 
-                  true, 
                   list_reload_finish,
-                  true,
                   false);
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
            go(false, '#history', '/api?alien=read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
-                  '#reviewresult', 
                   unavailable, 
-                  true, 
                   list_reload_finish,
-                  true,
                   false);
        }
 }
@@ -993,12 +939,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	   go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=images', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=images', unavailable, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -1011,12 +957,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=both', '', unavailable, false, false, false, false);
+	       go(false, '#pagetext', '/api?alien=home&switchmode=both', unavailable, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -1025,7 +971,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+      go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1043,12 +989,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=false', '', unavailable, false, false, false, false);
+           go(false, '#pagetext', '/api?alien=read&meaningmode=false', unavailable, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=true', '', unavailable, false, false, false, false);
+           go(false, '#pagetext', '/api?alien=read&meaningmode=true', unavailable, false, false);
            reveal_all(false);
        }
     });
@@ -1057,28 +1003,22 @@ function installreading() {
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
     go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
-        '', 
         'sync error', 
-        false,
         function(unused) { 
          document.getElementById(name).innerHTML = local('started');
          document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
         },
-        false,
         false);
 }
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
     go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
-        '', 
         'sync error', 
-        false,
         function(unused) { 
          document.getElementById(name).innerHTML = local('stopped');
          document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
         },
-        false,
         false);
 }
 
@@ -1114,34 +1054,24 @@ function finishedloading(storylist, navto) {
 }
 
 function loadstories(unused_data, navto) {
-
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
     go(false, '#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
-        '#storylistresult', 
         unavailable, 
-        true, 
         finishedloading,
-        true,
         navto);
 }
 
 function reviewstory(uuid, which) {
     go(false, '#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
-        '', 
         unavailable, 
-        false, 
         loadstories,
-        false,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
     go(false, '#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
-        '', 
         unavailable, 
-        false, 
         loadstories,
-        false,
         (which == 1) ? "#finished" : "#reading");
 }
 
@@ -1368,11 +1298,8 @@ function newContact(who) {
     url = "/api?alien=chat&history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
     go(false, '#pagesingle', url, 
-          '#chathistoryresult',
           unavailable, 
-          true, 
           handleConnectedLoaded,
-          true,
           false);
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
@@ -1643,11 +1570,8 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     $("#translateoption").attr('style', 'display: none');
     $("#romanizedoption").attr('style', 'display: none');
 
-    $("#originaloption").prop('href', '/stories?type=original&uuid=' + uuid);
-
     if (translated) {
         if (romanized) {
-            $("#romanizedlink").prop('href', '/stories?type=pinyin&uuid=' + uuid);
             $("#romanizedoption").attr('style', 'display: block');
         }
 
@@ -1688,6 +1612,18 @@ function start_learning(mode, action, uuid, name) {
    if (name) 
        url += "&name=" + name;
 
-   go(false, '#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
+   go(false, '', url,  unavailable, start_learning_finished, (action == 'view') ? false : true);
    //$('#settings').panel('close');
+}
+
+function getstory_finish(data, opaque) {
+    $.mobile.navigate("#printstory");
+    done();
+}
+function getstory(uuid, type) {
+   loading();
+   go(false, '#printstory_contents', '/api?alien=stories&type=' + type +'&uuid=' + uuid, 
+       unavailable, 
+       getstory_finish, 
+       false);
 }

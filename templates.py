@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Need to add this to frontpage and head element templates
+# return "<!DOCTYPE html>\n" + body 
+
 from twisted.web.template import Element, renderer, XMLFile, tags, XMLString
 from twisted.web._flatten import _flattenTree
 from twisted.python.filepath import FilePath
@@ -27,7 +30,7 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        mdebug("Rendering: " + req.messages)
+        mverbose("Rendering: " + req.messages)
         self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>")
 
     @renderer
@@ -509,8 +512,8 @@ class ViewElement(CommonElement) :
                       meaningclasstitle = _("show/hide translations"),
                       processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
                       refreshtitle = _("Refresh"),
-                      resultshow = 'display: block' if self.req.resultshow else 'display: none',
-                      result = (self.req.resultshow + ".") if self.req.resultshow else '',
+                      resultshow = 'display: block' if self.req.viewpageresult else 'display: none',
+                      result = (self.req.viewpageresult + ".") if self.req.viewpageresult else '',
                       )
         
         return tag
@@ -642,8 +645,8 @@ class AccountElement(CommonElement):
                         reset = _("Reset Password / Token"),
                         passonline = _("Please change your password on the website. Will support mobile in a future version."),
                         accounts = _("Accounts"),
-                        resultshow = 'display: block; padding: 10px' if self.req.resultshow else 'display: none',
-                        result = (self.req.resultshow + ".") if self.req.resultshow else '',
+                        resultshow = 'display: block; padding: 10px' if self.req.accountpageresult else 'display: none',
+                        result = (self.req.accountpageresult + ".") if self.req.accountpageresult else '',
                         delete = _("Delete"),
 
                      )
