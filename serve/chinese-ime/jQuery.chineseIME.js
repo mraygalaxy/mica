@@ -422,33 +422,33 @@
                     var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
                 }
 		*/
-                    var chat_language = chat_target_language;
-                     
-                    var micaurl = "/api?alien=chat_ime&ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+                var chat_language = chat_target_language;
+                    
+                var micaurl = "chat_ime&ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
-                    if (micaurl == self.last_api) {
+                if (micaurl == self.last_api) {
                         console.log("Ignoring duplicate api request from wierd keypress");
                         return false;
-                    }
+                }
 
-                    self.last_api = micaurl;
+                self.last_api = micaurl;
 
                 //if (true || options && options.length){
-                    var $box = $('#chinese-ime');
-                    if (!$box.size()){
+                var $box = $('#chinese-ime');
+                if (!$box.size()){
                         $box = $(document.createElement('div')).
                                 attr({'id': 'chinese-ime'}).
                                 html(self.html)
                         $('#chat_content').append($box);
-                    }
+                }
                     //$box.find('.typing').text(self.currentText);
 
-                    /* For now, assume that the target language
-                     * is the same as the language the user's native
-                     * language. We can fix this later. 
-                     */
+                /* For now, assume that the target language
+                 * is the same as the language the user's native
+                 * language. We can fix this later. 
+                 */
 
-                    go(false, '', micaurl, unavailable,   
+                 go(false, '', micaurl, unavailable,   
                         function(response, opaque){
                             console.log("Response: " + response); 
                             var data = JSON.parse(response);
@@ -470,7 +470,7 @@
                                 left: self.$el.offset().left + caretPosition.left,
                                 top: self.$el.offset().top + caretPosition.top
                             });
-                    }, false);
+                }, false);
 
             } else {
                 var $box = $('#chinese-ime').hide();
