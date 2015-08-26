@@ -60,7 +60,7 @@ function local(msgid) {
         }
   }
 
-  function go(form, id, url, callback, opaque){
+  function go(form, id, url, error, callback, opaque){
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
           console.log("AJAX Status code: " + XMLHttpRequest.status);
           if (XMLHttpRequest.status == 401) {
@@ -74,18 +74,16 @@ function local(msgid) {
     }
 
     function go_success(response) {
-            var data = "none";
             if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
-	        if(getSpecificContent != '') {
+	        if(id != '') {
 		    $(id).html(response);
-	            data = response;
 	        }
 
                 go_callback(callback, response, opaque);
 
-                if(getSpecificContent != '' && response.indexOf('<script') != -1) {
+                if(id != '' && response.indexOf('<script') != -1) {
                         //have to replace script or else jQuery will remove them
                         $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
                             if (!$(this).attr('src')) {
@@ -109,7 +107,7 @@ function local(msgid) {
             });
       } else {
             $.ajax({
-                url: url,
+                url: '/api?alien=' + url,
                 type: "GET",
                 dataType: "html",
                 success: go_success,
@@ -176,7 +174,7 @@ function trans_poll_finish(data, uuid) {
 }
 
 function trans_poll(uuid) {
-   go(false, '#storypages', '/api?alien=read&tstatus=1&uuid=' + uuid, 
+   go(false, '#storypages', 'read&tstatus=1&uuid=' + uuid, 
        unavailable,
        trans_poll_finish, 
        uuid);
@@ -202,10 +200,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go(false, '#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
-       unavailable, 
-       trans_stop,
-       uuid);
+   go(false, '#translationstatus', 'home&translate=1&uuid=' + uuid, unavailable, trans_stop, uuid);
 }
 
 function poll(s, finisher, monid) {
@@ -528,7 +523,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
         $('#instantspin').attr('style', 'display: inline');
         $('#instantdestination').html("");
 
-       var url = '/api?alien=instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
+       var url = 'instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
        if (username)
            url += "&username=" + username
@@ -577,7 +572,7 @@ function multipoprefresh(data, opaque) {
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
+          go(false, '#pop' + trans_id, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
 		  unavailable, 
 		  multipoprefresh,
@@ -639,16 +634,14 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go(false, '#newaccountresultdestination', "/api?alien=" + who + "&connect=1&finish=1&code=" + code,
-        unavailable, 
-        false, 
-        false);
+    go(false, '#newaccountresultdestination', who + "&connect=1&finish=1&code=" + code,
+        unavailable, false, false);
 }
 
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
-   var url = '/api?alien=' + mode + '&view=1&uuid=' + uuid + '&page=' + page;
+   var url = mode + '&view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
    if (show_both) {
@@ -668,10 +661,7 @@ function view(mode, uuid, page) {
 
        url += "&image=0";
 
-       go(false, '#pageimg' + curr_img_num, url, 
-              unavailable, 
-              false,
-              false);
+       go(false, '#pageimg' + curr_img_num, url, unavailable, false, false);
    } else {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
@@ -681,10 +671,7 @@ function view(mode, uuid, page) {
            $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
        }
        
-       go(false, '#pagesingle', url, 
-              unavailable, 
-              false,
-              false);
+       go(false, '#pagesingle', url, unavailable, false, false);
    }
 
    listreload(mode, uuid, page);
@@ -743,7 +730,7 @@ function memory_finish(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go(false, '#memory' + id, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           unavailable, 
           memory_finish,
           id);
@@ -759,7 +746,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go(false, '#memory' + id, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           unavailable, 
           memory_finish,
           id);
@@ -851,7 +838,7 @@ function install_highlight() {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
            $('#instantdestination').html("");
-           go(false, '#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
+           go(false, '#instantdestination', 'instant&source=' + st + "&lang=en", 
               unavailable, 
               offinstantspin,
               $("html").scrollTop());
@@ -900,21 +887,21 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
+           go(false, '#memolist', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
               unavailable, 
               list_reload_finish,
               false);
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+           go(false, '#editslist', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
                   false);
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '#history', '/api?alien=read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+           go(false, '#history', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
                   false);
@@ -939,12 +926,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
+	   go(false, '#pagetext', 'home&switchmode=text', unavailable, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=images', unavailable, false, false);
+	       go(false, '#pagetext', 'home&switchmode=images', unavailable, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -957,12 +944,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
+	       go(false, '#pagetext', 'home&switchmode=text', unavailable, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=both', unavailable, false, false);
+	       go(false, '#pagetext', 'home&switchmode=both', unavailable, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -971,7 +958,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go(false, '#pagetext', '/api?alien=home&switchmode=text', unavailable, false, false);
+      go(false, '#pagetext', 'home&switchmode=text', unavailable, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -989,12 +976,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=false', unavailable, false, false);
+           go(false, '#pagetext', 'read&meaningmode=false', unavailable, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=true', unavailable, false, false);
+           go(false, '#pagetext', 'read&meaningmode=true', unavailable, false, false);
            reveal_all(false);
        }
     });
@@ -1002,7 +989,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
+    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=1",
         'sync error', 
         function(unused) { 
          document.getElementById(name).innerHTML = local('started');
@@ -1013,7 +1000,7 @@ function syncstory(name, uuid) {
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
+    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=0",
         'sync error', 
         function(unused) { 
          document.getElementById(name).innerHTML = local('stopped');
@@ -1055,21 +1042,21 @@ function finishedloading(storylist, navto) {
 
 function loadstories(unused_data, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go(false, '#storypages', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         unavailable, 
         finishedloading,
         navto);
 }
 
 function reviewstory(uuid, which) {
-    go(false, '#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
+    go(false, '#storypages', 'home&reviewed=' + which + '&uuid=' + uuid,
         unavailable, 
         loadstories,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
-    go(false, '#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
+    go(false, '#storypages', 'home&finished=' + which + '&uuid=' + uuid,
         unavailable, 
         loadstories,
         (which == 1) ? "#finished" : "#reading");
@@ -1242,18 +1229,18 @@ function appendChat(who, to, msg) {
         var reverse = false;
     }
 
-    var micaurl = "/api?alien=chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
+    var micaurl = "chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 
     start_trans_id += msg.length;
 
-    $.get(micaurl, "", $.proxy(function(response, success){
-	var data = JSON.parse(response);
-	if(data.success)  {
-		appendBox(who, ts, data.result.human, msgclass, reverse);
-	} else {
-		appendBox(who, ts, data.desc, msgclass, reverse);
-	}
-    }, {}), 'html');
+    go(false, '', micaurl, unavailable, function(response, opaque){
+		var data = JSON.parse(response);
+		if(data.success)  {
+			appendBox(who, ts, data.result.human, msgclass, reverse);
+		} else {
+			appendBox(who, ts, data.desc, msgclass, reverse);
+		}
+	}, false);
 }
 
 function addressableID(who) {
@@ -1295,13 +1282,8 @@ function newContact(who) {
 
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
-    url = "/api?alien=chat&history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
-    go(false, '#pagesingle', url, 
-          unavailable, 
-          handleConnectedLoaded,
-          false);
-    //document.getElementById('iResp').lastChild.scrollIntoView();
+    go(false, '#pagesingle', "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable, handleConnectedLoaded, false);
 }
 
 
@@ -1605,7 +1587,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
 function start_learning(mode, action, uuid, name) {
     $('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});
 
-   var url = '/api?alien=' + mode + '&' + action + "=1";
+   var url = mode + '&' + action + "=1";
 
    if (uuid)
         url += "&uuid=" + uuid;
@@ -1622,7 +1604,7 @@ function getstory_finish(data, opaque) {
 }
 function getstory(uuid, type) {
    loading();
-   go(false, '#printstory_contents', '/api?alien=stories&type=' + type +'&uuid=' + uuid, 
+   go(false, '#printstory_contents', 'stories&type=' + type +'&uuid=' + uuid, 
        unavailable, 
        getstory_finish, 
        false);

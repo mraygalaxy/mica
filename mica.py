@@ -1437,7 +1437,10 @@ class MICA(object):
 
             if py in ['\n', u'\n'] or target in ['\n', u'\n']:
                if len(line) > 0 :
-                   lines.append(line)
+                   if chat :
+                       lines = [line] + lines
+                   else :
+                       lines.append(line)
                    line = []
                    chars = 0
             else :
@@ -1456,7 +1459,10 @@ class MICA(object):
             trans_id += 1
 
         if len(line) :
-            lines.append(line)
+            if chat :
+                lines = [line] + lines
+            else :
+                lines.append(line)
 
         mverbose("View Page " + str(page) + " story " + str(name) + " grouped...")
         
@@ -4139,7 +4145,7 @@ class MICA(object):
                 self.roll_period(req, "days", "weeks", peer)
 
 
-            out = "<table>\n"
+            out = "<table width='100%'>\n"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
                 stories = []
 
