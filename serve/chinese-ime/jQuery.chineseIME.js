@@ -448,7 +448,7 @@
                      * language. We can fix this later. 
                      */
 
-                    go(false, '', micaurl, '', unavailable, false,   
+                    go(false, '', micaurl, unavailable,   
                         function(response, opaque){
                             console.log("Response: " + response); 
                             var data = JSON.parse(response);
@@ -470,7 +470,7 @@
                                 left: self.$el.offset().left + caretPosition.left,
                                 top: self.$el.offset().top + caretPosition.top
                             });
-                    }, false, false);
+                    }, false);
 
             } else {
                 var $box = $('#chinese-ime').hide();

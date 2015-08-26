@@ -33,7 +33,7 @@ function switchinstall(initlist) {
 
 function switchlist() {
    go(false, '#switchlisttext', '/api?alien=home&switchlist=' + (list_mode ? '0' : '1'), 
-        '', unavailable, false, false, false);
+        unavailable, false);
    switchinstall(list_mode ? false : true);
    listreload(current_mode, current_uuid, current_page);
 }
@@ -83,8 +83,7 @@ function form_loaded(data, do_forms) {
                 var destid = "#" + closest.attr('id');
                 if (destid == "#undefined")
                     destid = "#" + $(form).attr('id') + "content";
-                var fromid = destid + "_result"; 
-                go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded_finish, true, true);
+                go(form, destid, 'url_comes_from_form', unavailable, form_loaded_finish, true);
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
@@ -125,7 +124,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go(false, '#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
+                   go(false, '#chat_content', '/api?alien=chat', unavailable, chat_success, false);
                 }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
@@ -133,15 +132,15 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go(false, '#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
+                   go(false, '#learn_content', '/api?alien=' + pageid, unavailable, learn_success, false);
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '#account_content', '/api?alien=account', '', unavailable, false, form_loaded, true, true);
+               go(false, '#account_content', '/api?alien=account', unavailable, form_loaded, true);
         } else if (where == 'help') {
-               go(false, '#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
+               go(false, '#help_content', '/api?alien=help', unavailable, false, false);
         } else if (where == 'privacy') {
-               go(false, '#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
+               go(false, '#privacy_content', '/api?alien=privacy', unavailable, false, false);
         }
    }
    return true;

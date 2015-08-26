@@ -75,6 +75,7 @@
     <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
     <div data-role='page' id='privacy'><div data-role='content' id='privacy_content'></div></div>
     <div data-role='page' id='messages'><div data-role='content'><div t:render="messages"/></div></div>
+    <div data-role='page' id='printstory'><div data-role='content' id='printstory_contents'/></div>
     <div data-role='page' id='instant'><div data-role='content'>
 	   	<!--<tr><td><div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div></td></tr>-->
                 <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
@@ -107,14 +108,14 @@
 		    <li id='finishedoption'><a onclick="finishstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-thumbs-up'></i> <t:slot name='finishedoption'/></a></li>
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
 		    <li id='reviewedoption'><a onclick="reviewstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-arrow-up'></i> <t:slot name='reviewed'/></a></li>
-		    <li id='romanizedoption'><a id='romanizedlink' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
+		    <li id='romanizedoption'><a id='romanizedlink' onclick="getstory(exploded_uuid, 'pinyin')"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
                     <!--(if mobile)-->
                     <li id='syncstatus'></li>
                     <!--(end)-->
 
                     <!--(if not mobile)-->
                     <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
-		    <li><a id='originaloption' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
+		    <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
 		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', exploded_uuid, false)"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
 		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
 		    <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
