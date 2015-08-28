@@ -621,7 +621,7 @@ class MICA(object):
                             req.session.value["connected"] = False
                             req.session.save()
             else :
-                if req.api and req.action not in params["oauth"].keys() :
+                if req.api and req.action not in params["oauth"].keys() + ["connect", "disconnect"]:
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
                 if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "stories" ] + ([] if mobile else params["oauth"].keys() ):
@@ -707,11 +707,19 @@ class MICA(object):
         contents_fh.close()
         return contents
 
-    def api(self, req, json, human = True) :
+    def api(self, req, desc = "", json = {}, error = False) :
+        human = True if int(req.http.params.get("human", "1")) else False
+
         if human :
-            return str(json["desc"])
+            return str(json["desc"]) if "desc" in json else desc
         else :
+            if "desc" not in json :
+                 json["desc"] = desc 
+            json["success"] = True if not error else False
             return json_dumps(json)
+
+    def bad_api(self, req, desc, json = {}) :
+        return self.api(req, desc = desc, json = json, error = True)
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -2962,7 +2970,7 @@ class MICA(object):
 
     def render_disconnect(self, req) : 
         self.clean_session(req)
-        return "<html><body><script>window.location.href = '/';</script></body></html>"
+        return self.api(req)
 
     def render_privacy(self, req) :
         self.install_local_language(req)
@@ -3052,10 +3060,14 @@ class MICA(object):
         try :
             out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
         except OnlineTranslateException, e :
-            return self.api(req, {"success" : False, "desc" : _("Internet access error. Try again later: ") + str(e)}, False)
+            return self.bad_api(req, desc = _("Internet access error. Try again later: "))
 
-        return self.api(req, out, False)
+        return self.api(req, out)
 
+    # This is the only function that needs to be backwards compatible
+    # and support an old API that does not use JSON because it may be used
+    # from old mobile devices, hence the explicit check for the missing
+    # 'human' parameter, which defaults to 1
     @api_validate
     def render_instant(self, req) :
         human = True if int(req.http.params.get("human", "1")) else False
@@ -3160,12 +3172,9 @@ class MICA(object):
 
         except OSError, e :
             mdebug("Looking up target instant translation failed: " + str(e))
-            return self.api(req, {"success" : False, "desc" : _("Please wait until this account is fully synchronized for an offline instant translation.")}, human)
+            return self.bad_api(req, _("Please wait until this account is fully synchronized for an offline instant translation."))
 
-        if human :
-            out = {"success" : True, "desc" : out}
-
-        return self.api(req, out, human)
+        return self.api(req, out)
 
     def roll_period(self, req, period_key, period_next_key, peer) :
         to_delete = []
@@ -3318,7 +3327,6 @@ class MICA(object):
             }
 
             gp = self.processors[self.tofrom(story)]
-            out = {"success" : False}
             lens = []
             chars = []
             source = ""
@@ -3331,10 +3339,9 @@ class MICA(object):
 
                 if not char_result :
                     mdebug("No result from search for: " + orig)
-                    out["desc"] = _("No result") + "."
                     if not gp.already_romanized :
                         self.imemutex.release()
-                        return self.api(req, out, False)
+                        return self.bad_api(req, _("No result"))
 
                     source = orig
                 else :
@@ -3442,7 +3449,7 @@ class MICA(object):
 
         self.imemutex.release()
 
-        return self.api(req, out, False) 
+        return self.api(req, out) 
 
     def render_uploadfile(self, req) :
         fh = req.http.params.get("storyfile")
@@ -4330,7 +4337,7 @@ class MICA(object):
                     # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
                     return _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ")."
             else :
-                # Social networking service experience some unknown error when we tried to authenticate the user before creating an account.
+                # Social networking service experienced some unknown error when we tried to authenticate the user before creating an account.
                 return _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
 
         code = req.http.params.get("code")
@@ -4448,8 +4455,8 @@ class MICA(object):
             req.session.value["from_third_party"] = False 
             if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
-                req.messages = _("To login for the first time and begin synchronization with the website, you must activate internet access.")
-                return self.render_frontpage(req)
+                return self.bad_api(req, _("To login for the first time and begin synchronization with the website, you must activate internet access."))
+
             username = req.http.params.get('username').lower()
             password = req.http.params.get('password')
 
@@ -4482,7 +4489,7 @@ class MICA(object):
 
         if not auth_user :
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            return str(reason)
+            return self.bad_api(req, str(reason))
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
@@ -4502,11 +4509,10 @@ class MICA(object):
                appuser = req.db["MICA:appuser"]
                if appuser["username"] != username :
                     # Beginning of a message 
-                    req.messages = _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                    return self.bad_api(req, _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
                         appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
                         _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
-                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks.")
-                    return self.render_frontpage(req)
+                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks."))
             else :
                mdebug("First time user. Reserving this device: " + username)
                appuser = {"username" : username}
@@ -4519,8 +4525,7 @@ class MICA(object):
                 req.session.save()
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                req.messages = _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again.")
-                return self.render_frontpage(req)
+                return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
 
         req.action = "home"
         req.session.value['connected'] = True 
@@ -4543,7 +4548,7 @@ class MICA(object):
         if not user :
             mwarn("Problem before warn_not_replicated:")
             print_stack()
-            return self.warn_not_replicated(req, frontpage = True)
+            return self.bad_api(req, self.warn_not_replicated(req)) 
 
         if not mobile :
             jobs = req.db.try_get("MICA:jobs")
@@ -4828,16 +4833,17 @@ class MICA(object):
             connect_result = self.render_connect(req, from_third_party)
             if connect_result :
                 # There was an error with anything
-                req.messages = connect_result
-                return self.render_frontpage(req)
+                #req.messages = connect_result
+                #return self.render_frontpage(req)
+                return connect_result
 
             # This is a response to an ajax request to complete the
             # connection
             if from_third_party :
                 return self.render_frontpage(req)
             
-            # Local account creation. Just redirect to home.
-            return "<html><body><script>window.location.href = '/';</script></body></html>"
+            # Local account. Nothing to do.
+            return self.api(req)
             
         self.install_local_language(req)
 

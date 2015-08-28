@@ -51,8 +51,9 @@
                     <!--(end)-->
                     <li><a href='#account' onclick="$('#settings').panel('close')"><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
                     <li><a href='#' onclick='switchlist()'><t:attr name='onclick'><t:slot name='switchclick'/></t:attr><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
-                    <li><a href='/disconnect' rel="external" ><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
+                    <li><form class='ajaxform' ajaxfinish='disconnect_finish' data-ajax='false' method='POST' action='disconnect'><button type='submit'><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></button></form></li>
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
+                    <!-- looks like crap. Fix it. -->
                     <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
                     <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
                     <!--(if not mobile)-->

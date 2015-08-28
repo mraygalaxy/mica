@@ -75,14 +75,18 @@ function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
+            var destid ='';
             $(this).on("submit", function(event, form) {
-                loading();
-                event.preventDefault();
+              loading();
+              event.preventDefault();
+	      var aff = $(form).attr('ajaxfinish');
+	      if(form && aff == undefined) {
                 var closest = $(form).closest("[data-role='content']");
                 var destid = "#" + closest.attr('id');
                 if (destid == "#undefined")
                     destid = "#" + $(form).attr('id') + "content";
-                go(form, destid, 'url_comes_from_form', unavailable, form_loaded_finish, true);
+              }
+              go(form, destid, 'url_comes_from_form', unavailable, form_loaded_finish, true);
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
@@ -159,6 +163,7 @@ $(document).on('ready', function() {
 		$("div.view1").slideToggle(400);
 		$("div.tri1").toggleClass("toggle1");
 	});
+        form_loaded(false, true);
 });
 
 

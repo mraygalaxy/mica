@@ -52,7 +52,7 @@
             
             <div class="modal-body">
                 <div id='newaccountdestination'>
-                    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+                    <form class='ajaxform' data-ajax='false' action='account' method='post'>
 
                     <h5>&#160;<t:slot name="userlang"/>: <select name="language" t:render="user_languages"/></h5>
                     <h5>&#160;<t:slot name='email'/>: <input type="text" name="email"/></h5>
@@ -93,7 +93,7 @@
                    </div>
                    <div id='collapseText' class='panel-body collapse'>
                        <div class='panel-inner'>
-                        <form data-ajax='false' id='textform' action='/home' method='post' enctype='multipart/form-data'>
+                        <form data-ajax='false' id='textform' action='/api?alien=home' method='post' enctype='multipart/form-data'>
                         <h5><div style='display: inline; color: red'>*&#160;</div><t:slot name="uniquename"/>: <input id='textname' type='text' name='storyname' value=''></input>
                         </h5>
                         <div style='display: inline; color: red'>*&#160;</div>
@@ -114,7 +114,7 @@
                    </div>
                    <div id='collapseScanned' class='panel-body collapse'>
                        <div class='panel-inner'>
-                        <form data-ajax='false' id='fileform' action='/home' method='post' enctype='multipart/form-data'>
+                        <form data-ajax='false' id='fileform' action='/api?alien=home' method='post' enctype='multipart/form-data'>
                         <h5><div style='display: inline; color: red'>*&#160;</div>
                             <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
                             <br/><div style='display: inline; color: red'>*&#160;</div>
@@ -209,7 +209,7 @@
             
             <div class="modal-body">
                 <h4><t:slot name="suredelete"/></h4>
-                <form data-ajax='false' action='/account' method='post'>
+                <form data-ajax='false' action='/api?alien=account' method='post'>
                 <input type='hidden' name='username'><t:attr name='value'><t:slot name='username'/></t:attr></input>
                 <button name='deleteaccount' type="submit" class="btn btn-default btn-primary" value='1'><t:slot name="deleteconfirm"/></button>
                 </form>                                   
