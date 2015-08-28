@@ -5,7 +5,7 @@
         <div class='col-lg-3' id='leftpane'>
             <div style='display: inline; margin: 0 auto'>
                 <br/>
-                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
+                <form ajaxfinish='connect_finish' class='ajaxform' data-ajax="false" method="POST" action="connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
                     <table style='margin: 0 auto'>
                         <tr><td> <b><t:slot name='softwarename'/></b></td></tr>
                         <!--(if not mobile)-->
@@ -54,7 +54,8 @@
                             <t:slot name='rememberme'/>
                             </label>
                         </td></tr><tr><td>
-                            <button onclick="loading()" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+                            <input type='hidden' name="connect" value='1'/>
+                            <button type="submit" class="btn-primary btn-block"><t:slot name='signin'/></button>
                         </td></tr><tr><td>
                         <!--
                         <h4><t:slot name="connect"/>.</h4>

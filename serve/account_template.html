@@ -13,7 +13,7 @@
     <tr><td>&#160;<t:slot name ='charperline'/>:</td></tr>
     <tr>
     <td>
-        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <!--(if mobile)-->
         <input type='text' name='setappchars'>
         <!--(else)-->
@@ -27,7 +27,7 @@
     <tr><td><h5>&#160;<t:slot name='zoom'/>: </h5></td></tr>
     <tr>
     <td>
-        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <!--(if mobile)-->
         <input type='text' name='setappzoom'>
         <!--(else)-->
@@ -39,7 +39,7 @@
     </form>
     </td></tr><tr><td>
         <h4><b><t:slot name='language'/></b>?</h4>
-        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <select name="language" t:render='languages'/>
         <input type='hidden' name='changelanguage' value='1'/>
         <button type='submit' class='btn btn-default btn-primary'><t:slot name='changelang'/></button>
@@ -48,7 +48,7 @@
         </form>
     </td></tr><tr><td>
         <h4><b><t:slot name='learninglanguage'/></b>?</h4>
-        <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <select name="learnlanguage" t:render='learnlanguages'/>
         <input type='hidden' name='changelearnlanguage' value='1'/>
         <button type='submit' class='btn btn-default btn-primary'><t:slot name='changelearnlang'/></button>
@@ -58,7 +58,7 @@
     </td></tr>
 </table>
 <!--(if req.session.value["username"] != "demo")-->
-    <form class='ajaxform' data-ajax='false' action='/account'>
+    <form class='ajaxform' data-ajax='false' action='account'>
         <input type='hidden' name='pack' value='1'/>
         <button data-role='none' onclick="$('#compactModal').modal({backdrop: 'static', keyboard: false, show: true});" class='btn btn-default btn-primary'><t:slot name='compact'/></button>
     </form>
@@ -66,7 +66,7 @@
     <h4><b><t:slot name='changepass'/>?</b></h4>
 
     <!--(if not mobile)-->
-    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+    <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <table>
             <tr><td><h5>&#160;<t:slot name="oldpassword"/>:</h5> </td><td><input type="password" name="oldpassword"/></td></tr>
             <tr><td><h5>&#160;<t:slot name="password"/>:</h5> </td><td><input type="password" name="password"/></td></tr>
@@ -78,7 +78,7 @@
         </table>
     </form>                                   
 
-    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+    <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <input type='hidden' name='resetpassword' value='1'/>
         <button type="submit" class="btn btn-default btn-primary"><t:slot name="reset"/></button>
     </form>                                   
@@ -88,7 +88,7 @@
 
     <h4><b><t:slot name='changeemail'/></b>?</h4>
     <!--(if not mobile)-->
-    <form class='ajaxform' data-ajax='false' action='/account' method='post'>
+    <form class='ajaxform' data-ajax='false' action='account' method='post'>
         <input type='text' name='email'><t:attr name='value'><t:slot name='email'/></t:attr></input>
         <input name='changeemail' type='hidden' value='1'/>
         <button type='submit' class='btn btn-default btn-primary'><t:slot name='changemail'/></button>
@@ -116,7 +116,7 @@
                 <td>@!result["key"]["name"]!@</td>
                 <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
                 <td>&#160;&#160;Source:@!result["key"]["source"] if "source" in result["key"] else "mica"!@&#160;&#160;</td>
-                <td><form class='ajaxform' data-ajax='false' action='/account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
+                <td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
             </tr>
         <!--(end)-->
         </table>

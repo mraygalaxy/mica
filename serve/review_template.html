@@ -9,7 +9,7 @@
 <p/>
 <a class='btn btn-default' style='border: 2px solid black' onclick="process_reviews('@!story['uuid']!@', true)"><t:slot name='tryrecco'/></a>
 <p/>
-<form data-ajax='false' class='ajaxform' action='/home' method='post'>
+<form data-ajax='false' class='ajaxform' action='home' method='post'>
 <input type='hidden' name='retranslate' value='1'/>
 <input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
 <input type='hidden' name="uuid" value="@!story['uuid']!@"/>

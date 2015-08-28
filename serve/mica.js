@@ -32,6 +32,26 @@ if ("liststate" in params)
   var newRefresh = 0;
   var finish = false;
 
+function disconnect_finish(response) {
+    var data = JSON.parse(response);
+    done();
+    if (data.success) {
+        window.location.href = "/";
+    } else {
+        alert(data.desc);
+    }
+}
+function connect_finish(response) {
+    var data = JSON.parse(response);
+    done();
+    if (data.success) {
+        window.location.href = "/";
+    } else {
+        $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + data.desc + "</div>");
+        $("#newaccountresultdestination").attr("style", "display: block");
+    }
+}
+
 function local(msgid) {
     return $("#" + msgid).html();
 }
@@ -66,10 +86,15 @@ function local(msgid) {
           if (XMLHttpRequest.status == 401) {
                 window.location.href = "/";
           } else {
-              if(XMLHttpRequest.statusText == 'error') {
-                  $(id).html(error);
-              }
-             go_callback(callback, error, opaque);
+	      var aff = $(form).attr('ajaxfinish');
+	      if(form && aff != undefined) {
+			eval(aff + "('" + error + "')");
+	      } else {
+		      if(XMLHttpRequest.statusText == 'error') {
+			  $(id).html(error);
+		      }
+		     go_callback(callback, error, opaque);
+    	      }
           }
     }
 
@@ -77,20 +102,25 @@ function local(msgid) {
             if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
-	        if(id != '') {
-		    $(id).html(response);
-	        }
+		var aff = $(form).attr('ajaxfinish')
+		if(form && aff != undefined) {
+			eval(aff + "('" + response + "')");
+		} else {
+			if(id != '') {
+			    $(id).html(response);
+			}
 
-                go_callback(callback, response, opaque);
+			go_callback(callback, response, opaque);
 
-                if(id != '' && response.indexOf('<script') != -1) {
-                        //have to replace script or else jQuery will remove them
-                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
-                            if (!$(this).attr('src')) {
-                                eval($(this).text());
-                            }
-                        });
-                }
+			if(id != '' && response.indexOf('<script') != -1) {
+				//have to replace script or else jQuery will remove them
+				$(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
+				    if (!$(this).attr('src')) {
+					eval($(this).text());
+				    }
+				});
+			}
+		}
             }
       }
 
@@ -100,14 +130,14 @@ function local(msgid) {
 
             $.ajax({
                 type: 'POST',
-                url: $(form).attr('action'),
+                url: '/api?human=0&alien=' + $(form).attr('action'),
                 data: formData,
                 success: go_success,
                 error: go_fail
             });
       } else {
             $.ajax({
-                url: '/api?alien=' + url,
+                url: '/api?human=0&alien=' + url,
                 type: "GET",
                 dataType: "html",
                 success: go_success,
@@ -421,7 +451,7 @@ function process_edits(uuid, operation, batch) {
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
       // 'learn_' is not a typo. It's used in form_loaded() so as not to class with the id 'learn'
-      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/edit'>"
+      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -583,7 +613,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/home'>"
+      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
