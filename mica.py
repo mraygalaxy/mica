@@ -615,7 +615,7 @@ class MICA(object):
                         merr(line)
 
                     resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
-                    if not msg.count("SAXParseException") and not msg.count("MissingRenderMethod") and "connected" in req.session.value and req.session.value["connected"] :
+                    if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod"))) and "connected" in req.session.value and req.session.value["connected"] :
                         mwarn("Boo other, logging out user now.")
                         if not mobile :
                             req.session.value["connected"] = False
@@ -707,15 +707,18 @@ class MICA(object):
         contents_fh.close()
         return contents
 
-    def api(self, req, desc = "", json = {}, error = False) :
+    def api(self, req, desc = "", json = False, error = False) :
+        if not json :
+            json = {}
         human = True if int(req.http.params.get("human", "1")) else False
 
         if human :
             return str(json["desc"]) if "desc" in json else desc
         else :
             if "desc" not in json :
-                 json["desc"] = desc 
+                 json["desc"] = desc
             json["success"] = True if not error else False
+            #mdebug("Dumping: " + str(json))
             return json_dumps(json)
 
     def bad_api(self, req, desc, json = {}) :
@@ -1294,7 +1297,7 @@ class MICA(object):
 
         return run_template(req, EditElement)
 
-    def view(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
+    def view_outline(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
             # Begin long explanation
             ut = _("This story has not yet been converted to reading format.")
@@ -1303,7 +1306,7 @@ class MICA(object):
                 ut += _("Translation requires significant computer power, so you must convert (translate) it online first, and then it will be synchronized with this device.")
             else :
                 ut += _("Please click 'Translate' in the side panel to proceed.")
-            return ut 
+            return self.api(req, ut)
 
         upgrade_needed = 0
 
@@ -1325,7 +1328,7 @@ class MICA(object):
                 for err in story["last_error"] :
                     out += "<br/>" + myquote(err.replace("\n", "<br/>"))
 
-            return out
+            return self.api(req, out)
 
         req.gp = self.processors[self.tofrom(story)]
 
@@ -1346,7 +1349,18 @@ class MICA(object):
         else :
             req.story_name = story["name"]
 
-        req.install_pages = "install_pages('" + req.action + "', " + str(self.nb_pages(req, story)) + ", '" + uuid + "', " + start_page + ", '" + view_mode + "', true, '" + meaning_mode + "');"
+        json = {
+                 "install_pages" : { 
+                     "action" : req.action,
+                     "pages" : str(self.nb_pages(req, story)),
+                     "uuid" : uuid,
+                     "start_page" : start_page,
+                     "view_mode" : view_mode,
+                     "reload" : True,
+                     "meaning_mode" : meaning_mode,
+                 }
+        }
+
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
 
@@ -1354,7 +1368,7 @@ class MICA(object):
         req.uuid = story['uuid']
 
         output = run_template(req, ViewElement)
-        return output
+        return self.api(req, desc = output, json = json)
 
     def nb_pages(self, req, story, cached = True, force = False):
         nb_pages = 0
@@ -1956,7 +1970,7 @@ class MICA(object):
             # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
             output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output
 
-        mverbose("View Page " + str(page) + " story " + str(name) + " complete.")
+        mdebug("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
 
     def translate_and_check_array(self, req, name, requests, lang, from_lang) :
@@ -2896,7 +2910,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         # 'Forgot' a story using the button in the side-panel.
-        return _("Forgotten")
+        return self.api(req)
 
     @serial
     def deletestory(self, req, uuid, name) : 
@@ -2947,8 +2961,7 @@ class MICA(object):
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
             self.clear_story(req)
             uuid = False
-        # The user has deleted a story from the system.
-        return _("Deleted")
+        return self.api(req)
 
     # This needs to be replaced with token authentication
     def api_validate(func):
@@ -3506,21 +3519,20 @@ class MICA(object):
 
     def render_tstatus(self, req, story) :
         uuid = story["uuid"]
-        out = ""
         if not req.db.doc_exist(self.index(req, uuid)) :
-            out += "error 25 0 0"
+            return self.api(req, json = {"translated" : { "translating" : 'error', "percent" : 25, "page" : 0, "pages" : 0 }})
         else :
             if "translating" not in story or not story["translating"] :
-                out += "no 0 0 0"
+                return self.api(req, json = {"translated" : { "translating" : 'no', "percent" : 0, "page" : 0, "pages" : 0 }})
             else :
+                result = { "translated" : {"translating" : 'yes'}}
                 curr = float(int(story["translating_current"]))
                 total = float(int(story["translating_total"]))
 
-                out += "yes " + str(int(curr / total * 100))
-                out += (" " + str(story["translating_page"])) if "translating_page" in story else "0"
-                out += (" " + str(story["translating_pages"])) if "translating_pages" in story else "1"
-                
-        return out
+                result["translated"]["percent"] = str(int(curr / total * 100))
+                result["translated"]["page"] = str(story["translating_page"]) if "translating_page" in story else "0"
+                result["translated"]["pages"] = str(story["translating_pages"]) if "translating_pages" in story else "1"
+                return self.api(req, json = result)
 
     def render_finished(self, req, story) :
         name = story["name"]
@@ -3748,7 +3760,7 @@ class MICA(object):
 
         return run_template(req, ReadElement)
 
-    def render_view(self, req, uuid, start_page) :
+    def render_story(self, req, uuid, start_page) :
         req.viewpageresult = False
         view_mode = "text"
         if "view_mode" in req.session.value :
@@ -3772,7 +3784,7 @@ class MICA(object):
             gp = self.processors[self.tofrom(story)]
  
             if req.action == "edit" and gp.already_romanized :
-                return _("Edit mode is only supported for learning character-based languages") + "."
+                return self.api(req, _("Edit mode is only supported for learning character-based languages") + ".")
             
             if req.http.params.get("page") and not req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
@@ -3798,7 +3810,7 @@ class MICA(object):
                        output += _("Image") + " #" + str(nb_image) + " "
                        # end of thes sentence, indicating that a particular image number doesn't exist.
                        output += _("not available on this page")
-                    return output
+                    return self.api(req, output)
                 else :
                     output = ""
                     chat = history = True if ("filetype" in story and story["filetype"] == "chat") else False 
@@ -3810,8 +3822,8 @@ class MICA(object):
                     self.set_page(req, story, page)
                     if chat :
                         output += "</table>"
-                    return "<br/><br/>" + output
-            output = self.view(req, uuid, name, story, start_page, view_mode, meaning_mode)
+                    return self.api(req, "<br/><br/>" + output)
+            return self.view_outline(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
             # Beginning of a message.
             output += _("No story loaded. Choose a story above")
@@ -3828,7 +3840,7 @@ class MICA(object):
                 output += _("please read the tutorial") + "</a>"
                 output += "</h4>"
 
-        return output
+        return self.api(req, output)
 
     def render_stories(self, req, story) :
         ftype = "txt" if "filetype" not in story else story["filetype"]
@@ -4929,19 +4941,17 @@ class MICA(object):
         if req.http.params.get("switchmode") :
             req.session.value["view_mode"] = req.http.params.get("switchmode")
             req.session.save()
-            # The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
-            return _("Mode changed")
+            return self.api(req)
 
         if req.http.params.get("meaningmode") :
             req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
             req.session.save()
-            return _("Mode changed")
+            return self.api(req)
 
         if req.http.params.get("switchlist") :
             req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
             req.session.save()
-            # This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
-            return _("List statistics mode changed")
+            return self.api(req)
 
         # We want the job list to appear before using any story-related functions
         # User must wait.
@@ -5005,7 +5015,7 @@ class MICA(object):
             self.render_bulkreview(req, name)
 
         if req.action in ["home", "read", "edit" ] :
-            return self.render_view(req, uuid, start_page)
+            return self.render_story(req, uuid, start_page)
 
         if req.action in ["stories", "storylist", "account", "chat"] :
             func = getattr(self, "render_" + req.action)
