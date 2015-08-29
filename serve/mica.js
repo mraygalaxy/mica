@@ -157,8 +157,13 @@ function local(msgid) {
                 error: go_fail
             });
       } else {
+            if(id != undefined && id != '')
+                var human = 1;
+            else
+                var human = 0;
+
             $.ajax({
-                url: '/api?human=0&alien=' + url,
+                url: '/api?human=' + human + '&alien=' + url,
                 type: "GET",
                 dataType: "html",
                 success: go_success,
@@ -760,7 +765,7 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
     });
 
     if(reload) {
-        view(mode, uuid, start);
+        view(mode, uuid, parseInt(start));
     }
 }
 
@@ -1166,7 +1171,7 @@ var start_trans_id = 0;
 
 function handleIQ(oIQ) {
     console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
-    $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
+    $('#iResp').prepend("<tr><td style='color: black'><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
@@ -1199,7 +1204,7 @@ var chat_username = false;
 function appendBox(who, ts, msg, msgclass, reverse) {
         var html = '<tr><td>';
         var id = ("" + who).split("@");
-        html += "<div style='width: 100%'><span class='badge " + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black'><table><tr><td>&nbsp</td>";
+        html += "<div style='width: 100%'><span class='" + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black; border-radius: 10px'><table class='chattable'><tr><td>&nbsp</td>";
         sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
         sendtime += "<td style='vertical-align: top'>";
         sendtime += "&nbsp;" + make_date(ts) + "</td>";
@@ -1275,13 +1280,12 @@ function appendChat(who, to, msg) {
 
     start_trans_id += msg.length;
 
-    go(false, '', micaurl, unavailable, function(response, opaque){
-		var data = JSON.parse(response);
-		if(data.success)  {
-			appendBox(who, ts, data.result.human, msgclass, reverse);
-		} else {
-			appendBox(who, ts, data.desc, msgclass, reverse);
-		}
+    go(false, '', micaurl, unavailable, function(json, opaque){
+            if(json.success)  {
+                    appendBox(who, ts, json.result.human, msgclass, reverse);
+            } else {
+                    appendBox(who, ts, json.desc, msgclass, reverse);
+            }
 	}, false);
 }
 

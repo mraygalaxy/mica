@@ -1549,6 +1549,8 @@ class MICA(object):
                 line_out.append("\n<table")
                 if not chat and not history :
                     line_out.append(" style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'")
+                else : 
+                    line_out.append(" class='chattable'")
 
                 line_out.append(">")
                 line_out.append("\n<tr>")
@@ -2130,7 +2132,7 @@ class MICA(object):
 
             notsure.append(");\" title='" + _("Open") + "' style='font-size: x-small' class='btn-default'>")
 
-            notsure.append("<table width='100%'><tr><td>")
+            notsure.append("<table class='chattable' width='100%'><tr><td style='color: black'>")
 
             if "source_language" in story :
                 notsure.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
@@ -3073,7 +3075,7 @@ class MICA(object):
         try :
             out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
         except OnlineTranslateException, e :
-            return self.bad_api(req, desc = _("Internet access error. Try again later: "))
+            return self.bad_api(req, _("Internet access error. Try again later: "))
 
         return self.api(req, out)
 
@@ -3399,6 +3401,8 @@ class MICA(object):
         # When we finish this fix, we can remove the imemutex lock below.
 
         cerror = False
+        failed = True
+        out = {}
         try :
             try :
                 #sys_settrace(tracefunc)
@@ -3430,7 +3434,7 @@ class MICA(object):
                 self.rehash_correct_polyphome(before)
                 self.add_period(req, "days", peer, messages, [before] + story["pages"]["0"]["units"], story)
                 
-            out["success"] = True
+            failed = False
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
 
             select_idx = 1
@@ -3446,23 +3450,23 @@ class MICA(object):
             mwarn("Problem before warn_not_replicated:")
             for line in format_exc().splitlines() :
                 mwarn(line)
-            out["result"] = self.warn_not_replicated(req)
+            out["desc"] = self.warn_not_replicated(req)
         except processors.NotReady, e :
             merr("Translation processor is not ready: " + str(e))
             mwarn("Problem before warn_not_replicated:")
             for line in format_exc().splitlines() :
                 mwarn(line)
-            out["result"] = self.warn_not_replicated(req)
+            out["desc"] = self.warn_not_replicated(req)
         except Exception, e :
             err = ""
             for line in format_exc().splitlines() :
                 err += line + "\n"
             merr(err)
-            out["result"] = _("Chat error") + ": " + source 
+            out["desc"] = _("Chat error") + ": " + source 
 
         self.imemutex.release()
 
-        return self.api(req, out) 
+        return self.api(req, _("Chat error"), json = out, error = failed)
 
     def render_uploadfile(self, req) :
         fh = req.http.params.get("storyfile")
