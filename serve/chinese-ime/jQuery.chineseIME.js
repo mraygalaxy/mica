@@ -449,18 +449,17 @@
                  */
 
                  go(false, '', micaurl, unavailable,   
-                        function(response, opaque){
-                            console.log("Response: " + response); 
-                            var data = JSON.parse(response);
-                            if(data.success)  {
-                                if (!$.wordDatabase.hasWord(data.result.word, 10)){
-                                    $.wordDatabase.addWord(data.result.word, 10);
-                                    $.wordDatabase.setChoices(data.result.word, data.result.chars, data.result.lens);
+                        function(json, opaque){
+                            console.log("Response: " + json); 
+                            if(json.success)  {
+                                if (!$.wordDatabase.hasWord(json.result.word, 10)){
+                                    $.wordDatabase.addWord(json.result.word, 10);
+                                    $.wordDatabase.setChoices(json.result.word, json.result.chars, json.result.lens);
                                 }
 
-                                $box.find('ul').html(data.result.human);
+                                $box.find('ul').html(json.result.human);
                             } else {
-                                $box.find('ul').html(data.desc);
+                                $box.find('ul').html(json.desc);
                             }
 
                             $box.show();
