@@ -493,7 +493,6 @@ class ViewElement(CommonElement) :
         tag.fillSlots(storyname = self.req.story_name.replace("_", " "),
                       spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                       stats = stats,
-                      installpages = self.req.install_pages,
                       # This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
                       performingtranslation= _("Doing instant translation..."),
                       # 'Go' or 'Skip' ahead to a specific page in a book/story.

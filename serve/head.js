@@ -31,10 +31,18 @@ function switchinstall(initlist) {
 	}
 }
 
+function switchlist_finish(data, opaque) {
+    done();
+    if (json.success) {
+       switchinstall(list_mode ? false : true);
+       listreload(current_mode, current_uuid, current_page);
+    } else {
+        alert(json.desc);
+    }
+}
+
 function switchlist() {
-   go(false, '#switchlisttext', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, false);
-   switchinstall(list_mode ? false : true);
-   listreload(current_mode, current_uuid, current_page);
+   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, switchlist_finish, false);
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
@@ -60,8 +68,14 @@ function chat_success(data) {
 
 learn_loaded = false;
 
-function learn_success(data) {
-    learn_loaded = true;
+function learn_success(json, opaque) {
+    if (json.success) {
+        learn_loaded = true;
+        $("#learn_content").html(json.desc);
+        install_pages_if_needed(json);
+    } else {
+        alert(json.desc);
+    }
 }
 
 function form_loaded_finish(data, opaque) {
@@ -135,7 +149,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go(false, '#learn_content', pageid, unavailable, learn_success, false);
+                   go(false, '', pageid, unavailable, learn_success, false);
                 }
         } else if (where == 'account') {
                loading();
