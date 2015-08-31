@@ -37,7 +37,7 @@ uploads_enabled = True
 
 if not mobile :
     from oauthlib.common import to_unicode
-    from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+    from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
     try :
@@ -181,6 +181,7 @@ class Params(object) :
         self.http = Request(environ)  
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
+        minfo("Request: " + self.http.url + " action: " + self.action)
         self.api = False
         if self.action is None or self.action == "":
             self.action = "index"
@@ -215,9 +216,6 @@ class Params(object) :
         else :
             self.mpath = self.uri + "/.." + relative_prefix
             self.bootstrappath = self.uri + "/.." + relative_prefix + "/bootstrap"
-
-        minfo("Request: " + self.unparsed_uri + " action: " + self.action)
-
 
 class MICA(object):
     def tofrom(self, story) :
@@ -4415,10 +4413,12 @@ class MICA(object):
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
         except MissingTokenError, e :
-            merr('Internal oauth error')
             for line in format_exc().splitlines() :
                 merr(line)
             return _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
+        except InvalidGrantError, e :
+            merr('Someone tried to use an old URL with an old Code')
+            return _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
         mdebug("Token fetched successfully: " + str(service.token))
 
@@ -4427,14 +4427,10 @@ class MICA(object):
 
         lookup_url = creds["lookup_url"]
 
-        updated = False
-
         if "force_token" in creds and creds["force_token"] :
-            if updated :
-                lookup_url += "&"
-            else :
-                lookup_url += "?"
-            lookup_url += "access_token=" + service.token["access_token"]
+            lookup_url += "?access_token=" + service.token["access_token"]
+
+        mdebug("Looking up to: " + lookup_url)
 
         r = service.get(lookup_url)
         
@@ -5169,8 +5165,6 @@ class GUIDispatcher(Resource) :
         #    return self.stories
         if name.count("favicon.ico"):
             return self.icon
-        elif name.count("git"):
-            return self.git
         else :
             return self.app
 
