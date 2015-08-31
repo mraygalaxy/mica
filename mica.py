@@ -4441,17 +4441,31 @@ class MICA(object):
             values = values["response"]
 
         if creds["verified_key"] :
-            assert(creds["verified_key"] in values)
+            vkeys = creds["verified_key"].split(",")
+            vdict = values
+            for vkey in vkeys :
+                assert(vkey in vdict)
+                vdict = vdict[vkey]
 
-            if not values[creds["verified_key"]] :
+            if not vdict :
                 return _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
 
-        if creds["email_key"] and creds["email_key"] not in values :
-            authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-            out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
-            out += authorization_url
-            out += "'>" + _("You're welcome to try again") + "</a>"
-            return out
+        email_found = False
+        if creds["email_key"] :
+            vkeys = creds["email_key"].split(",")
+            vdict = values
+            for vkey in vkeys :
+                if isinstance(vdict, dict) :
+                    if vkey not in vdict :
+                        authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
+                        out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
+                        out += authorization_url
+                        out += "'>" + _("You're welcome to try again") + "</a>"
+                        return out
+
+                    vdict = vdict[vkey]
+            values["email"] = vdict
+            creds["email_key"] = vkey
 
         password = binascii_hexlify(os_urandom(4))
         if "locale" not in values :
