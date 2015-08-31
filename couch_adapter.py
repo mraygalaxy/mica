@@ -203,6 +203,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         else :
             raise CommunicationError("No such attachment: " + name + " => " + filename)
             
+    def listen(self, username, password, port) :
+        return port 
 
     def get_attachment_meta(self, name, filename) :
         return self.__getitem__(name)["_attachments"][filename]
@@ -540,6 +542,19 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
             while True :
                 sleep(3600)
 
+    def listen(self, username, password, port) :
+        # Since the user/pass will be fed locally through memory,
+        # and then accessed through javascript, I haven't found
+        # a need to escape them yet
+        #username_unquoted = myquote(username)
+        #password_unquoted = myquote(password)
+
+        port = self.db.listen(String(username), String(password), port)
+        if port == -1 :
+            raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
+
+        return port 
+
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
@@ -753,6 +768,19 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         else :
             mdebug("Replication started. Yay.")
             return True
+
+    def listen(self, username, password, port) :
+        # Since the user/pass will be fed locally through memory,
+        # and then accessed through javascript, I haven't found
+        # a need to escape them yet
+        #username_unquoted = myquote(username)
+        #password_unquoted = myquote(password)
+
+        port = self.db.listen___(String(username), String(password), String(str(port)))
+        if port == -1 :
+            raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
+
+        return port 
 
     def detach_thread(self) :
         pass

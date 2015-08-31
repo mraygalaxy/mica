@@ -339,7 +339,7 @@ class MICA(object):
         return self.key_common(req) + ":memorized:" + key 
     
     def credentials(self) :
-        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"])
+        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"] + (params["couch_path"] if ("couch_path" in params and params["couch_path"] != "") else ""))
 
     def install_local_language(self, req, language = False) :
         if language :
@@ -582,11 +582,12 @@ class MICA(object):
 
                         if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+                        req.session.value["port"] = req.db.listen(username, req.session.value["password"], 5984)
+                        req.session.save()
                     else :
                         # On the server, use cookies to talk to CouchDB
                         cookie = req.session.value["cookie"]
                         mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
-
                 try :
                     self.verify_db(req, req.session.value["database"], cookie = cookie)
                     resp = self.render(req)
@@ -719,6 +720,8 @@ class MICA(object):
                  json["desc"] = desc
             json["success"] = True if not error else False
             #mdebug("Dumping: " + str(json))
+            if not mobile :
+                json["cookie"] = req.session.value["cookie"]
             return json_dumps(json)
 
     def bad_api(self, req, desc, json = {}) :
@@ -2082,7 +2085,9 @@ class MICA(object):
     def makestorylist(self, req, tzoffset):
         untrans_count = 0
         reading_count = 0
+        newstory_count = 0
         chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
+        storynew = [self.storyTemplate("New")]
         reading = [self.storyTemplate("Reading")]
         noreview = [self.storyTemplate("Reviewing")]
         untrans = [self.storyTemplate("Untranslated")]
@@ -2099,8 +2104,9 @@ class MICA(object):
         for name, story in items :
             gp = self.processors[self.tofrom(story) if "source_language" in story else "zh-CHS,en"]
 
-            reviewed = not ("reviewed" not in story or not story["reviewed"])
-            finished = not ("finished" not in story or not story["finished"])
+            reviewed = "reviewed" in story and story["reviewed"]
+            finished = "finished" in story and story["finished"]
+            newstory = "new" in story and story["new"]
 
             if isinstance(story['uuid'], tuple) :
                 uuid = story['uuid']
@@ -2130,6 +2136,8 @@ class MICA(object):
             else :
                 notsure.append(", 'false'")
 
+            notsure.append(", " + ('true' if newstory else 'false'))
+
             notsure.append(");\" title='" + _("Open") + "' style='font-size: x-small' class='btn-default'>")
 
             notsure.append("<table class='chattable' width='100%'><tr><td style='color: black'>")
@@ -2148,22 +2156,27 @@ class MICA(object):
             closing = "</td></tr></table></a></li>"
 
             if not story["translated"] : 
-                untrans_count += 1
-                untrans += notsure
+                if newstory :
+                    newstory_count += 1
+                    storynew += notsure
+                    storynew.append(closing)
+                else :
+                    untrans_count += 1
+                    untrans += notsure
 
-                if not mobile :
-                    untrans.append("<div id='transbutton" + story['uuid'] + "'>")
-                    if "last_error" in story and not isinstance(story["last_error"], str) :
-                        for err in story["last_error"] :
-                            untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
+                    if not mobile :
+                        untrans.append("<div id='transbutton" + story['uuid'] + "'>")
+                        if "last_error" in story and not isinstance(story["last_error"], str) :
+                            for err in story["last_error"] :
+                                untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
 
-                    untrans.append("</div>&#160;")
+                        untrans.append("</div>&#160;")
 
-                untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
+                    untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
 
-                if "translating" in story and story["translating"] :
-                    untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
-                untrans.append(closing)
+                    if "translating" in story and story["translating"] :
+                        untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
+                    untrans.append(closing)
             else : 
                 if finished :
                    finish += notsure
@@ -2181,7 +2194,7 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
                    
-        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -2362,19 +2375,63 @@ class MICA(object):
         return [True, offset]
 
     @serial
-    def add_story_from_source(self, req, filename, source, filetype, source_lang, target_lang, sourcepath) :
+    def storyinit(self, req, uuid, name) :
+        source = False
+        sourcepath = False
+        filename = name
+
+        story = req.db[self.story(req, name)]
+        filetype = story['filetype']
+        source_lang = story['source_language'].encode('utf-8')
+        target_lang = story['target_language'].encode('utf-8')
+
+        if filetype == 'txt' :
+            # return API error if key is missing
+            source = story['txtsource'] + '\n'
+        else :
+            sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
+            mdebug("Will stream upload to " + sourcepath)
+            sourcefh = open(sourcepath, 'wb')
+            sourcebytes = 0
+            maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
+            sourcefailed = False
+
+            '''
+            fh = req.http.params.get("storyfile")
+            # Stream the file contents directly to disk, first
+            # Make sure it's not too big while we're doing it...
+
+            while True :
+                data = fh.file.read(1)
+                if data == '' :
+                    break
+                sourcebytes += 1
+                if sourcebytes > maxbytes[filetype] :
+                    sourcefailed = True
+                    break 
+
+                sourcefh.write(data)
+
+            sourcefh.close()
+            fh.file.close()
+
+            if sourcefailed :
+                mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
+                os_remove(sourcepath)
+                # This appears when the user tries to upload a story document that is too large.
+                # At the end of the message will appear something like '30 MB', or whatever is
+                # the current maximum file size allowed by the system.
+                msg = _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB."
+                return self.render_mainpage(req, msg)
+
+            mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
+            '''
+
         if sourcepath :
             assert(source == False)
 
             # Do a test that we can read it back in.
             fp = open(sourcepath, 'rb')
-
-        if filetype == "chat" :
-            assert(not req.db.doc_exist(self.story(req, filename)))
-        elif req.db.doc_exist(self.story(req, filename)) :
-            return self.render_mainpage(req, _("Upload Failed! Story already exists") + ": " + filename)
-        
-        mdebug("Received new story name: " + filename)
 
         gp = self.processors[source_lang + "," + target_lang]
 
@@ -2390,25 +2447,8 @@ class MICA(object):
                 source = fp.read()
             mdebug("Source: " + source)
 
-        new_uuid = str(uuid_uuid4())
-
-        story = {
-            'uuid' : new_uuid,
-            'translated' : False if filetype != "chat" else True,
-            'reviewed' : False if filetype != "chat" else True,
-            'name' : filename,
-            'filetype' : filetype,
-            'source_language' : source_lang.decode("utf-8"), 
-            'target_language' : target_lang.decode("utf-8"), 
-            'format' : story_format,
-            'date' : timest(),
-            'nb_pages' : 0,
-        }
-        
         try :
-            if filetype == "chat" :
-                pass
-            elif filetype == "pdf" :
+            if filetype == "pdf" :
                 pagenos = set()
                 pagecount = 0
                 rsrcmgr = PDFResourceManager()
@@ -2499,11 +2539,10 @@ class MICA(object):
                     orig = { "value" : de_source }
 
                 req.db[origkey] = orig
-            
-            req.db[self.story(req, filename)] = story
-            req.db[self.index(req, story["uuid"])] = { "value" : filename }
 
-            self.clear_story(req)
+            story = req.db[self.story(req, name)]
+            story['new'] = False
+            req.db[self.story(req, name)] = story
         except Exception, e :
             # Need to make sure we clear the uploaded file before releasing the exception.
             for line in format_exc().splitlines() :
@@ -2517,7 +2556,54 @@ class MICA(object):
             fp.close()
             os_remove(sourcepath)
 
-        return _("Upload Complete! Story ready for translation") + ": " + filename
+        return _("Initialization Complete! Story ready for translation") + ": " + filename
+
+    @serial
+    def add_story_from_source(self, req, filename, filetype, source_lang, target_lang) :
+        if filetype == "chat" :
+            assert(not req.db.doc_exist(self.story(req, filename)))
+        elif req.db.doc_exist(self.story(req, filename)) :
+            return self.bad_api(req, _("Upload Failed! Story already exists") + ": " + filename)
+        
+        mdebug("Received new story name: " + filename)
+
+        new_uuid = str(uuid_uuid4())
+
+        '''
+          Before, stories were uploaded and initialize immediately.
+          But, to make everything fully AJAX and testable, we have
+          to split that into the upload of the original content
+          as a 'new' story, but not yet unpacked (i.e. PDFs, etc)
+          and then later have a thread unpack them asynchronously.
+
+          Chat messages already do this, in fact. Just gotta prepare
+          for importing content from literally anywhere.
+        '''
+
+        try :
+            req.db[self.story(req, filename)] = {
+                    'uuid' : new_uuid,
+                    'translated' : False if filetype != "chat" else True,
+                    'reviewed' : False if filetype != "chat" else True,
+                    'new' : True if filetype != "chat" else False, 
+                    'name' : filename,
+                    'filetype' : filetype,
+                    'source_language' : source_lang.decode("utf-8"), 
+                    'target_language' : target_lang.decode("utf-8"), 
+                    'format' : story_format,
+                    'date' : timest(),
+                    'nb_pages' : 0,
+                }
+        
+            req.db[self.index(req, new_uuid)] = { "value" : filename }
+
+            self.clear_story(req)
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            return self.bad_api(req, str(e))
+
+        return self.api(req, json = {'storykey' : self.story(req, filename)})
         
     def flush_pages(self, req, name):
         mdebug("Ready to flush translated pages.")
@@ -2928,7 +3014,8 @@ class MICA(object):
                 self.flush_pages(req, name)
                 if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
                     mdebug("Deleting txt original contents.")
-                    del req.db[self.story(req, name) + ":original"]
+                    if not tmp_story["new"] :
+                        del req.db[self.story(req, name) + ":original"]
                 else :
                     if tmp_story["filetype"] == "chat" :
                         self.clear_chat(req, tmp_story["name"])
@@ -3010,6 +3097,13 @@ class MICA(object):
         req.mica = self
         req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
         req.user = req.db.try_get(self.acct(req.session.value['username']))
+        req.username = req.session.value['username']
+        if mobile :
+            req.database = params["local_database"]
+            req.credentials = 'http://127.0.0.1:' + str(req.session.value["port"])
+        else :
+            req.database = req.session.value["database"]
+            req.credentials = self.credentials()
         contents = run_template(req, HeadElement)
         fh = open(cwd + 'serve/head.js')
         bootscript = fh.read()
@@ -3245,7 +3339,7 @@ class MICA(object):
     def add_period_story(self, req, period_key, peer, current_day, story) :
         if not req.db.try_get(self.chat_period(req, period_key, peer, current_day)) :
             mdebug("Adding new story for period " + period_key + " and peer" + peer)
-            self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), False, "chat", story["source_language"], story["target_language"], False)
+            self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), "chat", story["source_language"], story["target_language"])
         mverbose("Looking up story for period " + period_key + " and peer" + peer)
         story = req.db[self.chat_period(req, period_key, peer, current_day)]
         req.session.value["chats"][period_key][peer] = story 
@@ -3469,57 +3563,16 @@ class MICA(object):
         return self.api(req, _("Chat error"), json = out, error = failed)
 
     def render_uploadfile(self, req) :
-        fh = req.http.params.get("storyfile")
         filetype = req.http.params.get("filetype")
         langtype = req.http.params.get("languagetype")
         source_lang, target_lang = langtype.split(",")
-        # Stream the file contents directly to disk, first
-        # Make sure it's not too big while we're doing it...
-        sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
-        mdebug("Will stream upload to " + sourcepath)
-        sourcefh = open(sourcepath, 'wb')
-
-        sourcebytes = 0
-        maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
-        sourcefailed = False
-        while True :
-            data = fh.file.read(1)
-            if data == '' :
-                break
-            sourcebytes += 1
-            if sourcebytes > maxbytes[filetype] :
-                sourcefailed = True
-                break 
-
-            sourcefh.write(data)
-
-        sourcefh.close()
-        fh.file.close()
-
-        if sourcefailed :
-            mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
-            os_remove(sourcepath)
-            # This appears when the user tries to upload a story document that is too large.
-            # At the end of the message will appear something like '30 MB', or whatever is
-            # the current maximum file size allowed by the system.
-            msg = _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB."
-            return self.render_mainpage(req, msg)
-
-        mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
-
-        # A new story has been uploaded and is being processed in the background.
-        self.new_job(req, self.add_story_from_source, False, _("Processing New PDF Story"), fh.filename, False, args = [req, fh.filename.lower().replace(" ","_").replace(",","_").replace(";","_"), False, filetype, source_lang, target_lang, sourcepath])
-        return u"<div><script>\nwindow.location.href = '/';</script></div>"
+        return self.add_story_from_source(req, fh.filename.lower().replace(" ","_").replace(",","_").replace(";","_"), filetype, source_lang, target_lang)
 
     def render_uploadtext(self, req) :
-        source = req.http.params.get("storytext") + "\n"
         filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_").replace(";","_")
         langtype = req.http.params.get("languagetype")
         source_lang, target_lang = langtype.split(",")
-
-        # A new story has been uploaded and is being processed in the background.
-        out = self.new_job(req, self.add_story_from_source, False, _("Processing New TXT Story"), filename, False, args = [req, filename, source, "txt", source_lang, target_lang, False])
-        return u"<div><script>\nwindow.location.href = '/';</script></div>"
+        return self.add_story_from_source(req, filename, "txt", source_lang, target_lang)
 
     def render_tstatus(self, req, story) :
         uuid = story["uuid"]
@@ -4262,12 +4315,13 @@ class MICA(object):
 
         storylist = ["<script>var translist = [];</script>\n"]
 
-        untrans_count, reading, noreview, untrans, finish, reading_count, chatting = self.makestorylist(req, tzoffset)
+        untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count = self.makestorylist(req, tzoffset)
         
         reading.append("\n</ul></div></div>\n")
         noreview.append("\n</ul></div></div>\n")
         untrans.append("\n</ul></div></div>\n")
         finish.append("\n</ul></div></div>\n")
+        newstory.append("\n</ul></div></div>\n")
 
         chat_all = [self.storyTemplate("Chatting")]
 
@@ -4278,31 +4332,28 @@ class MICA(object):
 
         chat_all.append("\n</ul></div></div>\n")
 
-        scripts = [""]
+        storylist += newstory + reading + chat_all + untrans + noreview + finish
 
-        if untrans_count :
-            storylist += untrans + reading + chat_all + noreview + finish
-            # make JQM go to the right sub-menu first by switching to the right page
-            scripts.append("<script>firstload = '#untranslated';</script>")
+        firstload = "reviewing"
+        if newstory_count :
+            firstload = "newstory"
+        elif untrans_count :
+            firstload = "untranslated"
         elif reading_count :
-            storylist += reading + chat_all + untrans + noreview + finish
-            scripts.append("<script>firstload = '#reading';</script>")
-        else :
-            storylist += noreview + reading + chat_all + untrans + finish
-            scripts.append("<script>firstload = '#reviewing';</script>")
+            firstload = "reading"
 
-        scripts.append("""
-                    
+        scripts = """
                    <script>
+                   firstload = '#""" + firstload + """';
                    for(var tidx = 0; tidx < translist.length; tidx++) {
                        trans_start(translist[tidx]);
                    }
                    translist = [];
                    </script>
-                  """)
+                  """
 
         try :
-            finallist = "".join(storylist) + "".join(scripts)
+            finallist = "".join(storylist) + scripts
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
 
@@ -4504,8 +4555,9 @@ class MICA(object):
         auth_user, reason = self.authenticate(username, password, address, from_third_party = from_third_party)
 
         if not auth_user :
+            mwarn("Login failed; " + str(reason))
             # User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
-            return self.bad_api(req, str(reason))
+            return self.bad_api(req, _("Invalid credentials"))
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
@@ -4542,6 +4594,9 @@ class MICA(object):
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
                 return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+
+            req.session.value["port"] = req.db.listen(username, req.session.value["password"], 5984)
+            req.session.save()
 
         req.action = "home"
         req.session.value['connected'] = True 
@@ -4924,7 +4979,10 @@ class MICA(object):
                     story = req.db[self.story(req, name)]
 
         if req.http.params.get("delete") :
-            return self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name])
+            return self.api(req, self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name]))
+
+        if req.http.params.get("storyinit") :
+            return self.api(req, self.new_job(req, self.storyinit, False, _("Initializing Story in Database"), name, False, args = [req, uuid, name]))
 
         if uuid :
             if not req.db.doc_exist(self.index(req, uuid)) :
@@ -4940,7 +4998,7 @@ class MICA(object):
             # Resetting means that we are dropping the translate contents of the original story. We are
             # not deleteing the story itself, nor the user's memorization data, only the translated
             # version of the story itself.
-            return self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name])
+            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]))
 
         if req.http.params.get("switchmode") :
             req.session.value["view_mode"] = req.http.params.get("switchmode")
@@ -5175,6 +5233,8 @@ def get_options() :
     parser.add_option("-g", "--couchproto", dest = "couchproto", default = "https", help = "couchdb http protocol (https|http)")
     parser.add_option("-i", "--couchport", dest = "couchport", default = "6984", help = "couchdb port")
 
+    parser.add_option("-z", "--couchpath", dest = "couchpath", default = "", help = "couchdb path after port name")
+
     parser.set_defaults()
     options, args = parser.parse_args()
 
@@ -5201,6 +5261,7 @@ def get_options() :
                "couch_server" : options.couchserver,
                "couch_proto" : options.couchproto,
                "couch_port" : options.couchport, 
+               "couch_path" : options.couchpath,
     }
 
     return params 

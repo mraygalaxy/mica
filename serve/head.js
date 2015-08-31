@@ -208,3 +208,33 @@ $(document).ready(function () {
 	});
 });
 
+var token = encodeURIComponent($('#token').html());
+$.couch.urlPrefix = $('#creds').html();
+var db = $.couch.db($('#database').html()); 
+var authtype = $("#authtype").html();
+var username = encodeURIComponent($("#username").html());
+
+/*
+ * Note: When using 'login', the username/pass 
+ * needs to be encoded, but for some reason,
+ * the keys for things like 'openDoc' do not need that.
+ */
+if (authtype == 'cookie') {
+    /*
+     * When using cookies, we need to have the browser set the
+     * cookie in the actual cookies list so that future AJAX
+     * requests are using the right cookie.
+     */
+    db.openDoc("MICA:accounts:" + $("#username").html(), {
+          error: function(err) {
+                alert("Boo. Doc failed: " + err);
+          }
+        },
+        { "headers" : ['Cookie: ' + token] }
+);
+} else {
+   $.couch.login({name: username, password: token,
+                 error : function(stat, error, reason) {
+                        alert("Failed to login to couch listener on mobile! " + stat + " " + error + " " + reason);
+                }});
+}

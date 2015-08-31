@@ -98,11 +98,11 @@
                         </h5>
                         <div style='display: inline; color: red'>*&#160;</div>
                           <t:slot name="langtype"/>? <select id='textlanguage' name="languagetype" t:render="languages"/>
-                        <br/><div style='display: inline; color: red'>*&#160;</div><textarea style='width: 90%' name="storytext" id="textvalue"></textarea>
                            <br/>
                            <input type='hidden' name='uploadtext' value='1'/>
-                           <input rel='external' type="button" class="btn-primary" onclick='validatetext()'><t:attr name='value'><t:slot name='uploadtext'/></t:attr></input>
+                           <input type="button" class="btn-primary" onclick='validatetext()'><t:attr name='value'><t:slot name='uploadtext'/></t:attr></input>
                         </form>                                   
+                        <br/><div style='display: inline; color: red'>*&#160;</div><textarea style='width: 90%' name="storytext" id="textvalue"></textarea>
                        </div>
                    </div>
                  </div>
@@ -116,8 +116,6 @@
                        <div class='panel-inner'>
                         <form data-ajax='false' id='fileform' action='/api?alien=home' method='post' enctype='multipart/form-data'>
                         <h5><div style='display: inline; color: red'>*&#160;</div>
-                            <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
-                            <br/><div style='display: inline; color: red'>*&#160;</div>
                               <t:slot name="whatkindfile"/> <select name="filetype" id='uploadtype'>
                               <option value=''><t:slot name='noneselected'/></option>
                               <option value='pdf'>PDF (utf-8, <t:slot name="multipage"/>)</option>
@@ -131,6 +129,9 @@
                             <input type='hidden' name='uploadfile' value='1'/>
                             <input rel='external' onclick='validatefile()' type="button" class="btn-primary"><t:attr name='value'><t:slot name='uploadfile'/></t:attr></input> </h5>
                         </form>                                   
+                        <div style='display: inline; color: red'>*&#160;</div>
+                        <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
+                        <br/>
                         <h5><t:slot name="mustbeencoded"/>.</h5>
                        </div>
                    </div>
