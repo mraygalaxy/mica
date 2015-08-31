@@ -5175,8 +5175,8 @@ class GUIDispatcher(Resource) :
         #    return self.stories
         if name.count("favicon.ico"):
             return self.icon
-        elif name.count("git"):
-            return self.git
+        #elif name.count("git"):
+        #    return self.git
         else :
             return self.app
 
