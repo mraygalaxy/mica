@@ -1,6 +1,12 @@
 <html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
   <head t:render="head"/>
   <body id='cbody'>
+    <!--(if not mobile)-->
+    <div id='token' style='display: none'><t:slot name='token'/></div>
+    <div id='creds' style='display: none'><t:slot name='creds'/></div>
+    <div id='database' style='display: none'><t:slot name='database'/></div>
+    <div id='authtype' style='display: none'><t:slot name='authtype'/></div>
+    <!--(end)-->
     <div t:render="translations"/>
     <!--(if False)-->
     <div data-role='panel' data-display="reveal" id='settings'>
@@ -37,7 +43,7 @@
 			</table>
 		    </li>
 		    <li>
-			<b><t:slot name='accountusername'/></b>
+			<b id='username'><t:slot name='accountusername'/></b>
 		    </li>
                     <li><a onclick="start_learning('home', 'view', false, false)"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
                     <li><a onclick="start_learning('edit', 'view', false, false)"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
@@ -70,6 +76,7 @@
     <div data-role='page' id='chatting'><div data-role='content' id='content_collapseChatting'></div></div>
     <div data-role='page' id='finished'><div data-role='content' id='content_collapseFinished'></div></div>
     <div data-role='page' id='reviewing'><div data-role='content' id='content_collapseReviewing'></div></div>
+    <div data-role='page' id='newstory'><div data-role='content' id='content_collapseNew'></div></div>
     <div data-role='page' id='untranslated'><div data-role='content' id='content_collapseUntranslated'></div></div>
     <div data-role='page' id='account'><div data-role='content' id='account_content'></div></div>
     <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
@@ -90,6 +97,7 @@
 		    <li><a href='#reading'><t:slot name='reading'/></a></li>
 		    <li><a href='#chatting'><t:slot name='chatting'/></a></li>
 		    <li><a href='#reviewing'><t:slot name='notreviewed'/></a></li>
+		    <li><a href='#newstory'><t:slot name='newstory'/></a></li>
 		    <li><a href='#untranslated'><t:slot name='untranslated'/></a></li>
 		    <li><a href='#finished'><t:slot name='finished'/></a></li>
 		</ul>
@@ -118,6 +126,7 @@
 		    <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
 		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', exploded_uuid, false)"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
 		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
+		    <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
 		    <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
                     <!--(end)-->
 		</ul>

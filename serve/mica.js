@@ -918,7 +918,6 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             var rule = rules[j];
             all += rule.selectorText + "\n";
             if (rule.selectorText && rule.selectorText.split(',').indexOf(selector) !== -1) {
-//                alert("Old: " + rule.style[style])
                 rule.style[style] = newstyle;
             }
         }
@@ -1056,7 +1055,7 @@ function unsyncstory(name, uuid) {
         false);
 }
 
-var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated"];
+var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
 
 function finishedloading(storylist, navto) {
 
@@ -1124,6 +1123,35 @@ $.fn.goDeep = function(levels, func){
     });
 };
 
+function validatetext_finish(json, opaque) {
+    if(json.success) {
+        db.openDoc(json.storykey, {
+              error: function(err) {
+                    alert("Boo. Doc failed: " + err);
+              },
+              success : function(doc) {
+                   doc["txtsource"] = $("#textvalue").val();
+                   db.saveDoc(doc, {
+                        error: function(saveerr) {
+                            alert("Boo. Couldn't save TXT contents: " + saveerr);
+                            // Need to call the API to delete this story,
+                            // both the name and the UUID index
+                        },
+                        success: function(response) {
+                            $('#uploadModal').modal('hide');
+                            done();
+                            $.mobile.navigate('#stories');
+                            loadstories(false, "#newstory");
+                                
+                        }
+                   });
+              }
+            });
+    } else {
+        alert("Failed to add your story. Please try again.");
+    }
+}
+
 function validatetext() {
     var ids = [ 'textname', 'textvalue', 'textlanguage' ];
 
@@ -1142,7 +1170,10 @@ function validatetext() {
             return;
     }
 
-    $("#textform").submit();
+    //$("#textform").submit();
+    
+    loading();
+    go($("#textform"), '', '', unavailable, validatetext_finish, false);
 }
 
 function validatefile() {
@@ -1162,6 +1193,8 @@ function validatefile() {
         document.getElementById("colonerror").style.display = 'block';
         return;
     }
+
+    var myFile = $('#uploadfile').prop('files');
 
     $("#fileform").submit();
 }
@@ -1579,19 +1612,24 @@ function install_pages_if_needed(json) {
     }
 }
 
-function start_learning_finished(json, reloadstories) {
+function start_learning_finished(json, action) {
     done();
+    $('#loadingModal').modal('hide');
     if (json.success) {
-        if (reloadstories) {
-            $.mobile.navigate('#stories');
-            loadstories(false, false);
+        if (action == 'storyinit') {
+           window.location.href = "/";
         } else {
-            $('#readingheader').affix();
-            $('#learn_content').html(json.desc);
-            $('#loadingModal').modal('hide');
-            $.mobile.navigate('#learn');
+            var reloadstories = (action == 'view') ? false : true;
+            if (reloadstories) {
+                $.mobile.navigate('#stories');
+                loadstories(false, false);
+            } else {
+                $('#readingheader').affix();
+                $('#learn_content').html(json.desc);
+                $.mobile.navigate('#learn');
+            }
+            install_pages_if_needed(json);
         }
-        install_pages_if_needed(json);
     } else {
         alert(json.desc);
     }
@@ -1599,7 +1637,8 @@ function start_learning_finished(json, reloadstories) {
 
 var exploded_uuid = false;
 var exploded_name = false;
-function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus) {
+function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus, newstory) {
+
     exploded_uuid = uuid;
     exploded_name = name;
     $.mobile.navigate('#explode');
@@ -1615,6 +1654,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     $("#deleteoption").attr('style', 'display: none');
     $("#translateoption").attr('style', 'display: none');
     $("#romanizedoption").attr('style', 'display: none');
+    $("#storyinitoption").attr('style', 'display: none');
 
     if (translated) {
         if (romanized) {
@@ -1636,6 +1676,9 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
         } else {
             $("#reviewedoption").attr('style', 'display: block');
         }
+    } else if (newstory) {
+        $("#storyinitoption").attr('style', 'display: block');
+        $("#deleteoption").attr('style', 'display: block');
     } else {
         $("#deleteoption").attr('style', 'display: block');
         $("#translateoption").attr('style', 'display: block');
@@ -1658,7 +1701,7 @@ function start_learning(mode, action, uuid, name) {
    if (name) 
        url += "&name=" + name;
 
-   go(false, '', url,  unavailable, start_learning_finished, (action == 'view') ? false : true);
+   go(false, '', url,  unavailable, start_learning_finished, action);
 }
 
 function getstory_finish(data, opaque) {
@@ -1672,3 +1715,4 @@ function getstory(uuid, type) {
        getstory_finish, 
        false);
 }
+

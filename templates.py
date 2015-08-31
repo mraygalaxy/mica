@@ -671,6 +671,7 @@ class HTMLElement(CommonElement):
                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      caret = self.req.mpath + "/chinese-ime/caret.js",
+                     couchjs = self.req.mpath + "/jquery.couch-1.5.js",
                     )
 
         return tag
@@ -770,6 +771,13 @@ class HeadElement(CommonElement):
                      instant = _("Instant Translation"),
                      performingtranslation= _("Doing instant translation..."),
                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
+                     token = self.req.session.value['cookie'] if not mobile else req.session.value['password'],
+                     creds = self.req.credentials,
+                     database = self.req.database,
+                     authtype = "cookie" if not mobile else "pass",
+                     newstory = _("New"),
+                     storyinit = _("Initialize Story"),
+
                      )
         return tag
 
