@@ -2376,6 +2376,7 @@ class MICA(object):
     def storyinit(self, req, uuid, name) :
         source = False
         sourcepath = False
+        fp = False
         filename = name
 
         story = req.db[self.story(req, name)]
@@ -2389,47 +2390,8 @@ class MICA(object):
         else :
             sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
             mdebug("Will stream upload to " + sourcepath)
-            sourcefh = open(sourcepath, 'wb')
-            sourcebytes = 0
-            maxbytes = { "pdf" : 30*1024*1024, "txt" : 1*1024*1024 }
-            sourcefailed = False
-
-            '''
-            fh = req.http.params.get("storyfile")
-            # Stream the file contents directly to disk, first
-            # Make sure it's not too big while we're doing it...
-
-            while True :
-                data = fh.file.read(1)
-                if data == '' :
-                    break
-                sourcebytes += 1
-                if sourcebytes > maxbytes[filetype] :
-                    sourcefailed = True
-                    break 
-
-                sourcefh.write(data)
-
-            sourcefh.close()
-            fh.file.close()
-
-            if sourcefailed :
-                mdebug("File is too big. Deleting it and aborting upload: " + fh.filename)
-                os_remove(sourcepath)
-                # This appears when the user tries to upload a story document that is too large.
-                # At the end of the message will appear something like '30 MB', or whatever is
-                # the current maximum file size allowed by the system.
-                msg = _("File is too big. Maximum file size:") + " " + str(maxbytes[filetype] / 1024 / 1024) + " MB."
-                return self.render_mainpage(req, msg)
-
-            mdebug("File " + fh.filename + " uploaded to disk. Bytes: " + str(sourcebytes))
-            '''
-
-        if sourcepath :
-            assert(source == False)
-
-            # Do a test that we can read it back in.
-            fp = open(sourcepath, 'rb')
+            sourcebytes = req.db.get_attachment_to_path(self.story(req, name), filename, sourcepath)
+            mdebug("File " + filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
         gp = self.processors[source_lang + "," + target_lang]
 
@@ -2446,6 +2408,7 @@ class MICA(object):
             mdebug("Source: " + source)
 
         try :
+            fp = open(sourcepath, 'rb')
             if filetype == "pdf" :
                 pagenos = set()
                 pagecount = 0
@@ -2503,7 +2466,7 @@ class MICA(object):
                     
                     req.db.put_attachment(self.story(req, filename) + ":original:" + str(pagecount),
                                             "attach",
-                                            str({ "images" : images, "contents" : de_data }), 
+                                            str({ "images" : images, "contents" : de_data }),
                                            )
 
                     pagecount += 1
@@ -2540,12 +2503,21 @@ class MICA(object):
 
             story = req.db[self.story(req, name)]
             story['new'] = False
+            if filetype == "txt" :
+                del story['txtsource']
             req.db[self.story(req, name)] = story
+            mdebug("Finihed resetting story to old.")
+            if filetype != "txt" :
+                mdebug("Deleting original file attachment.")
+                story = req.db[self.story(req, name)]
+                req.db.delete_attachment(story, filename)
+                mdebug("Deleted.")
+
         except Exception, e :
             # Need to make sure we clear the uploaded file before releasing the exception.
             for line in format_exc().splitlines() :
                 merr(line)
-            if sourcepath :
+            if sourcepath and fp:
                 fp.close()
                 os_remove(sourcepath)
             raise e
@@ -3563,8 +3535,9 @@ class MICA(object):
     def render_uploadfile(self, req) :
         filetype = req.http.params.get("filetype")
         langtype = req.http.params.get("languagetype")
+        filename = req.http.params.get("filename")
         source_lang, target_lang = langtype.split(",")
-        return self.add_story_from_source(req, fh.filename.lower().replace(" ","_").replace(",","_").replace(";","_"), filetype, source_lang, target_lang)
+        return self.add_story_from_source(req, filename.lower().replace(" ","_").replace(",","_").replace(";","_"), filetype, source_lang, target_lang)
 
     def render_uploadtext(self, req) :
         filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_").replace(";","_")
@@ -4397,28 +4370,28 @@ class MICA(object):
                 desc = req.http.params.get("error_description") if req.http.params.get("error_description") else "Access Denied."
                 if reason == "user_denied" :
                     # User denied our request to create their account using social networking. Apologize and move on.
-                    return _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.")
+                    return False, _("We're sorry you feel that way, but we need your authorization to use this service. You're welcome to try again later. Thanks.")
                 else :
                     # Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
-                    return _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ")."
+                    return False, _("Our service could not create an account from you") + ": " + desc + " (" + str(reason) + ")."
             else :
                 # Social networking service experienced some unknown error when we tried to authenticate the user before creating an account.
-                return _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
+                return False, _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
 
         code = req.http.params.get("code")
 
         if not req.http.params.get("finish") :
-            return "<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
+            return False, "<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
         except MissingTokenError, e :
             for line in format_exc().splitlines() :
                 merr(line)
-            return _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
+            return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
         except InvalidGrantError, e :
             merr('Someone tried to use an old URL with an old Code')
-            return _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+            return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
         mdebug("Token fetched successfully: " + str(service.token))
 
@@ -4448,24 +4421,26 @@ class MICA(object):
                 vdict = vdict[vkey]
 
             if not vdict :
-                return _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
+                return True, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
 
         email_found = False
-        if creds["email_key"] :
-            vkeys = creds["email_key"].split(",")
+        email_key = creds["email_key"]
+        if email_key :
+            vkeys = email_key.split(",")
             vdict = values
             for vkey in vkeys :
                 if isinstance(vdict, dict) :
                     if vkey not in vdict :
+                        mdebug("Key " + vkey + " not in " + str(vdict))
                         authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
                         out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
                         out += authorization_url
                         out += "'>" + _("You're welcome to try again") + "</a>"
-                        return out
+                        return True, out
 
                     vdict = vdict[vkey]
             values["email"] = vdict
-            creds["email_key"] = vkey
+            email_key = vkey
 
         password = binascii_hexlify(os_urandom(4))
         if "locale" not in values :
@@ -4473,27 +4448,27 @@ class MICA(object):
         else :
             language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
-        if creds["email_key"] :
-            if isinstance(values[creds["email_key"]], dict) :
+        if email_key :
+            if isinstance(values[email_key], dict) :
                 values["email"] = None
 
-                if "preferred" in values[creds["email_key"]] :
-                    values["email"] = values[creds["email_key"]]["preferred"]
+                if "preferred" in values[email_key] :
+                    values["email"] = values[email_key]["preferred"]
 
                 if values["email"] is None :
-                    for key, email in values[creds["email_key"]] :
+                    for key, email in values[email_key] :
                         if email is not None :
                             values["email"] = email 
             else :
-                values["email"] = values[creds["email_key"]]
+                values["email"] = values[email_key]
 
         from_third_party = values
-        if creds["email_key"] :
+        if email_key :
             from_third_party["username"] = values["email"]
 
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
-                return _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+                return True, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mdebug("Language: " + language)
@@ -4516,10 +4491,10 @@ class MICA(object):
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
-                return _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+                return True, _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
             req.messages = "<h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>" 
 
-        return from_third_party
+        return True, from_third_party
 
     def render_connect(self, req, from_third_party) :
         password = False
@@ -4890,14 +4865,17 @@ class MICA(object):
         from_third_party = False
 
         if not mobile and req.action in params["oauth"].keys() :
-            oauth_result = self.render_oauth(req)
+            api, oauth_result = self.render_oauth(req)
             if isinstance(oauth_result, str) or isinstance(oauth_result, unicode) :
                 # polled oauth provider successfully, but have not created
                 # account in the system (which is slow). Need print the front
                 # page again and wait for an ajax request to do that stuff.
                 # There might also be an error here.
-                req.messages = oauth_result
-                return self.render_frontpage(req)
+                if api :
+                    return self.api(req, oauth_result)
+                else :
+                    req.messages = oauth_result
+                    return self.render_frontpage(req)
 
             # This is a response to the ajax request that the account was
             # finished being created (finish=1), but we have no yet set the
@@ -4921,7 +4899,7 @@ class MICA(object):
             # This is a response to an ajax request to complete the
             # connection
             if from_third_party :
-                return self.render_frontpage(req)
+                return self.api(req, req.messages)
             
             # Local account. Nothing to do.
             return self.api(req)

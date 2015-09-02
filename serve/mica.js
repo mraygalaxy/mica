@@ -1136,18 +1136,20 @@ function validatetext_finish(json, opaque) {
                             alert("Boo. Couldn't save TXT contents: " + saveerr);
                             // Need to call the API to delete this story,
                             // both the name and the UUID index
+                            done();
                         },
                         success: function(response) {
                             $('#uploadModal').modal('hide');
-                            done();
                             $.mobile.navigate('#stories');
                             loadstories(false, "#newstory");
+                            done();
                                 
                         }
                    });
               }
             });
     } else {
+        done();
         alert("Failed to add your story. Please try again.");
     }
 }
@@ -1176,8 +1178,48 @@ function validatetext() {
     go($("#textform"), '', '', unavailable, validatetext_finish, false);
 }
 
+function validatefile_finish(json, opaque) {
+    done();
+    if(json.success) {
+        db.openDoc(json.storykey, {
+              error: function(err) {
+                    alert("Boo. Doc failed: " + err);
+                    done();
+              },
+              success : function(doc) {
+                   var myFile = $('#_attachments').prop('files')[0];
+                   $('.couchform input#_db').val($('#database').html());
+                   $('.couchform input#_id').val(doc._id);
+                   $('.couchform input#_rev').val(doc._rev);
+                  
+                   var url = $('#creds').html() + "/" + $('#database').html() + "/" + doc._id;
+                   console.log("Submitting to: " + url);
+                   $('#filedata').ajaxSubmit({
+                        url: url,
+                        success: function(response) {
+                            done();
+                            $('#uploadModal').modal('hide');
+                            $.mobile.navigate('#stories');
+                            loadstories(false, "#newstory");
+                        },
+                        error: function(response) {
+                            // Need to call the API to delete this story,
+                            // both the name and the UUID index
+                            done();
+                            alert("Failed to submit your attachment.");
+                        }
+                   });
+
+              }
+            });
+    } else {
+        done();
+        alert("Failed to add your story. Please try again.");
+    }
+}
+
 function validatefile() {
-    var ids = [ 'uploadfile', 'uploadtype', 'uploadlanguage' ];
+    var ids = [ '_attachments', 'uploadtype', 'uploadlanguage' ];
 
     document.getElementById("colonerror").style.display = 'none';
     document.getElementById("uploaderror").style.display = 'none';
@@ -1189,14 +1231,19 @@ function validatefile() {
          }
     }
 
-    if ($("#uploadfile").val().replace("C:\\", "").indexOf(':') != -1) {
+    if ($("#_attachments").val().replace("C:\\", "").indexOf(':') != -1) {
         document.getElementById("colonerror").style.display = 'block';
         return;
     }
 
-    var myFile = $('#uploadfile').prop('files');
-
-    $("#fileform").submit();
+    var myFile = $('#_attachments').prop('files')[0];
+    if (myFile.size > (30*1024*1024)) { 
+        alert("Your file is too big.");
+        return;
+    }
+    loading();
+    $("#filename").val(myFile.name);
+    go($("#fileform"), '', '', unavailable, validatefile_finish, false);
 }
 
 var oDbg, con;
