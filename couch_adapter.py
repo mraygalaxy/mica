@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 from common import *
 from json import loads, dumps
@@ -164,6 +165,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         del self.db[name]
         #self.db.purge([doc])
 
+    def delete_attachment(self, doc, filename) :
+        self.db.delete_attachment(doc, filename)
+
     def put_attachment(self, name, filename, contents, new_doc = False) :
         if not new_doc :
             trydelete = True
@@ -192,7 +196,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         else :
             doc = new_doc
 
-        mdebug("Putting attachment..")
+        mdebug("Putting attachment of length: " + str(len(contents)))
 
         return self.db.put_attachment(doc, contents, filename)
 
@@ -202,6 +206,24 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             return obj.read()
         else :
             raise CommunicationError("No such attachment: " + name + " => " + filename)
+
+    def get_attachment_to_path(self, name, filename, path) :
+        sourcebytes = 0
+        obj = self.db.get_attachment(name, filename)
+        if obj is not None :
+            fh = open(path, 'wb')
+            while True :
+                byte = obj.read(1)
+                sourcebytes += 1
+                if byte :
+                    fh.write(byte)
+                else :
+                    break
+
+            fh.close()
+        else :
+            raise CommunicationError("No such attachment: " + name + " => " + filename)
+        return sourcebytes
             
     def listen(self, username, password, port) :
         return port 

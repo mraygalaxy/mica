@@ -93,7 +93,7 @@
                    </div>
                    <div id='collapseText' class='panel-body collapse'>
                        <div class='panel-inner'>
-                        <form data-ajax='false' id='textform' action='/api?alien=home' method='post' enctype='multipart/form-data'>
+                        <form data-ajax='false' id='textform' action='/api?alien=home' method='post'>
                         <h5><div style='display: inline; color: red'>*&#160;</div><t:slot name="uniquename"/>: <input id='textname' type='text' name='storyname' value=''></input>
                         </h5>
                         <div style='display: inline; color: red'>*&#160;</div>
@@ -114,7 +114,7 @@
                    </div>
                    <div id='collapseScanned' class='panel-body collapse'>
                        <div class='panel-inner'>
-                        <form data-ajax='false' id='fileform' action='/api?alien=home' method='post' enctype='multipart/form-data'>
+                        <form data-ajax='false' id='fileform' action='/api?alien=home' method='post'>
                         <h5><div style='display: inline; color: red'>*&#160;</div>
                               <t:slot name="whatkindfile"/> <select name="filetype" id='uploadtype'>
                               <option value=''><t:slot name='noneselected'/></option>
@@ -127,10 +127,16 @@
                               <t:slot name="langtype"/>? <select id='uploadlanguage' name="languagetype" t:render="languages"/>
                             <br/>
                             <input type='hidden' name='uploadfile' value='1'/>
-                            <input rel='external' onclick='validatefile()' type="button" class="btn-primary"><t:attr name='value'><t:slot name='uploadfile'/></t:attr></input> </h5>
+                            <input type='hidden' id='filename' name='filename'/>
+                            <input onclick='validatefile()' type="button" class="btn-primary"><t:attr name='value'><t:slot name='uploadfile'/></t:attr></input> </h5>
                         </form>                                   
-                        <div style='display: inline; color: red'>*&#160;</div>
-                        <t:slot name='selectfile'/>: <input type="file" name="storyfile" id="uploadfile"/> 
+                        <form class='couchform' data-ajax='false' id='filedata' method='post' enctype='multipart/form-data'>
+                         <input type="hidden" name="_db" id="_db" />
+                         <input type="hidden" name="_id" id="_id" />
+                         <input type="hidden" name="_rev" id="_rev" />
+                         <div style='display: inline; color: red'>*&#160;</div>
+                         <t:slot name='selectfile'/>: <input type="file" name="_attachments" id="_attachments" multiple="multiple"/> 
+                         </form>
                         <br/>
                         <h5><t:slot name="mustbeencoded"/>.</h5>
                        </div>
