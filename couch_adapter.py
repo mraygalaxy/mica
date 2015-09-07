@@ -136,10 +136,13 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
+            mdebug("Set key not found error: " + name)
             raise ResourceNotFound(str(e), e)
         except couch_ResourceConflict, e :
+            mdebug("Set key conflict error: " + name)
             raise ResourceConflict(str(e), e)
         except ServerError, e :
+            mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
             raise CommunicationError("MICA Unvalidated: " + str(e))
 
     def __getitem__(self, name, false_if_not_found = False) :
