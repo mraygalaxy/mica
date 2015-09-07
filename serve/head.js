@@ -208,7 +208,7 @@ $(document).ready(function () {
 	});
 });
 
-var token = encodeURIComponent($('#token').html());
+var token = $('#token').html();
 $.couch.urlPrefix = $('#creds').html();
 var db = $.couch.db($('#database').html()); 
 var authtype = $("#authtype").html();
@@ -229,8 +229,10 @@ if (authtype == 'cookie') {
           error: function(err) {
                 alert("Boo. Doc failed: " + err);
           }
-        },
-        { "headers" : ['Cookie: ' + token] }
+        }
+        /*,
+        { "headers" : {'Cookie' : token} }
+        */
 );
 } else {
    $.couch.login({name: username, password: token,

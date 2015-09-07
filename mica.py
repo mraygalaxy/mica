@@ -593,7 +593,8 @@ class MICA(object):
                     merr("Must re-login: " + str(e))
                     self.clean_session(req)
                     # The user has completed logging out / signing out already - then this message appears.
-                    resp = self.render_frontpage(req, "<h4>" + _("Disconnected from MICA") + "</h4>")
+                    req.messages = _("Disconnected from MICA")
+                    resp = self.render_frontpage(req)
                 except couch_adapter.ResourceNotFound, e :
                     mwarn("Problem before warn_not_replicated:")
                     for line in format_exc().splitlines() :
@@ -669,6 +670,7 @@ class MICA(object):
             req.db = False
             req.dest = ""#prefix(req.unparsed_uri)
             req.front_ads = False
+            req.couch_cookie = False
 
             if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
                 req.front_ads = True
@@ -690,7 +692,12 @@ class MICA(object):
             if isinstance(resp, str) or isinstance(resp, unicode):
                 if isinstance(resp, str) :
                     resp = resp.decode("utf-8")
-                r = Response(resp)(environ, start_response)
+                webob_response = Response(resp)
+                if not mobile and 'cookie' in req.session.value :
+                    cook = req.session.value["cookie"].split("=")[1]
+                    webob_response.set_cookie("AuthSession", cook, max_age=604800)
+                r = webob_response(environ, start_response)
+
             else :
                 r = resp(environ, start_response)
         except Exception, e :
@@ -1077,13 +1084,13 @@ class MICA(object):
             out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
         out += "</div>"
         out += "<table class='table table-hover table-striped' style='font-size: x-small; color: black'>"
-        out += "<tr>"
+        out += "<tr style='color: black'>"
         if len(unit["multiple_sromanization"]) :
             # Pinyin means the romanization of a character-based word, such as Chinese
-            out += "<td>" + _("Pinyin") + "</td>"
-        out += "<td>" + _("Definition") + "</td>"
+            out += "<td style='color: black'>" + _("Pinyin") + "</td>"
+        out += "<td style='color: black'>" + _("Definition") + "</td>"
         # This appears in a list of items and indicates which is the default item
-        out += "<td>" + _("Default") + "?</td></tr>"
+        out += "<td style='color: black'>" + _("Default") + "?</td></tr>"
         source = "".join(unit["source"])
 
         total_changes = 0.0
@@ -1098,16 +1105,16 @@ class MICA(object):
 
             if len(unit["multiple_sromanization"]) :
                 spy = " ".join(unit["multiple_sromanization"][x])
-                out += "<td>" + spy + " (" + str(percent) + " %) </td>"
+                out += "<td style='color: black'>" + spy + " (" + str(percent) + " %) </td>"
             else :
                 spy = " ".join(unit["multiple_target"][x])
 
-            out += "<td>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
+            out += "<td style='color: black'>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
             if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
                 out += "<td>" + _("Default") + "</td>"
             else :
                 # Appears on a button in review mode that allows the user to choose a definition among multiple choices.
-                out += "<td><a style='font-size: x-small' class='btn-default btn-xs' " + \
+                out += "<td><a style='color: black; font-size: x-small' class='btn-default btn-xs' " + \
                        "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
                        str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
 
@@ -2408,8 +2415,8 @@ class MICA(object):
             mdebug("Source: " + source)
 
         try :
-            fp = open(sourcepath, 'rb')
             if filetype == "pdf" :
+                fp = open(sourcepath, 'rb')
                 pagenos = set()
                 pagecount = 0
                 rsrcmgr = PDFResourceManager()
@@ -2441,10 +2448,13 @@ class MICA(object):
                     flattened.type = im.type
                     flattened.composite(im, 0, 0, PythonMagick.CompositeOperator.SrcOverCompositeOp)
                     flattened.density(density)
-                    flattened.quality(100)
+                    flattened.quality(10)
                     blob = PythonMagick.Blob()
-                    flattened.write(blob, "png")
+                    flattened.write(blob, "jpg")
                     images = [blob.data] + images
+
+                    for image in images :
+                        mdebug("Images len: " + str(len(images)) + " blob size: " + str(len(blob.data)) + " first image size " + str(len(image)))
 
                     if gp.already_romanized :
                         new_page = data2
