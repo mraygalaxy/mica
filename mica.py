@@ -1329,7 +1329,7 @@ class MICA(object):
             if mobile :
                 out += _("Unfortunately, this can only be performed with the online version. Please login to your account online to perform the upgrade. The changes will then be synchronized to all your devices. Thank you.")
             else :
-                out += "<br/><a rel='external' class='btn btn-default btn-primary' href='/" + req.action + "?storyupgrade=1&uuid=" + uuid + "&version=" + str(upgrade_needed) + "'>" + _("Start Upgrade") + "</a>" 
+                out += "<br/><a class='btn btn-default' onclick=\"start_learning('" + req.action + "', 'storyupgrade', " + sdict(uuid = uuid, version = upgrade_needed) + ")\">" + _("Start Upgrade") + "</a>" 
 
             if "last_error" in story and not isinstance(story["last_error"], str) :
                 out + "Last upgrade Exception:<br/>"
@@ -3864,9 +3864,9 @@ class MICA(object):
             return self.view_outline(req, uuid, name, story, start_page, view_mode, meaning_mode)
         else :
             # Beginning of a message.
-            output += _("No story loaded. Choose a story above")
+            output += _("No story loaded. Go to the 'Stories' tab")
             if mobile :
-                output += "<p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
+                output += ".<p><br/><h5>" + _("Brand new stories cannot (yet) be created/uploaded yet on the device. You must first create them on the website. (New stories require a significant amount of computer resources to prepare. Thus, they can only be synchronized to the device for regular use.") + ")</h5>"
             else :
                 # end of a message
                 output += "<br/>" + _("or create one by going to Account => Upload New Story") + "."
@@ -4490,7 +4490,7 @@ class MICA(object):
             output += "<br/><br/>Save this Password: " + password
             output += "<br/><br/>" + _("If this is your first time here") + ", <a rel='external' data-role='none' class='btn btn-default' href='/help'>"
             output += _("please read the tutorial") + "</a>"
-            output += "<br/><br/>Happy Learning!</h4>"
+            output += "<br/><br/>" + _("Happy Learning") + "!</h4>"
             output += "<br/><a rel='external' data-role='none' class='btn btn-default' href='/'>" + _("Start learning!") + "</a>" 
             output += "<script>$('#maindisplay').attr('style', 'display: none');</script>"
             output += "<script>$('#leftpane').attr('style', 'display: none');</script>"

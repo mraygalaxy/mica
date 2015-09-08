@@ -31,7 +31,7 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        mdebug("Rendering: " + req.messages)
+        #mdebug("Rendering: " + req.messages)
         self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>")
 
     @renderer
