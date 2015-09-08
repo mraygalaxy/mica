@@ -1738,15 +1738,17 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     }
 }
 
-function start_learning(mode, action, uuid, name) {
+function start_learning(mode, action, values) {
     $('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});
 
    var url = mode + '&' + action + "=1";
 
-   if (uuid)
-        url += "&uuid=" + uuid;
-   if (name) 
-       url += "&name=" + name;
+   if (values.uuid)
+        url += "&uuid=" + values.uuid;
+   if (values.name)
+       url += "&name=" + values.name;
+   if (values.version)
+       url += "&version=" + values.version;
 
    go(false, '', url,  unavailable, start_learning_finished, action);
 }

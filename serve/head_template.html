@@ -45,9 +45,9 @@
 		    <li>
 			<b id='username'><t:slot name='accountusername'/></b>
 		    </li>
-                    <li><a onclick="start_learning('home', 'view', false, false)"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-                    <li><a onclick="start_learning('edit', 'view', false, false)"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
-                    <li><a onclick="start_learning('read', 'view', false, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+                    <li><a onclick="start_learning('home', 'view', {})"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+                    <li><a onclick="start_learning('edit', 'view', {})"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+                    <li><a onclick="start_learning('read', 'view', {})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
                     <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
                     <li>
                         <a onclick="$.mobile.navigate('#account'); $('#settings').panel('close');" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
@@ -109,9 +109,9 @@
         <div data-role='content' id='explode_content'>
 		<ul data-role='listview' data-inset='true'>
                         
-		    <li id='readoption'><a onclick="start_learning('read', 'view', exploded_uuid, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
-		    <li id='reviewoption'><a onclick="start_learning('home', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-		    <li id='editoption'><a onclick="start_learning('edit', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+		    <li id='readoption'><a onclick="start_learning('read', 'view', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+		    <li id='reviewoption'><a onclick="start_learning('home', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+		    <li id='editoption'><a onclick="start_learning('edit', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
 		    <li id='notfinishedoption'><a onclick="finishstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-thumbs-down'></i> <t:slot name='notfinished'/></a></li>
 		    <li id='finishedoption'><a onclick="finishstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-thumbs-up'></i> <t:slot name='finishedoption'/></a></li>
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
@@ -124,9 +124,9 @@
                     <!--(if not mobile)-->
                     <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
 		    <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
-		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', exploded_uuid, false)"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
-		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
-		    <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
+		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
+		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
+		    <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
 		    <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
                     <!--(end)-->
 		</ul>
