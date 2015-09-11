@@ -208,7 +208,7 @@ $(document).ready(function () {
 	});
 });
 
-var token = $('#token').html();
+var token = encodeURIComponent($('#token').html());
 $.couch.urlPrefix = $('#creds').html();
 var db = $.couch.db($('#database').html()); 
 var authtype = $("#authtype").html();
