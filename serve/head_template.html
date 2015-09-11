@@ -1,6 +1,12 @@
 <html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
   <head t:render="head"/>
   <body id='cbody'>
+    <!--(if not mobile)-->
+    <div id='token' style='display: none'><t:slot name='token'/></div>
+    <div id='creds' style='display: none'><t:slot name='creds'/></div>
+    <div id='database' style='display: none'><t:slot name='database'/></div>
+    <div id='authtype' style='display: none'><t:slot name='authtype'/></div>
+    <!--(end)-->
     <div t:render="translations"/>
     <!--(if False)-->
     <div data-role='panel' data-display="reveal" id='settings'>
@@ -37,11 +43,11 @@
 			</table>
 		    </li>
 		    <li>
-			<b><t:slot name='accountusername'/></b>
+			<b id='username'><t:slot name='accountusername'/></b>
 		    </li>
-                    <li><a onclick="start_learning('home', 'view', false, false)"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-                    <li><a onclick="start_learning('edit', 'view', false, false)"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
-                    <li><a onclick="start_learning('read', 'view', false, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+                    <li><a onclick="start_learning('home', 'view', {})"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+                    <li><a onclick="start_learning('edit', 'view', {})"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+                    <li><a onclick="start_learning('read', 'view', {})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
                     <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
                     <li>
                         <a onclick="$.mobile.navigate('#account'); $('#settings').panel('close');" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
@@ -51,7 +57,7 @@
                     <!--(end)-->
                     <li><a href='#account' onclick="$('#settings').panel('close')"><i class='glyphicon glyphicon-user'></i>&#160;<t:slot name='preferences'/></a></li>
                     <li><a href='#' onclick='switchlist()'><t:attr name='onclick'><t:slot name='switchclick'/></t:attr><i class='glyphicon glyphicon-tasks'></i>&#160;<div id='switchlisttext' style='display: inline'></div></a></li>
-                    <li><a href='/disconnect' rel="external" ><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
+                    <li><a onclick='disconnect()'><i class='glyphicon glyphicon-off'></i>&#160;<t:slot name='disconnect'/></a></li>
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
                     <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
                     <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
@@ -70,13 +76,15 @@
     <div data-role='page' id='chatting'><div data-role='content' id='content_collapseChatting'></div></div>
     <div data-role='page' id='finished'><div data-role='content' id='content_collapseFinished'></div></div>
     <div data-role='page' id='reviewing'><div data-role='content' id='content_collapseReviewing'></div></div>
+    <div data-role='page' id='newstory'><div data-role='content' id='content_collapseNew'></div></div>
     <div data-role='page' id='untranslated'><div data-role='content' id='content_collapseUntranslated'></div></div>
     <div data-role='page' id='account'><div data-role='content' id='account_content'></div></div>
     <div data-role='page' id='help'><div data-role='content' id='help_content'></div></div>
     <div data-role='page' id='privacy'><div data-role='content' id='privacy_content'></div></div>
     <div data-role='page' id='messages'><div data-role='content'><div t:render="messages"/></div></div>
+    <div data-role='page' id='printstory'><div data-role='content' id='printstory_contents'/></div>
     <div data-role='page' id='instant'><div data-role='content'>
-	   	<!--<tr><td><div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div></td></tr>-->
+	   	<div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div>
                 <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
                 <div id='instantdestination'></div>
     </div></div>
@@ -89,6 +97,7 @@
 		    <li><a href='#reading'><t:slot name='reading'/></a></li>
 		    <li><a href='#chatting'><t:slot name='chatting'/></a></li>
 		    <li><a href='#reviewing'><t:slot name='notreviewed'/></a></li>
+		    <li><a href='#newstory'><t:slot name='newstory'/></a></li>
 		    <li><a href='#untranslated'><t:slot name='untranslated'/></a></li>
 		    <li><a href='#finished'><t:slot name='finished'/></a></li>
 		</ul>
@@ -100,23 +109,24 @@
         <div data-role='content' id='explode_content'>
 		<ul data-role='listview' data-inset='true'>
                         
-		    <li id='readoption'><a onclick="start_learning('read', 'view', exploded_uuid, false)"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
-		    <li id='reviewoption'><a onclick="start_learning('home', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-		    <li id='editoption'><a onclick="start_learning('edit', 'view', exploded_uuid, false)" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
+		    <li id='readoption'><a onclick="start_learning('read', 'view', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+		    <li id='reviewoption'><a onclick="start_learning('home', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
+		    <li id='editoption'><a onclick="start_learning('edit', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
 		    <li id='notfinishedoption'><a onclick="finishstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-thumbs-down'></i> <t:slot name='notfinished'/></a></li>
 		    <li id='finishedoption'><a onclick="finishstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-thumbs-up'></i> <t:slot name='finishedoption'/></a></li>
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
 		    <li id='reviewedoption'><a onclick="reviewstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-arrow-up'></i> <t:slot name='reviewed'/></a></li>
-		    <li id='romanizedoption'><a id='romanizedlink' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
+		    <li id='romanizedoption'><a id='romanizedlink' onclick="getstory(exploded_uuid, 'pinyin')"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
                     <!--(if mobile)-->
                     <li id='syncstatus'></li>
                     <!--(end)-->
 
                     <!--(if not mobile)-->
                     <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
-		    <li><a id='originaloption' rel='external' onclick="$('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
-		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', exploded_uuid, false)"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
-		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', exploded_uuid, exploded_name)"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
+		    <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
+		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
+		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
+		    <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
 		    <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
                     <!--(end)-->
 		</ul>

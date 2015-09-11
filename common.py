@@ -15,6 +15,7 @@ from urllib2 import quote
 from time import time as timest
 from traceback import extract_stack
 from sys import _getframe
+from json import loads as json_loads, dumps as json_dumps
 
 import __builtin__
 import xmlrpclib
@@ -425,3 +426,6 @@ def call_report() :
         mdebug("Function: " + fdata["fname"] + " calls: " + str(fdata["calls"]) + " level: " + str(fdata["level"]) + " time: " + str(fdata["time"]))
     times = {}
 
+
+def sdict(**kwargs) :
+    return json_dumps(kwargs)

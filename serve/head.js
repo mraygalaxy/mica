@@ -31,11 +31,18 @@ function switchinstall(initlist) {
 	}
 }
 
+function switchlist_finish(data, opaque) {
+    done();
+    if (json.success) {
+       switchinstall(list_mode ? false : true);
+       listreload(current_mode, current_uuid, current_page);
+    } else {
+        alert(json.desc);
+    }
+}
+
 function switchlist() {
-   go(false, '#switchlisttext', '/api?alien=home&switchlist=' + (list_mode ? '0' : '1'), 
-        '', unavailable, false, false, false);
-   switchinstall(list_mode ? false : true);
-   listreload(current_mode, current_uuid, current_page);
+   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, switchlist_finish, false);
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
@@ -61,8 +68,14 @@ function chat_success(data) {
 
 learn_loaded = false;
 
-function learn_success(data) {
-    learn_loaded = true;
+function learn_success(json, opaque) {
+    if (json.success) {
+        learn_loaded = true;
+        $("#learn_content").html(json.desc);
+        install_pages_if_needed(json);
+    } else {
+        alert(json.desc);
+    }
 }
 
 function form_loaded_finish(data, opaque) {
@@ -76,15 +89,18 @@ function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
+            var destid ='';
             $(this).on("submit", function(event, form) {
-                loading();
-                event.preventDefault();
+              loading();
+              event.preventDefault();
+	      var aff = $(form).attr('ajaxfinish');
+	      if(form && aff == undefined) {
                 var closest = $(form).closest("[data-role='content']");
                 var destid = "#" + closest.attr('id');
                 if (destid == "#undefined")
                     destid = "#" + $(form).attr('id') + "content";
-                var fromid = destid + "_result"; 
-                go(form, destid, 'url_comes_from_form', fromid, unavailable, true, form_loaded_finish, true, true);
+              }
+              go(form, destid, 'url_comes_from_form', unavailable, form_loaded_finish, true);
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
@@ -125,7 +141,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go(false, '#chat_content', '/api?alien=chat', '#chat_content_result', unavailable, true, chat_success, true, false);
+                   go(false, '#chat_content', 'chat', unavailable, chat_success, false);
                 }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
@@ -133,15 +149,15 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go(false, '#learn_content', '/api?alien=' + pageid, '', unavailable, false, learn_success, true, false);
+                   go(false, '', pageid, unavailable, learn_success, false);
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '#account_content', '/api?alien=account', '', unavailable, false, form_loaded, true, true);
+               go(false, '#account_content', 'account', unavailable, form_loaded, true);
         } else if (where == 'help') {
-               go(false, '#help_content', '/api?alien=help', '#helpresult', unavailable, true, false, true, false);
+               go(false, '#help_content', 'help', unavailable, false, false);
         } else if (where == 'privacy') {
-               go(false, '#privacy_content', '/api?alien=privacy', '#privacyresult', unavailable, true, false, true, false);
+               go(false, '#privacy_content', 'privacy', unavailable, false, false);
         }
    }
    return true;
@@ -161,6 +177,7 @@ $(document).on('ready', function() {
 		$("div.view1").slideToggle(400);
 		$("div.tri1").toggleClass("toggle1");
 	});
+        form_loaded(false, true);
 });
 
 
@@ -191,3 +208,20 @@ $(document).ready(function () {
 	});
 });
 
+var token = encodeURIComponent($('#token').html());
+$.couch.urlPrefix = $('#creds').html();
+var db = $.couch.db($('#database').html()); 
+var authtype = $("#authtype").html();
+var username = encodeURIComponent($("#username").html());
+
+/*
+ * Note: When using 'login', the username/pass 
+ * needs to be encoded, but for some reason,
+ * the keys for things like 'openDoc' do not need that.
+ */
+if (authtype != 'cookie') {
+   $.couch.login({name: username, password: token,
+                 error : function(stat, error, reason) {
+                        alert("Failed to login to couch listener on mobile! " + stat + " " + error + " " + reason);
+                }});
+}

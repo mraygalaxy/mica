@@ -32,6 +32,28 @@ if ("liststate" in params)
   var newRefresh = 0;
   var finish = false;
 
+function disconnect_finish(json, opaque) {
+    done();
+    if (json.success) {
+        window.location.href = "/";
+    } else {
+        alert(json.desc);
+    }
+}
+
+function disconnect() {
+   go(false, '', 'disconnect', unavailable, disconnect_finish, false);
+}
+function connect_finish(json, opaque) {
+    done();
+    if (json.success) {
+        window.location.href = "/";
+    } else {
+        $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + json.desc + "</div>");
+        $("#newaccountresultdestination").attr("style", "display: block");
+    }
+}
+
 function local(msgid) {
     return $("#" + msgid).html();
 }
@@ -60,50 +82,66 @@ function local(msgid) {
         }
   }
 
-  function go(form, id, url, getSpecificContent, error, writeSubcontent, callback, write, opaque){
+  function go(form, id, url, error, callback, opaque){
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
           console.log("AJAX Status code: " + XMLHttpRequest.status);
           if (XMLHttpRequest.status == 401) {
                 window.location.href = "/";
           } else {
-              if(XMLHttpRequest.statusText == 'error') {
-                  $(id).html(error);
-              }
-             go_callback(callback, error, opaque);
+	      var aff = $(form).attr('ajaxfinish');
+	      if(form && aff != undefined) {
+			eval(aff + "('" + error + "')");
+	      } else {
+		     if(id != undefined && id != '') {
+                          if(XMLHttpRequest.statusText == 'error') {
+                              $(id).html(error);
+                          }
+		     } else {
+                          error = {"success" : false, "desc" : error}
+                     }
+		     go_callback(callback, error, opaque);
+    	      }
           }
     }
 
     function go_success(response) {
-            var data = "none";
             if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
                 $(id).html(response);
             } else {
-	            if(getSpecificContent != '') {
-                        var obj = $(response);
-                        var objresult = obj.find(getSpecificContent);
-	                var data = objresult.html();
-	                if(write) {
-	                    if(writeSubcontent) {
-	                        $(id).html(data);
-	                    } else
-	                        $(id).html(response);
-	                }
-	            } else {
-	                if(write)
-	                    $(id).html(response);
-	                data = response;
-	            }
+		var aff = false;
+                if (form)
+                    aff = $(form).attr('ajaxfinish');
 
-                go_callback(callback, data, opaque);
-
-                if((write || (!write && !writeSubcontent)) && response.indexOf('<script') != -1) {
-                        //have to replace script or else jQuery will remove them
-                        $(response.replace(/script/gi, 'mikescript')).find(getSpecificContent).find('mikescript').each(function (index, domEle) {
-                            if (!$(this).attr('src')) {
-                                eval($(this).text());
-                            }
-                        });
+                if(id != undefined && id != '') {
+                    $(id).html(response);
+                } else {
+                    if(!aff) {
+                        try {
+                            response = JSON.parse(response);
+                        } catch(err) {
+                            console.log("ERROR parsing: " + response);
+                        }
+                    }
                 }
+
+		if(form && aff) {
+                        if (id == '' || id == undefined) {
+                            eval(aff + "(" + response + ")");
+                        } else {
+                            eval(aff + "('" + response + "')");
+                        }
+		} else {
+			go_callback(callback, response, opaque);
+
+			if(id != undefined && id != '' && response.indexOf('<script') != -1) {
+				//have to replace script or else jQuery will remove them
+				$(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
+				    if (!$(this).attr('src')) {
+					eval($(this).text());
+				    }
+				});
+			}
+		}
             }
       }
 
@@ -113,14 +151,19 @@ function local(msgid) {
 
             $.ajax({
                 type: 'POST',
-                url: $(form).attr('action'),
+                url: '/api?human=0&alien=' + $(form).attr('action'),
                 data: formData,
                 success: go_success,
                 error: go_fail
             });
       } else {
+            if(id != undefined && id != '')
+                var human = 1;
+            else
+                var human = 0;
+
             $.ajax({
-                url: url,
+                url: '/api?human=' + human + '&alien=' + url,
                 type: "GET",
                 dataType: "html",
                 success: go_success,
@@ -166,19 +209,13 @@ function trans_wait_poll(uuid) {
 
 var first_time = false; 
 
-function trans_poll_finish(data, uuid) {
-    var tmparr = data.split(" ");
-    var result = tmparr[0];
-    var percent = tmparr[1];
-    var page = parseInt(tmparr[2]) + 1;
-    var pages = parseInt(tmparr[3]); 
-    
-    if (pages == 0) {
-    	pages = page;
+function trans_poll_finish(json, uuid) {
+    if (json.translated.pages == 0) {
+    	json.translated.pages = json.translated.page;
     }
 
-    if (result == "yes" || first_time) {
-        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;" + local("working") + ": " + local("page") + ": " + page + "/" + pages + ", " + percent + "%");
+    if (json.translated.translating == "yes" || first_time) {
+        $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;" + local("working") + ": " + local("page") + ": " + json.translated.page + "/" + json.translated.pages + ", " + json.translated.percent + "%");
         trans_wait_poll(uuid);
     } else {
         $("#translationstatus" + uuid).html(local('donereload'));
@@ -187,12 +224,9 @@ function trans_poll_finish(data, uuid) {
 }
 
 function trans_poll(uuid) {
-   go(false, '#storypages', '/api?alien=read&tstatus=1&uuid=' + uuid, 
-       '#tstatusresult',
-       unavailable, 
-       false, 
+   go(false, '', 'read&tstatus=1&uuid=' + uuid, 
+       unavailable,
        trans_poll_finish, 
-       false,
        uuid);
 } 
 
@@ -216,13 +250,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go(false, '#translationstatus', '/api?alien=home&translate=1&uuid=' + uuid, 
-       '#translationstatusresult', 
-       unavailable, 
-       true, 
-       trans_stop,
-       true,
-       uuid);
+   go(false, '#translationstatus', 'home&translate=1&uuid=' + uuid, unavailable, trans_stop, uuid);
 }
 
 function poll(s, finisher, monid) {
@@ -443,7 +471,7 @@ function process_edits(uuid, operation, batch) {
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
       // 'learn_' is not a typo. It's used in form_loaded() so as not to class with the id 'learn'
-      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/edit'>"
+      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -545,7 +573,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
         $('#instantspin').attr('style', 'display: inline');
         $('#instantdestination').html("");
 
-       var url = '/api?alien=instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
+       var url = 'instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
        if (username)
            url += "&username=" + username
@@ -553,11 +581,8 @@ function process_instant(with_spaces, lang, source, target, username, password) 
            url += "&password=" + password
 
        go(false, '#instantdestination', url,
-          '#instantresult', 
           local("onlineoffline"),
-          true, 
           offinstantspin,
-          true,
           $("html").scrollTop());
        }
 }
@@ -597,21 +622,18 @@ function multipoprefresh(data, opaque) {
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '#pop' + trans_id, '/api?alien=home&view=1&uuid=' + uuid + '&multiple_select=1'
+          go(false, '#pop' + trans_id, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
-          '#multiresult', 
-          unavailable, 
-          true, 
-          multipoprefresh,
-          true,
-          [trans_id, spy]);
+		  unavailable, 
+		  multipoprefresh,
+		  [trans_id, spy]);
 }
 
 function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='/home'>"
+      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -662,19 +684,14 @@ function restore_pageimg_width() {
 }
 
 function finish_new_account(code, who) {
-    go(false, '#newaccountresultdestination', "/api?alien=" + who + "&connect=1&finish=1&code=" + code,
-        '#newaccountresult', 
-        unavailable, 
-        true,
-        false, 
-        true,
-        false);
+    go(false, '#newaccountresultdestination', who + "&connect=1&finish=1&code=" + code,
+        unavailable, false, false);
 }
 
 function view(mode, uuid, page) {
    $("#gotoval").val(page + 1);
    $("#pagetotal").html(current_pages);
-   var url = '/api?alien=' + mode + '&view=1&uuid=' + uuid + '&page=' + page;
+   var url = mode + '&view=1&uuid=' + uuid + '&page=' + page;
    
    window.scrollTo(0, 0);
    if (show_both) {
@@ -687,23 +704,11 @@ function view(mode, uuid, page) {
        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
-       go(false, '#pagetext', url, 
-              '#pageresult', 
-              unavailable, 
-              true, 
-              false,
-              true,
-              false);
+       go(false, '', url, unavailable, function(json, opaque) { $('#pagetext').html(json.desc) }, false);
 
        url += "&image=0";
 
-       go(false, '#pageimg' + curr_img_num, url, 
-              '#pageresult', 
-              unavailable, 
-              true, 
-              false,
-              true,
-              false);
+       go(false, '', url, unavailable, function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
    } else {
        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
        if (view_images) {
@@ -713,13 +718,7 @@ function view(mode, uuid, page) {
            $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
        }
        
-       go(false, '#pagesingle', url, 
-              '#pageresult',
-              unavailable, 
-              true, 
-              false,
-              true,
-              false);
+       go(false, '', url, unavailable, function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
    }
 
    listreload(mode, uuid, page);
@@ -766,7 +765,7 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
     });
 
     if(reload) {
-        view(mode, uuid, start);
+        view(mode, uuid, parseInt(start));
     }
 }
 
@@ -778,12 +777,9 @@ function memory_finish(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, '/api?alien=read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
-          '#memoryresult', 
+   go(false, '#memory' + id, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           unavailable, 
-          true, 
           memory_finish,
-          false,
           id);
 }
 
@@ -797,12 +793,9 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, '/api?alien=read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
-          '#memoryresult',
+   go(false, '#memory' + id, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           unavailable, 
-          true, 
           memory_finish,
-          false,
           id);
 }
 
@@ -858,7 +851,6 @@ if ($.browser.device == true) {
 
 function offinstantspin(data, curr) {
     //var data = JSON.parse(data);
-    $('#instantdestination').html(data);
     $('#instantspin').attr('style', 'display: none');
     //$('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
@@ -893,12 +885,9 @@ function install_highlight() {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
            $('#instantdestination').html("");
-           go(false, '#instantdestination', '/api?alien=instant&source=' + st + "&lang=en", 
-              '#instantresult', 
+           go(false, '#instantdestination', 'instant&source=' + st + "&lang=en", 
               unavailable, 
-              false, 
               offinstantspin,
-              false,
               $("html").scrollTop());
       }
     }
@@ -929,7 +918,6 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             var rule = rules[j];
             all += rule.selectorText + "\n";
             if (rule.selectorText && rule.selectorText.split(',').indexOf(selector) !== -1) {
-//                alert("Old: " + rule.style[style])
                 rule.style[style] = newstyle;
             }
         }
@@ -945,32 +933,23 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#memolist', '/api?alien=read&uuid=' + uuid + '&memolist=1&page=' + page, 
-              '#memolistresult', 
+           go(false, '#memolist', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
               unavailable, 
-              true, 
               list_reload_finish,
-              true,
               false);
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#editslist', '/api?alien=edit&uuid=' + uuid + '&editslist=1&page=' + page, 
-                  '#editsresult', 
+           go(false, '#editslist', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   unavailable, 
-                  true, 
                   list_reload_finish,
-                  true,
                   false);
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '#history', '/api?alien=read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
-                  '#reviewresult', 
+           go(false, '#history', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable, 
-                  true, 
                   list_reload_finish,
-                  true,
                   false);
        }
 }
@@ -993,12 +972,12 @@ function installreading() {
            $('#imageButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            view_images = false;
-	   go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	   go(false, '', 'home&switchmode=text', unavailable, false, false);
         } else {
            view_images = true; 
            $('#imageButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=images', '', unavailable, false, false, false, false);
+	       go(false, '', 'home&switchmode=images', unavailable, false, false);
         }
        show_both = false;
        $('#sideButton').attr('class', 'btn btn-default');
@@ -1011,12 +990,12 @@ function installreading() {
            $('#sideButton').attr('class', 'btn btn-default');
            $('#textButton').attr('class', 'active btn btn-default');
            show_both = false;
-	       go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+	       go(false, '', 'home&switchmode=text', unavailable, false, false);
         } else {
            show_both = true; 
            $('#sideButton').attr('class', 'active btn btn-default');
            $('#textButton').attr('class', 'btn btn-default');
-	       go(false, '#pagetext', '/api?alien=home&switchmode=both', '', unavailable, false, false, false, false);
+	       go(false, '', 'home&switchmode=both', unavailable, false, false);
         }
        current_view_mode = "both";
        view_images = false;
@@ -1025,7 +1004,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-      go(false, '#pagetext', '/api?alien=home&switchmode=text', '', unavailable, false, false, false, false);
+      go(false, '', 'home&switchmode=text', unavailable, false, false);
 	   if (show_both == false && view_images == false) {
 	   	  // already in text mode
 	   	  return;
@@ -1043,12 +1022,12 @@ function installreading() {
        if($('#meaningButton').attr('class') == 'active btn btn-default') {
            $('#meaningButton').attr('class', 'btn btn-default');
            current_meaning_mode = false;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=false', '', unavailable, false, false, false, false);
+           go(false, '', 'read&meaningmode=false', unavailable, false, false);
            reveal_all(true);
        } else {
            $('#meaningButton').attr('class', 'active btn btn-default');
            current_meaning_mode = true;
-           go(false, '#pagetext', '/api?alien=read&meaningmode=true', '', unavailable, false, false, false, false);
+           go(false, '', 'read&meaningmode=true', unavailable, false, false);
            reveal_all(false);
        }
     });
@@ -1056,33 +1035,27 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=1",
-        '', 
+    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=1",
         'sync error', 
-        false,
         function(unused) { 
          document.getElementById(name).innerHTML = local('started');
          document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
         },
-        false,
         false);
 }
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '#' + name, '/api?alien=storylist&uuid=' + uuid + "&sync=0",
-        '', 
+    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=0",
         'sync error', 
-        false,
         function(unused) { 
          document.getElementById(name).innerHTML = local('stopped');
          document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
         },
-        false,
         false);
 }
 
-var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated"];
+var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
 
 function finishedloading(storylist, navto) {
 
@@ -1114,34 +1087,24 @@ function finishedloading(storylist, navto) {
 }
 
 function loadstories(unused_data, navto) {
-
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '#storypages', '/api?alien=storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
-        '#storylistresult', 
+    go(false, '#storypages', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         unavailable, 
-        true, 
         finishedloading,
-        true,
         navto);
 }
 
 function reviewstory(uuid, which) {
-    go(false, '#storypages', '/api?alien=home&reviewed=' + which + '&uuid=' + uuid,
-        '', 
+    go(false, '#storypages', 'home&reviewed=' + which + '&uuid=' + uuid,
         unavailable, 
-        false, 
         loadstories,
-        false,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
-    go(false, '#storypages', '/api?alien=home&finished=' + which + '&uuid=' + uuid,
-        '', 
+    go(false, '#storypages', 'home&finished=' + which + '&uuid=' + uuid,
         unavailable, 
-        false, 
         loadstories,
-        false,
         (which == 1) ? "#finished" : "#reading");
 }
 
@@ -1159,6 +1122,37 @@ $.fn.goDeep = function(levels, func){
         iterateChildren($(this), levels);
     });
 };
+
+function validatetext_finish(json, opaque) {
+    if(json.success) {
+        db.openDoc(json.storykey, {
+              error: function(err) {
+                    alert("Boo. Doc failed: " + err);
+              },
+              success : function(doc) {
+                   doc["txtsource"] = $("#textvalue").val();
+                   db.saveDoc(doc, {
+                        error: function(saveerr) {
+                            alert("Boo. Couldn't save TXT contents: " + saveerr);
+                            // Need to call the API to delete this story,
+                            // both the name and the UUID index
+                            done();
+                        },
+                        success: function(response) {
+                            $('#uploadModal').modal('hide');
+                            $.mobile.navigate('#stories');
+                            loadstories(false, "#newstory");
+                            done();
+                                
+                        }
+                   });
+              }
+            });
+    } else {
+        done();
+        alert("Failed to add your story. Please try again.");
+    }
+}
 
 function validatetext() {
     var ids = [ 'textname', 'textvalue', 'textlanguage' ];
@@ -1178,11 +1172,54 @@ function validatetext() {
             return;
     }
 
-    $("#textform").submit();
+    //$("#textform").submit();
+    
+    loading();
+    go($("#textform"), '', '', unavailable, validatetext_finish, false);
+}
+
+function validatefile_finish(json, opaque) {
+    done();
+    if(json.success) {
+        db.openDoc(json.storykey, {
+              error: function(err) {
+                    alert("Boo. Doc failed: " + err);
+                    done();
+              },
+              success : function(doc) {
+                   var myFile = $('#_attachments').prop('files')[0];
+                   $('.couchform input#_db').val($('#database').html());
+                   $('.couchform input#_id').val(doc._id);
+                   $('.couchform input#_rev').val(doc._rev);
+                  
+                   var url = $('#creds').html() + "/" + $('#database').html() + "/" + doc._id;
+                   console.log("Submitting to: " + url);
+                   $('#filedata').ajaxSubmit({
+                        url: url,
+                        success: function(response) {
+                            done();
+                            $('#uploadModal').modal('hide');
+                            $.mobile.navigate('#stories');
+                            loadstories(false, "#newstory");
+                        },
+                        error: function(response) {
+                            // Need to call the API to delete this story,
+                            // both the name and the UUID index
+                            done();
+                            alert("Failed to submit your attachment.");
+                        }
+                   });
+
+              }
+            });
+    } else {
+        done();
+        alert("Failed to add your story. Please try again.");
+    }
 }
 
 function validatefile() {
-    var ids = [ 'uploadfile', 'uploadtype', 'uploadlanguage' ];
+    var ids = [ '_attachments', 'uploadtype', 'uploadlanguage' ];
 
     document.getElementById("colonerror").style.display = 'none';
     document.getElementById("uploaderror").style.display = 'none';
@@ -1194,12 +1231,19 @@ function validatefile() {
          }
     }
 
-    if ($("#uploadfile").val().replace("C:\\", "").indexOf(':') != -1) {
+    if ($("#_attachments").val().replace("C:\\", "").indexOf(':') != -1) {
         document.getElementById("colonerror").style.display = 'block';
         return;
     }
 
-    $("#fileform").submit();
+    var myFile = $('#_attachments').prop('files')[0];
+    if (myFile.size > (30*1024*1024)) { 
+        alert("Your file is too big.");
+        return;
+    }
+    loading();
+    $("#filename").val(myFile.name);
+    go($("#fileform"), '', '', unavailable, validatefile_finish, false);
 }
 
 var oDbg, con;
@@ -1207,7 +1251,7 @@ var start_trans_id = 0;
 
 function handleIQ(oIQ) {
     console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
-    $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
+    $('#iResp').prepend("<tr><td style='color: black'><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }
@@ -1240,7 +1284,7 @@ var chat_username = false;
 function appendBox(who, ts, msg, msgclass, reverse) {
         var html = '<tr><td>';
         var id = ("" + who).split("@");
-        html += "<div style='width: 100%'><span class='badge " + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black'><table><tr><td>&nbsp</td>";
+        html += "<div style='width: 100%'><span class='" + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black; border-radius: 10px'><table class='chattable'><tr><td>&nbsp</td>";
         sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
         sendtime += "<td style='vertical-align: top'>";
         sendtime += "&nbsp;" + make_date(ts) + "</td>";
@@ -1312,18 +1356,17 @@ function appendChat(who, to, msg) {
         var reverse = false;
     }
 
-    var micaurl = "/api?alien=chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
+    var micaurl = "chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
 
     start_trans_id += msg.length;
 
-    $.get(micaurl, "", $.proxy(function(response, success){
-	var data = JSON.parse(response);
-	if(data.success)  {
-		appendBox(who, ts, data.result.human, msgclass, reverse);
-	} else {
-		appendBox(who, ts, data.desc, msgclass, reverse);
-	}
-    }, {}), 'html');
+    go(false, '', micaurl, unavailable, function(json, opaque){
+            if(json.success)  {
+                    appendBox(who, ts, json.result.human, msgclass, reverse);
+            } else {
+                    appendBox(who, ts, json.desc, msgclass, reverse);
+            }
+	}, false);
 }
 
 function addressableID(who) {
@@ -1365,16 +1408,8 @@ function newContact(who) {
 
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
-    url = "/api?alien=chat&history=" + peer + "&tzoffset=" + tzoffset;
     start_trans_id = 1000000;
-    go(false, '#pagesingle', url, 
-          '#chathistoryresult',
-          unavailable, 
-          true, 
-          handleConnectedLoaded,
-          true,
-          false);
-    //document.getElementById('iResp').lastChild.scrollIntoView();
+    go(false, '#pagesingle', "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable, handleConnectedLoaded, false);
 }
 
 
@@ -1612,21 +1647,45 @@ onunload = function() {
     }
 };
 
-function start_learning_finished(data, reloadstories) {
-    if (reloadstories) {
-        $.mobile.navigate('#stories');
-        loadstories(false, false);
+function install_pages_if_needed(json) {
+    if ("install_pages" in json) {
+        install_pages(json.install_pages.action,
+                      json.install_pages.pages,
+                      json.install_pages.uuid,
+                      json.install_pages.start_page,
+                      json.install_pages.view_mode,
+                      json.install_pages.reload,
+                      json.install_pages.meaning_mode)
+    }
+}
+
+function start_learning_finished(json, action) {
+    done();
+    $('#loadingModal').modal('hide');
+    if (json.success) {
+        if (action == 'storyinit') {
+           window.location.href = "/";
+        } else {
+            var reloadstories = (action == 'view') ? false : true;
+            if (reloadstories) {
+                $.mobile.navigate('#stories');
+                loadstories(false, false);
+            } else {
+                $('#readingheader').affix();
+                $('#learn_content').html(json.desc);
+                $.mobile.navigate('#learn');
+            }
+            install_pages_if_needed(json);
+        }
     } else {
-        $('#readingheader').affix();
-        $('#learn_content').html(data);
-        $('#loadingModal').modal('hide');
-        $.mobile.navigate('#learn');
+        alert(json.desc);
     }
 }
 
 var exploded_uuid = false;
 var exploded_name = false;
-function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus) {
+function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus, newstory) {
+
     exploded_uuid = uuid;
     exploded_name = name;
     $.mobile.navigate('#explode');
@@ -1642,12 +1701,10 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     $("#deleteoption").attr('style', 'display: none');
     $("#translateoption").attr('style', 'display: none');
     $("#romanizedoption").attr('style', 'display: none');
-
-    $("#originaloption").prop('href', '/stories?type=original&uuid=' + uuid);
+    $("#storyinitoption").attr('style', 'display: none');
 
     if (translated) {
         if (romanized) {
-            $("#romanizedlink").prop('href', '/stories?type=pinyin&uuid=' + uuid);
             $("#romanizedoption").attr('style', 'display: block');
         }
 
@@ -1666,6 +1723,9 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
         } else {
             $("#reviewedoption").attr('style', 'display: block');
         }
+    } else if (newstory) {
+        $("#storyinitoption").attr('style', 'display: block');
+        $("#deleteoption").attr('style', 'display: block');
     } else {
         $("#deleteoption").attr('style', 'display: block');
         $("#translateoption").attr('style', 'display: block');
@@ -1678,16 +1738,30 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     }
 }
 
-function start_learning(mode, action, uuid, name) {
+function start_learning(mode, action, values) {
     $('#loadingModal').modal({backdrop: 'static', keyboard: false, show: true});
 
-   var url = '/api?alien=' + mode + '&' + action + "=1";
+   var url = mode + '&' + action + "=1";
 
-   if (uuid)
-        url += "&uuid=" + uuid;
-   if (name) 
-       url += "&name=" + name;
+   if (values.uuid)
+        url += "&uuid=" + values.uuid;
+   if (values.name)
+       url += "&name=" + values.name;
+   if (values.version)
+       url += "&version=" + values.version;
 
-   go(false, '#storypages', url,  '', unavailable, false, start_learning_finished, false, (action == 'view') ? false : true);
-   //$('#settings').panel('close');
+   go(false, '', url,  unavailable, start_learning_finished, action);
 }
+
+function getstory_finish(data, opaque) {
+    $.mobile.navigate("#printstory");
+    done();
+}
+function getstory(uuid, type) {
+   loading();
+   go(false, '#printstory_contents', 'stories&type=' + type +'&uuid=' + uuid, 
+       unavailable, 
+       getstory_finish, 
+       false);
+}
+
