@@ -5,14 +5,14 @@
         <div class='col-lg-3' id='leftpane'>
             <div style='display: inline; margin: 0 auto'>
                 <br/>
-                <form data-ajax="false" method="POST" action="/connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
+                <form ajaxfinish='connect_finish' class='ajaxform' data-ajax="false" method="POST" action="connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
                     <table style='margin: 0 auto'>
-                        <tr><td> <b><t:slot name='softwarename'/></b></td></tr>
+                        <tr><td style='color: black'> <b><t:slot name='softwarename'/></b></td></tr>
                         <!--(if not mobile)-->
                         <tr>
-                        <td style='font-size: x-small; margin: 0 auto' t:render='switchlangs'></td>
+                        <td style='font-size: x-small; margin: 0 auto; color: black' t:render='switchlangs'></td>
                         </tr>
-                        <tr><td>
+                        <tr><td style='color: black'>
                             <br/><h4><b><t:slot name='signinwith'/>:</b></h4>
                             <table>
                             <tr t:render="thirdparty" style='display: inline'/>
@@ -20,7 +20,7 @@
                             <br/>
                         </td></tr>
                         <!--(end)-->
-                        <tr><td>
+                        <tr><td style='color: black'>
                             <t:slot name='username'/>: 
                         </td></tr><tr><td>
                             <div style='display:inline'>
@@ -28,11 +28,11 @@
                                 value='@!req.session.value['last_username'] if 'last_username' in req.session.value else ''!@'>
                                 </input>
                             </div>
-                         </td></tr><tr><td>
+                         </td></tr><tr><td style='color: black'>
                             <t:slot name='password'/>:
                          </td></tr><tr><td>
                             <input type="password" id="password" name="password" placeholder="Password" />
-                        </td></tr><tr><td>
+                        </td></tr><tr><td style='color: black'>
                             <div class="slide1">
                                 <div class="tri1"></div>
                                 <u data-role='none'><t:slot name='address'/></u>
@@ -54,7 +54,8 @@
                             <t:slot name='rememberme'/>
                             </label>
                         </td></tr><tr><td>
-                            <button onclick="loading()" type="submit" name="connect" class="btn-primary btn-block" value='1'><t:slot name='signin'/></button>
+                            <input type='hidden' name="connect" value='1'/>
+                            <button type="submit" class="btn-primary btn-block"><t:slot name='signin'/></button>
                         </td></tr><tr><td>
                         <!--
                         <h4><t:slot name="connect"/>.</h4>
@@ -74,9 +75,9 @@
                     <div style='display: inline'>
                         <div style="margin: 0 auto; padding-left: 40px; padding-bottom: 20px; padding-right: 40px;">
                             <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
-                                <h2 style='font-size: x-large'><b><t:slot name="learn"/>.</b></h2>
+                                <h2 style='font-size: x-large; color: black'><b><t:slot name="learn"/>.</b></h2>
                                 <br/>
-                                <div style='font-size: medium'>
+                                <div style='font-size: medium; color: black'>
                                 <t:slot name="offline"/>.
                                 <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
                                 <p/>
@@ -85,7 +86,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
+                        <div style="color: black; width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
                             <!-- Menu -->
                             <ol style='margin-top: 20px' class="carousel-indicators">
                                 <li data-target="#carousel" data-slide-to="0" class="active"></li>

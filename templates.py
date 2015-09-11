@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# coding: utf-8
+
+# Need to add this to frontpage and head element templates
+# return "<!DOCTYPE html>\n" + body 
 
 from twisted.web.template import Element, renderer, XMLFile, tags, XMLString
 from twisted.web._flatten import _flattenTree
@@ -27,7 +31,7 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        mdebug("Rendering: " + req.messages)
+        #mdebug("Rendering: " + req.messages)
         self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>")
 
     @renderer
@@ -490,7 +494,6 @@ class ViewElement(CommonElement) :
         tag.fillSlots(storyname = self.req.story_name.replace("_", " "),
                       spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                       stats = stats,
-                      installpages = self.req.install_pages,
                       # This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
                       performingtranslation= _("Doing instant translation..."),
                       # 'Go' or 'Skip' ahead to a specific page in a book/story.
@@ -509,8 +512,8 @@ class ViewElement(CommonElement) :
                       meaningclasstitle = _("show/hide translations"),
                       processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
                       refreshtitle = _("Refresh"),
-                      resultshow = 'display: block' if self.req.resultshow else 'display: none',
-                      result = (self.req.resultshow + ".") if self.req.resultshow else '',
+                      resultshow = 'display: block' if self.req.viewpageresult else 'display: none',
+                      result = (self.req.viewpageresult + ".") if self.req.viewpageresult else '',
                       )
         
         return tag
@@ -642,8 +645,8 @@ class AccountElement(CommonElement):
                         reset = _("Reset Password / Token"),
                         passonline = _("Please change your password on the website. Will support mobile in a future version."),
                         accounts = _("Accounts"),
-                        resultshow = 'display: block; padding: 10px' if self.req.resultshow else 'display: none',
-                        result = (self.req.resultshow + ".") if self.req.resultshow else '',
+                        resultshow = 'display: block; padding: 10px' if self.req.accountpageresult else 'display: none',
+                        result = (self.req.accountpageresult + ".") if self.req.accountpageresult else '',
                         delete = _("Delete"),
 
                      )
@@ -669,6 +672,8 @@ class HTMLElement(CommonElement):
                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      caret = self.req.mpath + "/chinese-ime/caret.js",
+                     couchjs = self.req.mpath + "/jquery.couch-1.5.js",
+                     ajaxformjs = self.req.mpath + "/jquery.form.min.js",
                     )
 
         return tag
@@ -768,6 +773,13 @@ class HeadElement(CommonElement):
                      instant = _("Instant Translation"),
                      performingtranslation= _("Doing instant translation..."),
                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
+                     token = self.req.session.value['cookie'] if not mobile else req.session.value['password'],
+                     creds = self.req.credentials,
+                     database = self.req.database,
+                     authtype = "cookie" if not mobile else "pass",
+                     newstory = _("New"),
+                     storyinit = _("Initialize Story"),
+
                      )
         return tag
 

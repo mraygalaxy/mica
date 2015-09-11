@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 from common import *
 from json import loads, dumps
@@ -135,10 +136,13 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
+            mdebug("Set key not found error: " + name)
             raise ResourceNotFound(str(e), e)
         except couch_ResourceConflict, e :
+            mdebug("Set key conflict error: " + name)
             raise ResourceConflict(str(e), e)
         except ServerError, e :
+            mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
             raise CommunicationError("MICA Unvalidated: " + str(e))
 
     def __getitem__(self, name, false_if_not_found = False) :
@@ -163,6 +167,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         doc = self.db[name]
         del self.db[name]
         #self.db.purge([doc])
+
+    def delete_attachment(self, doc, filename) :
+        self.db.delete_attachment(doc, filename)
 
     def put_attachment(self, name, filename, contents, new_doc = False) :
         if not new_doc :
@@ -192,7 +199,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         else :
             doc = new_doc
 
-        mdebug("Putting attachment..")
+        mdebug("Putting attachment of length: " + str(len(contents)))
 
         return self.db.put_attachment(doc, contents, filename)
 
@@ -202,7 +209,27 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             return obj.read()
         else :
             raise CommunicationError("No such attachment: " + name + " => " + filename)
+
+    def get_attachment_to_path(self, name, filename, path) :
+        sourcebytes = 0
+        obj = self.db.get_attachment(name, filename)
+        if obj is not None :
+            fh = open(path, 'wb')
+            while True :
+                byte = obj.read(1)
+                sourcebytes += 1
+                if byte :
+                    fh.write(byte)
+                else :
+                    break
+
+            fh.close()
+        else :
+            raise CommunicationError("No such attachment: " + name + " => " + filename)
+        return sourcebytes
             
+    def listen(self, username, password, port) :
+        return port 
 
     def get_attachment_meta(self, name, filename) :
         return self.__getitem__(name)["_attachments"][filename]
@@ -540,6 +567,19 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
             while True :
                 sleep(3600)
 
+    def listen(self, username, password, port) :
+        # Since the user/pass will be fed locally through memory,
+        # and then accessed through javascript, I haven't found
+        # a need to escape them yet
+        #username_unquoted = myquote(username)
+        #password_unquoted = myquote(password)
+
+        port = self.db.listen(String(username), String(password), port)
+        if port == -1 :
+            raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
+
+        return port 
+
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
         self.db = db_already_local
@@ -753,6 +793,19 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         else :
             mdebug("Replication started. Yay.")
             return True
+
+    def listen(self, username, password, port) :
+        # Since the user/pass will be fed locally through memory,
+        # and then accessed through javascript, I haven't found
+        # a need to escape them yet
+        #username_unquoted = myquote(username)
+        #password_unquoted = myquote(password)
+
+        port = self.db.listen___(String(username), String(password), String(str(port)))
+        if port == -1 :
+            raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
+
+        return port 
 
     def detach_thread(self) :
         pass
