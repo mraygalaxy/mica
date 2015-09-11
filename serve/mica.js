@@ -1251,7 +1251,7 @@ var start_trans_id = 0;
 
 function handleIQ(oIQ) {
     console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
-    $('#iResp').prepend("<tr><td style='color: black'><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
+    $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
 }

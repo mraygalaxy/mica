@@ -276,6 +276,10 @@ body {
     background-color: black;
 }
 
+.chattable td {
+    color: black;
+}
+
 td {
     color: white
 }
@@ -283,10 +287,6 @@ td {
 .badge {
    background-color: #dfdfdf;
    color: black;
-}
-
-.chattable > td {
-    color: black;
 }
 
 li {
