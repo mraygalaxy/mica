@@ -1,4 +1,4 @@
-var last_data = '';
+v:qar last_data = '';
 var first_time = true;
 var debug = false;
 //var debug = true; 
