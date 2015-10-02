@@ -4564,7 +4564,19 @@ class MICA(object):
         if not mobile :
             if "temp_jabber_pw" not in params :
                 auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
-                self.userdb["org.couchdb.user:" + username] = auth_user
+                try :
+                    self.userdb["org.couchdb.user:" + username] = auth_user
+                except couch_adapter.CommunicationError, e :
+                    mwarn("User database access expired...")
+                    # If the userdb times out, we do have to reacquire it,
+                    # even though its used in other places. Login-time will be the only
+                    # place it gets updated.
+                    self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
+                    self.userdb = self.cs["_users"]
+                    if self.userdb :
+                        self.db = self.userdb
+                    mwarn("Retrying userdb access...")
+                    self.userdb["org.couchdb.user:" + username] = auth_user
 
         if mobile :
             if req.db.doc_exist("MICA:appuser") :
