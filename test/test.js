@@ -1,9 +1,10 @@
 var fs = require('fs');
+var http = require('http');
 //var jQuery = require('../serve/jquery-1.11.3.js');
 var $ = require('jquery');
 //var couch = require('../serve/jquery.couch-1.5.js');
 var couch = require('couchjs');
-var mica = require('../serve/mica.js');
+//var mica = require('../serve/mica.js');
 //eval(fs.readFileSync('../serve/mica.js')+'');
 
 var Docker = require('dockerode');
@@ -50,20 +51,36 @@ function cleanup(name, next) {
 	}
 }
 
-// query API for container info
-//docker run -i -t -d -p 5984:5984 -p 2222:22 -p 6984:6984 -p 7984:7984 --name couchdev micadev7 
-options = {
+var options = {
 	Image: 'micadev7', 
 	Cmd: ['/home/mrhines/mica/restart.sh'], 
 	name: 'couchdev',
 	Tty : true,
-	ExposedPorts: {
-            "22/tcp": {},
-            "5984/tcp": {},
-            "6984/tcp": {},
-            "7984/tcp": {}
+	PortBindings: {
+            "22/tcp": [{
+	            "HostIp": "0.0.0.0",
+                    "HostPort": "2222"
+	     }],
+            "5984/tcp": [{
+	            "HostIp": "0.0.0.0",
+                    "HostPort": "5984"
+	    }],
+            "6984/tcp": [{
+	            "HostIp": "0.0.0.0",
+                    "HostPort": "6984"
+	    }],
+            "7984/tcp": [{
+	            "HostIp": "0.0.0.0",
+                    "HostPort": "7984"
+	    }]
         }
 }
+
+var loc = {
+    host: 'localhost',
+    port: 80,
+    path: '/'
+};
 
 function start(result, next) {
 	docker.createContainer(options, function (err, container) {
@@ -76,12 +93,22 @@ function start(result, next) {
 			      console.log(err);
 			else {
 				console.log("Container started.");
-				cleanup(options.name, null);
+				//cleanup(options.name, null);
+
+				var html = '';
+				http.get(options, function(res) {
+				    res.on('data', function(data) {
+					// collect the data chunks to the variable named "html"
+					html += data;
+				    }).on('end', function() {
+					var title = $(html).find('title').text();
+					console.log("HTML title:" + title);
+				     });
+				});
 			}
 		  });
 	  }
 	});
 
 }
-
 cleanup(options.name, start);
