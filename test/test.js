@@ -1,10 +1,16 @@
+//var jQuery = require('../serve/jquery-1.11.3.js');
+//var couch = require('../serve/jquery.couch-1.5.js');
+//var $ = require('jquery');
+//var $ = require("jquery")(jsdom.jsdom().parentWindow);
+//var wait = require('waitfor');
 var fs = require('fs');
 var http = require('http');
-//var jQuery = require('../serve/jquery-1.11.3.js');
-var $ = require('jquery');
-//var couch = require('../serve/jquery.couch-1.5.js');
+var jsdom = require("jsdom"); 
+var $ = require("jquery")(jsdom.jsdom().createWindow);
+var jquery = fs.readFileSync("../serve/jquery-1.11.3.js", "utf-8");
+var mica = fs.readFileSync('../serve/mica.js', 'utf-8');
+var head = fs.readFileSync('../serve/head.js', 'utf-8');
 var couch = require('couchjs');
-//var mica = require('../serve/mica.js');
 //eval(fs.readFileSync('../serve/mica.js')+'');
 
 var Docker = require('dockerode');
@@ -93,18 +99,17 @@ function start(result, next) {
 			      console.log(err);
 			else {
 				console.log("Container started.");
-				//cleanup(options.name, null);
 
-				var html = '';
-				http.get(options, function(res) {
-				    res.on('data', function(data) {
-					// collect the data chunks to the variable named "html"
-					html += data;
-				    }).on('end', function() {
-					var title = $(html).find('title').text();
-					console.log("HTML title:" + title);
-				     });
-				});
+                jsdom.env({
+                  url: "http://localhost",
+                  src: [jquery, mica, head],
+                  done: function (err, window) {
+                    var $ = window.$;
+                    console.log("address: " + $("#address").val());
+                    //form_loaded(false, true);
+                    //cleanup(options.name, null);
+                  }
+                });
 			}
 		  });
 	  }

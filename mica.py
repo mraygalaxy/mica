@@ -179,6 +179,7 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
+        self.human = True if int(self.http.params.get("human", "1")) else False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         minfo("Request: " + self.http.url + " action: " + self.action)
@@ -2088,6 +2089,7 @@ class MICA(object):
               """
 
     def makestorylist(self, req, tzoffset):
+        translist = []
         untrans_count = 0
         reading_count = 0
         newstory_count = 0
@@ -2180,7 +2182,7 @@ class MICA(object):
                     untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
 
                     if "translating" in story and story["translating"] :
-                        untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
+                        translist.append(story['uuid'])
                     untrans.append(closing)
             else : 
                 if finished :
@@ -2199,7 +2201,7 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
                    
-        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -4281,28 +4283,29 @@ class MICA(object):
             if mobile :
                 req.db.stop_replication()
                 if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return _("Failed to change synchronization. Please try again") + ": " + tofrom
+                    return self.bad_api(req, _("Failed to change synchronization. Please try again") + ": " + tofrom)
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
             req.session.save()
 
-            return "changed"
+            return self.api(req, "changed")
 
         if not req.http.params.get("tzoffset") :
-            return "<script>loadstories(false, false);</script>"
+            #return "<script>loadstories(false, false);</script>"
+            return self.api(req, json = dict(reload = True))
 
         tzoffset = int(req.http.params.get("tzoffset"))
 
-        storylist = ["<script>var translist = [];</script>\n"]
+        storylist = []
 
-        untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count = self.makestorylist(req, tzoffset)
+        untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count, translist = self.makestorylist(req, tzoffset)
         
-        reading.append("\n</ul></div></div>\n")
-        noreview.append("\n</ul></div></div>\n")
-        untrans.append("\n</ul></div></div>\n")
-        finish.append("\n</ul></div></div>\n")
-        newstory.append("\n</ul></div></div>\n")
+        reading.append(u"\n</ul></div></div>\n")
+        noreview.append(u"\n</ul></div></div>\n")
+        untrans.append(u"\n</ul></div></div>\n")
+        finish.append(u"\n</ul></div></div>\n")
+        newstory.append(u"\n</ul></div></div>\n")
 
         chat_all = [self.storyTemplate("Chatting")]
 
@@ -4311,7 +4314,7 @@ class MICA(object):
                 chat_all.append("<li>" + _("Recent") + " " + translated_periods[period] + ":</li>")
                 chat_all += chatting[period]
 
-        chat_all.append("\n</ul></div></div>\n")
+        chat_all.append(u"\n</ul></div></div>\n")
 
         storylist += newstory + reading + chat_all + untrans + noreview + finish
 
@@ -4323,22 +4326,11 @@ class MICA(object):
         elif reading_count :
             firstload = "reading"
 
-        scripts = """
-                   <script>
-                   firstload = '#""" + firstload + """';
-                   for(var tidx = 0; tidx < translist.length; tidx++) {
-                       trans_start(translist[tidx]);
-                   }
-                   translist = [];
-                   </script>
-                  """
-
         try :
-            finallist = "".join(storylist) + scripts
+            return self.api(req, json = dict(firstload = firstload, translist = translist, reload = False, storylist = u"".join(storylist)))
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
-
-        return finallist
+            return self.bad_api(req, _("Storylist failed") + ": " + str(e))
 
     def baidu_compliance_fix(self, session):
         self.fixed = False

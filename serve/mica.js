@@ -1036,23 +1036,40 @@ function installreading() {
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
     go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=1",
-        'sync error', 
-        function(unused) { 
-         document.getElementById(name).innerHTML = local('started');
-         document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
-        },
-        false);
+        'sync error', storylist_finish,
+        { element: name, label: local('started'), cleanup: unsyncstory});
+}
+
+function storylist_finish(json, params) {
+    if (!json.success) {
+        $("#" + params.element).html("Error: " + json.desc);
+        return;
+    }
+    if (json.firstload) {
+        firstload = '#' + json.firstload;
+        for(var tidx = 0; tidx < json.translist.length; tidx++) {
+            trans_start(json.translist[tidx]);
+        }
+        translist = [];
+ 
+        if (params.cleanup) {
+            document.getElementById(params.element).innerHTML = params.label;
+            document.getElementById(params.element).onclick = function() { params.cleanup(name, uuid); }; 
+        } else { 
+            finishedloading(json.storylist, params.navto);
+        }
+
+        $("#" + params.element).html(json.storylist); 
+    } else if(json.reload) {
+        loadstories(false, false);
+    }
 }
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=0",
-        'sync error', 
-        function(unused) { 
-         document.getElementById(name).innerHTML = local('stopped');
-         document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
-        },
-        false);
+    go(false, '', 'storylist&uuid=' + uuid + "&sync=0",
+        'sync error', storylist_finish,
+        { element: name, label: local('stopped'), cleanup: syncstory});
 }
 
 var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
@@ -1088,10 +1105,10 @@ function finishedloading(storylist, navto) {
 
 function loadstories(unused_data, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '#storypages', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go(false, '', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         unavailable, 
-        finishedloading,
-        navto);
+        storylist_finish,
+        { element: 'storypages', navto: navto});
 }
 
 function reviewstory(uuid, which) {
