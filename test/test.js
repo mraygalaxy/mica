@@ -29,7 +29,7 @@ function remove(container, next) {
 }
 function cleanup(name, next) {
 	console.log("Looking up: " + name);
-        var container = docker.getContainer(name);
+    var container = docker.getContainer(name);
 	if (container) {
 		container.inspect(function (err, data) {
 			if (err) {
