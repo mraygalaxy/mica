@@ -85,8 +85,17 @@
     <div data-role='page' id='printstory'><div data-role='content' id='printstory_contents'/></div>
     <div data-role='page' id='instant'><div data-role='content'>
 	   	<div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div>
-                <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
-                <div id='instantdestination'></div>
+        <h3 id="myInstantLabel"><t:slot name='instant'/>:</h3>
+        <div id='instantdestination'>
+            <h4><b><t:slot name='onlineinstant'/></b>:</h4>
+            <t:slot name='selectedinstant'/> <div id='selectedresult' style='display: inline'/>
+            <p/>
+            <t:slot name='piecemealinstant'/>:<br/>
+            <div id='piecemealresult'/>
+            <h4><b><t:slot name='offlineinstant'/>:</b></h4>
+            <div id='offlineresult'/>
+        </div>
+        <div id='instanterror'></div>
     </div></div>
     <div data-role='page' id='stories'>
         <div data-role='content'>

@@ -779,7 +779,11 @@ class HeadElement(CommonElement):
                      authtype = "cookie" if not mobile else "pass",
                      newstory = _("New"),
                      storyinit = _("Initialize Story"),
-
+                     onlineinstant = _("Online instant translation"),
+                     selectedinstant = _("Selected instant translation"),
+                     piecemealinstant = _("Piecemeal instant translation"),
+                     offlineinstant = _("Offline instant translation"),
+                     noinstant = _("No instant translation found."),
                      )
         return tag
 

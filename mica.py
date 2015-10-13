@@ -1231,7 +1231,7 @@ class MICA(object):
         # Offline indicates a count of how many words were translated using an offline dictionary
         req.onlineoffline += _("Offline") + ": " + str(offline)
 
-        return run_template(req, ReviewElement)
+        return self.api(req, run_template(req, ReviewElement))
 
     def render_editslist(self, req, story) :
         req.page = str(req.http.params.get("page"))
@@ -1304,7 +1304,7 @@ class MICA(object):
         req.story = story
         req.history = history
 
-        return run_template(req, EditElement)
+        return self.api(req, run_template(req, EditElement))
 
     def view_outline(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
@@ -3695,7 +3695,7 @@ class MICA(object):
             if req.db.doc_exist(self.memorized(req, nshash)) :
                 del req.db[self.memorized(req, nshash)]
 
-        return  _("Memorized!") + " " + str(nshash)
+        return self.api(req)
 
     def render_memorized(self, req, story) :
         memorized = int(req.http.params.get("memorized"))
@@ -3720,7 +3720,7 @@ class MICA(object):
             if req.db.doc_exist(self.memorized(req, unit["hash"])) :
                 del req.db[self.memorized(req, unit["hash"])]
             
-        return _("Memorized!") + " " + unit["hash"]
+        return self.api(req)
 
     def render_storyupgrade(self, req, story) :
         name = story["name"]
@@ -3798,7 +3798,7 @@ class MICA(object):
                 total_memorized, total_unique, unique, progress = req.memresult
                 req.mempercent = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
 
-        return run_template(req, ReadElement)
+        return self.api(req, desc = run_template(req, ReadElement))
 
     def render_story(self, req, uuid, start_page) :
         req.viewpageresult = False

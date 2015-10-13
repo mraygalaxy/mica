@@ -571,7 +571,6 @@ function process_instant(with_spaces, lang, source, target, username, password) 
      } else {
         $.mobile.navigate('#instant');
         $('#instantspin').attr('style', 'display: inline');
-        $('#instantdestination').html("");
 
        var url = 'instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
@@ -580,10 +579,10 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       go(false, '#instantdestination', url,
+       go(false, '', url,
           local("onlineoffline"),
           offinstantspin,
-          $("html").scrollTop());
+          false);
        }
 }
 
@@ -770,17 +769,23 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
 }
 
 function memory_finish(data, opaque) {
-    var hash = opaque;
-    toggle(hash, 0);
-    toggle_specific('memory', hash, 0);
+    var id = opaque[0];
+    var memorized = opaque[1];
+    toggle(id, 0);
+    toggle_specific('memory', id, 0);
+    if (memorized) {
+        $('#memoitem' + id).attr('style', 'display: block');
+    } else {
+        $('#memoitem' + id).attr('style', 'display: none');
+    }
 }
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go(false, '', 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           unavailable, 
           memory_finish,
-          id);
+          [id, memorized]);
 }
 
 function memorize(id, uuid, nb_unit, page) {
@@ -793,7 +798,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go(false, '', 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           unavailable, 
           memory_finish,
           id);
@@ -849,15 +854,41 @@ if ($.browser.device == true) {
 }
 */
 
-function offinstantspin(data, curr) {
-    //var data = JSON.parse(data);
+function offinstantspin(json, opaque) {
     $('#instantspin').attr('style', 'display: none');
+    if (json.success) {
+        $("#instanterror").attr('style', 'display: none');
+        $("#instantdestination").attr('style', 'display: block');
+        $("#selectedresult").html("(" + json.desc.whole.source + "): " + json.desc.whole.target);
+        var pieceresult = "";
+        for (var x = 0; x < json.desc.online.length; x++) {
+            pieceresult += "(" + json.desc.online[x].char + "): "; 
+            pieceresult += json.desc.online[x].target + "<br/>"; 
+        }
+        $("#piecemealresult").html(pieceresult);
+        var offlineresult = "";
+        for (var x = 0; x < json.desc.offline.length; x++) {
+            offlineresult += "(" + json.desc.offline[x].request + "): "; 
+            if (json.desc.offline[x].target) {
+                offlineresult += json.desc.offline[x].target; 
+            } else {
+                offlineresult += local('noinstant'); 
+            }
+            offlineresult += "<br/>";
+        }
+        $("#offlineresult").html(offlineresult);
+
+    } else {
+        $("#instantdestination").attr('style', 'display: none');
+        $("#instanterror").attr('style', 'display: block');
+        $("#instanterror").html(json.desc);
+    }
     //$('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
 //    $(document).unbind("mouseleave");
 //    $(document).unbind("copy");
 //    install_highlight();
-    $("html").scrollTop(curr);
+//    $("html").scrollTop(curr);
 }
 
 function install_highlight() {
@@ -884,11 +915,10 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
-           $('#instantdestination').html("");
-           go(false, '#instantdestination', 'instant&source=' + st + "&lang=en", 
+           go(false, '', 'instant&source=' + st + "&lang=en", 
               unavailable, 
               offinstantspin,
-              $("html").scrollTop());
+              false);
       }
     }
 
@@ -925,7 +955,8 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 }
 
 var list_mode = true;
-function list_reload_finish(data, opaque) {
+function list_reload_finish(json, opaque) {
+      $("#" + opaque).html(json.desc);
       form_loaded(false, true);
 }
 
@@ -933,24 +964,25 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#memolist', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
+           go(false, '', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
               unavailable, 
               list_reload_finish,
-              false);
+              "memolist");
+
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#editslist', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+           go(false, '', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
-                  false);
+                  'editslist');
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '#history', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+           go(false, '', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
-                  false);
+                  'history');
        }
 }
 
