@@ -96,31 +96,44 @@ r = s.post("http://localhost/connect", data=dict(human='0', username=test["usern
 assert(r.status_code == 200)
 assert(json_loads(r.text)['success'])
 
-urls = [    "api?human=0&alien=storylist&tzoffset=18000",
-            "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb",
-            "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0",
-            "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0",
-            "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=1&nb_unit=8&page=0",
-            "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=0&nb_unit=3&page=0",
-            "api?human=0&alien=read",
-            "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0",
-            "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0&image=0",
-            "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0",
-            "api?human=0&alien=instant&source=%E7%82%8E%E7%83%AD&lang=en&source_language=zh-CHS&target_language=en",
-#            "",
-#            "",
-#            "",
-#            "",
-#            "",
-#            "",
-#            "",
-#            "",
-#            "",
+urls = [    { "loc" : "api?human=0&alien=storylist&tzoffset=18000", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=1&nb_unit=8&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=0&nb_unit=3&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0&image=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=instant&source=%E7%82%8E%E7%83%AD&lang=en&source_language=zh-CHS&target_language=en", "method" : "get" },
+            { "loc" : "api?human=0&alien=home&view=1", "method" : "get" },
+            { "loc" : "api?human=0&alien=home&switchmode=text", "method" : "get" },
+            { "loc" : "api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&reviewlist=1&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=11&trans_id=9&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=48&trans_id=42&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=home", "method" : "post", "data" : dict(retranslate = '1', page = '0', uuid = 'b220074e-f1a7-417b-9f83-e63cebea02cb') },
+            # Assert that the default has changed and move multiple_select to actual JSON, then retry the request
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
+#           { "loc" : "", "method" : "get" },
         ]
 
 for url in urls :
-    print "Testing url: " + url
-    r = s.get("http://localhost/" + url)
+    print url["method"] + ": " + url["loc"]
+    if url["method"] == "get" :
+        r = s.get("http://localhost/" + url["loc"])
+    else :
+        r = s.get("http://localhost/" + url["loc"], data = url["data"])
     assert(r.status_code == 200)
     assert(json_loads(r.text)['success'])
 
