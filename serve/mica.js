@@ -105,44 +105,44 @@ function local(msgid) {
     }
 
     function go_success(response) {
-            if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+        if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+            $(id).html(response);
+        } else {
+            var aff = false;
+            if (form)
+                aff = $(form).attr('ajaxfinish');
+
+            if(id != undefined && id != '') {
                 $(id).html(response);
             } else {
-		var aff = false;
-                if (form)
-                    aff = $(form).attr('ajaxfinish');
-
-                if(id != undefined && id != '') {
-                    $(id).html(response);
-                } else {
-                    if(!aff) {
-                        try {
-                            response = JSON.parse(response);
-                        } catch(err) {
-                            console.log("ERROR parsing: " + response);
-                        }
+                if(!aff) {
+                    try {
+                        response = JSON.parse(response);
+                    } catch(err) {
+                        console.log("ERROR parsing: " + response);
                     }
                 }
-
-		if(form && aff) {
-                        if (id == '' || id == undefined) {
-                            eval(aff + "(" + response + ")");
-                        } else {
-                            eval(aff + "('" + response + "')");
-                        }
-		} else {
-			go_callback(callback, response, opaque);
-
-			if(id != undefined && id != '' && response.indexOf('<script') != -1) {
-				//have to replace script or else jQuery will remove them
-				$(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
-				    if (!$(this).attr('src')) {
-					eval($(this).text());
-				    }
-				});
-			}
-		}
             }
+
+            if(form && aff) {
+                if (id == '' || id == undefined) {
+                    eval(aff + "(" + response + ")");
+                } else {
+                    eval(aff + "('" + response + "')");
+                }
+            } else {
+                go_callback(callback, response, opaque);
+
+                if(id != undefined && id != '' && response.indexOf('<script') != -1) {
+                    //have to replace script or else jQuery will remove them
+                    $(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
+                        if (!$(this).attr('src')) {
+                            eval($(this).text());
+                        }
+                    });
+                }
+            }
+        }
       }
 
       jQuery.support.cors = true;
@@ -613,15 +613,16 @@ function multipopinstall(trans_id, unused) {
                                    }});
 }
 
-function multipoprefresh(data, opaque) {
+function multipoprefresh(json, opaque) {
     var trans_id = opaque[0];
     var spy = opaque[1];
     $('#ttip' + trans_id).html(spy);
     $('#ttip' + trans_id).popover('hide');
+    $('#pop' + trans_id).html(json.desc);
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '#pop' + trans_id, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
+          go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
 		  unavailable, 
 		  multipoprefresh,
@@ -1697,6 +1698,7 @@ onunload = function() {
 };
 
 function install_pages_if_needed(json) {
+    done();
     if ("install_pages" in json) {
         install_pages(json.install_pages.action,
                       json.install_pages.pages,
@@ -1706,6 +1708,10 @@ function install_pages_if_needed(json) {
                       json.install_pages.reload,
                       json.install_pages.meaning_mode)
     }
+}
+
+function retrans_finish(json) {
+   install_pages_if_needed(json); 
 }
 
 function start_learning_finished(json, action) {

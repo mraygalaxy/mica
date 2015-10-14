@@ -3675,7 +3675,7 @@ class MICA(object):
         page = req.http.params.get("page")
         unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, story["name"])
 
-        return self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page)
+        return self.api(req, self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page))
 
     def render_memorizednostory(self, req, story) :
         memorized = int(req.http.params.get("memorizednostory"))

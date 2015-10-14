@@ -9,7 +9,7 @@
 <p/>
 
 <a data-role='none' href='#' class='btn btn-default' onclick="process_edits('@!story['uuid']!@', 'all', true);"><t:slot name='tryrecco'/></a><p/>
-<form data-ajax='false' class='ajaxform' action='edit' method='post'>
+<form ajaxfinish='install_pages_if_needed' data-ajax='false' class='ajaxform' action='edit' method='post'>
 <input type='hidden' name='retranslate' value='1'/>
 <input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
 <input type='hidden' name='uuid'><t:attr name='value'><t:slot name='uuid'/></t:attr></input>
