@@ -470,8 +470,8 @@ function process_edits(uuid, operation, batch) {
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      // 'learn_' is not a typo. It's used in form_loaded() so as not to class with the id 'learn'
-      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='edit'>"
+      // 'learn_' is not a typo. It's used in form_loaded() so as not to clash with the id 'learn'
+      out += "<form ajaxfinish='install_pages_if_needed' id='learn_' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -1699,6 +1699,8 @@ onunload = function() {
 
 function install_pages_if_needed(json) {
     done();
+    $('#regroupModal').modal('hide');
+
     if ("install_pages" in json) {
         install_pages(json.install_pages.action,
                       json.install_pages.pages,
