@@ -2302,7 +2302,7 @@ class MICA(object):
             for char in curr["source"] :
                 groups.append(char.encode("utf-8"))
 
-            processor.parse_page(False, req, story, groups, page, temp_units = True)
+            processor.parse_page(req, story, groups, page, temp_units = True)
 
             page_dict["units"] = before + story["temp_units"] + after
 
@@ -2331,7 +2331,7 @@ class MICA(object):
                 for char in chargroup["source"] :
                     group += char.encode("utf-8")
 
-            processor.parse_page(False, req, story, [group], page, temp_units = True)
+            processor.parse_page(req, story, [group], page, temp_units = True)
 
             if len(story["temp_units"]) == 1 :
                 merged = story["temp_units"][0]
@@ -2379,7 +2379,7 @@ class MICA(object):
                 del story["temp_units"]
             
         mdebug("Completed edit with offset: " + str(offset))
-        return [True, offset]
+        return offset
 
     @serial
     def storyinit(self, req, uuid, name) :
@@ -4811,30 +4811,17 @@ class MICA(object):
                 continue
 
             try :
-                result = self.operation(req, story, edit, offset)
+                offset = self.operation(req, story, edit, offset)
             except OSError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req)
+                return self.bad_api(req, self.self.warn_not_replicated(req))
             except AttributeError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req)
-            
-            if not result[0] and len(result) > 1 :
-                return self.render_mainpage(req, result[1])
-            
-            ret = result[1:]
-            success = ret[0]
-            offset = ret[1]
-            
-            if not success :
-                # This occurs in Edit mode when a merge/split request failed.
-                req.viewpageresult = _("Invalid Operation") + ": " + str(edit)
-
-        return False
+                return self.bad_api(req, self.self.warn_not_replicated(req))
 
     def render_rest(self, req, from_third_party) :
         pageid = "#messages"
@@ -4869,6 +4856,7 @@ class MICA(object):
 
     def render(self, req) :
         global times
+        mdebug(str(req.http.params))
         if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
             func = getattr(self, "render_" + req.action)
             return func(req)
@@ -5055,14 +5043,12 @@ class MICA(object):
                 start_page = tmp_story["current_page"]
                 mdebug("Loading start page: " + str(start_page))
             
-        for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
+        for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist", "oprequest" ] :
             if req.http.params.get(param) :
-                return getattr(self, "render_" + param)(req, story)
-
-        if req.http.params.get("oprequest") :
-            oprequest_result = self.render_oprequest(req, story)
-            if oprequest_result :
-                return oprequest_result
+                result = getattr(self, "render_" + param)(req, story)
+                # Oprequests still need to return a rendered page.
+                if param != "oprequest" :
+                    return result
 
         if req.http.params.get("retranslate") :
             page = req.http.params.get("page")

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
@@ -9,7 +10,6 @@ import requests
 import docker
 import socket
 import sys
-
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
@@ -115,11 +115,11 @@ urls = [    { "loc" : "api?human=0&alien=storylist&tzoffset=18000", "method" : "
             { "loc" : "api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=48&trans_id=42&page=0", "method" : "get" },
             { "loc" : "api?human=0&alien=home", "method" : "post", "data" : dict(retranslate = '1', page = '0', uuid = 'b220074e-f1a7-417b-9f83-e63cebea02cb') },
             # Assert that the default has changed and move multiple_select to actual JSON, then retry the request
-#           { "loc" : "", "method" : "get" },
-#           { "loc" : "", "method" : "get" },
-#           { "loc" : "", "method" : "get" },
-#           { "loc" : "", "method" : "get" },
-#           { "loc" : "", "method" : "get" },
+            { "loc" : "api?human=0&alien=edit&view=1", "method" : "get" },
+            { "loc" : "api?human=0&alien=edit&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=edit&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&editslist=1&page=0", "method" : "get" },
+            { "loc" : "api?human=0&alien=edit", "data" : { "oprequest" : '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"小鸟","pinyin":"xiǎo+niǎo","nbunit":"8","tid":"0b23c772194ef5a97aa23d5590105665","index":"-1","pagenum":"0","out":""},{"operation":"merge","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":2,"failed":false,"chars":"跳","pinyin":"tiào","nbunit0":"45","tid0":"0cdbc17e9ed386e3f3df2b26ed5b5187","index0":"-1","page0":"0","chars0":"跳","pinyin0":"tiào","nbunit1":"46","tid1":"0cdbc17e9ed386e3f3df2b26ed5b5187","index1":"-1","page1":"0","chars1":"跳","pinyin1":"tiào","out":""}]', "uuid" : "b220074e-f1a7-417b-9f83-e63cebea02cb"}, "method" : "post" },
+           { "loc" : "api?human=0&alien=edit", "method" : "post", "data" : { "oprequest" : '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"山羊","pinyin":"shān+yáng","nbunit":"111","tid":"fb7335cbba25395d3b9a867ddad630fd","index":"-1","pagenum":"0","out":""}]', "uuid" : "b220074e-f1a7-417b-9f83-e63cebea02cb" } },
 #           { "loc" : "", "method" : "get" },
 #           { "loc" : "", "method" : "get" },
 #           { "loc" : "", "method" : "get" },
@@ -128,15 +128,20 @@ urls = [    { "loc" : "api?human=0&alien=storylist&tzoffset=18000", "method" : "
 #           { "loc" : "", "method" : "get" },
         ]
 
-for url in urls :
-    print url["method"] + ": " + url["loc"]
-    if url["method"] == "get" :
-        r = s.get("http://localhost/" + url["loc"])
-    else :
-        r = s.get("http://localhost/" + url["loc"], data = url["data"])
-    assert(r.status_code == 200)
-    assert(json_loads(r.text)['success'])
 
+def run_tests() :
+    for url in urls :
+        print url["method"] + ": " + url["loc"]
+        if url["method"] == "get" :
+            r = s.get("http://localhost/" + url["loc"])
+        else :
+            print "   Post data: " + str(url["data"])
+            r = s.post("http://localhost/" + url["loc"], data = url["data"])
+        assert(r.status_code == 200)
+        assert(json_loads(r.text)['success'])
+
+
+run_tests()
 
 print "Logging out..."
 r = s.get("http://localhost/disconnect")
