@@ -105,44 +105,50 @@ function local(msgid) {
     }
 
     function go_success(response) {
-            if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
-                $(id).html(response);
-            } else {
-		var aff = false;
-                if (form)
-                    aff = $(form).attr('ajaxfinish');
+        if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+            $(id).html(response);
+        } else {
+            var aff = false;
+            if (form)
+                aff = $(form).attr('ajaxfinish');
 
-                if(id != undefined && id != '') {
+            if(id != undefined && id != '') {
+                try {
+                    response = JSON.parse(response);
+                    $(id).html(response.desc);
+                } catch(err) {
+                    console.log("ERROR parsing: " + response);
                     $(id).html(response);
-                } else {
-                    if(!aff) {
-                        try {
-                            response = JSON.parse(response);
-                        } catch(err) {
-                            console.log("ERROR parsing: " + response);
-                        }
+                }
+            } else {
+                if(!aff) {
+                    try {
+                        response = JSON.parse(response);
+                    } catch(err) {
+                        console.log("ERROR parsing: " + response);
                     }
                 }
-
-		if(form && aff) {
-                        if (id == '' || id == undefined) {
-                            eval(aff + "(" + response + ")");
-                        } else {
-                            eval(aff + "('" + response + "')");
-                        }
-		} else {
-			go_callback(callback, response, opaque);
-
-			if(id != undefined && id != '' && response.indexOf('<script') != -1) {
-				//have to replace script or else jQuery will remove them
-				$(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
-				    if (!$(this).attr('src')) {
-					eval($(this).text());
-				    }
-				});
-			}
-		}
             }
+
+            if(form && aff) {
+                if (id == '' || id == undefined) {
+                    eval(aff + "(" + response + ")");
+                } else {
+                    eval(aff + "('" + response + "')");
+                }
+            } else {
+                go_callback(callback, response, opaque);
+
+                if(id != undefined && id != '' && response.indexOf('<script') != -1) {
+                    //have to replace script or else jQuery will remove them
+                    $(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
+                        if (!$(this).attr('src')) {
+                            eval($(this).text());
+                        }
+                    });
+                }
+            }
+        }
       }
 
       jQuery.support.cors = true;
@@ -470,8 +476,8 @@ function process_edits(uuid, operation, batch) {
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      // 'learn_' is not a typo. It's used in form_loaded() so as not to class with the id 'learn'
-      out += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='edit'>"
+      // 'learn_' is not a typo. It's used in form_loaded() so as not to clash with the id 'learn'
+      out += "<form ajaxfinish='install_pages_if_needed' id='learn_' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -571,7 +577,6 @@ function process_instant(with_spaces, lang, source, target, username, password) 
      } else {
         $.mobile.navigate('#instant');
         $('#instantspin').attr('style', 'display: inline');
-        $('#instantdestination').html("");
 
        var url = 'instant&source=' + allchars + "&lang=" + lang + "&source_language=" + source + "&target_language=" + target
 
@@ -580,10 +585,10 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       go(false, '#instantdestination', url,
+       go(false, '', url,
           local("onlineoffline"),
           offinstantspin,
-          $("html").scrollTop());
+          false);
        }
 }
 
@@ -614,15 +619,16 @@ function multipopinstall(trans_id, unused) {
                                    }});
 }
 
-function multipoprefresh(data, opaque) {
+function multipoprefresh(json, opaque) {
     var trans_id = opaque[0];
     var spy = opaque[1];
     $('#ttip' + trans_id).html(spy);
     $('#ttip' + trans_id).popover('hide');
+    $('#pop' + trans_id).html(json.desc);
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '#pop' + trans_id, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
+          go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
           + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
 		  unavailable, 
 		  multipoprefresh,
@@ -633,7 +639,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='home'>"
+      form += "<form id='learn_' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -770,17 +776,23 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
 }
 
 function memory_finish(data, opaque) {
-    var hash = opaque;
-    toggle(hash, 0);
-    toggle_specific('memory', hash, 0);
+    var id = opaque[0];
+    var memorized = opaque[1];
+    toggle(id, 0);
+    toggle_specific('memory', id, 0);
+    if (memorized) {
+        $('#memoitem' + id).attr('style', 'display: block');
+    } else {
+        $('#memoitem' + id).attr('style', 'display: none');
+    }
 }
 
 function memory(id, uuid, nb_unit, memorized, page) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+   go(false, '', 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
           unavailable, 
           memory_finish,
-          id);
+          [id, memorized]);
 }
 
 function memorize(id, uuid, nb_unit, page) {
@@ -793,7 +805,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
    toggle_specific('memory', id, 0);
-   go(false, '#memory' + id, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
+   go(false, '', 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct, 
           unavailable, 
           memory_finish,
           id);
@@ -849,15 +861,41 @@ if ($.browser.device == true) {
 }
 */
 
-function offinstantspin(data, curr) {
-    //var data = JSON.parse(data);
+function offinstantspin(json, opaque) {
     $('#instantspin').attr('style', 'display: none');
+    if (json.success) {
+        $("#instanterror").attr('style', 'display: none');
+        $("#instantdestination").attr('style', 'display: block');
+        $("#selectedresult").html("(" + json.desc.whole.source + "): " + json.desc.whole.target);
+        var pieceresult = "";
+        for (var x = 0; x < json.desc.online.length; x++) {
+            pieceresult += "(" + json.desc.online[x].char + "): "; 
+            pieceresult += json.desc.online[x].target + "<br/>"; 
+        }
+        $("#piecemealresult").html(pieceresult);
+        var offlineresult = "";
+        for (var x = 0; x < json.desc.offline.length; x++) {
+            offlineresult += "(" + json.desc.offline[x].request + "): "; 
+            if (json.desc.offline[x].target) {
+                offlineresult += json.desc.offline[x].target; 
+            } else {
+                offlineresult += local('noinstant'); 
+            }
+            offlineresult += "<br/>";
+        }
+        $("#offlineresult").html(offlineresult);
+
+    } else {
+        $("#instantdestination").attr('style', 'display: none');
+        $("#instanterror").attr('style', 'display: block');
+        $("#instanterror").html(json.desc);
+    }
     //$('#instantModal').modal('show');
 //    $(document).unbind("mouseup");
 //    $(document).unbind("mouseleave");
 //    $(document).unbind("copy");
 //    install_highlight();
-    $("html").scrollTop(curr);
+//    $("html").scrollTop(curr);
 }
 
 function install_highlight() {
@@ -884,11 +922,10 @@ function install_highlight() {
       if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
-           $('#instantdestination').html("");
-           go(false, '#instantdestination', 'instant&source=' + st + "&lang=en", 
+           go(false, '', 'instant&source=' + st + "&lang=en", 
               unavailable, 
               offinstantspin,
-              $("html").scrollTop());
+              false);
       }
     }
 
@@ -925,7 +962,8 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 }
 
 var list_mode = true;
-function list_reload_finish(data, opaque) {
+function list_reload_finish(json, opaque) {
+      $("#" + opaque).html(json.desc);
       form_loaded(false, true);
 }
 
@@ -933,24 +971,25 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#memolist', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
+           go(false, '', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
               unavailable, 
               list_reload_finish,
-              false);
+              "memolist");
+
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '#editslist', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+           go(false, '', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
-                  false);
+                  'editslist');
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '#history', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+           go(false, '', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable, 
                   list_reload_finish,
-                  false);
+                  'history');
        }
 }
 
@@ -1036,23 +1075,40 @@ function installreading() {
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
     go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=1",
-        'sync error', 
-        function(unused) { 
-         document.getElementById(name).innerHTML = local('started');
-         document.getElementById(name).onclick = function() { unsyncstory(name, uuid); }; 
-        },
-        false);
+        'sync error', storylist_finish,
+        { element: name, label: local('started'), cleanup: unsyncstory});
+}
+
+function storylist_finish(json, params) {
+    if (!json.success) {
+        $("#" + params.element).html("Error: " + json.desc);
+        return;
+    }
+    if (json.firstload) {
+        firstload = '#' + json.firstload;
+        for(var tidx = 0; tidx < json.translist.length; tidx++) {
+            trans_start(json.translist[tidx]);
+        }
+        translist = [];
+ 
+        if (params.cleanup) {
+            document.getElementById(params.element).innerHTML = params.label;
+            document.getElementById(params.element).onclick = function() { params.cleanup(name, uuid); }; 
+        } else { 
+            finishedloading(json.storylist, params.navto);
+        }
+
+        $("#" + params.element).html(json.storylist); 
+    } else if(json.reload) {
+        loadstories(false, false);
+    }
 }
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '#' + name, 'storylist&uuid=' + uuid + "&sync=0",
-        'sync error', 
-        function(unused) { 
-         document.getElementById(name).innerHTML = local('stopped');
-         document.getElementById(name).onclick = function() { syncstory(name, uuid); }; 
-        },
-        false);
+    go(false, '', 'storylist&uuid=' + uuid + "&sync=0",
+        'sync error', storylist_finish,
+        { element: name, label: local('stopped'), cleanup: syncstory});
 }
 
 var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
@@ -1088,10 +1144,10 @@ function finishedloading(storylist, navto) {
 
 function loadstories(unused_data, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '#storypages', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go(false, '', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         unavailable, 
-        finishedloading,
-        navto);
+        storylist_finish,
+        { element: 'storypages', navto: navto});
 }
 
 function reviewstory(uuid, which) {
@@ -1648,6 +1704,10 @@ onunload = function() {
 };
 
 function install_pages_if_needed(json) {
+    done();
+    $('#regroupModal').modal('hide');
+    $('#reviewModal').modal('hide');
+
     if ("install_pages" in json) {
         install_pages(json.install_pages.action,
                       json.install_pages.pages,
@@ -1657,6 +1717,10 @@ function install_pages_if_needed(json) {
                       json.install_pages.reload,
                       json.install_pages.meaning_mode)
     }
+}
+
+function retrans_finish(json) {
+   install_pages_if_needed(json); 
 }
 
 function start_learning_finished(json, action) {

@@ -15,9 +15,9 @@
             <div class='panel-group' id='panelReading' style='color: black'>
                 <!--(for x in memresult[3])-->
                     <!--py, target, unit, nb_unit, trans_id, page_idx = progress -->
-                    <div class='panel panel-default'>
+                    <div class='panel panel-default' id='memoitem@!str(x[4])!@'>
                         <div class='panel-heading'>
-                            <a style='cursor: pointer' class='trans btn-default' onclick="forget('@!str(x[4])!@', '@!story['uuid']!@', '@!x[3]!@)', '@!str(x[5])!@')">
+                            <a style='cursor: pointer' class='trans btn-default' onclick="forget('@!str(x[4])!@', '@!story['uuid']!@', '@!x[3]!@', '@!str(x[5])!@')">
                             <i class='glyphicon glyphicon-remove'></i>
                             </a>
                             &#160; @!x[0]!@ @!"".join(x[2]['source'])!@: <a class='panel-toggle' style='display: inline' data-toggle='collapse' data-parent='#panelReading' href='#collapse@!str(x[4])!@'>

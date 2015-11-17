@@ -199,7 +199,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         else :
             doc = new_doc
 
-        mdebug("Putting attachment of length: " + str(len(contents)))
+        if type(contents) != file :
+            mdebug("Putting attachment of length: " + str(len(contents)))
 
         return self.db.put_attachment(doc, contents, filename)
 

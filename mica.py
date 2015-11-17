@@ -179,6 +179,8 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
+        self.not_replicated = False
+        self.human = True if int(self.http.params.get("human", "1")) else False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
         minfo("Request: " + self.http.url + " action: " + self.action)
@@ -724,6 +726,11 @@ class MICA(object):
             if "desc" not in json :
                  json["desc"] = desc
             json["success"] = True if not error else False
+
+            if json["success"] and req.not_replicated :
+                mdebug("API request was true, but setting to false because of replication error.")
+                json["success"] = False
+
             #mdebug("Dumping: " + str(json))
             if not mobile :
                 json["cookie"] = req.session.value["cookie"]
@@ -1230,7 +1237,7 @@ class MICA(object):
         # Offline indicates a count of how many words were translated using an offline dictionary
         req.onlineoffline += _("Offline") + ": " + str(offline)
 
-        return run_template(req, ReviewElement)
+        return self.api(req, run_template(req, ReviewElement))
 
     def render_editslist(self, req, story) :
         req.page = str(req.http.params.get("page"))
@@ -1303,7 +1310,7 @@ class MICA(object):
         req.story = story
         req.history = history
 
-        return run_template(req, EditElement)
+        return self.api(req, run_template(req, EditElement))
 
     def view_outline(self, req, uuid, name, story, start_page, view_mode, meaning_mode) :
         if not story["translated"] :
@@ -2088,6 +2095,7 @@ class MICA(object):
               """
 
     def makestorylist(self, req, tzoffset):
+        translist = []
         untrans_count = 0
         reading_count = 0
         newstory_count = 0
@@ -2180,7 +2188,7 @@ class MICA(object):
                     untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
 
                     if "translating" in story and story["translating"] :
-                        untrans.append("\n<script>translist.push('" + story["uuid"] + "');</script>")
+                        translist.append(story['uuid'])
                     untrans.append(closing)
             else : 
                 if finished :
@@ -2199,7 +2207,7 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
                    
-        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count] 
+        return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist] 
     
     def memocount(self, req, story, page):
         added = {}
@@ -2300,7 +2308,7 @@ class MICA(object):
             for char in curr["source"] :
                 groups.append(char.encode("utf-8"))
 
-            processor.parse_page(False, req, story, groups, page, temp_units = True)
+            processor.parse_page(req, story, groups, page, temp_units = True)
 
             page_dict["units"] = before + story["temp_units"] + after
 
@@ -2329,7 +2337,7 @@ class MICA(object):
                 for char in chargroup["source"] :
                     group += char.encode("utf-8")
 
-            processor.parse_page(False, req, story, [group], page, temp_units = True)
+            processor.parse_page(req, story, [group], page, temp_units = True)
 
             if len(story["temp_units"]) == 1 :
                 merged = story["temp_units"][0]
@@ -2377,7 +2385,7 @@ class MICA(object):
                 del story["temp_units"]
             
         mdebug("Completed edit with offset: " + str(offset))
-        return [True, offset]
+        return offset
 
     @serial
     def storyinit(self, req, uuid, name) :
@@ -2652,11 +2660,18 @@ class MICA(object):
         if "current_page" not in story or story["current_page"] != str(page) :
             mdebug("Setting story " + story["name"] + " to page: " + str(page))
             tmp_story = req.db[self.story(req, story["name"])]
+
+            pages = self.nb_pages(req, tmp_story)
+            if (int(page) + 1) > pages :
+                mwarn("Can't set the current page to higher than the number of pages. Clamping to last page.")
+                page = pages - 1
+                
             tmp_story["current_page"] = story["current_page"] = str(page)
             req.db[self.story(req, story["name"])] = tmp_story
 
 
     def warn_not_replicated(self, req, frontpage = False, harmless = False) :
+        req.not_replicated = True
         self.clear_story(req)
 
         if mobile :
@@ -3673,7 +3688,7 @@ class MICA(object):
         page = req.http.params.get("page")
         unit = self.multiple_select(req, True, nb_unit, mindex, trans_id, page, story["name"])
 
-        return self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page)
+        return self.api(req, self.polyphomes(req, story, story["uuid"], unit, nb_unit, trans_id, page))
 
     def render_memorizednostory(self, req, story) :
         memorized = int(req.http.params.get("memorizednostory"))
@@ -3693,7 +3708,7 @@ class MICA(object):
             if req.db.doc_exist(self.memorized(req, nshash)) :
                 del req.db[self.memorized(req, nshash)]
 
-        return  _("Memorized!") + " " + str(nshash)
+        return self.api(req)
 
     def render_memorized(self, req, story) :
         memorized = int(req.http.params.get("memorized"))
@@ -3718,7 +3733,7 @@ class MICA(object):
             if req.db.doc_exist(self.memorized(req, unit["hash"])) :
                 del req.db[self.memorized(req, unit["hash"])]
             
-        return _("Memorized!") + " " + unit["hash"]
+        return self.api(req)
 
     def render_storyupgrade(self, req, story) :
         name = story["name"]
@@ -3796,7 +3811,7 @@ class MICA(object):
                 total_memorized, total_unique, unique, progress = req.memresult
                 req.mempercent = str(int((float(total_memorized) / float(total_unique)) * 100)) if total_unique > 0 else 0
 
-        return run_template(req, ReadElement)
+        return self.api(req, desc = run_template(req, ReadElement))
 
     def render_story(self, req, uuid, start_page) :
         req.viewpageresult = False
@@ -4181,7 +4196,7 @@ class MICA(object):
         req.processors = self.processors
         req.scratch = params["scratch"]
         req.userdb = self.userdb
-        return out + run_template(req, AccountElement)
+        return self.api(req, out + run_template(req, AccountElement))
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
@@ -4281,28 +4296,29 @@ class MICA(object):
             if mobile :
                 req.db.stop_replication()
                 if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return _("Failed to change synchronization. Please try again") + ": " + tofrom
+                    return self.bad_api(req, _("Failed to change synchronization. Please try again") + ": " + tofrom)
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
             req.session.save()
 
-            return "changed"
+            return self.api(req, "changed")
 
         if not req.http.params.get("tzoffset") :
-            return "<script>loadstories(false, false);</script>"
+            #return "<script>loadstories(false, false);</script>"
+            return self.api(req, json = dict(reload = True))
 
         tzoffset = int(req.http.params.get("tzoffset"))
 
-        storylist = ["<script>var translist = [];</script>\n"]
+        storylist = []
 
-        untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count = self.makestorylist(req, tzoffset)
+        untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count, translist = self.makestorylist(req, tzoffset)
         
-        reading.append("\n</ul></div></div>\n")
-        noreview.append("\n</ul></div></div>\n")
-        untrans.append("\n</ul></div></div>\n")
-        finish.append("\n</ul></div></div>\n")
-        newstory.append("\n</ul></div></div>\n")
+        reading.append(u"\n</ul></div></div>\n")
+        noreview.append(u"\n</ul></div></div>\n")
+        untrans.append(u"\n</ul></div></div>\n")
+        finish.append(u"\n</ul></div></div>\n")
+        newstory.append(u"\n</ul></div></div>\n")
 
         chat_all = [self.storyTemplate("Chatting")]
 
@@ -4311,7 +4327,7 @@ class MICA(object):
                 chat_all.append("<li>" + _("Recent") + " " + translated_periods[period] + ":</li>")
                 chat_all += chatting[period]
 
-        chat_all.append("\n</ul></div></div>\n")
+        chat_all.append(u"\n</ul></div></div>\n")
 
         storylist += newstory + reading + chat_all + untrans + noreview + finish
 
@@ -4323,22 +4339,11 @@ class MICA(object):
         elif reading_count :
             firstload = "reading"
 
-        scripts = """
-                   <script>
-                   firstload = '#""" + firstload + """';
-                   for(var tidx = 0; tidx < translist.length; tidx++) {
-                       trans_start(translist[tidx]);
-                   }
-                   translist = [];
-                   </script>
-                  """
-
         try :
-            finallist = "".join(storylist) + scripts
+            return self.api(req, json = dict(firstload = firstload, translist = translist, reload = False, storylist = u"".join(storylist)))
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
-
-        return finallist
+            return self.bad_api(req, _("Storylist failed") + ": " + str(e))
 
     def baidu_compliance_fix(self, session):
         self.fixed = False
@@ -4819,30 +4824,17 @@ class MICA(object):
                 continue
 
             try :
-                result = self.operation(req, story, edit, offset)
+                offset = self.operation(req, story, edit, offset)
             except OSError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req)
+                return self.bad_api(req, self.self.warn_not_replicated(req))
             except AttributeError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req)
-            
-            if not result[0] and len(result) > 1 :
-                return self.render_mainpage(req, result[1])
-            
-            ret = result[1:]
-            success = ret[0]
-            offset = ret[1]
-            
-            if not success :
-                # This occurs in Edit mode when a merge/split request failed.
-                req.viewpageresult = _("Invalid Operation") + ": " + str(edit)
-
-        return False
+                return self.bad_api(req, self.self.warn_not_replicated(req))
 
     def render_rest(self, req, from_third_party) :
         pageid = "#messages"
@@ -4877,6 +4869,7 @@ class MICA(object):
 
     def render(self, req) :
         global times
+        mdebug(str(req.http.params))
         if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
             func = getattr(self, "render_" + req.action)
             return func(req)
@@ -5062,15 +5055,17 @@ class MICA(object):
             if "current_page" in tmp_story :
                 start_page = tmp_story["current_page"]
                 mdebug("Loading start page: " + str(start_page))
+                pages = self.nb_pages(req, tmp_story)
+                if (int(start_page) + 1) > pages :
+                    mwarn("Can't load a start page that's higher than the number of pages. Clamping to last page.")
+                    start_page = pages - 1
             
-        for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist" ] :
+        for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist", "oprequest" ] :
             if req.http.params.get(param) :
-                return getattr(self, "render_" + param)(req, story)
-
-        if req.http.params.get("oprequest") :
-            oprequest_result = self.render_oprequest(req, story)
-            if oprequest_result :
-                return oprequest_result
+                result = getattr(self, "render_" + param)(req, story)
+                # Oprequests still need to return a rendered page.
+                if param != "oprequest" :
+                    return result
 
         if req.http.params.get("retranslate") :
             page = req.http.params.get("page")
