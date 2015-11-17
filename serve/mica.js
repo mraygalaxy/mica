@@ -113,7 +113,13 @@ function local(msgid) {
                 aff = $(form).attr('ajaxfinish');
 
             if(id != undefined && id != '') {
-                $(id).html(response);
+                try {
+                    response = JSON.parse(response);
+                    $(id).html(response.desc);
+                } catch(err) {
+                    console.log("ERROR parsing: " + response);
+                    $(id).html(response);
+                }
             } else {
                 if(!aff) {
                     try {
@@ -633,7 +639,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' class='ajaxform' data-ajax='false' method='post' action='home'>"
+      form += "<form id='learn_' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -1700,6 +1706,7 @@ onunload = function() {
 function install_pages_if_needed(json) {
     done();
     $('#regroupModal').modal('hide');
+    $('#reviewModal').modal('hide');
 
     if ("install_pages" in json) {
         install_pages(json.install_pages.action,

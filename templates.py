@@ -21,10 +21,6 @@ for l, readable in lang.iteritems() :
     if locale not in softlangs :
         softlangs.append((locale, readable))
 
-if not mobile :
-    from requests_oauthlib import OAuth2Session
-    from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
-
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
 class MessagesElement(Element) :
@@ -322,24 +318,14 @@ class FrontPageElement(CommonElement) :
 
     @renderer
     def thirdparty(self, request, tag) :
-       for name, creds in self.req.oauth.iteritems() :
-           if name == "redirect" :
-               continue
-           service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+        for link in generate_oauth_links(self.req.oauth) :
+            creds = link["creds"]
+            del link["creds"]
+            servicetag = tags.a(**link)
+            servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+            tag(tags.td(servicetag))
 
-           if name == "facebook" :
-               service = facebook_compliance_fix(service)
-
-           if name == "weibo" :
-               service = weibo_compliance_fix(service)
-
-           authorization_url, state = service.authorization_url(creds["authorization_base_url"])
-
-           servicetag = tags.a(onclick = "loading()", href = authorization_url, title=name, **{"data-ajax" : "false"})
-           servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
-           tag(tags.td(servicetag))
-
-       return tag
+        return tag
 
     @renderer
     def head(self, request, tag) :

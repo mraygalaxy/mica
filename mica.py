@@ -179,6 +179,7 @@ class Params(object) :
     def __init__(self, environ, session):
         self.pid = "none"
         self.http = Request(environ)  
+        self.not_replicated = False
         self.human = True if int(self.http.params.get("human", "1")) else False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
@@ -725,6 +726,11 @@ class MICA(object):
             if "desc" not in json :
                  json["desc"] = desc
             json["success"] = True if not error else False
+
+            if json["success"] and req.not_replicated :
+                mdebug("API request was true, but setting to false because of replication error.")
+                json["success"] = False
+
             #mdebug("Dumping: " + str(json))
             if not mobile :
                 json["cookie"] = req.session.value["cookie"]
@@ -2654,11 +2660,18 @@ class MICA(object):
         if "current_page" not in story or story["current_page"] != str(page) :
             mdebug("Setting story " + story["name"] + " to page: " + str(page))
             tmp_story = req.db[self.story(req, story["name"])]
+
+            pages = self.nb_pages(req, tmp_story)
+            if (int(page) + 1) > pages :
+                mwarn("Can't set the current page to higher than the number of pages. Clamping to last page.")
+                page = pages - 1
+                
             tmp_story["current_page"] = story["current_page"] = str(page)
             req.db[self.story(req, story["name"])] = tmp_story
 
 
     def warn_not_replicated(self, req, frontpage = False, harmless = False) :
+        req.not_replicated = True
         self.clear_story(req)
 
         if mobile :
@@ -4183,7 +4196,7 @@ class MICA(object):
         req.processors = self.processors
         req.scratch = params["scratch"]
         req.userdb = self.userdb
-        return out + run_template(req, AccountElement)
+        return self.api(req, out + run_template(req, AccountElement))
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
@@ -5042,6 +5055,10 @@ class MICA(object):
             if "current_page" in tmp_story :
                 start_page = tmp_story["current_page"]
                 mdebug("Loading start page: " + str(start_page))
+                pages = self.nb_pages(req, tmp_story)
+                if (int(start_page) + 1) > pages :
+                    mwarn("Can't load a start page that's higher than the number of pages. Clamping to last page.")
+                    start_page = pages - 1
             
         for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist", "oprequest" ] :
             if req.http.params.get(param) :
