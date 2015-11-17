@@ -440,7 +440,7 @@ def generate_oauth_links(oauth, slash = "") :
     for name, creds in oauth.iteritems() :
         if name == "redirect" :
             continue
-        service = OAuth2Session(creds["client_id"], redirect_uri=oauth["redirect"] + "/" + name, scope = creds["scope"])
+        service = OAuth2Session(creds["client_id"], redirect_uri=oauth["redirect"] + slash + name, scope = creds["scope"])
 
         if name == "facebook" :
             service = facebook_compliance_fix(service)
