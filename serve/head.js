@@ -208,6 +208,7 @@ $(document).ready(function () {
 	});
 });
 
+var translist = [];
 var token = encodeURIComponent($('#token').html());
 $.couch.urlPrefix = $('#creds').html();
 var db = $.couch.db($('#database').html()); 
