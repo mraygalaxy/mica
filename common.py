@@ -220,6 +220,10 @@ except ImportError, e :
         mdebug("pyjnius and pyobjus not available. Probably on a server.")
         mobile = False
 
+if not mobile :
+    from requests_oauthlib import OAuth2Session
+    from requests_oauthlib.compliance_fixes import facebook_compliance_fix, weibo_compliance_fix
+
 def mica_init_logging(logfile, duplicate = False) :
     global micalogger
     global duplicate_logger
@@ -408,6 +412,7 @@ def tracefunc(frame, event, arg, indent=[0]):
         del tree[-1]
 
     return tracefunc
+
 def call_report() :
     global times
     mdebug("Times length: " + str(len(times)))
@@ -429,3 +434,22 @@ def call_report() :
 
 def sdict(**kwargs) :
     return json_dumps(kwargs)
+
+def generate_oauth_links(oauth, slash = "") :
+    links = []
+    for name, creds in oauth.iteritems() :
+        if name == "redirect" :
+            continue
+        service = OAuth2Session(creds["client_id"], redirect_uri=oauth["redirect"] + "/" + name, scope = creds["scope"])
+
+        if name == "facebook" :
+            service = facebook_compliance_fix(service)
+
+        if name == "weibo" :
+            service = weibo_compliance_fix(service)
+
+        authorization_url, state = service.authorization_url(creds["authorization_base_url"])
+        print "URL: " + authorization_url
+        links.append({ "onclick" : "loading()", "href" : authorization_url, "title" : name, "data-ajax" : "false", "creds" : creds})
+
+    return links
