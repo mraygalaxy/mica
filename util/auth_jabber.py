@@ -57,7 +57,7 @@ def authenticate(username, password, auth_url) :
         url = auth_url + "/auth"
         log.write("URL: " + url + "\n")
 
-	up = { "exchange" : myquote(output_dict) }
+        up = { "exchange" : myquote(output_dict) }
         req = urllib2_Request(url, urllib_urlencode(up))
         res = jabber_crypt.loads(urllib2_unquote(urllib2_urlopen(req).read().encode("utf-8")))
 

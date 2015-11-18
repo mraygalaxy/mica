@@ -171,7 +171,7 @@ options = [
     ),
 
     dict(
-        image = 'jabber3',
+        image = 'jabber4',
         command = ['/home/mrhines/mica/restart.sh'],
         hostname = 'jabber',
         name = 'jabber',
@@ -321,7 +321,7 @@ oresp.start()
 sleep(3)
 
 urls.append({ "method" : "logout", "loc" : "logout" })
-run_tests()
+#run_tests()
 
 httpd.socket.close()
 
