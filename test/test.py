@@ -141,7 +141,7 @@ def run_tests() :
 c = Client(base_url='unix://var/run/docker.sock')
 s = requests.Session()
 
-options = dict(
+mica_options = dict(
         image = 'micadev7', 
         command = ['/home/mrhines/mica/restart.sh'], 
         name = 'couchdev',
@@ -155,32 +155,61 @@ options = dict(
         })
     )
 
-cleanup(options["name"])
+options = [
+    dict(
+        image = 'micadev7', 
+        command = ['/home/mrhines/mica/restart.sh'], 
+        name = 'couchdev',
+        tty = True,
+        ports = [5984, 22, 6984, 7984],
+        host_config = c.create_host_config(port_bindings = {
+                "22/tcp":   ("0.0.0.0", 2222),
+                "5984/tcp": ("0.0.0.0", 5984),
+                "6984/tcp": ("0.0.0.0", 6984),
+                "7984/tcp": ("0.0.0.0", 7984),
+        })
+    ),
 
-print "Creating container: " + options["name"]
-details = c.create_container(**options)
+    dict(
+        image = 'jabber3',
+        command = ['/home/mrhines/mica/restart.sh'],
+        hostname = 'jabber',
+        name = 'jabber',
+        tty = True,
+        ports = [5222, 22, 5280, 5223, 5281],
+        host_config = c.create_host_config(port_bindings = {
+                "22/tcp":   ("0.0.0.0", 4444),
+                "5222/tcp": ("0.0.0.0", 5222),
+                "5223/tcp": ("0.0.0.0", 5223),
+                "5280/tcp": ("0.0.0.0", 5280),
+                "5281/tcp": ("0.0.0.0", 5281),
+        })
+    ),
+]
 
-print "Creation complete."
+for option in options :
+    cleanup(option["name"])
+    print "Creating container: " + option["name"]
+    details = c.create_container(**option)
+    print "Creation complete."
+    c.start(option["name"])
 
-c.start(options["name"])
+    port = option["ports"][0]
+    print "Started. Waiting for port " + str(port) + " ready..."
+    hostname = "localhost"
+    print "Checking " + hostname + ": " + str(port)
+    while True :
+        if check_port(hostname, port) :
+            try :
+                r = s.get("http://" + hostname + ":" + str(port))
+                print "Container " + option["name"] + " ready. Running tests."
+                break
+            except requests.exceptions.ConnectionError, e :
+                print "Container " + option["name"] + " not ready: " + str(e) + ". Waiting..."
+        else :
+            print "Port not open yet. Waiting..."
 
-print "Started. Waiting for couch ready..."
-
-port = 5984
-hostname = "localhost"
-print "Checking " + hostname + ": " + str(port)
-while True :
-    if check_port(hostname, port) :
-        try :
-            r = s.get("http://" + hostname + ":" + str(port))
-            print "Container ready. Running tests."
-            break
-        except requests.exceptions.ConnectionError, e :
-            print "Container not ready: " + str(e) + ". Waiting..."
-    else :
-        print "Port not open yet. Waiting..."
-
-    sleep(1)
+        sleep(1)
 
 r = s.get("http://localhost")
 assert(r.status_code == 200)

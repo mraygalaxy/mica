@@ -15,8 +15,14 @@ import sys
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters
+from crypticle import *
 
-log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
+try :
+    log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
+    jabber_crypt = Crypticle(parameters["jabber_auth"])
+except Exception, e :
+    log.write("Goddamnit: " + str(e))
+    exit(1)
 
 if getdefaultencoding() != "utf-8" :
     log.write("Correcting the default encoding back to UTF-8 from " + getdefaultencoding() + "\n")
@@ -33,7 +39,6 @@ def myquote(val):
 
     return val_unquoted
 
-
 def from_ejabberd():
     input_length = sys.stdin.read(2)
     (size,) = unpack('>h', input_length)
@@ -44,13 +49,14 @@ def to_ejabberd(answer):
     sys.stdout.write(token)
     sys.stdout.flush()
 
-
 def authenticate(username, password, auth_url) :
     try :
-        username_unquoted = myquote(username.replace("%40", "@"))
-        password_unquoted = myquote(password)
-        url = auth_url + u"/auth?username=" + username_unquoted + u"&password=" + password_unquoted
-	#log.write("URL: " + url + "\n")
+        output_dict = {"username" : username_unquoted, "password" : password}
+        output_dict_unquoted = myquote(output_dict)
+        url = auth_url + u"/auth?exchange=" + jabber_crypt.dumps(output_dict_unquoted)
+
+        log.write("URL: " + url + "\n")
+
         req = urllib2_Request(url)
         res = urllib2_urlopen(req).read()
 
