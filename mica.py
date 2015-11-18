@@ -3136,9 +3136,10 @@ class MICA(object):
             mwarn("Bad request from: " + req.source)
             raise exc.HTTPBadRequest("auth: you did a bad thing")
 
-        input_dict = self.jabber_crypt.loads(req.http.params.get("exchange"))
-        username = input_dict["username"].lower()
-        password = input_dict["password"]
+        input_dict = self.jabber_crypt.loads(unquote(req.http.params.get("exchange").encode("utf-8")))
+
+        username = unquote(input_dict["username"].lower())
+        password = unquote(input_dict["password"])
 
         auth_user = self.userdb.try_get("org.couchdb.user:" + username)
 
@@ -3146,13 +3147,14 @@ class MICA(object):
             auth_user, reason = self.authenticate(username, password, self.credentials())
 
             if not auth_user :
-                return 'bad'
+                mwarn("reason: " + str(reason))
+                return myquote(self.jabber_crypt.dumps('bad'))
             else :
                 mdebug("Success jabber auth w/ password: " + username)
         else :
             mdebug("Success jabber auth w/ token: " + username)
 
-        return 'good'
+        return myquote(self.jabber_crypt.dumps('good'))
 
     @api_validate
     def render_online(self, req) :

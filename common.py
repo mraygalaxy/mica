@@ -11,7 +11,7 @@ from os import path as os_path
 from sys import getdefaultencoding
 from locale import setlocale, LC_ALL, getlocale
 from gettext import install as gettext_install, GNUTranslations, NullTranslations
-from urllib2 import quote
+from urllib2 import quote, unquote
 from time import time as timest
 from traceback import extract_stack
 from sys import _getframe
