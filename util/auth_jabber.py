@@ -6,7 +6,8 @@ from os import path as os_path
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from struct import *
 from subprocess import *
-from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
+from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError, unquote as urllib2_unquote
+from urllib import urlencode as urllib_urlencode
 from time import sleep
 from sys import getdefaultencoding
 
@@ -17,8 +18,9 @@ sys.path = [cwd, cwd + "../"] + sys.path
 from params import parameters
 from crypticle import *
 
+log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
+
 try :
-    log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
     jabber_crypt = Crypticle(parameters["jabber_auth"])
 except Exception, e :
     log.write("Goddamnit: " + str(e))
@@ -51,14 +53,13 @@ def to_ejabberd(answer):
 
 def authenticate(username, password, auth_url) :
     try :
-        output_dict = {"username" : username_unquoted, "password" : password}
-        output_dict_unquoted = myquote(output_dict)
-        url = auth_url + u"/auth?exchange=" + jabber_crypt.dumps(output_dict_unquoted)
-
+        output_dict = jabber_crypt.dumps({"username" : username, "password" : password})
+        url = auth_url + "/auth"
         log.write("URL: " + url + "\n")
 
-        req = urllib2_Request(url)
-        res = urllib2_urlopen(req).read()
+	up = { "exchange" : myquote(output_dict) }
+        req = urllib2_Request(url, urllib_urlencode(up))
+        res = jabber_crypt.loads(urllib2_unquote(urllib2_urlopen(req).read().encode("utf-8")))
 
         if res == "good" :
             return 1, False
