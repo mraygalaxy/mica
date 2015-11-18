@@ -172,7 +172,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '', 'account', unavailable, form_loaded, true);
+               go(false, '', 'account', unavailable, account_complete, true);
         } else if (where == 'help') {
                go(false, '', 'help', unavailable, help_complete, false);
         } else if (where == 'privacy') {
