@@ -31,7 +31,7 @@ function switchinstall(initlist) {
 	}
 }
 
-function switchlist_complete(data, opaque) {
+function switchlist_complete(json, opaque) {
     done();
     if (json.success) {
        switchinstall(list_mode ? false : true);
