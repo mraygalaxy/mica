@@ -31,7 +31,7 @@ function switchinstall(initlist) {
 	}
 }
 
-function switchlist_finish(data, opaque) {
+function switchlist_complete(data, opaque) {
     done();
     if (json.success) {
        switchinstall(list_mode ? false : true);
@@ -42,7 +42,7 @@ function switchlist_finish(data, opaque) {
 }
 
 function switchlist() {
-   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, switchlist_finish, false);
+   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, switchlist_complete, false);
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
@@ -62,7 +62,13 @@ $(".ui-loader").hide();
 
 chat_loaded = false;
 
-function chat_success(data) {
+function chat_success(json, opaque) {
+    if (json.success) {
+        $("#chat_content").html(json.desc);
+    } else {
+        // This is an error. Do something better with the print here.
+        $("#chat_content").html(json.desc);
+    }
     chat_loaded = true;
 }
 
@@ -78,7 +84,7 @@ function learn_success(json, opaque) {
     }
 }
 
-function form_loaded_finish(data, opaque) {
+function form_loaded_complete(data, opaque) {
     done();
     $('#compactModal').modal('hide');
     $('#regroupModal').modal('hide');
@@ -100,7 +106,7 @@ function form_loaded(data, do_forms) {
                 if (destid == "#undefined")
                     destid = "#" + $(form).attr('id') + "content";
               }
-              go(form, destid, 'url_comes_from_form', unavailable, form_loaded_finish, true);
+              go(form, destid, 'url_comes_from_form', unavailable, form_loaded_complete, true);
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
@@ -130,6 +136,19 @@ $(document).on("pagecontainershow", function (e, data) {
     done();
 });
 
+function account_complete(json, opaque) {
+    $("#account_content").html(json.desc);
+    form_loaded(json.desc, opaque);
+}
+
+function help_complete(json, opaque) {
+    $("#help_content").html(json.desc);
+}
+
+function privacy_complete(json, opaque) {
+    $("#privacy_content").html(json.desc);
+}
+
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
        var where = data.toPage.split("#")[1];
@@ -141,7 +160,7 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
             loadstories(false, false);
         } else if (where == 'chat') {
                 if (!chat_loaded) {
-                   go(false, '#chat_content', 'chat', unavailable, chat_success, false);
+                   go(false, '', 'chat', unavailable, chat_success, false);
                 }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
@@ -153,11 +172,11 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '#account_content', 'account', unavailable, form_loaded, true);
+               go(false, '', 'account', unavailable, form_loaded, true);
         } else if (where == 'help') {
-               go(false, '#help_content', 'help', unavailable, false, false);
+               go(false, '', 'help', unavailable, help_complete, false);
         } else if (where == 'privacy') {
-               go(false, '#privacy_content', 'privacy', unavailable, false, false);
+               go(false, '', 'privacy', unavailable, privacy_complete, false);
         }
    }
    return true;
@@ -222,7 +241,8 @@ var username = encodeURIComponent($("#username").html());
  */
 if (authtype != 'cookie') {
    $.couch.login({name: username, password: token,
-                 error : function(stat, error, reason) {
-                        alert("Failed to login to couch listener on mobile! " + stat + " " + error + " " + reason);
-                }});
+         error : function(stat, error, reason) {
+            alert("Failed to login to couch listener on mobile! " + stat + " " + error + " " + reason);
+        }
+    });
 }

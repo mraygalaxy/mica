@@ -6,7 +6,8 @@ from os import path as os_path
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from struct import *
 from subprocess import *
-from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError
+from urllib2 import quote as urllib2_quote, Request as urllib2_Request, urlopen as urllib2_urlopen, URLError as urllib2_URLError, HTTPError as urllib2_HTTPError, unquote as urllib2_unquote
+from urllib import urlencode as urllib_urlencode
 from time import sleep
 from sys import getdefaultencoding
 
@@ -15,8 +16,15 @@ import sys
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters
+from crypticle import *
 
 log = open("/var/log/ejabberd/auth-filter.log",'a+b',0)
+
+try :
+    jabber_crypt = Crypticle(parameters["jabber_auth"])
+except Exception, e :
+    log.write("Goddamnit: " + str(e))
+    exit(1)
 
 if getdefaultencoding() != "utf-8" :
     log.write("Correcting the default encoding back to UTF-8 from " + getdefaultencoding() + "\n")
@@ -33,7 +41,6 @@ def myquote(val):
 
     return val_unquoted
 
-
 def from_ejabberd():
     input_length = sys.stdin.read(2)
     (size,) = unpack('>h', input_length)
@@ -44,15 +51,15 @@ def to_ejabberd(answer):
     sys.stdout.write(token)
     sys.stdout.flush()
 
-
 def authenticate(username, password, auth_url) :
     try :
-        username_unquoted = myquote(username.replace("%40", "@"))
-        password_unquoted = myquote(password)
-        url = auth_url + u"/auth?username=" + username_unquoted + u"&password=" + password_unquoted
-	#log.write("URL: " + url + "\n")
-        req = urllib2_Request(url)
-        res = urllib2_urlopen(req).read()
+        output_dict = jabber_crypt.dumps({"username" : username, "password" : password})
+        url = auth_url + "/auth"
+        log.write("URL: " + url + "\n")
+
+        up = { "exchange" : myquote(output_dict) }
+        req = urllib2_Request(url, urllib_urlencode(up))
+        res = jabber_crypt.loads(urllib2_unquote(urllib2_urlopen(req).read().encode("utf-8")))
 
         if res == "good" :
             return 1, False

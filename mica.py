@@ -36,6 +36,7 @@ from templates import *
 uploads_enabled = True
 
 if not mobile :
+    from crypticle import *
     from oauthlib.common import to_unicode
     from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
     from requests_oauthlib import OAuth2Session
@@ -364,6 +365,8 @@ class MICA(object):
         self.dbs = {}
         self.userdb = False
         self.db_adapter = db_adapter 
+        self.jabber_crypt = Crypticle(params["jabber_auth"])
+
         if mobile :
             self.cs = self.db_adapter(params["couch"])
         else :
@@ -3071,11 +3074,11 @@ class MICA(object):
 
     def render_privacy(self, req) :
         self.install_local_language(req)
-        return "<!DOCTYPE html>\n" + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8')
+        return self.api(req, "<!DOCTYPE html>\n" + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8'))
 
     def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
-        return "<!DOCTYPE html>\n" + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8'))
+        return self.api(req, "<!DOCTYPE html>\n" + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8')))
 
     def render_mainpage(self, req, msg, pageid = "#messages") :
         if req.messages == "" :
@@ -3128,15 +3131,15 @@ class MICA(object):
     def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
         mdebug("Auth request from source: " + req.source)
-        if req.source not in params["allowed_jabber_hosts"] :
+
+        if not req.http.params.get("exchange") :
             mwarn("Bad request from: " + req.source)
             raise exc.HTTPBadRequest("auth: you did a bad thing")
 
-        if not req.http.params.get("username") or not req.http.params.get("password") :
-            return 'error'
+        input_dict = self.jabber_crypt.loads(unquote(req.http.params.get("exchange").encode("utf-8")))
 
-        username = req.http.params.get("username").lower()
-        password = req.http.params.get("password")
+        username = unquote(input_dict["username"].lower())
+        password = unquote(input_dict["password"])
 
         auth_user = self.userdb.try_get("org.couchdb.user:" + username)
 
@@ -3144,13 +3147,14 @@ class MICA(object):
             auth_user, reason = self.authenticate(username, password, self.credentials())
 
             if not auth_user :
-                return 'bad'
+                mwarn("reason: " + str(reason))
+                return myquote(self.jabber_crypt.dumps('bad'))
             else :
                 mdebug("Success jabber auth w/ password: " + username)
         else :
             mdebug("Success jabber auth w/ token: " + username)
 
-        return 'good'
+        return myquote(self.jabber_crypt.dumps('good'))
 
     @api_validate
     def render_online(self, req) :
@@ -3594,7 +3598,7 @@ class MICA(object):
         tmp_story["finished"] = finished 
         req.db[self.story(req, name)] = tmp_story 
         # Finished reviewing a story in review mode.
-        return _("Finished")
+        return self.api(req, _("Finished"))
 
     def render_reviewed(self, req, story) :
         name = story["name"]
@@ -3623,7 +3627,7 @@ class MICA(object):
                     
                 req.db[self.story(req, name) + ":final"] = final
         req.db[self.story(req, name)] = tmp_story 
-        return _("Reviewed")
+        return self.api(req, _("Reviewed"))
 
     def render_translate(self, req, story) :
         output = ""
@@ -3641,7 +3645,7 @@ class MICA(object):
                 output += self.warn_not_replicated(req)
             except Exception, e :
                 output += _("Failed to translate story") + ": " + str(e)
-        return output
+        return self.api(req, output)
 
     def render_jobs(self, req, jobs) :
         out = _("MICA is busy processing the following. Please wait") + ":<br/>\n"
@@ -3900,7 +3904,7 @@ class MICA(object):
         if ftype != "txt" :
             # words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
             # Tho original story format as it was imported, that is
-            return _("Story is a") + " " + ftype + ". " + _("Viewing original not yet implemented")
+            return self.api(req, _("Story is a") + " " + ftype + ". " + _("Viewing original not yet implemented"))
         
         which = req.http.params.get("type")
         assert(which)
@@ -3908,10 +3912,10 @@ class MICA(object):
         if which == "original" :
             original = _("Here is the original story. Choose from one of the options in the above navigation bar to begin learning with this story.") + "<br/>"
             original += req.db[self.story(req, story["name"]) + ":original"]["value"]
-            return original.encode("utf-8").replace("\n","<br/>")
+            return self.api(req, original.encode("utf-8").replace("\n","<br/>"))
         elif which == "pinyin" :
             final = req.db[self.story(req, story["name"]) + ":final"]["0"]
-            return final.encode("utf-8").replace("\n","<br/>")
+            return self.api(req, final.encode("utf-8").replace("\n","<br/>"))
 
     def render_account(self, req, story) :
         req.accountpageresult = False
@@ -4216,7 +4220,6 @@ class MICA(object):
                 self.roll_period(req, "weeks", "months", peer)
                 self.roll_period(req, "days", "weeks", peer)
 
-
             out = "<table width='100%'>\n"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
                 stories = []
@@ -4229,6 +4232,7 @@ class MICA(object):
 
                     stories.sort(key=by_date, reverse=True)
                     added = False
+
                     for tmp_story in stories :
                         nb_pages = self.nb_pages(req, tmp_story)
 
@@ -4252,7 +4256,7 @@ class MICA(object):
                         break
 
             out += "\n</table>"
-            return out
+            return self.api(req, out)
 
         req.main_server = params["main_server"]
 
@@ -4266,13 +4270,13 @@ class MICA(object):
         }
 
         if self.tofrom(story) not in self.processors :
-            return _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you.")
-
+            return self.bad_api(req, _("We're sorry, but chat for this language pair is not supported") + ": " + lang[story["source_language"]] + " " + _("to") + " " + lang[story["target_language"]] + " (" + _("as indicated by your account preferences") + "). " + _("Please choose a different 'Learning Language' in your accout preferences. Thank you."))
 
         req.gp = self.processors[self.tofrom(story)]
         req.source_language = story["source_language"]
         req.target_language = story["target_language"]
-        return run_template(req, ChatElement)
+
+        return self.api(req, run_template(req, ChatElement))
 
     def render_storylist(self, req, unused_story) :
         if req.http.params.get("sync") :
