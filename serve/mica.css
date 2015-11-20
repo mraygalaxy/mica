@@ -163,10 +163,7 @@ td.mergetop { border-top: solid red; }
 td.mergebottom { border-bottom: solid red; }
 td.mergeleft { border-left: solid red; }
 td.mergeright { border-right: solid red; }
-td.splittop { border-top: solid blue }
-td.splitbottom { border-bottom: solid blue }
-td.splitleft { border-left: solid blue  }
-td.splitright { border-right: solid blue  }
+td.split { border: solid blue;  }
 
 .affix {
     z-index : 9999;

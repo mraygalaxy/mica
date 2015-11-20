@@ -1077,32 +1077,31 @@ class MICA(object):
 
     def polyphomes(self, req, story, uuid, unit, nb_unit, trans_id, page) :
         gp = self.processors[self.tofrom(story)]
-        out = "<div style='color: black'>"
-        # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English
-        if gp.already_romanized :
-            out += "\n" + _("This word") + " ("
-        else :
-            out += "\n" + _("This character") + " ("
-        if gp.already_romanized : 
-            out += "".join(unit["source"])
-        else :
-            out += " ".join(unit["source"])
-        # end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
-        if gp.already_romanized :
-            out += ") " + _("has more than one meaning") + ":<br>"
-        else :
-            out += ") " + _("is polyphonic: (has more than one pronunciation") + "):<br>"
-        out += "</div>"
-        out += "<table class='table table-hover table-striped' style='font-size: x-small; color: black'>"
-        out += "<tr style='color: black'>"
-        if len(unit["multiple_sromanization"]) :
-            # Pinyin means the romanization of a character-based word, such as Chinese
-            out += "<td style='color: black'>" + _("Pinyin") + "</td>"
-        out += "<td style='color: black'>" + _("Definition") + "</td>"
-        # This appears in a list of items and indicates which is the default item
-        out += "<td style='color: black'>" + _("Default") + "?</td></tr>"
-        source = "".join(unit["source"])
 
+        # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English -- also the end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
+        # Pinyin means the romanization of a character-based word, such as Chinese
+        # Default appears in a list of items and indicates which is the default item
+        out = """
+            <div style='color: black'>"
+                %(thiselement)s (%(source)s) %(explain)s:
+                <br/>
+            </div>
+            <table class='table table-hover table-striped' style='font-size: x-small; color: black'>
+                <tr style='color: black'>
+                    %(pinyincolumn)s
+                    <td style='color: black'>%(definition)s</td>
+                    <td style='color: black'>%(defaultchoice)s?</td>
+                </tr>
+
+        """ % dict(thiselement = _("This word") if gp.already_romanized else _("This character"),
+                   source = ("" if gp.already_romanized else " ").join(unit["source"]),
+                   explain = _("has more than one meaning") if gp.already_romanized else _("is polyphonic: (has more than one pronunciation"),
+                   pinyincolumn = "<td style='color: black'>" + _("Pinyin") + "</td>" if len(unit["multiple_sromanization"]) else "",
+                   definition = _("Definition"),
+                   defaultchoice = _("Default")
+                   )
+
+        source = "".join(unit["source"])
         total_changes = 0.0
         changes = req.db.try_get(self.tones(req, source))
         
@@ -1111,24 +1110,37 @@ class MICA(object):
 
         for x in range(0, len(unit["multiple_target"])) :
             percent = self.get_polyphome_percentage(x, total_changes, changes, unit) 
-            out += "<tr>"
-
             if len(unit["multiple_sromanization"]) :
                 spy = " ".join(unit["multiple_sromanization"][x])
-                out += "<td style='color: black'>" + spy + " (" + str(percent) + " %) </td>"
             else :
                 spy = " ".join(unit["multiple_target"][x])
 
-            out += "<td style='color: black'>" + " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>") + "</td>"
             if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
-                out += "<td>" + _("Default") + "</td>"
+                link = _("Default")
             else :
-                # Appears on a button in review mode that allows the user to choose a definition among multiple choices.
-                out += "<td><a style='color: black; font-size: x-small' class='btn-default btn-xs' " + \
-                       "onclick=\"multiselect('" + uuid + "', '" + str(x) + "', '" + \
-                       str(nb_unit) + "','" + str(trans_id) + "', '" + spy + "', '" + page + "')\">" + _("Select") + "</a></td>"
+                link = """
+                        <a style='color: black; font-size: x-small' class='btn-default btn-xs' 
+                           onclick="multiselect('%(uuid)s','%(index)s','%(nb_unit)s','%(trans_id)s','%(spy)s','%(page)s')">%(select)s</a>
+                       """ % dict(uuid = uuid,
+                                  index = x,
+                                  nb_unit = nb_unit,
+                                  trans_id = trans_id,
+                                  spy = spy,
+                                  page = page,
+                                  select = _("Select"))
 
-            out += "</tr>"
+            # 'Select' appears on a button in review mode that allows the user to choose a definition among multiple choices.
+            out += """
+                    <tr>
+                        <td style='color: black'>%(spy)s (%(percent)s %%)</td>
+                        <td style='color: black'>%(target)s</td>
+                        <td>%(link)s</td>
+                    </tr>
+            """ % dict(
+                        percent = percent,
+                        spy = spy,
+                        target = " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>"),
+                        link = link)
 
         out += "</table>"
 
@@ -1418,8 +1430,8 @@ class MICA(object):
         holder += "</div>"
         return holder
     
-    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, disk = False, start_trans_id = 0, tzoffset = 0, chat = False, history = False) :
-        output = [output]
+    def view_page_start(self, req, name, story, page, chars_per_line, start_trans_id = 0, chat = False) :
+        lines = []
         gp = self.processors[self.tofrom(story)]
 
         if mobile and req.session.value["username"] == "demo" and gp.already_romanized :
@@ -1434,7 +1446,8 @@ class MICA(object):
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.warn_not_replicated(req, harmless = True)
+
+                return False
         else :
             page_dict = story["pages"]["0"]
 
@@ -1442,32 +1455,13 @@ class MICA(object):
 
         units = page_dict["units"]
         words = len(units)
-        lines = [] 
         line = [] 
-
         trans_id = start_trans_id 
         chars = 0
-        batch = -1
-
-        mverbose("View Page " + str(page) + " story " + str(name) + " building...")
-            
-        sources = {}
-
-        if action == "edit" :
-            sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
-            sources['splits'] = self.view_keys(req, "splits", units) 
-        elif action == "home" :
-            sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
-        elif action == "read" :
-            sources['memorized'] = self.view_keys(req, "memorized", units) 
-        
-        mverbose("View Page " + str(page) + " story " + str(name) + " querying...")
 
         for x in range(0, len(units)) :
             unit = units[x]
-
             source = "".join(unit["source"])
-
             ret = self.get_parts(unit, self.tofrom(story))
 
             if ret == False :
@@ -1505,6 +1499,165 @@ class MICA(object):
                 lines.append(line)
 
         mverbose("View Page " + str(page) + " story " + str(name) + " grouped...")
+
+        return lines, units
+
+    # Perform the analytics of recommending whether or not characters should be 
+    # split or merged together by analyzing their history.
+    def view_check_edits(self, prev_merge, sources, unit, py, word_idx, line, source, batch) :
+        curr_merge = False
+        merge_end = False
+        skip_prev_merge = False
+        use_batch = False
+        tmp_class = []
+
+        if not py :
+            prev_merge = False
+            return prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class
+
+        sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
+        
+        if sourcegroup and unit["hash"] in sourcegroup["record"] :
+            curr_merge = True
+
+            if word_idx < (len(line) - 1) :
+                endword = line[word_idx + 1]
+                if endword[1] :
+                    endunit = endword[3]
+                    endchars = "".join(endunit["source"])
+                    endgroup = False if endchars not in sources['mergegroups'] else sources['mergegroups'][endchars]
+                    if not endgroup or (endunit["hash"] not in endgroup["record"]) :
+                        merge_end = True
+                    else :
+                        end_members = endgroup["record"][endunit["hash"]]["members"]
+                        curr_members = sourcegroup["record"][unit["hash"]]["members"]
+                        source_found = False
+                        end_found = False
+                        for mchars, member in end_members.iteritems() :
+                            if source in mchars :
+                                source_found = True
+                        for mchars, member in curr_members.iteritems() :
+                            if endchars in mchars :
+                                end_found = True
+                                
+                        if not end_found or not source_found :
+                            mverbose(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
+                            merge_end = True
+                            skip_prev_merge = True
+                            
+                else :
+                    merge_end = True
+
+        if curr_merge :
+            if not prev_merge :
+                if (word_idx == (len(line) - 1)) :
+                    merge_end = False
+                    curr_merge = False        
+                elif merge_end:
+                    prev_merge = False
+                    merge_end = False
+                    curr_merge = False
+            elif (word_idx == (len(line) - 1)) :
+                merge_end = True
+                    
+        if curr_merge :
+            tmp_class.append("mergetop")
+            tmp_class.append("mergebottom")
+            if not prev_merge : 
+                batch += 1
+                tmp_class.append("mergeleft")
+            use_batch = "merge" 
+        else :
+            if not curr_merge :
+                sourcesplits = False if source not in sources['splits'] else sources['splits'][source]
+                if sourcesplits and unit["hash"] in sourcesplits["record"] :
+                    batch += 1
+                    use_batch = "split" 
+                    tmp_class.append('split')
+
+        prev_merge = curr_merge if not skip_prev_merge else False
+
+        return prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class
+
+    def view_check_reviews(self, req, sources, source, unit, py) :
+        largest_hcode = False 
+        largest_index = -1
+        largest = -1
+        largest_target = False
+        home_changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
+        add_count = ""
+
+        if home_changes :
+            for hcode, record in home_changes["record"].iteritems() :
+                curr = record["total_selected"]
+                if largest < curr :
+                    largest_hcode = hcode
+                    largest = curr 
+                elif largest == curr :
+                    # If there is no winner, then don't recommend anything
+                    largest = -1
+                    largest_hcode = False
+                    break
+
+            if largest_hcode == unit["hash"] :
+                largest_hcode = False
+                largest = -1
+
+            if largest_hcode :
+                for idx in range(0, len(unit["multiple_target"])) :
+                    hcode = self.get_polyphome_hash(idx, source)
+                    if hcode == largest_hcode :
+                        largest_index = idx
+                        break
+
+                if largest_index == -1 :
+                    mdebug("Problem with logic: " + str(unit) + " largest_hcode: " + str(hcode) + " changes: " + str(home_changes))
+                    largest_hcode = False
+
+        if largest_hcode :
+            if len(unit["multiple_sromanization"]) :
+                largest_target = " ".join(unit["multiple_sromanization"][largest_index])
+            else :
+                largest_target = " ".join(unit["multiple_target"][largest_index])
+
+        color = "grey" if not unit["punctuation"] else "white"
+        if py and len(unit["multiple_target"]) :
+            color = "green"
+
+        if home_changes :
+            if unit["hash"] in home_changes["record"] :
+                color = "black"
+                add_count = " (" + str(int(home_changes["total"])) + ")"
+
+        if color != "black" and py and len(unit["multiple_sromanization"]) :
+            fpy = " ".join(unit["multiple_sromanization"][0])
+            for ux in range(1, len(unit["multiple_sromanization"])) :
+                 upy = " ".join(unit["multiple_sromanization"][ux])
+                 if upy != fpy :
+                     color = "red"
+                     break
+
+        return largest_hcode, largest_index, largest_target, color, add_count
+
+    def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, start_trans_id = 0, tzoffset = 0, chat = False, history = False) :
+        output = [output]
+        gp = self.processors[self.tofrom(story)]
+
+        result = self.view_page_start(req, name, story, page, chars_per_line, start_trans_id = start_trans_id, chat = chat)
+        if not result :
+            return self.warn_not_replicated(req, harmless = True)
+
+        mverbose("View Page " + str(page) + " story " + str(name) + " querying...")
+        lines, units = result
+
+        sources = {}
+        if action == "edit" :
+            sources['mergegroups'] = self.view_keys(req, "mergegroups", units) 
+            sources['splits'] = self.view_keys(req, "splits", units) 
+        elif action == "home" :
+            sources['tonechanges'] = self.view_keys(req, "tonechanges", units) 
+        elif action == "read" :
+            sources['memorized'] = self.view_keys(req, "memorized", units) 
         
         # TODO: The rest of the code involed in viewing a page is just a bunch of
         # loops. We have already finished querying the database and are simply
@@ -1539,14 +1692,11 @@ class MICA(object):
         # Each unit would need to have a rendered HTML chunk for all three
         # modes for which the unit could be viewed.
         
-        spacer = "<td style='margin-right: 20px'></td>"
-        merge_spacer = "<td class='mergetop mergebottom' style='margin-right: 20px'></td>"
-        merge_end_spacer = "<td class='mergeleft' style='margin-right: 20px'></td>"
-
+        mverbose("View Page " + str(page) + " story " + str(name) + " building...")
+        batch = -1
         recommendations = False
 
         for line in lines :
-            disk_out = ""
             line_out = []
 
             if chat and history :
@@ -1554,423 +1704,236 @@ class MICA(object):
                     msgto = line[0][3]["peer"]
                 else :
                     msgto = req.session.value["username"]
-                msgclass = "msgright" if msgto != req.session.value["username"] else "msgleft"
 
                 line_out.append("""
-                        <tr><td>                
-                            <div style='width: 100%'>
-                                <span class=' """ + msgclass + """' style='border-radius: 15px ;background-color: """ + ('#f0f0f0' if not history else 'white') + """; border: 1px solid grey; color: black'>
-                                    <table><tr><td>&nbsp</td><td>
-                """)
+                    <tr><td>                
+                        <div style='width: 100%'>
+                            <span class='%(msgclass)s' style='border-radius: 15px; background-color: %(background)s; border: 1px solid grey; color: black'>
+                            <table>
+                                <tr>
+                                    <td>&nbsp</td><td>
+                """ % dict(msgclass = "msgright" if msgto != req.session.value["username"] else "msgleft",
+                           background = '#f0f0f0' if not history else 'white'))
 
-            if not disk :
-                line_out.append("\n<table")
-                if not chat and not history :
-                    line_out.append(" style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'")
-                else : 
-                    line_out.append(" class='chattable'")
+            line_out.append("""
+                <table %(style)s>
+                    <tr>
+            """ % dict(style = "style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable"))
 
-                line_out.append(">")
-                line_out.append("\n<tr>")
+            prev_merge = False
 
-                prev_merge = False
-                for word_idx in range(0, len(line)) :
-                    word = line[word_idx]
-                    target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
-                    py = word[1]
-                    trans_id = str(word[2])
-                    unit = word[3]
-                    tid = unit["hash"] if py else trans_id 
-                    nb_unit = str(word[4])
-                    source = word[5]
-                    curr_merge = False
-                    merge_end = False
-                    use_batch = False
-                    skip_prev_merge = False
-
-                    line_out.append("\n<td style='vertical-align: middle; text-align: center; font-size: ")
-                    if not mobile :
-                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
-                    else :
-                        line_out.append("100")
-                    line_out.append("%' ")
-
-                    if action == "edit" :
-                        if py :
-                            sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
-                            
-                            if sourcegroup and unit["hash"] in sourcegroup["record"] :
-                                curr_merge = True
-
-                                if word_idx < (len(line) - 1) :
-                                    endword = line[word_idx + 1]
-                                    if endword[1] :
-                                        endunit = endword[3]
-                                        endchars = "".join(endunit["source"])
-                                        endgroup = False if endchars not in sources['mergegroups'] else sources['mergegroups'][endchars]
-                                        if not endgroup or (endunit["hash"] not in endgroup["record"]) :
-                                            merge_end = True
-                                        else :
-                                            end_members = endgroup["record"][endunit["hash"]]["members"]
-                                            curr_members = sourcegroup["record"][unit["hash"]]["members"]
-                                            source_found = False
-                                            end_found = False
-                                            for mchars, member in end_members.iteritems() :
-                                                if source in mchars :
-                                                    source_found = True
-                                            for mchars, member in curr_members.iteritems() :
-                                                if endchars in mchars :
-                                                    end_found = True
-                                                    
-                                            if not end_found or not source_found :
-                                                #mdebug(source + " (" + str(py) + ") and " + endchars + " are not related to each other!")
-                                                merge_end = True
-                                                skip_prev_merge = True
-                                                
-                                    else :
-                                        merge_end = True
-                        else :
-                            prev_merge = False
-
-                    if py and action == "edit" :
-                        if curr_merge :
-                            if not prev_merge :
-                                if (word_idx == (len(line) - 1)) :
-                                    merge_end = False
-                                    curr_merge = False        
-                                elif merge_end:
-                                    prev_merge = False
-                                    merge_end = False
-                                    curr_merge = False
-                            elif (word_idx == (len(line) - 1)) :
-                                merge_end = True
-                                    
-                        if curr_merge :
-                            line_out.append("class='mergetop mergebottom")
-                            if not prev_merge : 
-                                batch += 1
-                                line_out.append(" mergeleft")
-                            line_out.append("'")
-                            use_batch = "merge" 
-                        else :
-                            if not curr_merge :
-                                sourcesplits = False if source not in sources['splits'] else sources['splits'][source]
-                                if sourcesplits and unit["hash"] in sourcesplits["record"] :
-                                    batch += 1
-                                    use_batch = "split" 
-                                    line_out.append("class='splittop splitbottom splitleft splitright'")
-
-                        prev_merge = curr_merge if not skip_prev_merge else False
-
-                    line_out.append(">")
-
-                    if "timestamp" not in unit or not unit["punctuation"] :
-                        line_out.append("<span id='spanselect_" + trans_id + "' class='")
-                        line_out.append("batch" if use_batch else "none")
-                        line_out.append("'>")
-                        if gp.already_romanized :
-                            line_out.append("<a class='transroman'")
-                        else :
-                            line_out.append("<a class='trans'")
-                        line_out.append(" uniqueid='" + tid + "' ")
-                        line_out.append(" nbunit='" + nb_unit + "' ")
-                        line_out.append(" transid='" + trans_id + "' ")
-                        line_out.append(" batchid='" + (str(batch) if use_batch else "-1") + "' ")
-                        line_out.append(" operation='" + (str(use_batch) if use_batch else "none") + "' ")
-                        line_out.append(" page='" + page + "' ")
-                        line_out.append(" pinyin=\"" + (py if py else target) + "\" ")
-                        line_out.append(" index='" + (str(unit["multiple_correct"]) if py else '-1') + "' ")
-                        line_out.append(" style='color: black; font-weight: normal")
-                        if "punctuation" not in unit or not unit["punctuation"] :
-                            line_out.append("; cursor: pointer")
-                        line_out.append("' ")
-                        if chat :
-                            if "select_idx" in unit :
-                                line_out.append(" onclick=\"select_chat_option('" + str(unit["select_idx"]) + "')\"")
-                        else :
-                            line_out.append(" onclick=\"select_toggle('" + trans_id + "')\"")
-                        line_out.append(">")
-
-                        line_out.append(source if py else target)
-                        line_out.append("</a>")
-                        line_out.append("</span>")
-                    else :
-                        period = story["name"].split(";")[1]
-                        ts = " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[period]) + ")"
-                        line_out.append(source + u": " + ts + ":&#160;&#160;&#160;")
-
-                    line_out.append("</td>")
-
-                    if py :
-                        if action == "edit" and merge_end :
-                            # mergeright
-                            line_out.append(merge_end_spacer)
-                        elif action == "edit" and curr_merge :
-                            line_out.append(merge_spacer)
-                        else :
-                            line_out.append(spacer)
-
-                line_out.append("</tr>\n<tr>")
-
-            for word in line :
+            for word_idx in range(0, len(line)) :
+                word = line[word_idx]
                 target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
                 py = word[1]
-                unit = word[3]
                 trans_id = str(word[2])
+                unit = word[3]
                 tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
-                largest_hcode = False 
-                largest_index = -1
-                largest = -1
 
-                if py and (py not in gp.punctuation) :
-                    if not disk :
-                        if action == "home" :
-                            home_changes = False if source not in sources['tonechanges'] else sources['tonechanges'][source]
+                if action == "edit" :
+                    prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
 
-                            if home_changes :
-                                for hcode, record in home_changes["record"].iteritems() :
-                                    curr = record["total_selected"]
-                                    if largest < curr :
-                                        largest_hcode = hcode
-                                        largest = curr 
-                                    elif largest == curr :
-                                        # If there is no winner, then don't recommend anything
-                                        largest = -1
-                                        largest_hcode = False
-                                        break
+                if chat :
+                    if "select_idx" in unit :
+                        onclick = "select_chat_option('" + str(unit["select_idx"]) + "'"
+                else :
+                    onclick = "select_toggle('" + trans_id + "')"
 
-                                if largest_hcode == unit["hash"] :
-                                    largest_hcode = False
-                                    largest = -1
+                req.template_dict = dict(
+                    font = 100 if mobile else req.session.value["default_web_zoom"] * 100.0,
+                    tmpclass = " ".join(tmp_class) if action == "edit" else "",
+                    merge_end = merge_end if action == "edit" else False,
+                    curr_merge = curr_merge if action == "edit" else False,
+                    unit = unit,
+                    onclick = onclick,
+                    py = py,
+                )
 
-                                if largest_hcode :
-                                    for idx in range(0, len(unit["multiple_target"])) :
-                                        hcode = self.get_polyphome_hash(idx, source)
-                                        if hcode == largest_hcode :
-                                            largest_index = idx
-                                            break
+                if "timestamp" not in unit or not unit["punctuation"] :
+                    req.template_dict.update(dict(
+                        trans_id = trans_id,
+                        batch = 'batch' if (action == "edit" and use_batch) else 'none',
+                        transclass = 'transroman' if gp.already_romanized else 'trans',
+                        tid = tid,
+                        nb_unit = nb_unit,
+                        batchid = batch if (action == "edit" and use_batch) else -1,
+                        operation = use_batch if (action == "edit" and use_batch) else "none",
+                        page = page,
+                        pinyin = py if py else target,
+                        index = unit["multiple_correct"] if py else -1,
+                        cursor = "; cursor: pointer" if "punctuation" not in unit or not unit["punctuation"] else "",
+                        link = source if py else target, 
+                      ))
+                else :
+                    req.template_dict["chatlog"] = source + u": " + " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[story["name"].split(";")[1]]) + ")" + ":&#160;&#160;&#160;"
 
-                                    if largest_index == -1 :
-                                        mdebug("Problem with logic: " + str(unit) + " largest_hcode: " + str(hcode) + " changes: " + str(home_changes))
-                                        largest_hcode = False
+                line_out.append(run_template(req, Row1Element))
+                delattr(req, "template_dict")
 
-                line_out.append("\n<td style='vertical-align: bottom; text-align: center; font-size: ")
+            line_out.append("""
+                </tr>
+                <tr>
+            """)
+
+            for word in line :
+                py = word[1]
+                unit = word[3]
+                largest_hcode = False
+                source = word[5]
+                add_count = ""
+
+                req.template_dict = dict(
+                  font = req.session.value["default_web_zoom"] * 100.0 if not mobile else 100,
+                  cursor = "; cursor: pointer" if ("punctuation" not in unit or not unit["punctuation"]) else "", 
+                  py = py,
+                  gp = gp,
+                  unit = unit,
+                  add_count = add_count,
+                  border = "none",
+                  source = source,
+                  uuid = uuid,
+                  target = word[0].replace("\"", "\\\"").replace("\'", "\\\""),
+                  transclass = 'transroman' if gp.already_romanized else 'trans',
+                  trans_id = str(word[2]),
+                  tid = unit["hash"] if py else str(word[2]),
+                  page = page,
+                  nb_unit = str(word[4]),
+                )
+
+                if py and (py not in gp.punctuation) and not unit["punctuation"] :
+                    if action == "home" :
+                        req.template_dict["largest_hcode"], req.template_dict["largest_index"], req.template_dict["largest_target"], req.template_dict["color"], add_count = self.view_check_reviews(req, sources, source, unit, py) 
+
+                        if req.template_dict["largest_hcode"] :
+                            if not recommendations :
+                                recommendations = 0
+                            recommendations += 1
+
+                        if req.template_dict["largest_hcode"] :
+                            req.template_dict["border"] = "3px solid black"
+
+                if action != "home" and py :
+                    req.template_dict["color"] = "grey" if not unit["punctuation"] else "white"
+
+
+                if py and (py not in gp.punctuation) and not unit["punctuation"] :
+                    if gp.already_romanized :
+                        row2_result = target if req.template_dict["color"] not in [ "grey", "white" ] else self.roman_holder(source, req.template_dict["color"])
+                    else :
+                        if py == u' ' :
+                            row2_result = self.roman_holder(source, req.template_dict["color"])
+                        elif py :
+                            row2_result = py
+                        else :
+                            row2_result = target.lower()
+                    req.template_dict["row2_result"] = row2_result
+                
+                if action == "home" and py and len(unit["multiple_target"]) :
+                    req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
+
+                line_out.append(run_template(req, Row2Element))
+                delattr(req, "template_dict")
+
+                if py :
+                    line_out.append("<td style='margin-right: 20px'></td>")
+
+            line_out.append("""
+                </tr>
+                <tr>
+            """)
+
+            for word in line :
+                target = word[0]
+                if len(target) and target[0] == '/' :
+                    target = target[1:-1]
+                unit = word[3]
+                nb_unit = str(word[4])
+                py = word[1]
+                source = word[5]
+                memorized = False
+
+                if py and action == 'read' :
+                    if unit["hash"] in sources['memorized'] :
+                        memorized = True
+                        
+                tid = unit["hash"] if py else str(word[2])
+                line_out.append("\n<td style='vertical-align: bottom; text-align: center'>")
+                line_out.append("<table><tr>")
+                line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
+                line_out.append("<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;")
+                line_out.append("</div></td>")
+                line_out.append("</tr><tr><td>")
+                if gp.already_romanized :
+                    line_out.append("<div class='transroman ")
+                else :
+                    line_out.append("<div class='trans ")
+                    
+                line_out.append(" trans" + tid + "' style='display: ")
+                line_out.append("block" if (action == "read" and not memorized) else "none")
+                line_out.append("; font-size: ")
                 if not mobile :
                     line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
                 else :
                     line_out.append("100")
-
                 line_out.append("%")
 
-                if "punctuation" not in unit or not unit["punctuation"] :
-                    line_out.append("; cursor: pointer")
-
-                if largest_hcode :
-                    line_out.append("; border: 2px solid black")
-
-                line_out.append("'>")
-
-                if py and (py not in gp.punctuation) and not unit["punctuation"] :
-                    if not disk :
+                line_out.append("' id='trans" + tid + "'>")
+                if py and not unit["punctuation"] :
+                    if not memorized :
+                        line_out.append("<div revealid='" + tid + "' ")
+                        line_out.append("class='reveal reveal" + tid + "'")
+                        if meaning_mode == "true":
+                            line_out.append("style='display: none'")
+                        line_out.append(">&#160;&#160;<a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
+                        line_out.append("<div class='definition definition" + tid + "' ")
+                        if meaning_mode == "false":
+                            line_out.append("style='display: none'")
+                        line_out.append(">")
+                    if action in ["read", "edit"] :
                         if gp.already_romanized :
                             line_out.append("<a class='transroman' ")
                         else :
                             line_out.append("<a class='trans' ")
-
-                        add_count = ""
-
-                        if action == "home" :
-                            color = "grey" if not unit["punctuation"] else "white"
-                            if py and len(unit["multiple_target"]) :
-                                color = "green"
-
-                            if home_changes :
-                                if unit["hash"] in home_changes["record"] :
-                                    color = "black"
-                                    add_count = " (" + str(int(home_changes["total"])) + ")"
-
-                            if color != "black" and py and len(unit["multiple_sromanization"]) :
-                                fpy = " ".join(unit["multiple_sromanization"][0])
-                                for ux in range(1, len(unit["multiple_sromanization"])) :
-                                     upy = " ".join(unit["multiple_sromanization"][ux])
-                                     if upy != fpy :
-                                         color = "red"
-                                         break
-
-                            if color != "" :
-                                line_out.append(" style='color: " + color + "' ")
-                        elif py :
-                            line_out.append(" style='color: black' ")
-                            color = "grey" if not unit["punctuation"] else "white"
-
-                        line_out.append(" id='ttip" + trans_id + "'")
-
-                        if action in ["read","edit"] or not(len(unit["multiple_target"])) :
-                            line_out.append(" onclick=\"toggle('" + tid + "', ")
-                            line_out.append(("0" if action == "read" else "1") + ")\"")
-
-                        line_out.append(">")
-                        
-                        if action == "home" :
-                            if largest_hcode :
-                                if not recommendations :
-                                    recommendations = 0
-
-                                recommendations += 1
-
-                                if len(unit["multiple_sromanization"]) :
-                                    largest_target = " ".join(unit["multiple_sromanization"][largest_index])
-                                else :
-                                    largest_target = " ".join(unit["multiple_target"][largest_index])
-                                line_out.append("<span page='" + str(page) + "' target='" + largest_target + "' nbunit='" + str(nb_unit) + "' index='" + str(largest_index) + "' transid='" + str(trans_id) + "' class='review' source='" + source + "'>")
-                        
-                        if gp.already_romanized :
-                            if color not in [ "grey", "white" ] :
-                                line_out.append(target)
-                            else :
-                                line_out.append(self.roman_holder(source, color))
+                        if uuid :
+                            line_out.append("onclick=\"memorize('" + \
+                                    tid + "', '" + str(uuid) + "', '" + str(nb_unit) + "', '" + page + "')\">")
                         else :
-                            if py == u' ' :
-                                line_out.append(self.roman_holder(source, color))
-                            elif py :
-                                line_out.append(py)
-                            else :
-                                line_out.append(target.lower())
-        
-                        line_out.append(add_count)
+                            line_out.append("onclick=\"memorize_nostory('" + \
+                                    tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
 
-                        if largest_hcode :
-                            line_out.append("</span>")
-
-                        line_out.append("</a>")
-                    else :
-                        disk_out += (("hold" if py == u' ' else py) if py else target).lower()
-                else :
-                    if disk :
-                        disk_out += (("hold" if py == u' ' else py) if py else target).lower()
-                    else :
-                        if "timestamp" not in unit or not unit["punctuation"] :
-                            line_out.append((("hold" if py == u' ' else py) if py else target).lower())
-
-                if not disk :
-                    if action == "home" :
+                    line_out.append(target.replace("/"," /<br/>"))
+                        
+                    if action == "read" :
                         if "ipa_word" in unit and unit["ipa_word"] :
                             line_out.append("<br>" + unit["ipa_word"])
-                    line_out.append("<br/>")
+                
+                    if action in [ "read", "edit" ] :
+                        line_out.append("</a>")
 
-                    if action == "home" and py and len(unit["multiple_target"]) :
-                        line_out.append("<div style='color: black; display: none' id='pop" + str(trans_id) + "'>")
-                        line_out.append(self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page))
+                    if not memorized :
                         line_out.append("</div>")
-                        line_out.append("<script>")
-                        line_out.append("multipopinstall('" + str(trans_id) + "', 0);\n")
-                        line_out.append("</script>")
 
-                    line_out.append("</td>")
-
-                    if py :
-                        line_out.append(spacer)
+                line_out.append("<br/>")
+                line_out.append("</div>")
+                line_out.append("<div style='display: ")
+                line_out.append("none" if (action in ["read", "edit"] and not memorized) else "block")
+                if gp.already_romanized :
+                    line_out.append("' class='transroman")
                 else :
-                    disk_out += " "
+                    line_out.append("' class='trans")
+                
+                line_out.append(" blank" + tid + "'>")
+                line_out.append("&#160;</div>")
+                line_out.append("</td>")
+                line_out.append("</tr></table>")
+                line_out.append("</td>")
+                if py :
+                    line_out.append("<td>&#160;</td>")
 
-            if disk :
-                disk_out += "\n"
-            else :
-                line_out.append("</tr>")
-                line_out.append("<tr>")
-
-            if not disk :
-                for word in line :
-                    target = word[0]
-                    if len(target) and target[0] == '/' :
-                        target = target[1:-1]
-                    unit = word[3]
-                    nb_unit = str(word[4])
-                    py = word[1]
-                    source = word[5]
-                    memorized = False
-
-                    if py and action == 'read' :
-                        if unit["hash"] in sources['memorized'] :
-                            memorized = True
-                            
-                    tid = unit["hash"] if py else str(word[2])
-                    line_out.append("\n<td style='vertical-align: bottom; text-align: center'>")
-                    line_out.append("<table><tr>")
-                    line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
-                    line_out.append("<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;")
-                    line_out.append("</div></td>")
-                    line_out.append("</tr><tr><td>")
-                    if gp.already_romanized :
-                        line_out.append("<div class='transroman ")
-                    else :
-                        line_out.append("<div class='trans ")
-                        
-                    line_out.append(" trans" + tid + "' style='display: ")
-                    line_out.append("block" if (action == "read" and not memorized) else "none")
-                    line_out.append("; font-size: ")
-                    if not mobile :
-                        line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
-                    else :
-                        line_out.append("100")
-                    line_out.append("%")
-
-                    line_out.append("' id='trans" + tid + "'>")
-                    if py and not unit["punctuation"] :
-                        if not memorized :
-                            line_out.append("<div revealid='" + tid + "' ")
-                            line_out.append("class='reveal reveal" + tid + "'")
-                            if meaning_mode == "true":
-                                line_out.append("style='display: none'")
-                            line_out.append(">&#160;&#160;<a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
-                            line_out.append("<div class='definition definition" + tid + "' ")
-                            if meaning_mode == "false":
-                                line_out.append("style='display: none'")
-                            line_out.append(">")
-                        if action in ["read", "edit"] :
-                            if gp.already_romanized :
-                                line_out.append("<a class='transroman' ")
-                            else :
-                                line_out.append("<a class='trans' ")
-                            if uuid :
-                                line_out.append("onclick=\"memorize('" + \
-                                        tid + "', '" + str(uuid) + "', '" + str(nb_unit) + "', '" + page + "')\">")
-                            else :
-                                line_out.append("onclick=\"memorize_nostory('" + \
-                                        tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
-
-                        line_out.append(target.replace("/"," /<br/>"))
-                            
-                        if action == "read" :
-                            if "ipa_word" in unit and unit["ipa_word"] :
-                                line_out.append("<br>" + unit["ipa_word"])
-                    
-                        if action in [ "read", "edit" ] :
-                            line_out.append("</a>")
-
-                        if not memorized :
-                            line_out.append("</div>")
-
-                    line_out.append("<br/>")
-                    line_out.append("</div>")
-                    line_out.append("<div style='display: ")
-                    line_out.append("none" if (action in ["read", "edit"] and not memorized) else "block")
-                    if gp.already_romanized :
-                        line_out.append("' class='transroman")
-                    else :
-                        line_out.append("' class='trans")
-                    
-                    line_out.append(" blank" + tid + "'>")
-                    line_out.append("&#160;</div>")
-                    line_out.append("</td>")
-                    line_out.append("</tr></table>")
-                    line_out.append("</td>")
-                    if py :
-                        line_out.append("<td>&#160;</td>")
-                line_out.append("</tr>")
-                line_out.append("</table>")
+            line_out.append("</tr>")
+            line_out.append("</table>")
 
             if chat and history :
                 line_out.append("""
@@ -1981,10 +1944,7 @@ class MICA(object):
                         <tr><td>&nbsp</td></tr>
                 """)
 
-            if not disk :
-                output.append("".join(line_out))
-            else :
-                output.append(disk_out)
+            output.append("".join(line_out))
 
         if recommendations :
             # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
@@ -2747,7 +2707,13 @@ class MICA(object):
     '''
 
     def upgrade2(self, req, story) :
-        conversions = dict(spinyin = u"sromanization", tpinyin = u"tromanization", multiple_english = u"multiple_target", multiple_spinyin = u"multiple_sromanization", english = u"target", match_pinyin = u"match_romanization", pinyin = u"romanization")
+        conversions = dict(spinyin = u"sromanization", 
+                           tpinyin = u"tromanization", 
+                           multiple_english = u"multiple_target", 
+                           multiple_spinyin = u"multiple_sromanization", 
+                           english = u"target", 
+                           match_pinyin = u"match_romanization", 
+                           pinyin = u"romanization")
 
         mdebug("Going to upgrade story to version 2.")
         name = story["name"]
@@ -2885,15 +2851,15 @@ class MICA(object):
         page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
         unit = page_dict["units"][nb_unit]
         
-        unit["multiple_correct"] = mindex
-        
-        self.rehash_correct_polyphome(unit) 
-        
-        page_dict["units"][nb_unit] = unit
-        req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
+        # First-time display of this unit on UI. Don't update.
+        if int(mindex) != -1 :
+            unit["multiple_correct"] = mindex
+            self.rehash_correct_polyphome(unit) 
+            page_dict["units"][nb_unit] = unit
+            req.db[self.story(req, name) + ":pages:" + str(page)] = page_dict
 
-        if record :
-            self.add_record(req, unit, mindex, self.tones, "selected") 
+            if record :
+                self.add_record(req, unit, mindex, self.tones, "selected") 
         return unit
 
     @serial
@@ -3535,7 +3501,7 @@ class MICA(object):
                 story["pages"]["0"]["units"][unit_idx]["select_idx"] = select_idx
                 select_idx += 1
 
-            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", disk = False, start_trans_id = start_trans_id, chat = True if not peer else False)
+            out["result"]["human"] = self.view_page(req, False, False, story, mode, "", "0", "100", "false", start_trans_id = start_trans_id, chat = True if not peer else False)
 
 
         except OSError, e :
@@ -3621,9 +3587,22 @@ class MICA(object):
                 
                 for page in range(0, pages) :
                     minfo("Page " + str(page) + "...")
-                    final[str(page)] = self.view_page(req, uuid, name, \
-                        story, req.action, "", str(page), \
-                        req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], req.session.value["meaning_mode"], disk = True)
+
+                    result = self.view_page_start(req, name, story, str(page), \
+                        req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
+
+                    if not result :
+                        return self.bad_api(req, self.warn_not_replicated(req), harmless = True) 
+
+                    final_output = ""
+                    lines, units = result
+                    for line in lines :
+                        for word in line :
+                            target = word[0].replace("\"", "\\\"").replace("\'", "\\\"")
+                            py = word[1]
+                            final_output += (("hold" if py == u' ' else py) if py else target).lower() + " "
+                        final_output += "\n"
+                    final[str(page)] = final_output
                     
                 req.db[self.story(req, name) + ":final"] = final
         req.db[self.story(req, name)] = tmp_story 
@@ -4249,7 +4228,7 @@ class MICA(object):
 
                         added = True
                         [x, period, howmany, peer] = tmp_story["name"].split(";")
-                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", disk = False, tzoffset = tzoffset, chat = True, history = True)
+                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", tzoffset = tzoffset, chat = True, history = True)
                         break
 
                     if added :
@@ -4400,7 +4379,16 @@ class MICA(object):
         code = req.http.params.get("code")
 
         if not req.http.params.get("finish") :
-            return False, "<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;" + _("Signing you in, Please wait") + "...<script>finish_new_account('" + code + "', '" + who + "');</script>"
+            return False, """
+                <img src='%(mpath)s/%(spinner)' width='15px'/>&#160;%(signin)s...
+                <script>
+                    finish_new_account('%(code)s', '%(who)s');
+                </script>
+            """ % dict(mpath = req.mpath, 
+                       spinner = spinner,
+                       code = code,
+                       who = who,
+                       signin = _("Signing you in, Please wait"))
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
@@ -4492,17 +4480,21 @@ class MICA(object):
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mdebug("Language: " + language)
 
-            output = ""
-            output += "<h4 style='color: white'>" + _("Congratulations. Your account is created") + ": " + values["email"] 
-            output += "<br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.")
-
-            output += "<br/><br/>Save this Password: " + password
-            output += "<br/><br/>" + _("If this is your first time here") + ", <a rel='external' data-role='none' class='btn btn-default' href='/help'>"
-            output += _("please read the tutorial") + "</a>"
-            output += "<br/><br/>" + _("Happy Learning") + "!</h4>"
-            output += "<br/><a rel='external' data-role='none' class='btn btn-default' href='/'>" + _("Start learning!") + "</a>" 
-            output += "<script>$('#maindisplay').attr('style', 'display: none');</script>"
-            output += "<script>$('#leftpane').attr('style', 'display: none');</script>"
+            output = """
+                <br/><br/>%(welcome)s
+                <br/><br/>Save this Password: %(password)s
+                <br/><br/>%(firsttime)s,&#160;
+                <a rel='external' data-role='none' class='btn btn-default' href='/help'>%(tutorial)s</a>
+                <br/><br/>%(happy)s!</h4>
+                <br/><a rel='external' data-role='none' class='btn btn-default' href='/'>%(start)s</a>
+                <script>$('#maindisplay').attr('style', 'display: none');</script>
+                <script>$('#leftpane').attr('style', 'display: none');</script>
+            """ % dict(tutorial = _("please read the tutorial"),
+                       happy = _("Happy Learning"),
+                       start = _("Start learning!"),
+                       password = password, 
+                       firsttime = _("If this is your first time here"),
+                       welcome = _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password."))
 
             req.messages = output
         else :
@@ -5474,26 +5466,14 @@ def second_splash() :
     encoded1 = base64_b64encode(contents)
     fh.close()
 
-    output += "<img src='data:image/jpeg;base64," + str(encoded1) + "' width='100%'/>"
-    output += """
-</div>
-<div class="inner2">
-"""
-    output += "<p><p><p>"
     fh = open(cwd + "serve/" + spinner, 'r')
     contents = fh.read() 
     encoded2 = base64_b64encode(contents)
     fh.close()
-    output += "<img src='data:image/jpeg;base64," + str(encoded2) + "' width='10%'/>"
-    output += "&#160;&#160;" + _("Please wait...") + "</p>"
-    output += """ 
-</div>    
-<div class="inner3">
-</div>    
-</body>  
-</html> 
-"""
-    return output
+
+    return output % dict(encoded1 = encoded1,
+                         encoded2 = encoded2,
+                         pleasewait = _("Please wait..."))
 
 if __name__ == "__main__":
     mdebug("Ready to go.")

@@ -1,0 +1,41 @@
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row2" style='vertical-align: bottom; text-align: center; font-size: @!font!@%%; border: @!border!@; @!cursor!@'>
+    <!--(if py and (py not in gp.punctuation) and not unit["punctuation"])-->
+        <a class='@!transclass!@' id='ttip@!trans_id!@'>
+            <!--(if action == 'home' and color != '')-->
+                <t:attr name='style'>color: @!color!@</t:attr>
+            <!--(end)-->
+            <!--(if action != 'home')-->
+                <t:attr name='style'>color: black</t:attr>
+            <!--(end)-->
+            <!--(if action in ["read", "edit"] or not(len(unit["multiple_target"])))-->
+                <t:attr name='onclick'>toggle('@!tid!@', '@!"0" if action == "read" else "1"!@')</t:attr>
+            <!--(elif action == "home")-->
+                <t:attr name='onclick'>multiselect('@!uuid!@', -1, '@!nb_unit!@', '@!trans_id!@', false, '@!page!@');</t:attr>
+            <!--(end)-->
+            
+            <!--(if action == "home" and largest_hcode)-->
+                <span page='@!page!@' target='@!largest_target!@' nbunit='@!nb_unit!@' index='@!largest_index!@' transid='@!trans_id!@' class='review' source='@!source!@'>
+            <!--(end)-->
+
+            @!row2_result!@ @!add_count!@
+
+            <!--(if action == "home" and largest_hcode)-->
+                </span>
+            <!--(end)-->
+        </a>
+    
+    <!--(elif "timestamp" not in unit or not unit["punctuation"])-->
+        @!(("hold" if py == u' ' else py) if py else target).lower()!@
+    <!--(end)-->
+
+    <!--(if action == "home" and "ipa_word" in unit and unit["ipa_word"])-->
+        <br>@!unit["ipa_word"]!@
+    <!--(end)-->
+
+    <br/>
+
+    <!--(if action == "home" and py and len(unit["multiple_target"]))-->
+        <div style='color: black; display: none' id='pop@!trans_id!@'/>
+        <script>multipopinstall('@!trans_id!@');</script>
+    <!--(end)-->
+</td>

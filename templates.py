@@ -63,6 +63,9 @@ class CommonElement(Element) :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
+        if hasattr(self.req, "template_dict") :
+            conditionals.update(self.req.template_dict)
+
         fh = open(cwd + 'serve/' + template_name, 'r')
         f = fh.read()
         fh.close()
@@ -136,6 +139,18 @@ class ReadElement(CommonElement) :
                         statdisabled = _("Statistics Disabled"),
                         nowords = _("No words memorized. Get to work!"),
                      )
+        return tag
+
+class Row1Element(CommonElement) :
+    @renderer
+    def row1(self, request, tag) :
+        #tag.fillSlots(foo = "bar")
+        return tag
+
+class Row2Element(CommonElement) :
+    @renderer
+    def row2(self, request, tag) :
+        #tag.fillSlots(foo = "bar")
         return tag
 
 class TranslationsElement(CommonElement) :
@@ -780,8 +795,8 @@ def run_template(req, which, content = False) :
         else :
             obj = which(req)
     except Exception, e :
-        return str(e)
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
+        raise e
 
     io = StringIO()
 

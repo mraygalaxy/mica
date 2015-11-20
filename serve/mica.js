@@ -567,30 +567,53 @@ function select_chat_option(select_idx) {
     $.receivePush(select_idx);
 }
 
-function multipopinstall(trans_id, unused) {
-    $('#ttip' + trans_id).popover({placement: 'bottom',
+function multipopinstall(trans_id) {
+    $('#ttip' + trans_id).popover(
+        {  placement: 'bottom',
     //$('#ttip' + trans_id).popover({placement: 'bottom-right',
-                                   trigger: 'click',
-                                   html: true,
-                                   content: function() {
-                                        return $('#pop' + trans_id).html();
-                                   }});
+           trigger: 'manual',
+           html: true,
+           content: function() {
+                return $('#pop' + trans_id).html();
+           }}).click(function(e) {
+                $('#ttip' + trans_id).not(this).popover('hide');
+                e.stopPropagation();
+            });
+
+    $(document).click(function(e) {
+        if (!$(e.target).is('#ttip' + trans_id + ', .popover-title, .popover-content')) {
+            $('#ttip' + trans_id).popover('hide');
+        }
+    });
 }
 
 function multipoprefresh(json, opaque) {
+    done();
     var trans_id = opaque[0];
     var spy = opaque[1];
-    $('#ttip' + trans_id).html(spy);
-    $('#ttip' + trans_id).popover('hide');
     $('#pop' + trans_id).html(json.desc);
+    if (spy) {
+        $('#ttip' + trans_id).html(spy);
+        $('#ttip' + trans_id).popover('hide');
+    } else {
+        $('#ttip' + trans_id).popover('show');
+    }
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
-          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
-		  unavailable, 
-		  multipoprefresh,
-		  [trans_id, spy]);
+
+    if(!spy && $('#ttip' + trans_id).data()['bs.popover'].tip().hasClass('in')){
+      // popover is visable
+      $('#ttip' + trans_id).popover('hide');
+    } else {
+      loading(); 
+      // popover is not visable
+        go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
+              + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
+              unavailable, 
+              multipoprefresh,
+              [trans_id, spy]);
+    }
 }
 
 function process_reviews(uuid, batch) {
