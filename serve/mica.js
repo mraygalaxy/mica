@@ -601,7 +601,6 @@ function multipoprefresh(json, opaque) {
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-
     if(!spy && $('#ttip' + trans_id).data()['bs.popover'].tip().hasClass('in')){
       // popover is visable
       $('#ttip' + trans_id).popover('hide');

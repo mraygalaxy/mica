@@ -1,6 +1,7 @@
-<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row2" style='vertical-align: bottom; text-align: center; font-size: @!font!@%%; border: @!border!@; @!cursor!@'>
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row2" style="vertical-align: bottom; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%; border: @!'3px solid black' if (action == 'home' and largest_hcode) else 'none'!@; @!'; cursor: pointer' if ('punctuation' not in unit or not unit['punctuation']) else ''!@">
     <!--(if py and (py not in gp.punctuation) and not unit["punctuation"])-->
-        <a class='@!transclass!@' id='ttip@!trans_id!@'>
+        <a id='ttip@!trans_id!@'>
+            <t:attr name='class'><t:slot name='transclass'/></t:attr>
             <!--(if action == 'home' and color != '')-->
                 <t:attr name='style'>color: @!color!@</t:attr>
             <!--(end)-->
@@ -17,7 +18,22 @@
                 <span page='@!page!@' target='@!largest_target!@' nbunit='@!nb_unit!@' index='@!largest_index!@' transid='@!trans_id!@' class='review' source='@!source!@'>
             <!--(end)-->
 
-            @!row2_result!@ @!add_count!@
+            <!--(if gp.already_romanized)-->
+                <!--(if color not in ['grey', 'white'])-->
+                    @!target!@
+                <!--(else)-->
+                    <div class='roman@!color!@'>@!"&#160;".join(source)!@&#160;</div>
+                <!--(end)-->
+            <!--(else)-->
+                <!--(if py == u' ')-->
+                    <div class='roman@!color!@'>@!"&#160;".join(source)!@&#160;</div>
+                <!--(elif py)-->
+                    @!py!@
+                <!--(else)-->
+                    @!target.lower()!@
+                <!--(end)-->
+            <!--(end)-->
+            @!add_count!@
 
             <!--(if action == "home" and largest_hcode)-->
                 </span>

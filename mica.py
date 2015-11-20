@@ -24,6 +24,7 @@ from socket import timeout as socket_timeout
 from string import ascii_lowercase as string_ascii_lowercase, ascii_uppercase as string_ascii_uppercase
 from binascii import hexlify as binascii_hexlify
 from sys import settrace as sys_settrace
+from pyratemp import TemplateSyntaxError
 
 import couch_adapter
 import processors
@@ -611,6 +612,15 @@ class MICA(object):
                     raise e
                 except exc.HTTPBadRequest, e :
                     raise e
+                except TemplateSyntaxError, e :
+                    merr(_("Exception") + ":")
+                    resp = "<h4>" + _("Exception") + ":</h4>"
+
+                    for line in format_exc().splitlines() :
+                        resp += "<br>" + line
+                        merr(line)
+
+                    resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
                 except Exception, msg:
                     merr(_("Exception") + ":")
                     resp = "<h4>" + _("Exception") + ":</h4>"
@@ -620,7 +630,7 @@ class MICA(object):
                         merr(line)
 
                     resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
-                    if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod"))) and "connected" in req.session.value and req.session.value["connected"] :
+                    if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod" and not resp.count("TemplateSyntaxError")))) and "connected" in req.session.value and req.session.value["connected"] :
                         mwarn("Boo other, logging out user now.")
                         if not mobile :
                             req.session.value["connected"] = False
@@ -1421,15 +1431,6 @@ class MICA(object):
 
         return nb_pages 
     
-    def roman_holder(self, source, color) :
-        holder = "<div class='roman" + color + "'>"
-        
-        for x in range(0, len(source)) :
-            holder += "&#160;"
-            
-        holder += "</div>"
-        return holder
-    
     def view_page_start(self, req, name, story, page, chars_per_line, start_trans_id = 0, chat = False) :
         lines = []
         gp = self.processors[self.tofrom(story)]
@@ -1642,6 +1643,7 @@ class MICA(object):
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, start_trans_id = 0, tzoffset = 0, chat = False, history = False) :
         output = [output]
         gp = self.processors[self.tofrom(story)]
+        req.gp = gp
 
         result = self.view_page_start(req, name, story, page, chars_per_line, start_trans_id = start_trans_id, chat = chat)
         if not result :
@@ -1735,27 +1737,20 @@ class MICA(object):
                 if action == "edit" :
                     prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
 
-                if chat :
-                    if "select_idx" in unit :
-                        onclick = "select_chat_option('" + str(unit["select_idx"]) + "'"
-                else :
-                    onclick = "select_toggle('" + trans_id + "')"
-
                 req.template_dict = dict(
-                    font = 100 if mobile else req.session.value["default_web_zoom"] * 100.0,
+                    default_web_zoom = req.session.value["default_web_zoom"],
                     tmpclass = " ".join(tmp_class) if action == "edit" else "",
                     merge_end = merge_end if action == "edit" else False,
                     curr_merge = curr_merge if action == "edit" else False,
                     unit = unit,
-                    onclick = onclick,
                     py = py,
+                    chat = chat,
                 )
 
                 if "timestamp" not in unit or not unit["punctuation"] :
                     req.template_dict.update(dict(
                         trans_id = trans_id,
                         batch = 'batch' if (action == "edit" and use_batch) else 'none',
-                        transclass = 'transroman' if gp.already_romanized else 'trans',
                         tid = tid,
                         nb_unit = nb_unit,
                         batchid = batch if (action == "edit" and use_batch) else -1,
@@ -1763,7 +1758,6 @@ class MICA(object):
                         page = page,
                         pinyin = py if py else target,
                         index = unit["multiple_correct"] if py else -1,
-                        cursor = "; cursor: pointer" if "punctuation" not in unit or not unit["punctuation"] else "",
                         link = source if py else target, 
                       ))
                 else :
@@ -1785,21 +1779,18 @@ class MICA(object):
                 add_count = ""
 
                 req.template_dict = dict(
-                  font = req.session.value["default_web_zoom"] * 100.0 if not mobile else 100,
-                  cursor = "; cursor: pointer" if ("punctuation" not in unit or not unit["punctuation"]) else "", 
+                  default_web_zoom = req.session.value["default_web_zoom"],
                   py = py,
-                  gp = gp,
                   unit = unit,
                   add_count = add_count,
-                  border = "none",
                   source = source,
                   uuid = uuid,
                   target = word[0].replace("\"", "\\\"").replace("\'", "\\\""),
-                  transclass = 'transroman' if gp.already_romanized else 'trans',
                   trans_id = str(word[2]),
                   tid = unit["hash"] if py else str(word[2]),
                   page = page,
                   nb_unit = str(word[4]),
+                  largest_hcode = False,
                 )
 
                 if py and (py not in gp.punctuation) and not unit["punctuation"] :
@@ -1811,25 +1802,9 @@ class MICA(object):
                                 recommendations = 0
                             recommendations += 1
 
-                        if req.template_dict["largest_hcode"] :
-                            req.template_dict["border"] = "3px solid black"
-
                 if action != "home" and py :
                     req.template_dict["color"] = "grey" if not unit["punctuation"] else "white"
 
-
-                if py and (py not in gp.punctuation) and not unit["punctuation"] :
-                    if gp.already_romanized :
-                        row2_result = target if req.template_dict["color"] not in [ "grey", "white" ] else self.roman_holder(source, req.template_dict["color"])
-                    else :
-                        if py == u' ' :
-                            row2_result = self.roman_holder(source, req.template_dict["color"])
-                        elif py :
-                            row2_result = py
-                        else :
-                            row2_result = target.lower()
-                    req.template_dict["row2_result"] = row2_result
-                
                 if action == "home" and py and len(unit["multiple_target"]) :
                     req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
 
@@ -1857,78 +1832,23 @@ class MICA(object):
                 if py and action == 'read' :
                     if unit["hash"] in sources['memorized'] :
                         memorized = True
-                        
-                tid = unit["hash"] if py else str(word[2])
-                line_out.append("\n<td style='vertical-align: bottom; text-align: center'>")
-                line_out.append("<table><tr>")
-                line_out.append("<td><div style='display: none' class='memory" + tid + "'>")
-                line_out.append("<img src='" + req.mpath + "/" + spinner + "' width='15px'/>&#160;")
-                line_out.append("</div></td>")
-                line_out.append("</tr><tr><td>")
-                if gp.already_romanized :
-                    line_out.append("<div class='transroman ")
-                else :
-                    line_out.append("<div class='trans ")
-                    
-                line_out.append(" trans" + tid + "' style='display: ")
-                line_out.append("block" if (action == "read" and not memorized) else "none")
-                line_out.append("; font-size: ")
-                if not mobile :
-                    line_out.append(str(req.session.value["default_web_zoom"] * 100.0))
-                else :
-                    line_out.append("100")
-                line_out.append("%")
 
-                line_out.append("' id='trans" + tid + "'>")
-                if py and not unit["punctuation"] :
-                    if not memorized :
-                        line_out.append("<div revealid='" + tid + "' ")
-                        line_out.append("class='reveal reveal" + tid + "'")
-                        if meaning_mode == "true":
-                            line_out.append("style='display: none'")
-                        line_out.append(">&#160;&#160;<a class='reveal' onclick=\"reveal('" + tid + "', false)\"><i class='glyphicon glyphicon-expand'></i></a></div>")
-                        line_out.append("<div class='definition definition" + tid + "' ")
-                        if meaning_mode == "false":
-                            line_out.append("style='display: none'")
-                        line_out.append(">")
-                    if action in ["read", "edit"] :
-                        if gp.already_romanized :
-                            line_out.append("<a class='transroman' ")
-                        else :
-                            line_out.append("<a class='trans' ")
-                        if uuid :
-                            line_out.append("onclick=\"memorize('" + \
-                                    tid + "', '" + str(uuid) + "', '" + str(nb_unit) + "', '" + page + "')\">")
-                        else :
-                            line_out.append("onclick=\"memorize_nostory('" + \
-                                    tid + "', '" + myquote(source) + "', '" + str(unit["multiple_correct"]) + "')\">")
+                req.template_dict = dict(
+                  tid = unit["hash"] if py else str(word[2]),
+                  default_web_zoom = req.session.value["default_web_zoom"],
+                  meaning_mode = meaning_mode,
+                  quoted_source = myquote(source),
+                  uuid = uuid,
+                  unit = unit,
+                  page = page,
+                  target = word[0].replace("\"", "\\\"").replace("\'", "\\\""),
+                  nb_unit = str(word[4]),
+                  py = py,
+                  memorized = memorized,
+                )
+                line_out.append(run_template(req, Row3Element))
+                delattr(req, "template_dict")
 
-                    line_out.append(target.replace("/"," /<br/>"))
-                        
-                    if action == "read" :
-                        if "ipa_word" in unit and unit["ipa_word"] :
-                            line_out.append("<br>" + unit["ipa_word"])
-                
-                    if action in [ "read", "edit" ] :
-                        line_out.append("</a>")
-
-                    if not memorized :
-                        line_out.append("</div>")
-
-                line_out.append("<br/>")
-                line_out.append("</div>")
-                line_out.append("<div style='display: ")
-                line_out.append("none" if (action in ["read", "edit"] and not memorized) else "block")
-                if gp.already_romanized :
-                    line_out.append("' class='transroman")
-                else :
-                    line_out.append("' class='trans")
-                
-                line_out.append(" blank" + tid + "'>")
-                line_out.append("&#160;</div>")
-                line_out.append("</td>")
-                line_out.append("</tr></table>")
-                line_out.append("</td>")
                 if py :
                     line_out.append("<td>&#160;</td>")
 
