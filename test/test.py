@@ -330,7 +330,7 @@ assert(r.status_code == 200)
 sleep(3)
 
 urls.append({ "method" : "logout", "loc" : "logout" })
-#run_tests()
+run_tests()
 
 try:
     print "Done. Application left running..."

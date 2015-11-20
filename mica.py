@@ -1514,7 +1514,7 @@ class MICA(object):
 
         if not py :
             prev_merge = False
-            return prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class
+            return prev_merge, merge_end, use_batch, batch, tmp_class
 
         sourcegroup = False if source not in sources['mergegroups'] else sources['mergegroups'][source]
         
@@ -1578,7 +1578,7 @@ class MICA(object):
 
         prev_merge = curr_merge if not skip_prev_merge else False
 
-        return prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class
+        return prev_merge, merge_end, use_batch, batch, tmp_class
 
     def view_check_reviews(self, req, sources, source, unit, py) :
         largest_hcode = False 
@@ -1688,7 +1688,7 @@ class MICA(object):
                 req.template_dict = { "largest_hcode" : False}
 
                 if action == "edit" :
-                    prev_merge, req.template_dict["curr_merge"], req.template_dict["merge_end"], use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
+                    prev_merge, req.template_dict["merge_end"], use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
 
                 if py :
                     if (py not in gp.punctuation) and not unit["punctuation"] :
@@ -1729,7 +1729,6 @@ class MICA(object):
                     uhash = uhash, 
                     meaning_mode = meaning_mode,
                     quoted_source = myquote(source),
-                    prev_merge = prev_merge,
                     row3_target = row3_target.replace("\"", "\\\"").replace("\'", "\\\""),
                     memorized = memorized,
                     link = source if py else target,
@@ -1751,14 +1750,14 @@ class MICA(object):
             line_out = []
             line_out.append("""
                 <table %(style)s>
-            """ % dict(style = "style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable'"))
+            """ % dict(style = "class='pagetable' style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable'"))
 
             for row_idx in [1, 2, 3] :
                 line_out.append("""
                     <tr>
+                    <td style='padding-right: 10px'/>
                 """)
                 for word in words :
-                    line_out.append("<td>&#160;</td>")
                     line_out.append(word[row_idx])
 
                 line_out.append("""
