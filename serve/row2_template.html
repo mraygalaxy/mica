@@ -1,4 +1,4 @@
-<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row2" style="vertical-align: bottom; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%; border: @!'3px solid black' if (action == 'home' and largest_hcode) else 'none'!@; @!'; cursor: pointer' if ('punctuation' not in unit or not unit['punctuation']) else ''!@">
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row" style="vertical-align: bottom; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%; border: @!'3px solid black' if (action == 'home' and largest_hcode) else 'none'!@; @!'; cursor: pointer' if ('punctuation' not in unit or not unit['punctuation']) else ''!@">
     <!--(if py and (py not in gp.punctuation) and not unit["punctuation"])-->
         <a id='ttip@!trans_id!@'>
             <t:attr name='class'><t:slot name='transclass'/></t:attr>
@@ -9,7 +9,7 @@
                 <t:attr name='style'>color: black</t:attr>
             <!--(end)-->
             <!--(if action in ["read", "edit"] or not(len(unit["multiple_target"])))-->
-                <t:attr name='onclick'>toggle('@!tid!@', '@!"0" if action == "read" else "1"!@')</t:attr>
+                <t:attr name='onclick'>toggle('@!uhash!@', '@!"0" if action == "read" else "1"!@')</t:attr>
             <!--(elif action == "home")-->
                 <t:attr name='onclick'>multiselect('@!uuid!@', -1, '@!nb_unit!@', '@!trans_id!@', false, '@!page!@');</t:attr>
             <!--(end)-->
@@ -47,8 +47,6 @@
     <!--(if action == "home" and "ipa_word" in unit and unit["ipa_word"])-->
         <br>@!unit["ipa_word"]!@
     <!--(end)-->
-
-    <br/>
 
     <!--(if action == "home" and py and len(unit["multiple_target"]))-->
         <div style='color: black; display: none' id='pop@!trans_id!@'/>

@@ -1,9 +1,13 @@
-<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row1" style='vertical-align: middle; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%' class='@!tmpclass!@'>
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row" class='@!tmpclass!@' style='vertical-align: middle; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%'>
+    <!--(if py and action == 'edit' and merge_end)-->
+        <t:attr name='class'>mergeright mergetop mergebottom</t:attr>
+    <!--(end)-->
+
     <!--(if "timestamp" not in unit or not unit["punctuation"])-->
 
         <span id='spanselect_@!trans_id!@' class='@!batch!@'>
             <a style='color: black; font-weight: normal @!'; cursor: pointer' if 'punctuation' not in unit or not unit['punctuation'] else ''!@'
-               uniqueid='@!tid!@'
+               uniqueid='@!uhash!@'
                nbunit='@!nb_unit!@'
                transid='@!trans_id!@'
                batchid='@!batchid!@'
@@ -23,15 +27,5 @@
         </span>
     <!--(else)-->
         @!chatlog!@
-    <!--(end)-->
-
-    <!--(if py)-->
-        <!--(if action == 'edit' and merge_end)--> 
-            <td class='mergeleft' style='margin-right: 20px'></td>
-        <!--(elif action == 'edit' and curr_merge)-->
-            <td class='mergetop mergebottom' style='margin-right: 20px'></td>
-        <!--(else)-->
-            <td style='margin-right: 20px'></td>
-        <!--(end)-->
     <!--(end)-->
 </td>

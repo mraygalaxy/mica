@@ -141,30 +141,18 @@ class ReadElement(CommonElement) :
                      )
         return tag
 
-class Row1Element(CommonElement) :
+class RowElement(CommonElement) :
     @renderer
-    def row1(self, request, tag) :
-        tag.fillSlots(
-            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
-            )
-        return tag
-
-class Row2Element(CommonElement) :
-    @renderer
-    def row2(self, request, tag) :
-        tag.fillSlots(
-            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
-            )
-        return tag
-
-class Row3Element(CommonElement) :
-    @renderer
-    def row3(self, request, tag) :
+    def row(self, request, tag) :
         tag.fillSlots(
             spinner = tags.img(src=self.req.mpath + '/'+ spinner, width='15px'),
             transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
-                     )
+            )
         return tag
+
+class Row1Element(RowElement) : pass
+class Row2Element(RowElement) : pass
+class Row3Element(RowElement) : pass
 
 class TranslationsElement(CommonElement) :
     @renderer
