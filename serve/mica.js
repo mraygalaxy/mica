@@ -298,7 +298,6 @@ function toggle_specific(prefix, name, check) {
 
 function toggle(name, check) {
    toggle_specific('trans', name, check);
-   toggle_specific('blank', name, 0);
 }
 
       
@@ -752,7 +751,7 @@ function memory_complete(data, opaque) {
     var id = opaque[0];
     var memorized = opaque[1];
     toggle(id, 0);
-    toggle_specific('memory', id, 0);
+    done();
     if (memorized) {
         $('#memoitem' + id).attr('style', 'display: block');
     } else {
@@ -761,7 +760,7 @@ function memory_complete(data, opaque) {
 }
 
 function memory(id, uuid, nb_unit, memorized, page) {
-    toggle_specific('memory', id, 0);
+    loading();
     go(false, '', 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
         unavailable, 
         memory_complete,
@@ -777,7 +776,7 @@ function forget(id, uuid, nb_unit, page) {
 }
 
 function memory_nostory(id, source, multiple_correct, memorized) {
-    toggle_specific('memory', id, 0);
+    loading();
     go(false, '', 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
         unavailable,
         memory_complete,
