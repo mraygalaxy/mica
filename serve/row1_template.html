@@ -1,9 +1,8 @@
-<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row1" style='vertical-align: middle; text-align: center; font-size: @!font!@%%' class='@!tmpclass!@'>
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row1" style='vertical-align: middle; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%' class='@!tmpclass!@'>
     <!--(if "timestamp" not in unit or not unit["punctuation"])-->
 
         <span id='spanselect_@!trans_id!@' class='@!batch!@'>
-            <a class="@!transclass!@"
-               style='color: black; font-weight: normal @!cursor!@'
+            <a style='color: black; font-weight: normal @!'; cursor: pointer' if 'punctuation' not in unit or not unit['punctuation'] else ''!@'
                uniqueid='@!tid!@'
                nbunit='@!nb_unit!@'
                transid='@!trans_id!@'
@@ -11,8 +10,16 @@
                operation='@!operation!@'
                page='@!page!@'
                pinyin="@!pinyin!@"
-               index='@!index!@'
-               onclick='@!onclick!@'>@!link!@</a>
+               index='@!index!@'>
+                    <t:attr name='class'><t:slot name='transclass'/></t:attr>
+               <!--(if chat and 'select_idx' in unit)-->
+                    <t:attr name='onclick'>select_chat_option('@!unit['select_idx']!@');</t:attr>
+               <!--(end)-->
+               <!--(if not chat)-->
+                    <t:attr name='onclick'>select_toggle('@!trans_id!@')</t:attr>
+               <!--(end)-->
+               @!link!@
+               </a>
         </span>
     <!--(else)-->
         @!chatlog!@

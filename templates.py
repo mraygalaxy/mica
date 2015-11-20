@@ -59,7 +59,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
+        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -144,13 +144,26 @@ class ReadElement(CommonElement) :
 class Row1Element(CommonElement) :
     @renderer
     def row1(self, request, tag) :
-        #tag.fillSlots(foo = "bar")
+        tag.fillSlots(
+            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
+            )
         return tag
 
 class Row2Element(CommonElement) :
     @renderer
     def row2(self, request, tag) :
-        #tag.fillSlots(foo = "bar")
+        tag.fillSlots(
+            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
+            )
+        return tag
+
+class Row3Element(CommonElement) :
+    @renderer
+    def row3(self, request, tag) :
+        tag.fillSlots(
+            spinner = tags.img(src=self.req.mpath + '/'+ spinner, width='15px'),
+            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
+                     )
         return tag
 
 class TranslationsElement(CommonElement) :
