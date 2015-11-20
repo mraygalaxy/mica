@@ -302,7 +302,7 @@ function toggle(name, check) {
 }
 
       
-function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
+function prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation) {
   	  var op = { 
   	  			"operation": operation,
   	  			"uuid" : uuid,
@@ -328,7 +328,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
 
           if (operation == "split") {
               op["nbunit"] = nbunits[0];
-              op["tid"] = tids[0];
+              op["uhash"] = uhashes[0];
               op["index"] = indexes[0];
               op["pagenum"] = pages[0];
               op["pinyin"] = pinyin[0];
@@ -342,7 +342,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
                         break;
                  }
                  op["nbunit" + x] = nbunits[x];
-                 op["tid" + x] = tids[x];
+                 op["uhash" + x] = uhashes[x];
                  op["index" + x] = indexes[x];
                  op["page" + x] = pages[x];
 	             op["chars" + x] = chars[x];
@@ -362,7 +362,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
 }
   
 function process_edits(uuid, operation, batch) {
-      var tids = [];
+      var uhashes = [];
       var transids = [];
       var nbunits = [];
       var chars = [];
@@ -376,7 +376,7 @@ function process_edits(uuid, operation, batch) {
 
       $("span." + selector_class + " > a").each(function(index) {
         chars.push($(this).text());
-        tids.push($(this).attr('uniqueid'));
+        uhashes.push($(this).attr('uniqueid'));
         nbunits.push($(this).attr('nbunit'));
         transids.push($(this).attr('transid'));
         pinyin.push($(this).attr('pinyin'));
@@ -390,7 +390,7 @@ function process_edits(uuid, operation, batch) {
       var out = "";
       
       if (batch) {
-			var t_tids = [];
+			var t_uhashes = [];
 			var t_transids = [];
 			var t_nbunits = [];
 			var t_chars = [];
@@ -401,8 +401,8 @@ function process_edits(uuid, operation, batch) {
 			var curr_batch = batchids[0];
 		    for (var x = 0; x < batchids.length; x++) {
 		    	if (batchids[x] != curr_batch) {
-					edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
-					t_tids = [];
+					edits.push(prepare_one_edit(batch, uuid, t_uhashes, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+					t_uhashes = [];
 					t_transids = [];
 					t_nbunits = [];
 					t_chars = [];
@@ -414,7 +414,7 @@ function process_edits(uuid, operation, batch) {
 				
 				curr_batch = batchids[x];
 			
-	    		t_tids.push(tids[x]);
+	    		t_uhashes.push(uhashes[x]);
 	    		t_transids.push(transids[x]);
 	    		t_nbunits.push(nbunits[x]);
 	    		t_chars.push(chars[x]);
@@ -426,11 +426,11 @@ function process_edits(uuid, operation, batch) {
 		    
 		    // handle the last batch...
 		    
-		    if (t_tids.length > 0) {
-				edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+		    if (t_uhashes.length > 0) {
+				edits.push(prepare_one_edit(batch, uuid, t_uhashes, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
 		    }
       } else {
-		  edits.push(prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation));
+		  edits.push(prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation));
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";

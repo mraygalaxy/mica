@@ -1207,7 +1207,7 @@ class MICA(object):
         gp = self.processors[self.tofrom(story)]
         history = []
         found = {}
-        tid = 0
+        uhash = 0
         online = 0
         offline = 0
 
@@ -1242,11 +1242,11 @@ class MICA(object):
                 if char not in found :
                     found[char] = True
                     if gp.already_romanized :
-                        history.append([char, str(changes["total"]), "", "<br/>".join(record["target"]), tid])
+                        history.append([char, str(changes["total"]), "", "<br/>".join(record["target"]), uhash])
                     else :
-                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid])
+                        history.append([char, str(changes["total"]), " ".join(record["sromanization"]), " ".join(record["target"]), uhash])
                             
-                tid += 1
+                uhash += 1
             
             # Add sort options here
             def by_total( a ):
@@ -1271,7 +1271,7 @@ class MICA(object):
 
         if req.list_mode :
             found = {}
-            tid = 0
+            uhash = 0
             error = False
             try :
                 page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(req.page)]
@@ -1298,7 +1298,7 @@ class MICA(object):
                         if unit["hash"] not in changes["record"] :
                             continue
                         record = changes["record"][unit["hash"]]
-                        history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), tid, "SPLIT"])
+                        history.append([char, str(record["total_splits"]), " ".join(record["sromanization"]), " ".join(record["target"]), uhash, "SPLIT"])
                     else: 
                         changes = False if char not in merge_keys else merge_keys[char]
                         
@@ -1317,13 +1317,13 @@ class MICA(object):
                                 memberlist.append((member["romanization"], key))
                             if nb_singles == len(record["members"]) :
                                 continue
-                            history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, tid, "MERGE"])
+                            history.append([char, str(changes["total"]), " ".join(record["sromanization"]), memberlist, uhash, "MERGE"])
                         else :
                             continue
 
                     if char not in found :
                         found[char] = True
-                    tid += 1
+                    uhash += 1
                 
                 # Add sort options here
                 def by_total( a ):
@@ -1661,68 +1661,13 @@ class MICA(object):
         elif action == "read" :
             sources['memorized'] = self.view_keys(req, "memorized", units) 
         
-        # TODO: The rest of the code involed in viewing a page is just a bunch of
-        # loops. We have already finished querying the database and are simply
-        # splicing together content.
-        # 
-        # Nevertheless, putting together this content, even purely in memory
-        # is by far the largest source of overhead that we have. I definitely
-        # think the next optimization would be to cache this content and
-        # build it offline during translation time and then refresh the rendered
-        # page each time we perform edits.
-        #
-        # But even during the edit process, the time to perform individual
-        # page renders here is incredibly slow if we have to render each page again.
-        #
-        # The final solution may be to abandon building the page altogether
-        # and just send json to the client browser, but that's a problem to
-        # be solved for another day.....
-        # 
-        # Anothers solution may be to incrementally update portions of
-        # the page instead of the whole page.
-        #
-        # Another solution may be to attach HTML elements to the individual
-        # units of the page without re-generating them from scratch as each
-        # unit changes, but the problem there is that pages are not yet
-        # grouped into lines (nor can they be statically if we're dealing
-        # with free-flowing text.
-        #
-        # But at a minimum, we may at least be able to attach the unique
-        # HTML for those modified units into the page dictionary and then
-        # worry about line-groupings later....
-        # 
-        # Each unit would need to have a rendered HTML chunk for all three
-        # modes for which the unit could be viewed.
-        
         mverbose("View Page " + str(page) + " story " + str(name) + " building...")
         batch = -1
         recommendations = False
 
         for line in lines :
-            line_out = []
-
-            if chat and history :
-                if "peer" in line[0][3] :
-                    msgto = line[0][3]["peer"]
-                else :
-                    msgto = req.session.value["username"]
-
-                line_out.append("""
-                    <tr><td>                
-                        <div style='width: 100%'>
-                            <span class='%(msgclass)s' style='border-radius: 15px; background-color: %(background)s; border: 1px solid grey; color: black'>
-                            <table>
-                                <tr>
-                                    <td>&nbsp</td><td>
-                """ % dict(msgclass = "msgright" if msgto != req.session.value["username"] else "msgleft",
-                           background = '#f0f0f0' if not history else 'white'))
-
-            line_out.append("""
-                <table %(style)s>
-                    <tr>
-            """ % dict(style = "style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable"))
-
             prev_merge = False
+            words = []
 
             for word_idx in range(0, len(line)) :
                 word = line[word_idx]
@@ -1730,145 +1675,118 @@ class MICA(object):
                 py = word[1]
                 trans_id = str(word[2])
                 unit = word[3]
-                tid = unit["hash"] if py else trans_id 
                 nb_unit = str(word[4])
                 source = word[5]
+                uhash = unit["hash"] if py else trans_id 
+                nb_unit = str(word[4])
+                add_count = ""
+                row3_target = target
+                memorized = False
+                tmp_class = []
+                rword = {}
+
+                req.template_dict = { "largest_hcode" : False}
 
                 if action == "edit" :
-                    prev_merge, curr_merge, merge_end, use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
+                    prev_merge, req.template_dict["curr_merge"], req.template_dict["merge_end"], use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
 
-                req.template_dict = dict(
+                if py :
+                    if (py not in gp.punctuation) and not unit["punctuation"] :
+                        if action == "home" :
+                            largest_hcode, req.template_dict["largest_index"], req.template_dict["largest_target"], req.template_dict["color"], add_count = self.view_check_reviews(req, sources, source, unit, py) 
+
+                            if req.template_dict["largest_hcode"] :
+                                if not recommendations :
+                                    recommendations = 0
+                                recommendations += 1
+
+                    if action != "home" :
+                        req.template_dict["color"] = "grey" if not unit["punctuation"] else "white"
+                    if action == "home" and len(unit["multiple_target"]) :
+                        req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
+
+                    if action == 'read' :
+                        if unit["hash"] in sources['memorized'] :
+                            memorized = True
+
+                if "timestamp" in unit and unit["punctuation"] :
+                    req.template_dict["chatlog"] = source + u": " + " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[story["name"].split(";")[1]]) + ")" + ": "
+
+                req.template_dict.update(dict(
                     default_web_zoom = req.session.value["default_web_zoom"],
-                    tmpclass = " ".join(tmp_class) if action == "edit" else "",
-                    merge_end = merge_end if action == "edit" else False,
-                    curr_merge = curr_merge if action == "edit" else False,
+                    tmpclass = " ".join(tmp_class),
                     unit = unit,
                     py = py,
                     chat = chat,
-                )
+                    add_count = add_count,
+                    source = source,
+                    target = target,
+                    trans_id = trans_id,
+                    page = page,
+                    uuid = uuid,
+                    action = action,
+                    nb_unit = nb_unit,
+                    uhash = uhash, 
+                    meaning_mode = meaning_mode,
+                    quoted_source = myquote(source),
+                    prev_merge = prev_merge,
+                    row3_target = row3_target.replace("\"", "\\\"").replace("\'", "\\\""),
+                    memorized = memorized,
+                    link = source if py else target,
+                    pinyin = py if py else target,
+                    index = unit["multiple_correct"] if py else -1,
+                    batch = 'batch' if (action == "edit" and use_batch) else 'none',
+                    batchid = batch if (action == "edit" and use_batch) else -1,
+                    operation = use_batch if (action == "edit" and use_batch) else "none",
+                ))
 
-                if "timestamp" not in unit or not unit["punctuation"] :
-                    req.template_dict.update(dict(
-                        trans_id = trans_id,
-                        batch = 'batch' if (action == "edit" and use_batch) else 'none',
-                        tid = tid,
-                        nb_unit = nb_unit,
-                        batchid = batch if (action == "edit" and use_batch) else -1,
-                        operation = use_batch if (action == "edit" and use_batch) else "none",
-                        page = page,
-                        pinyin = py if py else target,
-                        index = unit["multiple_correct"] if py else -1,
-                        link = source if py else target, 
-                      ))
-                else :
-                    req.template_dict["chatlog"] = source + u": " + " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[story["name"].split(";")[1]]) + ")" + ":&#160;&#160;&#160;"
+                if len(req.template_dict["row3_target"]) and req.template_dict["row3_target"][0] == '/' :
+                    req.template_dict["row3_target"] = req.template_dict["row3_target"][1:-1]
 
-                line_out.append(run_template(req, Row1Element))
-                delattr(req, "template_dict")
+                rword[1] = run_template(req, Row1Element)
+                rword[2] = run_template(req, Row2Element)
+                rword[3] = run_template(req, Row3Element)
+                words.append(rword)
 
+            line_out = []
             line_out.append("""
-                </tr>
-                <tr>
-            """)
+                <table %(style)s>
+            """ % dict(style = "style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable'"))
 
-            for word in line :
-                py = word[1]
-                unit = word[3]
-                largest_hcode = False
-                source = word[5]
-                add_count = ""
-
-                req.template_dict = dict(
-                  default_web_zoom = req.session.value["default_web_zoom"],
-                  py = py,
-                  unit = unit,
-                  add_count = add_count,
-                  source = source,
-                  uuid = uuid,
-                  target = word[0].replace("\"", "\\\"").replace("\'", "\\\""),
-                  trans_id = str(word[2]),
-                  tid = unit["hash"] if py else str(word[2]),
-                  page = page,
-                  nb_unit = str(word[4]),
-                  largest_hcode = False,
-                )
-
-                if py and (py not in gp.punctuation) and not unit["punctuation"] :
-                    if action == "home" :
-                        req.template_dict["largest_hcode"], req.template_dict["largest_index"], req.template_dict["largest_target"], req.template_dict["color"], add_count = self.view_check_reviews(req, sources, source, unit, py) 
-
-                        if req.template_dict["largest_hcode"] :
-                            if not recommendations :
-                                recommendations = 0
-                            recommendations += 1
-
-                if action != "home" and py :
-                    req.template_dict["color"] = "grey" if not unit["punctuation"] else "white"
-
-                if action == "home" and py and len(unit["multiple_target"]) :
-                    req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
-
-                line_out.append(run_template(req, Row2Element))
-                delattr(req, "template_dict")
-
-                if py :
-                    line_out.append("<td style='margin-right: 20px'></td>")
-
-            line_out.append("""
-                </tr>
-                <tr>
-            """)
-
-            for word in line :
-                target = word[0]
-                if len(target) and target[0] == '/' :
-                    target = target[1:-1]
-                unit = word[3]
-                nb_unit = str(word[4])
-                py = word[1]
-                source = word[5]
-                memorized = False
-
-                if py and action == 'read' :
-                    if unit["hash"] in sources['memorized'] :
-                        memorized = True
-
-                req.template_dict = dict(
-                  tid = unit["hash"] if py else str(word[2]),
-                  default_web_zoom = req.session.value["default_web_zoom"],
-                  meaning_mode = meaning_mode,
-                  quoted_source = myquote(source),
-                  uuid = uuid,
-                  unit = unit,
-                  page = page,
-                  target = word[0].replace("\"", "\\\"").replace("\'", "\\\""),
-                  nb_unit = str(word[4]),
-                  py = py,
-                  memorized = memorized,
-                )
-                line_out.append(run_template(req, Row3Element))
-                delattr(req, "template_dict")
-
-                if py :
-                    line_out.append("<td>&#160;</td>")
-
-            line_out.append("</tr>")
-            line_out.append("</table>")
-
-            if chat and history :
+            for row_idx in [1, 2, 3] :
                 line_out.append("""
-                                    </td><td>&nbsp</td></tr></table>
-                                </span>
-                            </div>
-                        </td></tr>
-                        <tr><td>&nbsp</td></tr>
+                    <tr>
+                """)
+                for word in words :
+                    line_out.append("<td>&#160;</td>")
+                    line_out.append(word[row_idx])
+
+                line_out.append("""
+                    </tr>
                 """)
 
-            output.append("".join(line_out))
+            line_out.append("""
+                </table>
+            """)
 
-        if recommendations :
-            # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
-            output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output
+            if chat and history :
+                if "peer" in line[0][3] :
+                    msgto = line[0][3]["peer"]
+                else :
+                    msgto = req.session.value["username"]
+
+                chatpage_fh = open(cwd + "serve/chatpage_template.html")
+                output.append((chatpage_fh.read() % dict(
+                           msgclass = "msgright" if msgto != req.session.value["username"] else "msgleft",
+                           background = '#f0f0f0' if not history else 'white',
+                           )).replace("RARAPAGECONTENTS", "".join(line_out)))
+                chatpage_fh.close()
+            else :
+                output += line_out
+
+                if recommendations :
+                    # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you. 
+                    output = ["<b>" + _("Found Recommendations") + ": " + str(recommendations) + "</b><br/><br/>"] + output
 
         mdebug("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
@@ -2179,7 +2097,7 @@ class MICA(object):
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
             mindex = int(edit["index"])
-            mhash = edit["tid"]
+            mhash = edit["uhash"]
             page = edit["pagenum"]
             page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
             units = page_dict["units"]
@@ -2205,10 +2123,10 @@ class MICA(object):
             nb_unit_start = int(edit["nbunit0"]) + offset
             mindex_start = int(edit["index0"])
             page = int(edit["page0"]) # all edits should be on the same page
-            mhash_start = edit["tid0"]
+            mhash_start = edit["uhash0"]
             mindex_stop = int(edit["index" + str(nb_units - 1)])
             nb_unit_stop = int(edit["nbunit" + str(nb_units - 1)]) + offset
-            mhash_stop = edit["tid" + str(nb_units - 1)]
+            mhash_stop = edit["uhash" + str(nb_units - 1)]
             page_dict = req.db[self.story(req, story['name']) + ":pages:" + str(page)]
             units = page_dict["units"]
             before = units[:nb_unit_start] if (nb_unit_start > 0) else [] 
@@ -4785,7 +4703,7 @@ class MICA(object):
 
     def render(self, req) :
         global times
-        mdebug(str(req.http.params))
+        mverbose(str(req.http.params))
         if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
             func = getattr(self, "render_" + req.action)
             return func(req)
