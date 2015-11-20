@@ -22,6 +22,7 @@ sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters, test
 from common import generate_oauth_links
+from mica import go
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self) :
@@ -94,10 +95,10 @@ def check_port(hostname, port, protocol = "TCP") :
         return True
     
     except socket.error, msg :
-        cbinfo("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + ": " + str(msg))
-        return False
+        print "Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + ": " + str(msg)
         sock.close()
         sock = None
+        return False
 
 def cleanup(name) :
     try :
@@ -187,32 +188,32 @@ options = [
     ),
 ]
 
+def wait_for_port_ready(name, hostname, port) : 
+    print "Checking " + hostname + ": " + str(port)
+
+    while True :
+        if check_port(hostname, port) :
+            try :
+                r = s.get("http://" + hostname + ":" + str(port))
+                print "Container " + name + " ready. Running tests."
+                break
+            except requests.exceptions.ConnectionError, e :
+                print "Container " + name + " not ready: " + str(e) + ". Waiting..."
+        else :
+            print "Port not open yet. Waiting..."
+
+        sleep(1)
+
 for option in options :
     cleanup(option["name"])
     print "Creating container: " + option["name"]
     details = c.create_container(**option)
     print "Creation complete."
     c.start(option["name"])
-
     port = option["ports"][0]
-    print "Started. Waiting for port " + str(port) + " ready..."
     hostname = "localhost"
-    print "Checking " + hostname + ": " + str(port)
-    while True :
-        if check_port(hostname, port) :
-            try :
-                r = s.get("http://" + hostname + ":" + str(port))
-                print "Container " + option["name"] + " ready. Running tests."
-                break
-            except requests.exceptions.ConnectionError, e :
-                print "Container " + option["name"] + " not ready: " + str(e) + ". Waiting..."
-        else :
-            print "Port not open yet. Waiting..."
 
-        sleep(1)
-
-r = s.get("http://localhost")
-assert(r.status_code == 200)
+    wait_for_port_ready(option["name"], hostname, port)
 
 urls = [    
             { "method" : "login", "loc" : "login" },
@@ -308,8 +309,8 @@ links = generate_oauth_links(parameters["oauth"], slash = "/")
 port = 9888
 
 for link in links :
-    parameters = link["href"].split("?", 1)[1]
-    newhref = ":" + str(port) + "/" + link["title"] + "?" + parameters 
+    url_parameters = link["href"].split("?", 1)[1]
+    newhref = ":" + str(port) + "/" + link["title"] + "?" + url_parameters 
     print "Emulating: " + newhref
     urls.append({ "loc" : newhref, "method" : "get", "data" : dict() })
 
@@ -318,11 +319,24 @@ oresp = Thread(target=oauth_responder, args = [httpd])
 oresp.daemon = True
 oresp.start() 
 
+mthread = Thread(target=go, args = [parameters])
+mthread.daemon = True
+mthread.start() 
+
+wait_for_port_ready("mica", "localhost", parameters["port"])
+r = s.get("http://localhost")
+assert(r.status_code == 200)
+
 sleep(3)
 
 urls.append({ "method" : "logout", "loc" : "logout" })
 #run_tests()
 
+try:
+    print "Done. Application left running..."
+    mthread.join()
+except KeyboardInterrupt:
+    print "CTRL-C interrupt"
+
 httpd.socket.close()
 
-print "Done."

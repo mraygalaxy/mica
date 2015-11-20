@@ -1,0 +1,30 @@
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row1" style='vertical-align: middle; text-align: center; font-size: @!font!@%%' class='@!tmpclass!@'>
+    <!--(if "timestamp" not in unit or not unit["punctuation"])-->
+
+        <span id='spanselect_@!trans_id!@' class='@!batch!@'>
+            <a class="@!transclass!@"
+               style='color: black; font-weight: normal @!cursor!@'
+               uniqueid='@!tid!@'
+               nbunit='@!nb_unit!@'
+               transid='@!trans_id!@'
+               batchid='@!batchid!@'
+               operation='@!operation!@'
+               page='@!page!@'
+               pinyin="@!pinyin!@"
+               index='@!index!@'
+               onclick='@!onclick!@'>@!link!@</a>
+        </span>
+    <!--(else)-->
+        @!chatlog!@
+    <!--(end)-->
+
+    <!--(if py)-->
+        <!--(if action == 'edit' and merge_end)--> 
+            <td class='mergeleft' style='margin-right: 20px'></td>
+        <!--(elif action == 'edit' and curr_merge)-->
+            <td class='mergetop mergebottom' style='margin-right: 20px'></td>
+        <!--(else)-->
+            <td style='margin-right: 20px'></td>
+        <!--(end)-->
+    <!--(end)-->
+</td>
