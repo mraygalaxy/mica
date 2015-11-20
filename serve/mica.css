@@ -277,6 +277,14 @@ body {
     color: black;
 }
 
+.pagetable td {
+    padding-right: 5px;
+}
+
+.pagetable tr {
+    padding: 10px;
+}
+
 td {
     color: white
 }
