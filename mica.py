@@ -42,6 +42,7 @@ if not mobile :
     from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
+    from requests.exceptions import ConnectionError as requests_ConnectionError
     try :
         import PythonMagick
     except ImportError, e :
@@ -4226,19 +4227,35 @@ class MICA(object):
                 # Social networking service experienced some unknown error when we tried to authenticate the user before creating an account.
                 return False, _("There was an unknown error trying to authenticate you before creating an account. Please try again later") + "."
 
+        if not req.http.params.get("code") :
+            raise exc.HTTPBadRequest("Code is missing. Who are you?")
+
+        if not req.http.params.get("state") :
+            raise exc.HTTPBadRequest("State is missing. Who are you?")
+
+        state = req.http.params.get("state")
         code = req.http.params.get("code")
 
         if not req.http.params.get("finish") :
             return False, """
-                <img src='%(mpath)s/%(spinner)' width='15px'/>&#160;%(signin)s...
+                <img src='%(mpath)s/%(spinner)s' width='15px'/>&#160;%(signin)s...
                 <script>
-                    finish_new_account('%(code)s', '%(who)s');
+                    finish_new_account('%(code)s', '%(who)s', '%(state)s');
                 </script>
             """ % dict(mpath = req.mpath, 
                        spinner = spinner,
                        code = code,
                        who = who,
+                       state = state,
                        signin = _("Signing you in, Please wait"))
+
+        if "states_urls" not in req.session.value :
+            raise exc.HTTPBadRequest("Your session doesn't have a state. Who are you?")
+
+        states_urls = req.session.value["states_urls"]
+
+        if states_urls["states"][who] != state :
+            raise exc.HTTPBadRequest("Invalid state. Who are you?")
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
@@ -4247,8 +4264,11 @@ class MICA(object):
                 merr(line)
             return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
         except InvalidGrantError, e :
-            merr('Someone tried to use an old URL with an old Code')
-            return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+            merr("Someone tried to use an old URL with an old Code")
+            return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+        except requests_ConnectionError, e :
+            merr("Could not reach " + who + ": " + str(e))
+            return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
         mdebug("Token fetched successfully: " + str(service.token))
 
@@ -4274,11 +4294,13 @@ class MICA(object):
             vkeys = creds["verified_key"].split(",")
             vdict = values
             for vkey in vkeys :
-                assert(vkey in vdict)
+                if vkey not in vdict :
+                    raise exc.HTTPBadRequest()
+                    return False, _("We're sorry, but the oauth provider " + who + " is missing information (vkey " + vkey + ") in their login protocol. Please report this. Thank you.")
                 vdict = vdict[vkey]
 
             if not vdict :
-                return True, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
+                return False, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
 
         email_found = False
         email_key = creds["email_key"]
@@ -4290,10 +4312,13 @@ class MICA(object):
                     if vkey not in vdict :
                         mdebug("Key " + vkey + " not in " + str(vdict))
                         authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
+                        req.session.value["states_urls"]["urls"][who] = authorization_url
+                        req.session.value["states_urls"]["states"][who] = state 
+                        req.session.save()
                         out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
                         out += authorization_url
                         out += "'>" + _("You're welcome to try again") + "</a>"
-                        return True, out
+                        return False, out
 
                     vdict = vdict[vkey]
             values["email"] = vdict
@@ -4325,7 +4350,7 @@ class MICA(object):
 
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
-                return True, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+                return False, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mdebug("Language: " + language)
@@ -4352,7 +4377,7 @@ class MICA(object):
 
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
-                return True, _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
+                return False, _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
             req.messages = "<h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>" 
 
         return True, from_third_party
@@ -4732,6 +4757,10 @@ class MICA(object):
                 # account in the system (which is slow). Need print the front
                 # page again and wait for an ajax request to do that stuff.
                 # There might also be an error here.
+
+                # api == False means both:
+                # 1. We need the 2nd-state ajax to complete the login (good)
+                # 2. There was an error.
                 if api :
                     return self.api(req, oauth_result)
                 else :

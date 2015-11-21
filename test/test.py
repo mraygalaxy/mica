@@ -2,28 +2,53 @@
 # coding: utf-8
 
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
-from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
+from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs, environ
 from docker import Client
 from json import loads as json_loads, dumps as json_dumps
 from time import sleep
 from urlparse import urlparse, parse_qs
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from threading import Thread
+from binascii import hexlify as binascii_hexlify
 
 import requests
 import docker
 import socket
 import sys
 import BaseHTTPServer
+import httplib
+import logging
+
+environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+'''
+httplib.HTTPConnection.debuglevel = 2
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
+'''
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters, test
-from common import generate_oauth_links, sdict
+from common import sdict
 from mica import go
+from pyquery import PyQuery as pq
 
 server_port = 9888
+
+'''
+Post: https://accounts.google.com/o/oauth2/token
+
+{u'code': u'4/sdRdEpg-UCxjF2bqlaFMIcXmzYcMqFfMZVUq1m3iDmE', u'client_secret': u'hIyf_eQqtPEbyMD7pLuKxejS', u'grant_type': u'authorization_code', u'client_id': u'195565572022-ogots3m7a0alrp6sbvm7a8i3458dc814.apps.googleusercontent.com', u'redirect_uri': u'http://localhost:20000/google'}
+
+    "GoogleToken" :      [ dict(inp = {u'code': u'4/sdRdEpg-UCxjF2bqlaFMIcXmzYcMqFfMZVUq1m3iDmE', u'client_secret': u'hIyf_eQqtPEbyMD7pLuKxejS', u'grant_type': u'authorization_code', u'client_id': u'195565572022-ogots3m7a0alrp6sbvm7a8i3458dc814.apps.googleusercontent.com', u'redirect_uri': u'http://localhost:20000/google'}
+'''
+
+oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
 mock_rest = {
     "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
@@ -72,18 +97,32 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         path = url.path.replace("/", "")
         length = int(self.headers.getheader('content-length'))
         url_parameters.update(self.my_parse(self.rfile.read(length)))
+        result = 200
+        result_msg = "OK"
 
         print str(path) + ": " + str(url_parameters)
 
-        body = "{'success' : true, 'test_success': true}"
+        body = sdict(success = True, test_success = True)
 
         if path == "foo" :
             body = "bar"
+        elif path in parameters["oauth"].keys() :
+            if "action" in url_parameters and url_parameters["action"] == "token" :
+                print "TOKEN REQUEST from: " + path
+                state = oauth["states"][path]
+                code = oauth["states"][path]
+                if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
+                    result = 401
+                    result_msg = "Bad Things"
+                    body = {"error" : "bad things"} 
+                    
+                oauth["tokens"][path] = binascii_hexlify(os_urandom(4))
+                body = sdict(access_token = oauth["tokens"][path], token_type = "Bearer", expires_in = 3597)
         else :
             body = self.check_mock_data(path, url_parameters)
 
         try:
-            self.send_response(200)
+            self.send_response(result, result_msg)
             self.send_header('Content-type','text/html')
             self.send_header("Content-length", str(len(body)))
             self.end_headers()
@@ -108,14 +147,32 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         path = url.path.replace("/", "")
         print str(path) + ": " + str(url_parameters)
 
+        result = 200
+        result_msg = "OK"
+
+        body = sdict(success = True, test_success = True)
+
         if path == "foo" :
             body = "bar"
         elif path in parameters["oauth"].keys() :
-            body = sdict(succes = True, test_success = True)
+            if "action" in url_parameters and url_parameters["action"] == "lookup" :
+                def getFromDict(dataDict, mapList):
+                    return reduce(lambda d, k: d[k], mapList, dataDict)
+                def setInDict(dataDict, mapList, value):
+                    getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
+                body_dict = {}
+
+                if "email_key" in parameters["oauth"][path] and parameters["oauth"][path]["email_key"] :
+                    setInDict(body_dict, parameters["oauth"][path]["email_key"].split(","), path + "@holymother.com")
+
+                if "verified_key" in parameters["oauth"][path] and parameters["oauth"][path]["verified_key"] :
+                    body_dict[parameters["oauth"][path]["verified_key"]] = True 
+                    setInDict(body_dict, parameters["oauth"][path]["verified_key"].split(","), True)
+                body = json_dumps(body_dict)
         else :
             body = self.check_mock_data(path, url_parameters)
 
-        self.send_response(200, 'OK')
+        self.send_response(result, result_msg)
         self.send_header('Content-type', 'html')
         self.send_header("Content-length", str(len(body)) )
         self.end_headers()
@@ -202,12 +259,13 @@ def run_tests() :
                         print "Failed to parse JSON from: " + r.text
                         assert(False)
 
-                    if "success" in url :
+                    if "success" in url and url["success"] is not None :
                         assert("success" in j)
                         assert(j["success"] == url["success"])
-                    if "test_success" in url :
+                    if "test_success" in url and url["test_success"] is not None :
                         assert("test_success" in j)
                         assert(j["test_success"] == url["test_success"])
+
     except KeyboardInterrupt:
         print "CTRL-C interrupt"
 
@@ -383,14 +441,6 @@ if "test" not in parameters or not parameters["test"] :
     parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
     parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
 
-links = generate_oauth_links(parameters["oauth"], slash = "/")
-
-for link in links :
-    url_parameters = link["href"].split("?", 1)[1]
-    newhref = ":" + str(server_port) + "/" + link["title"] + "?" + url_parameters 
-    print "Emulating: " + newhref
-    urls.append({ "loc" : newhref, "method" : "get", "data" : dict() })
-
 httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
 oresp.daemon = True
@@ -401,13 +451,35 @@ mthread.daemon = True
 mthread.start() 
 
 wait_for_port_ready("mica", "localhost", parameters["port"])
+r = s.get("http://localhost/disconnect")
+assert(r.status_code == 200)
 r = s.get("http://localhost")
 assert(r.status_code == 200)
 
-sleep(3)
+d = pq(r.text)
+
+for who in parameters["oauth"].keys() :
+    if who == "redirect" :
+        continue
+
+    print "Checking for: " + who + ": " + d("#oauth_" + who).html()
+    for part in d("#oauth_" + who).attr("href").split("&") :
+        if part.count("state") :
+            state = part.split("=")[1]
+            print "Need to test " + who + ", state: " + state
+            oauth["states"][who] = state
+            oauth["codes"][who] = binascii_hexlify(os_urandom(4))
+            urls.append({ "method" : "logout", "loc" : "logout" })
+            urls.append(dict(loc = "/" + who + "?connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
+            parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who + "?action=token"
+            parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who + "?action=lookup&"
+            break
+        
+sleep(5)
 
 urls.append({ "method" : "logout", "loc" : "logout" })
 stop = run_tests()
+#stop = False
 
 if not stop :
     try:
