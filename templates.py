@@ -334,11 +334,32 @@ class FrontPageElement(CommonElement) :
 
     @renderer
     def thirdparty(self, request, tag) :
-        for link in generate_oauth_links(self.req.oauth) :
-            creds = link["creds"]
-            del link["creds"]
-            servicetag = tags.a(**link)
+        if "states_urls" in self.req.session.value :
+            states_urls = self.req.session.value["states_urls"]
+        else :
+            states_urls = dict(states = {}, urls = {})
+
+            for name, creds in self.req.oauth.iteritems() :
+                if name == "redirect" :
+                    continue
+                service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+
+                if name == "facebook" :
+                    service = facebook_compliance_fix(service)
+
+                if name == "weibo" :
+                    service = weibo_compliance_fix(service)
+
+                states_urls["urls"][name], states_urls["states"][name] = service.authorization_url(creds["authorization_base_url"])
+            self.req.session.value["states_urls"] = states_urls
+
+        for name, creds in self.req.oauth.iteritems() :
+            if name == "redirect" :
+                continue
+
+            servicetag = tags.a(**{ "onclick" : "loading()", "href" : states_urls["urls"][name], "title" : name, "data-ajax" : "false", "id" : "oauth_" + name})
             servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+
             tag(tags.td(servicetag))
 
         return tag

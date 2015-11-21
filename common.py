@@ -435,25 +435,6 @@ def call_report() :
 def sdict(**kwargs) :
     return json_dumps(kwargs)
 
-def generate_oauth_links(oauth, slash = "") :
-    links = []
-    for name, creds in oauth.iteritems() :
-        if name == "redirect" :
-            continue
-        service = OAuth2Session(creds["client_id"], redirect_uri=oauth["redirect"] + slash + name, scope = creds["scope"])
-
-        if name == "facebook" :
-            service = facebook_compliance_fix(service)
-
-        if name == "weibo" :
-            service = weibo_compliance_fix(service)
-
-        authorization_url, state = service.authorization_url(creds["authorization_base_url"])
-        print "URL: " + authorization_url
-        links.append({ "onclick" : "loading()", "href" : authorization_url, "title" : name, "data-ajax" : "false", "creds" : creds})
-
-    return links
-
 def test_log(test, **kwargs) :
     if test :
         logentry = sdict(**kwargs)
