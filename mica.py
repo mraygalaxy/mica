@@ -358,7 +358,7 @@ class MICA(object):
     def __init__(self, db_adapter):
         self.serial = Serializable(params["serialize_couch_on_mobile"])
         self.general_processor = Processor(self, params)
-        self.client = Translator(params["trans_id"], params["trans_secret"])
+        self.translation_client = Translator(params["trans_id"], params["trans_secret"], params["trans_scope"], params["trans_access_token_url"], test = params["test"])
         self.mutex = Lock()
         self.transmutex = Lock()
         self.imemutex = Lock()
@@ -747,6 +747,10 @@ class MICA(object):
             #mdebug("Dumping: " + str(json))
             if not mobile :
                 json["cookie"] = req.session.value["cookie"]
+
+            if "test_success" not in json :
+                json["test_success"] = True
+
             return json_dumps(json)
 
     def bad_api(self, req, desc, json = {}) :
@@ -1747,6 +1751,9 @@ class MICA(object):
                 rword[3] = run_template(req, Row3Element)
                 words.append(rword)
 
+            # I have the 'meat' of the page right here in front of me, but
+            # because I couldn't find any column-driven table toolkits in HTML
+            # I have have to convert it to traditional row-based tables.
             line_out = []
             line_out.append("""
                 <table %(style)s>
@@ -1845,10 +1852,10 @@ class MICA(object):
             try : 
                 if attempt > 0 :
                     mdebug("Previous attempt failed. Re-authenticating")
-                    self.client.access_token = self.client.get_access_token()
+                    self.translation_client.access_token = self.translation_client.get_access_token()
 
                 mverbose("Entering online translation.")
-                result = self.client.translate_array(requests, lang, from_lang = from_lang)
+                result = self.translation_client.translate_array(requests, lang, from_lang = from_lang)
 
                 if not len(result) or "TranslatedText" not in result[0] :
                     mdebug("Probably key expired: " + str(result))
@@ -1861,7 +1868,7 @@ class MICA(object):
                 error = "First-try translation failed: " + str(e)
             except IOError, e :
                 error = "Connection error. Will try one more time: " + str(e)
-            except urllib2.URLError, e :
+            except urllib2_URLError, e :
                 error = "Response was probably too slow. Will try again: " + str(e)
             except socket_timeout, e :
                 error = "Response was probably too slow. Will try again: " + str(e)
@@ -1873,6 +1880,7 @@ class MICA(object):
                 if not finished and not error :
                     error = "Translation API not available for some reason. =("
                 if error :
+                    merr(error)
                     self.store_error(req, name, error)
 
             if finished or stop :
@@ -2987,6 +2995,7 @@ class MICA(object):
         source_language = req.http.params.get("source_language")
         source = req.http.params.get("source")
         language = req.http.params.get("lang")
+        test_success = True
 
         out = ""
         if not human :
@@ -3048,11 +3057,14 @@ class MICA(object):
 
         except OnlineTranslateException, e :
             mwarn("Online translate error: " + str(e))
+            for line in format_exc().splitlines() :
+                mwarn(line)
 
             if human :
                 out += _("Internet access error. Offline instant translation only" + ": " + str(e)) + "<br/>"
             else :
                 out["whole"] = {"source" : source, "target" : _("Internet access error. Offline translation only" + ": " + str(e))}
+                test_success = False
                
         if human :
             out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
@@ -3082,10 +3094,11 @@ class MICA(object):
                         out["offline"].append({"request" : request, "ipa" : False, "target" : False})
 
         except OSError, e :
+            test_success = False
             mdebug("Looking up target instant translation failed: " + str(e))
             return self.bad_api(req, _("Please wait until this account is fully synchronized for an offline instant translation."))
 
-        return self.api(req, out)
+        return self.api(req, out, json = {"test_success" : test_success} )
 
     def roll_period(self, req, period_key, period_next_key, peer) :
         to_delete = []
@@ -5157,6 +5170,18 @@ def go(p) :
     if sslport != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
         exit(1)
+
+    if "test" not in params :
+        params["test"] = False
+
+    if "trans_scope" not in params : 
+        params["trans_scope"] = "http://api.microsofttranslator.com"
+
+    if "trans_access_token_url" not in params :
+        params["trans_access_token_url"] = "https://datamarket.accesscontrol.windows.net/v2/OAuth2-13"
+
+    if params["test"] :
+        mdebug("Will run inputs and outputs in test mode.")
 
     if not params["scratch"] :
         merr("You must provide the path to a read/write folder where replicated dictionary databases can be placed (particularly on a mobile device.)")
