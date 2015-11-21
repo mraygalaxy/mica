@@ -453,3 +453,11 @@ def generate_oauth_links(oauth, slash = "") :
         links.append({ "onclick" : "loading()", "href" : authorization_url, "title" : name, "data-ajax" : "false", "creds" : creds})
 
     return links
+
+def test_log(test, **kwargs) :
+    if test :
+        logentry = sdict(**kwargs)
+        mdebug("Logging: " + logentry)
+        fh = open(test + "translator.log", 'a')
+        fh.write(logentry + "\n")
+        fh.close()
