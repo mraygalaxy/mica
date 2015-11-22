@@ -271,9 +271,21 @@ class ModalsElement(CommonElement) :
                      deleteconfirm = _("Yes, delete my account."),
                      suredelete = _("Are you sure you want to delete your account? This is IRREVERSIBLE."),
                      username = self.req.session.value["username"],
+                     chatusername = self.req.session.value["username"].replace("@", "%40"),
                      delete = _("Delete Account?"),
                       # This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
                       reviews = _("Bulk Review Words"),
+                      mobileinstructions = _("Mobile Device Instructions for Teachers"),
+                      xabberandroid = _("Get 'Xabber' for Android"),
+                      chatsecureandroid = _("Get 'ChatSecure' for Android"),
+                      chatsecureios = _("Get 'ChatSecure' for iOS"),
+                      instructions = _("Instructions"),
+                      usernamelabel = _("Username"),
+                      serverlabel = _("Server"),
+                      nowww = _("do not use 'www'"),
+                      security = _("Encryption/Security"),
+                      yes = _("Yes / SSL / TLS / SASL Authentication"),
+                      port = _("Port (if needed)"),
                      )
         return tag
 
@@ -315,6 +327,8 @@ class ChatElement(CommonElement) :
                       chaterror = _("An error occured"),
                       secsleft = _("Seconds left to reconnect"),
                       refreshtitle = _("Refresh"),
+                      mobileinstructions = _("Mobile Device Instructions for Teachers"),
+
                      )
         return tag
 
