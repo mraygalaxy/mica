@@ -441,7 +441,7 @@ class MICA(object):
         mdebug("Runloop running.")
         sleep(5)
         while True :
-            self.serial.safe_execute(self.db.runloop)
+            self.serial.safe_execute(False, self.db.runloop)
             sleep(1)
 
         self.db.detach_thread()
@@ -751,6 +751,9 @@ class MICA(object):
 
             if "test_success" not in json :
                 json["test_success"] = True
+
+            if "job_running" not in json :
+                json["job_running"] = False 
 
             return json_dumps(json)
 
@@ -3513,7 +3516,7 @@ class MICA(object):
                 del jobs["list"][job["uuid"]]
             req.db["MICA:jobs"] = jobs
 
-        return self.render_mainpage(req, out)
+        return self.api(req, self.render_mainpage(req, out), json = {"job_running" : True})
 
     def render_multiple_select(self, req, story) :
         nb_unit = int(req.http.params.get("nb_unit"))
@@ -3748,6 +3751,7 @@ class MICA(object):
             return self.api(req, final.encode("utf-8").replace("\n","<br/>"))
 
     def render_account(self, req, story) :
+        json = { "test_success" : False }
         req.accountpageresult = False
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
@@ -3760,8 +3764,8 @@ class MICA(object):
         
         if req.http.params.get("pack") :
             mdebug("Compacting...")
-            self.serial.safe_execute(req.db.compact) 
-            self.serial.safe_execute(req.db.cleanup)
+            self.serial.safe_execute(False, req.db.compact) 
+            self.serial.safe_execute(False, req.db.cleanup)
             design_docs = ["memorized", "stories", "mergegroups",
                            "tonechanges", "accounts", "splits", "chats" ]
 
@@ -3774,6 +3778,7 @@ class MICA(object):
                     req.db.compact(name)
 
             # The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
+            json["test_success"] = True
             req.accountpageresult = _("Database compaction complete for your account")
         elif req.http.params.get("changepassword") :
             if mobile :
@@ -3804,7 +3809,9 @@ class MICA(object):
                                 del self.dbs[username]
                                 self.verify_db(req, req.session.value["database"], newpassword)
                                 req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed")
+                                json["test_success"] = True
                             except Exception, e :
+                                json["success"] = False 
                                 req.accountpageresult = _("Password change failed") + ": " + str(e)
         elif req.http.params.get("resetpassword") :
             if mobile :
@@ -3824,6 +3831,7 @@ class MICA(object):
                         del self.dbs[username]
                         self.verify_db(req, req.session.value["database"], newpassword)
                         req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ": " + newpassword
+                        json["test_success"] = True
                     except Exception, e :
                         out = ""
                         for line in format_exc().splitlines() :
@@ -3865,6 +3873,7 @@ class MICA(object):
                                         self.make_account(req, newusername, newpassword, email, "mica", admin = admin, language = language)
 
                                         req.accountpageresult = _("Success! New user was created") + ": " + newusername
+                                        json["test_success"] = True
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
             if mobile :
                 req.accountpageresult = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
@@ -3903,6 +3912,7 @@ class MICA(object):
 
                             if req.session.value["username"] != username :
                                 req.accountpageresult = _("Success! Account was deleted") + ": " + username
+                                json["test_success"] = True
                             else :
                                 self.clean_session(req)
                                 req.messages = _("Your account has been permanently deleted.")
@@ -3915,6 +3925,7 @@ class MICA(object):
             req.session.save()
             self.install_local_language(req)
             req.accountpageresult = _("Success! Language changed")
+            json["test_success"] = True
         elif req.http.params.get("changelearnlanguage") :
             language = req.http.params.get("learnlanguage")
             user["learnlanguage"] = language
@@ -3923,6 +3934,7 @@ class MICA(object):
             req.db[self.acct(username)] = user
             self.install_local_language(req)
             req.accountpageresult = _("Success! Learning Language changed")
+            json["test_success"] = True
         elif req.http.params.get("changeemail") :
             email = req.http.params.get("email")
             email_user = self.userdb["org.couchdb.user:" + username]
@@ -3932,6 +3944,7 @@ class MICA(object):
             req.db[self.acct(username)] = user
             req.session.save()
             req.accountpageresult = _("Success! Email changed")
+            json["test_success"] = True
         elif req.http.params.get("setappchars") :
             chars_per_line = int(req.http.params.get("setappchars"))
             if chars_per_line > 1000 or chars_per_line < 5 :
@@ -3944,6 +3957,7 @@ class MICA(object):
                 req.session.save()
                 # Same as before, but specifically for a mobile device
                 req.accountpageresult = _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line)
+                json["test_success"] = True
         elif req.http.params.get("tofrom") :
             tofrom = req.http.params.get("tofrom")
             remove = int(req.http.params.get("remove"))
@@ -3986,6 +4000,7 @@ class MICA(object):
                             req.accountpageresult = _("Success! We will start distributing that dictionary to your devices") + ": " + supported[tofrom]
                         else :
                             req.accountpageresult = _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom]
+                    json["test_success"] = True
 
         elif req.http.params.get("setwebchars") :
             chars_per_line = int(req.http.params.get("setwebchars"))
@@ -3998,6 +4013,7 @@ class MICA(object):
                 req.session.save()
                 # Same as before, but specifically for a website 
                 req.accountpageresult = _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line)
+                json["test_success"] = True
         elif req.http.params.get("setappzoom") :
             zoom = float(req.http.params.get("setappzoom"))
             if zoom > 3.0 or zoom < 0.5 :
@@ -4010,6 +4026,7 @@ class MICA(object):
                 req.session.save()
                 # Same as before, but specifically for an application running on a mobile device
                 req.accountpageresult = _("Success! App zoom level set to:") + " " + str(zoom)
+                json["test_success"] = True
         elif req.http.params.get("setwebzoom") :
             zoom = float(req.http.params.get("setwebzoom"))
             if zoom > 3.0 or zoom < 0.5 :
@@ -4022,6 +4039,10 @@ class MICA(object):
                 req.session.save()
                 # Same as before, but specifically for an application running on the website 
                 req.accountpageresult = _("Success! Web zoom level set to:") + " " + str(zoom)
+                json["test_success"] = True
+        else :
+            # Just show the account page normally.
+            json["test_success"] = True
 
         req.default_zoom = str(user["default_app_zoom" if mobile else "default_web_zoom"])
         req.chars_per_line = str(user["app_chars_per_line"] if mobile else user["web_chars_per_line"])
@@ -4030,7 +4051,7 @@ class MICA(object):
         req.processors = self.processors
         req.scratch = params["scratch"]
         req.userdb = self.userdb
-        return self.api(req, out + run_template(req, AccountElement))
+        return self.api(req, out + run_template(req, AccountElement), json = json)
                     
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :

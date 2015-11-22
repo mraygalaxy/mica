@@ -91,12 +91,13 @@ function form_loaded_complete(data, opaque) {
     $('#reviewModal').modal('hide');
     form_loaded(data, true);
 }
+
 function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
             var destid ='';
-            $(this).on("submit", function(event, form) {
+            $(this).off().on("submit", function(event, form) {
               loading();
               event.preventDefault();
               var aff = $(form).attr('ajaxfinish');
@@ -104,11 +105,11 @@ function form_loaded(data, do_forms) {
                     var closest = $(form).closest("[data-role='content']");
                     var destid = "#" + closest.attr('id');
                     if (destid == "#undefined")
-                        destid = "#" + $(form).attr('id') + "content";
+                        destid = "#" + $(form).attr('ajaxfinishid');
               }
               go([form, destid], 'url_comes_from_form', unavailable(false), form_loaded_complete, true);
             });
-            $(this).find(":submit").click(function(event) {
+            $(this).find(":submit").off().on("click", function(event) {
                     event.preventDefault();
                     myform = $(this).closest("form");
                     myform.trigger('submit', myform);
@@ -197,7 +198,7 @@ $(document).on('ready', function() {
 		$("div.view1").slideToggle(400);
 		$("div.tri1").toggleClass("toggle1");
 	});
-        form_loaded(false, true);
+    form_loaded(false, true);
 });
 
 
@@ -217,11 +218,11 @@ $(window).on("resize orientationchange", function(){
 
 $(document).ready(function () {
 	$(".modal").each(function() {
-	    $(this).on('shown.bs.modal', function() {
+	    $(this).off().on('shown.bs.modal', function() {
 		$(".affix").each(function() { $(this).removeClass('affix'); $(this).addClass('affix-top'); $(this).affix(); });
 		
 	    });
-	    $(this).on('hidden.bs.modal', function() {
+	    $(this).off().on('hidden.bs.modal', function() {
 		$(".affix-top").each(function() { $(this).removeClass('affix-top'); $(this).addClass('affix'); $(this).affix(); });
 		
 	    });

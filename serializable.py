@@ -35,7 +35,10 @@ class Serializable(object) :
         (real_self, func, args, kwargs) = stuff
 
         try :
-            resp = func(real_self, *args, **kwargs)
+            if real_self :
+                resp = func(real_self, *args, **kwargs)
+            else :
+                resp = func(*args, **kwargs)
             rq.put((resp, False))
         except Exception, e :
             err = ""
@@ -48,7 +51,11 @@ class Serializable(object) :
 
     def safe_execute(self, real_self, func, *args, **kwargs) :
         if self.yes_or_no :
-            mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
+            if real_self :
+                mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
+            else :
+                mverbose("Serializing " + func.__name__)
+
             rq = Queue_Queue()
             co = self.safe_execute_serial()
             co.next()
@@ -57,7 +64,10 @@ class Serializable(object) :
         else :
             mverbose("NOT Serializing " + func.__name__)
             try :
-                resp = func(real_self, *args, **kwargs)
+                if real_self :
+                    resp = func(real_self, *args, **kwargs)
+                else :
+                    resp = func(*args, **kwargs)
                 error = False
             except Exception, e :
                 err = ""
