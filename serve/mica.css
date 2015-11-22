@@ -275,6 +275,7 @@ body {
 
 .chattable td {
     color: black;
+    padding-right: 5px;
 }
 
 .pagetable td {
