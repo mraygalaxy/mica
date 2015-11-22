@@ -396,7 +396,7 @@ function process_edits(uuid, operation, batch) {
       var edits = []
 
       $("span." + selector_class + " > a").each(function(index) {
-        chars.push($(this).text());
+        chars.push($(this).text().trim());
         uhashes.push($(this).attr('uniqueid'));
         nbunits.push($(this).attr('nbunit'));
         transids.push($(this).attr('transid'));
@@ -531,15 +531,15 @@ function process_instant(with_spaces, lang, source, target, username, password) 
      var allchars = "";
      $("span.label > a").each(function(index) {
 	      if (with_spaces) {
-		chars.push($(this).text());
+            chars.push($(this).text().trim());
 	      } else {
-		var split = $(this).text().split('');
+            var split = $(this).text().trim().split('');
 
-		for(var x = 0; x < split.length; x++) {
-		    chars.push(split[x]);
-		}
+            for(var x = 0; x < split.length; x++) {
+                chars.push(split[x]);
+            }
 	      }
-              select_toggle($(this).attr("transid"));
+          select_toggle($(this).attr("transid"));
       });
 
      for(var x = 0; x < chars.length; x++) {
