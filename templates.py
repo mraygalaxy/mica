@@ -813,7 +813,7 @@ class HeadElement(CommonElement):
                      instant = _("Instant Translation"),
                      performingtranslation= _("Doing instant translation..."),
                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
-                     token = self.req.session.value['cookie'] if not mobile else req.session.value['password'],
+                     token = self.req.session.value['cookie'] if not mobile else self.req.session.value['password'],
                      creds = self.req.credentials,
                      database = self.req.database,
                      authtype = "cookie" if not mobile else "pass",

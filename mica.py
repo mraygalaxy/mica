@@ -638,7 +638,7 @@ class MICA(object):
                             req.session.value["connected"] = False
                             req.session.save()
             else :
-                if req.api and req.action not in params["oauth"].keys() + ["connect", "disconnect"]:
+                if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
                 if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "stories" ] + ([] if mobile else params["oauth"].keys() ):
