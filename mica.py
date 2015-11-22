@@ -1450,6 +1450,7 @@ class MICA(object):
         mverbose("View Page " + str(page) + " story " + str(name) + " start...")
 
         if name :
+            mdebug("GETTING UNITS OUT AGAIN FROM SCRATCH........")
             try :
                 page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
             except couch_adapter.ResourceNotFound, e :
@@ -1459,6 +1460,7 @@ class MICA(object):
 
                 return False
         else :
+            mdebug("UNITS FROM EXISTING STORY PAGES........")
             page_dict = story["pages"]["0"]
 
         mverbose("View Page " + str(page) + " story " + str(name) + " fetched...")
@@ -3351,7 +3353,7 @@ class MICA(object):
             failed = False
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
 
-            select_idx = 1
+            select_idx = 5000000
             for unit_idx in range(2, min(len(story["pages"]["0"]["units"]), (len(chars) * 2 + 1)), 2) :
                 story["pages"]["0"]["units"][unit_idx]["select_idx"] = select_idx
                 select_idx += 1
@@ -4101,7 +4103,7 @@ class MICA(object):
 
                         added = True
                         [x, period, howmany, peer] = tmp_story["name"].split(";")
-                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", tzoffset = tzoffset, chat = True, history = True)
+                        out += self.view_page(req, tmp_story["uuid"], tmp_story["name"], tmp_story, "read", "", str(nb_pages - 1), "100", "false", tzoffset = tzoffset, chat = True, history = True, start_trans_id = 5000000)
                         break
 
                     if added :
