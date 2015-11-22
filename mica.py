@@ -367,7 +367,8 @@ class MICA(object):
         self.dbs = {}
         self.userdb = False
         self.db_adapter = db_adapter 
-        self.jabber_crypt = Crypticle(params["jabber_auth"])
+        if not mobile :
+            self.jabber_crypt = Crypticle(params["jabber_auth"])
 
         if mobile :
             self.cs = self.db_adapter(params["couch"])
@@ -5353,9 +5354,12 @@ def second_splash() :
     encoded2 = base64_b64encode(contents)
     fh.close()
 
-    return output % dict(encoded1 = encoded1,
+    mdebug("Rendering template: " + output)
+    outresult = output % dict(encoded1 = encoded1,
                          encoded2 = encoded2,
                          pleasewait = _("Please wait..."))
+    mdebug("Render complete.")
+    return outresult 
 
 if __name__ == "__main__":
     mdebug("Ready to go.")
