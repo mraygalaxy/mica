@@ -97,9 +97,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         body = sdict(success = True, test_success = True)
 
-        if path == "foo" :
-            body = "bar"
-        elif path in parameters["oauth"].keys() :
+        if path in parameters["oauth"].keys() :
             print "TOKEN REQUEST from: " + path
             state = oauth["states"][path]
             code = oauth["states"][path]
@@ -144,9 +142,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         body = sdict(success = True, test_success = True)
 
-        if path == "foo" :
-            body = "bar"
-        elif path in parameters["oauth"].keys() :
+        if path in parameters["oauth"].keys() :
             body_dict = {}
 
             if "email_key" in parameters["oauth"][path] and parameters["oauth"][path]["email_key"] :
@@ -335,7 +331,48 @@ for option in options :
 
     wait_for_port_ready(option["name"], hostname, port)
 
-urls = [    
+urls = []
+if "test" not in parameters or not parameters["test"] :
+    parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
+    parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
+
+httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
+oresp = Thread(target=oauth_responder, args = [httpd])
+oresp.daemon = True
+oresp.start() 
+
+mthread = Thread(target=go, args = [parameters])
+mthread.daemon = True
+mthread.start() 
+
+wait_for_port_ready("mica", "localhost", parameters["port"])
+r = s.get("http://localhost/disconnect")
+assert(r.status_code == 200)
+r = s.get("http://localhost")
+assert(r.status_code == 200)
+
+d = pq(r.text)
+
+for who in parameters["oauth"].keys() :
+    if who == "redirect" :
+        continue
+
+    print "Checking for: " + who + ": " + d("#oauth_" + who).html()
+    for part in d("#oauth_" + who).attr("href").split("&") :
+        if part.count("state") :
+            state = part.split("=")[1]
+            print "Need to test " + who + ", state: " + state
+            oauth["states"][who] = state
+            oauth["codes"][who] = binascii_hexlify(os_urandom(4))
+            urls.append({ "method" : "logout", "loc" : "logout" })
+            urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
+            parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who
+            parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
+            urls.append({ "method" : "logout", "loc" : "logout" })
+            break
+        
+urls += [
+            { "method" : "logout", "loc" : "logout" },
             { "method" : "login", "loc" : "login" },
             { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
@@ -425,44 +462,6 @@ urls = [
 
         ]
 
-if "test" not in parameters or not parameters["test"] :
-    parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
-    parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
-
-httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
-oresp = Thread(target=oauth_responder, args = [httpd])
-oresp.daemon = True
-oresp.start() 
-
-mthread = Thread(target=go, args = [parameters])
-mthread.daemon = True
-mthread.start() 
-
-wait_for_port_ready("mica", "localhost", parameters["port"])
-r = s.get("http://localhost/disconnect")
-assert(r.status_code == 200)
-r = s.get("http://localhost")
-assert(r.status_code == 200)
-
-d = pq(r.text)
-
-for who in parameters["oauth"].keys() :
-    if who == "redirect" :
-        continue
-
-    print "Checking for: " + who + ": " + d("#oauth_" + who).html()
-    for part in d("#oauth_" + who).attr("href").split("&") :
-        if part.count("state") :
-            state = part.split("=")[1]
-            print "Need to test " + who + ", state: " + state
-            oauth["states"][who] = state
-            oauth["codes"][who] = binascii_hexlify(os_urandom(4))
-            urls.append({ "method" : "logout", "loc" : "logout" })
-            urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
-            parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who
-            parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
-            break
-        
 sleep(5)
 
 urls.append({ "method" : "logout", "loc" : "logout" })

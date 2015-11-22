@@ -4289,66 +4289,32 @@ class MICA(object):
         mdebug("MICA returned content is: " + str(r.content))
         values = json_loads(r.content)
 
-        try :
-            if creds["verified_key"] :
-                vkeys = creds["verified_key"].split(",")
-                vdict = values
-                for vkey in vkeys :
-                    if vkey not in vdict :
-                        return False, _("We're sorry, but the oauth provider is missing information for your account") + ":  " + who + ": " + vkey + ": " + str(e)
-                    vdict = vdict[vkey]
-
-                if not vdict :
+        if creds["verified_key"] :
+            vkeys = creds["verified_key"].split(",")
+            try :
+                if not getFromDict(values, vkeys) :
                     return False, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
+            except KeyError, e :
+                return False, _("We're sorry, but the oauth provider is missing information for your account") + ":  " + who + ": " + str(vkeys) + ": " + str(e)
 
-            email_found = False
-            email_key = creds["email_key"]
+        email_found = False
 
-            if email_key :
-                vkeys = email_key.split(",")
-                vdict = values
-                for vkey in vkeys :
-                    if isinstance(vdict, dict) :
-                        if vkey not in vdict :
-                            mdebug("Key " + vkey + " not in " + str(vdict))
-                            authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-                            req.session.value["states_urls"]["urls"][who] = authorization_url
-                            req.session.value["states_urls"]["states"][who] = state 
-                            req.session.save()
-                            out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
-                            out += authorization_url
-                            out += "'>" + _("You're welcome to try again") + "</a>"
-                            return False, out
+        if creds["email_key"] :
+            vkeys = creds["email_key"].split(",")
+            try :
+                values["email"] = getFromDict(values, vkeys)
+            except KeyError, e :
+                mdebug("Couldn't find email from: " + str(vkeys) + ", dict: " + str(values))
+                return False, _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you")
 
-                        vdict = vdict[vkey]
-                values["email"] = vdict
-                email_key = vkey
+        password = binascii_hexlify(os_urandom(4))
+        if "locale" not in values :
+            language = "en"
+        else :
+            language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
-            password = binascii_hexlify(os_urandom(4))
-            if "locale" not in values :
-                language = "en"
-            else :
-                language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
-
-            if email_key :
-                if isinstance(values[email_key], dict) :
-                    values["email"] = None
-
-                    if "preferred" in values[email_key] :
-                        values["email"] = values[email_key]["preferred"]
-
-                    if values["email"] is None :
-                        for key, email in values[email_key] :
-                            if email is not None :
-                                values["email"] = email 
-                else :
-                    values["email"] = values[email_key]
-
-            from_third_party = values
-            if email_key :
-                from_third_party["username"] = values["email"]
-        except KeyError, e :
-            return False, _("We're sorry, but the oauth provider is missing information for your account") + ":  " + who + ": " + str(e)
+        values["username"] = values["email"]
+        from_third_party = values
             
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
