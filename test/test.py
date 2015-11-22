@@ -201,12 +201,6 @@ def cleanup(name) :
     except docker.errors.NotFound, e :
         print "No container to cleanup: " + name
 
-def login(s) :
-    print "Logging in..."
-    r = s.post("http://localhost/connect", data=dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1'))
-    assert(r.status_code == 200)
-    assert(json_loads(r.text)['success'])
-
 def run_tests() :
     stop = False
     try:
@@ -223,39 +217,33 @@ def run_tests() :
                 elif url["method"] == "post" :
                     print "   Post data: " + str(url["data"])
                     r = s.post("http://localhost" + url["loc"], data = url["data"])
-                elif url["method"] == "login" :
-                    login(s)
-                elif url["method"] == "logout" :
-                    print "Logging out..."
-                    r = s.get("http://localhost/disconnect")
 
-                if url["method"] != "login" :
-                    assert(r.status_code == 200)
+                assert(r.status_code == 200)
 
-                    if url["method"] != "logout" :
-                        # The difference between 'success' and 'test_success' is for errors
-                        # that happen during tests which are tolerable in the user experience.
-                        # For example, if the translation API can't reach the internet, the
-                        # UI will just return that connectivity information to the user, but
-                        # it does not mean there's a failure in the system. But, it is indeed
-                        # a unit test failure, so we need to know about it and check for it.
-                        try :
-                            j = json_loads(r.text)
-                        except ValueError, e :
-                            print "Failed to parse JSON from: " + r.text
-                            assert(False)
+                # The difference between 'success' and 'test_success' is for errors
+                # that happen during tests which are tolerable in the user experience.
+                # For example, if the translation API can't reach the internet, the
+                # UI will just return that connectivity information to the user, but
+                # it does not mean there's a failure in the system. But, it is indeed
+                # a unit test failure, so we need to know about it and check for it.
+                try :
+                    j = json_loads(r.text)
+                except ValueError, e :
+                    print "Failed to parse JSON from: " + r.text
+                    assert(False)
 
-                        if "job_running" in j and j["job_running"] :
-                            print "There is a job running. Come back later."
-                            sleep(5)
-                            continue
+                if "job_running" in j and j["job_running"] :
+                    print "There is a job running. Come back later."
+                    sleep(5)
+                    continue
 
-                        if "success" in url and url["success"] is not None :
-                            assert("success" in j)
-                            assert(j["success"] == url["success"])
-                        if "test_success" in url and url["test_success"] is not None :
-                            assert("test_success" in j)
-                            assert(j["test_success"] == url["test_success"])
+                if "success" in url and url["success"] is not None :
+                    assert("success" in j)
+                    assert(j["success"] == url["success"])
+                if "test_success" in url and url["test_success"] is not None :
+                    assert("test_success" in j)
+                    assert(j["test_success"] == url["test_success"])
+
                 break
 
     except KeyboardInterrupt:
@@ -372,16 +360,20 @@ for who in parameters["oauth"].keys() :
             print "Need to test " + who + ", state: " + state
             oauth["states"][who] = state
             oauth["codes"][who] = binascii_hexlify(os_urandom(4))
-            urls.append({ "method" : "logout", "loc" : "logout" })
+            urls.append({ "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() })
             urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
             parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who
             parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
-            urls.append({ "method" : "logout", "loc" : "logout" })
+            urls.append({ "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() })
             break
         
 urls += [
-            { "method" : "logout", "loc" : "logout" },
-            { "method" : "login", "loc" : "login" },
+            { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : True, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5984', connect='1') },
+
+            { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
+
             { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
@@ -444,7 +436,7 @@ urls += [
            { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=220", "method" : "get", "success" : False, "test_success" :  True },
 
            # So, login again:
-           { "method" : "login", "loc" : "login" },
+           { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
 
             # Go one page before the beginning.
            { "loc" : "/api?human=0&alien=read&meaningmode=true", "method" : "get", "success" : True, "test_success" :  True },
@@ -509,7 +501,8 @@ urls += [
 
 sleep(5)
 
-urls.append({ "method" : "logout", "loc" : "logout" })
+urls.append({ "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() })
+
 stop = run_tests()
 #stop = False
 

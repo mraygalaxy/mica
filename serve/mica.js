@@ -799,7 +799,7 @@ function memory_nostory(id, source, multiple_correct, memorized) {
     go(false, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
         unavailable(false),
         memory_complete,
-        id);
+        [id, memorized]);
 }
 
 function memorize_nostory(id, source, multiple_correct) {
