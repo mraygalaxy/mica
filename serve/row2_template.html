@@ -1,0 +1,55 @@
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row" style="vertical-align: bottom; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%; border: @!'3px solid black' if (action == 'home' and largest_hcode) else 'none'!@; @!'; cursor: pointer' if ('punctuation' not in unit or not unit['punctuation']) else ''!@">
+    <!--(if py and (py not in gp.punctuation) and not unit["punctuation"])-->
+        <a id='ttip@!trans_id!@'>
+            <t:attr name='class'><t:slot name='transclass'/></t:attr>
+            <!--(if action == 'home' and color != '')-->
+                <t:attr name='style'>color: @!color!@</t:attr>
+            <!--(end)-->
+            <!--(if action != 'home')-->
+                <t:attr name='style'>color: black</t:attr>
+            <!--(end)-->
+            <!--(if action in ["read", "edit"] or not(len(unit["multiple_target"])))-->
+                <t:attr name='onclick'>toggle('@!uhash!@', '@!"0" if action == "read" else "1"!@')</t:attr>
+            <!--(elif action == "home")-->
+                <t:attr name='onclick'>multiselect('@!uuid!@', -1, '@!nb_unit!@', '@!trans_id!@', false, '@!page!@');</t:attr>
+            <!--(end)-->
+            
+            <!--(if action == "home" and largest_hcode)-->
+                <span page='@!page!@' target='@!largest_target!@' nbunit='@!nb_unit!@' index='@!largest_index!@' transid='@!trans_id!@' class='review' source='@!source!@'>
+            <!--(end)-->
+
+            <!--(if gp.already_romanized)-->
+                <!--(if color not in ['grey', 'white'])-->
+                    @!target!@
+                <!--(else)-->
+                    <div class='roman@!color!@'>@!"&#160;".join(source)!@&#160;</div>
+                <!--(end)-->
+            <!--(else)-->
+                <!--(if py == u' ')-->
+                    <div class='roman@!color!@'>@!"&#160;".join(source)!@&#160;</div>
+                <!--(elif py)-->
+                    @!py!@
+                <!--(else)-->
+                    @!target.lower()!@
+                <!--(end)-->
+            <!--(end)-->
+            @!add_count!@
+
+            <!--(if action == "home" and largest_hcode)-->
+                </span>
+            <!--(end)-->
+        </a>
+    
+    <!--(elif "timestamp" not in unit or not unit["punctuation"])-->
+        @!(("hold" if py == u' ' else py) if py else target).lower()!@
+    <!--(end)-->
+
+    <!--(if action == "home" and "ipa_word" in unit and unit["ipa_word"])-->
+        <br>@!unit["ipa_word"]!@
+    <!--(end)-->
+
+    <!--(if action == "home" and py and len(unit["multiple_target"]))-->
+        <div style='color: black; display: none' id='pop@!trans_id!@'/>
+        <script>multipopinstall('@!trans_id!@');</script>
+    <!--(end)-->
+</td>

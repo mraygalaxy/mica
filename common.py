@@ -435,21 +435,27 @@ def call_report() :
 def sdict(**kwargs) :
     return json_dumps(kwargs)
 
-def generate_oauth_links(oauth, slash = "") :
-    links = []
-    for name, creds in oauth.iteritems() :
-        if name == "redirect" :
-            continue
-        service = OAuth2Session(creds["client_id"], redirect_uri=oauth["redirect"] + slash + name, scope = creds["scope"])
+def test_log(test, **kwargs) :
+    if test :
+        logentry = sdict(**kwargs)
+        mdebug("Logging: " + logentry)
+        fh = open(test + "translator.log", 'a')
+        fh.write(logentry + "\n")
+        fh.close()
 
-        if name == "facebook" :
-            service = facebook_compliance_fix(service)
+def getFromDict(dataDict, mapList):
+    return reduce(lambda d, k: d[k], mapList, dataDict)
 
-        if name == "weibo" :
-            service = weibo_compliance_fix(service)
+def setInDict(dataDict, mapList, value):
+    getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
 
-        authorization_url, state = service.authorization_url(creds["authorization_base_url"])
-        print "URL: " + authorization_url
-        links.append({ "onclick" : "loading()", "href" : authorization_url, "title" : name, "data-ajax" : "false", "creds" : creds})
-
-    return links
+def recursiveSetInDict(dataDict, mapList, value) :
+    for idx in range(0, len(mapList)) : 
+        sublist = mapList[:(idx + 1)]
+        try :
+            getFromDict(dataDict, sublist)
+        except KeyError, e :
+            if idx == (len(mapList) - 1) :
+                setInDict(dataDict, sublist, value)
+            else :
+                setInDict(dataDict, sublist, {})

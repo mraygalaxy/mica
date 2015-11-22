@@ -2,7 +2,16 @@ var last_data = '';
 var first_time = true;
 var debug = false;
 //var debug = true; 
-var unavailable = "<div class='img-rounded jumbotron style='padding: 10px'>" + local('requestfailed') + "</div>";
+function unavailable(error) {
+    if (!error) {
+        error = local('requestfailed');
+        if (error = "" || !error || error == undefined) {
+            error = "unavailable(false)";
+        }
+    }
+
+    return "<div class='img-rounded jumbotron style='padding: 10px'>" + error + "</div>";
+}
 var prmstr = window.location.search.substr(1);
 var prmarr = prmstr.split ("&");
 var params = {};
@@ -64,8 +73,9 @@ function disconnect_complete(json, opaque) {
 }
 
 function disconnect() {
-    go(false, '', 'disconnect', unavailable, disconnect_complete, false);
+    go(false, 'disconnect', unavailable(false), disconnect_complete, false);
 }
+
 function connect_complete(json, opaque) {
     done();
     if (json.success) {
@@ -82,32 +92,44 @@ function local(msgid) {
 
 function go_callback(callback, data, opaque) {
     if(callback != false && callback != undefined) {
-       if (opaque) 
+       if (opaque)
            callback(data, opaque);
        else
            callback(data);
     }
 }
 
-function go(form, id, url, error, callback, opaque){
+function go(form_id, url, error, callback, opaque){
+    var form = false;
+    var id = '';
+
+    if (form_id) {
+        form = form_id[0];
+        id = form_id[1];
+    }
+
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
-        console.log("AJAX Status code: " + XMLHttpRequest.status);
+        console.log("AJAX Status code: " + XMLHttpRequest.status + " id: " + id);
         if (XMLHttpRequest.status == 401) {
               window.location.href = "/";
         } else {
+            
             var aff = $(form).attr('ajaxfinish');
             if(form && aff != undefined) {
 			    eval(aff + "('" + error + "')");
             } else {
                 if(id != undefined && id != '') {
-                    if(XMLHttpRequest.statusText == 'error') {
-                        $(id).html(error);
-                    }
+                    $(id).html(error);
 		        } else {
-                    error = {"success" : false, "desc" : error}
+                    error = unavailable(XMLHttpRequest.responseText);
+                    if (!callback) {
+                        $(document.body).prepend(unavailable(XMLHttpRequest.responseText));
+                    }
                 }
 
-		        go_callback(callback, error, opaque);
+                if (callback) {
+                    go_callback(callback, {"success" : false, "desc" : error}, opaque);
+                }
             }
         }
     }
@@ -241,8 +263,8 @@ function trans_poll_complete(json, uuid) {
 }
 
 function trans_poll(uuid) {
-   go(false, '', 'read&tstatus=1&uuid=' + uuid, 
-       unavailable,
+   go(false, 'read&tstatus=1&uuid=' + uuid, 
+       unavailable(false),
        trans_poll_complete, 
        uuid);
 } 
@@ -268,7 +290,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go(false, '', 'home&translate=1&uuid=' + uuid, unavailable, trans_stop, uuid);
+   go(false, 'home&translate=1&uuid=' + uuid, unavailable(false), trans_stop, uuid);
 }
 
 function toggle_specific(prefix, name, check) {
@@ -298,11 +320,10 @@ function toggle_specific(prefix, name, check) {
 
 function toggle(name, check) {
    toggle_specific('trans', name, check);
-   toggle_specific('blank', name, 0);
 }
 
       
-function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation) {
+function prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation) {
   	  var op = { 
   	  			"operation": operation,
   	  			"uuid" : uuid,
@@ -328,7 +349,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
 
           if (operation == "split") {
               op["nbunit"] = nbunits[0];
-              op["tid"] = tids[0];
+              op["uhash"] = uhashes[0];
               op["index"] = indexes[0];
               op["pagenum"] = pages[0];
               op["pinyin"] = pinyin[0];
@@ -342,7 +363,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
                         break;
                  }
                  op["nbunit" + x] = nbunits[x];
-                 op["tid" + x] = tids[x];
+                 op["uhash" + x] = uhashes[x];
                  op["index" + x] = indexes[x];
                  op["page" + x] = pages[x];
 	             op["chars" + x] = chars[x];
@@ -362,7 +383,7 @@ function prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, i
 }
   
 function process_edits(uuid, operation, batch) {
-      var tids = [];
+      var uhashes = [];
       var transids = [];
       var nbunits = [];
       var chars = [];
@@ -376,7 +397,7 @@ function process_edits(uuid, operation, batch) {
 
       $("span." + selector_class + " > a").each(function(index) {
         chars.push($(this).text());
-        tids.push($(this).attr('uniqueid'));
+        uhashes.push($(this).attr('uniqueid'));
         nbunits.push($(this).attr('nbunit'));
         transids.push($(this).attr('transid'));
         pinyin.push($(this).attr('pinyin'));
@@ -390,7 +411,7 @@ function process_edits(uuid, operation, batch) {
       var out = "";
       
       if (batch) {
-			var t_tids = [];
+			var t_uhashes = [];
 			var t_transids = [];
 			var t_nbunits = [];
 			var t_chars = [];
@@ -401,8 +422,8 @@ function process_edits(uuid, operation, batch) {
 			var curr_batch = batchids[0];
 		    for (var x = 0; x < batchids.length; x++) {
 		    	if (batchids[x] != curr_batch) {
-					edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
-					t_tids = [];
+					edits.push(prepare_one_edit(batch, uuid, t_uhashes, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+					t_uhashes = [];
 					t_transids = [];
 					t_nbunits = [];
 					t_chars = [];
@@ -414,7 +435,7 @@ function process_edits(uuid, operation, batch) {
 				
 				curr_batch = batchids[x];
 			
-	    		t_tids.push(tids[x]);
+	    		t_uhashes.push(uhashes[x]);
 	    		t_transids.push(transids[x]);
 	    		t_nbunits.push(nbunits[x]);
 	    		t_chars.push(chars[x]);
@@ -426,16 +447,15 @@ function process_edits(uuid, operation, batch) {
 		    
 		    // handle the last batch...
 		    
-		    if (t_tids.length > 0) {
-				edits.push(prepare_one_edit(batch, uuid, t_tids, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
+		    if (t_uhashes.length > 0) {
+				edits.push(prepare_one_edit(batch, uuid, t_uhashes, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
 		    }
       } else {
-		  edits.push(prepare_one_edit(batch, uuid, tids, transids, nbunits, chars, pinyin, indexes, pages, operation));
+		  edits.push(prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation));
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      // 'learn_' is not a typo. It's used in form_loaded() so as not to clash with the id 'learn'
-      out += "<form ajaxfinish='install_pages_if_needed' id='learn_' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
+      out += "<form ajaxfinishid='learn_content' ajaxfinish='install_pages_if_needed' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -543,10 +563,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       go(false, '', url,
-          local("onlineoffline"),
-          offinstantspin,
-          false);
+       go(false, url, local("onlineoffline"), offinstantspin, false);
        }
 }
 
@@ -567,37 +584,59 @@ function select_chat_option(select_idx) {
     $.receivePush(select_idx);
 }
 
-function multipopinstall(trans_id, unused) {
-    $('#ttip' + trans_id).popover({placement: 'bottom',
+function multipopinstall(trans_id) {
+    $('#ttip' + trans_id).popover(
+        {  placement: 'bottom',
     //$('#ttip' + trans_id).popover({placement: 'bottom-right',
-                                   trigger: 'click',
-                                   html: true,
-                                   content: function() {
-                                        return $('#pop' + trans_id).html();
-                                   }});
+           trigger: 'manual',
+           html: true,
+           content: function() {
+                return $('#pop' + trans_id).html();
+           }}).click(function(e) {
+                $('#ttip' + trans_id).not(this).popover('hide');
+                e.stopPropagation();
+            });
+
+    $(document).click(function(e) {
+        if (!$(e.target).is('#ttip' + trans_id + ', .popover-title, .popover-content')) {
+            $('#ttip' + trans_id).popover('hide');
+        }
+    });
 }
 
 function multipoprefresh(json, opaque) {
+    done();
     var trans_id = opaque[0];
     var spy = opaque[1];
-    $('#ttip' + trans_id).html(spy);
-    $('#ttip' + trans_id).popover('hide');
     $('#pop' + trans_id).html(json.desc);
+    if (spy) {
+        $('#ttip' + trans_id).html(spy);
+        $('#ttip' + trans_id).popover('hide');
+    } else {
+        $('#ttip' + trans_id).popover('show');
+    }
 }
 
 function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
-          go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
-          + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
-		  unavailable, 
-		  multipoprefresh,
-		  [trans_id, spy]);
+    if(!spy && $('#ttip' + trans_id).data()['bs.popover'].tip().hasClass('in')){
+      // popover is visable
+      $('#ttip' + trans_id).popover('hide');
+    } else {
+        loading(); 
+        // popover is not visable
+        go(false, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
+              + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
+              unavailable(false), 
+              multipoprefresh,
+              [trans_id, spy]);
+    }
 }
 
 function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
+      form += "<form ajaxfinishid='learn_content' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -640,8 +679,9 @@ function restore_pageimg_width() {
 function finish_new_account_complete(json, opaque) {
     $("#newaccountresultdestination").html(json.desc);
 }
-function finish_new_account(code, who) {
-    go(false, '', who + "&connect=1&finish=1&code=" + code, unavailable, finish_new_account_complete, false);
+
+function finish_new_account(code, who, state) {
+    go(false, "api?human=0&alien=" + who + "&connect=1&finish=1&code=" + code + "&state=" + state, unavailable(false), finish_new_account_complete, false);
 }
 
 function view(mode, uuid, page) {
@@ -660,11 +700,11 @@ function view(mode, uuid, page) {
         $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
         $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
-        go(false, '', url, unavailable, function(json, opaque) { $('#pagetext').html(json.desc) }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pagetext').html(json.desc) }, false);
 
         url += "&image=0";
 
-        go(false, '', url, unavailable, function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
     } else {
         $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
         if (view_images) {
@@ -674,7 +714,7 @@ function view(mode, uuid, page) {
             $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
         }
        
-        go(false, '', url, unavailable, function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
     }
 
     listreload(mode, uuid, page);
@@ -730,7 +770,7 @@ function memory_complete(data, opaque) {
     var id = opaque[0];
     var memorized = opaque[1];
     toggle(id, 0);
-    toggle_specific('memory', id, 0);
+    done();
     if (memorized) {
         $('#memoitem' + id).attr('style', 'display: block');
     } else {
@@ -739,9 +779,9 @@ function memory_complete(data, opaque) {
 }
 
 function memory(id, uuid, nb_unit, memorized, page) {
-    toggle_specific('memory', id, 0);
-    go(false, '', 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
-        unavailable, 
+    loading();
+    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+        unavailable(false), 
         memory_complete,
         [id, memorized]);
 }
@@ -755,9 +795,9 @@ function forget(id, uuid, nb_unit, page) {
 }
 
 function memory_nostory(id, source, multiple_correct, memorized) {
-    toggle_specific('memory', id, 0);
-    go(false, '', 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
-        unavailable,
+    loading();
+    go(false, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
+        unavailable(false),
         memory_complete,
         id);
 }
@@ -800,18 +840,6 @@ function reveal(id, hide) {
         }
     }
 }
-
-/*
-$.browser.device = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
-
-if ($.browser.device == true) {
-    modifyStyleRuleValue("width", "#main-nav:target", "50%");
-    modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "50%");
-} else {
-    modifyStyleRuleValue("width", "#main-nav:target", "30%");
-    modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "70%");
-}
-*/
 
 function offinstantspin(json, opaque) {
     $('#instantspin').attr('style', 'display: none');
@@ -876,8 +904,8 @@ function install_highlight() {
         if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
-           go(false, '', 'instant&source=' + st + "&lang=en", 
-              unavailable, 
+           go(false, 'instant&source=' + st + "&lang=en", 
+              unavailable(false), 
               offinstantspin,
               false);
         }
@@ -928,23 +956,23 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
-              unavailable, 
+           go(false, 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
+              unavailable(false), 
               list_reload_complete,
               "memolist");
 
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
-                  unavailable, 
+           go(false, 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+                  unavailable(false), 
                   list_reload_complete,
                   'editslist');
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
-                  unavailable, 
+           go(false, 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+                  unavailable(false), 
                   list_reload_complete,
                   'history');
        }
@@ -970,12 +998,12 @@ function installreading() {
             $('#imageButton').attr('class', 'btn btn-default');
             $('#textButton').attr('class', 'active btn btn-default');
             view_images = false;
-            go(false, '', 'home&switchmode=text', unavailable, false, false);
+            go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
             view_images = true; 
             $('#imageButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
-	        go(false, '', 'home&switchmode=images', unavailable, false, false);
+	        go(false, 'home&switchmode=images', unavailable(false), false, false);
         }
         show_both = false;
         $('#sideButton').attr('class', 'btn btn-default');
@@ -987,12 +1015,12 @@ function installreading() {
             $('#sideButton').attr('class', 'btn btn-default');
             $('#textButton').attr('class', 'active btn btn-default');
             show_both = false;
-	        go(false, '', 'home&switchmode=text', unavailable, false, false);
+	        go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
             show_both = true; 
             $('#sideButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
-	        go(false, '', 'home&switchmode=both', unavailable, false, false);
+	        go(false, 'home&switchmode=both', unavailable(false), false, false);
         }
         current_view_mode = "both";
         view_images = false;
@@ -1001,7 +1029,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-        go(false, '', 'home&switchmode=text', unavailable, false, false);
+        go(false, 'home&switchmode=text', unavailable(false), false, false);
 	    if (show_both == false && view_images == false) {
 	   	    // already in text mode
 	   	    return;
@@ -1019,12 +1047,12 @@ function installreading() {
         if($('#meaningButton').attr('class') == 'active btn btn-default') {
             $('#meaningButton').attr('class', 'btn btn-default');
             current_meaning_mode = false;
-            go(false, '', 'read&meaningmode=false', unavailable, false, false);
+            go(false, 'read&meaningmode=false', unavailable(false), false, false);
             reveal_all(true);
        } else {
             $('#meaningButton').attr('class', 'active btn btn-default');
             current_meaning_mode = true;
-            go(false, '', 'read&meaningmode=true', unavailable, false, false);
+            go(false, 'read&meaningmode=true', unavailable(false), false, false);
             reveal_all(false);
        }
     });
@@ -1032,7 +1060,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go(false, '', 'storylist&uuid=' + uuid + "&sync=1",
+    go(false, 'storylist&uuid=' + uuid + "&sync=1",
         'sync error', storylist_complete,
         { element: name, label: local('started'), cleanup: unsyncstory});
 }
@@ -1064,7 +1092,7 @@ function storylist_complete(json, params) {
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '', 'storylist&uuid=' + uuid + "&sync=0",
+    go(false, 'storylist&uuid=' + uuid + "&sync=0",
         'sync error', storylist_complete,
         { element: name, label: local('stopped'), cleanup: syncstory});
 }
@@ -1100,22 +1128,22 @@ function finishedloading(storylist, navto) {
 
 function loadstories(json, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
-        unavailable, 
+    go(false, 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+        unavailable(false), 
         storylist_complete,
         { element: 'storypages', navto: navto});
 }
 
 function reviewstory(uuid, which) {
-    go(false, '', 'home&reviewed=' + which + '&uuid=' + uuid,
-        unavailable, 
+    go(false, 'home&reviewed=' + which + '&uuid=' + uuid,
+        unavailable(false), 
         loadstories,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
-    go(false, '', 'home&finished=' + which + '&uuid=' + uuid,
-        unavailable, 
+    go(false, 'home&finished=' + which + '&uuid=' + uuid,
+        unavailable(false), 
         loadstories,
         (which == 1) ? "#finished" : "#reading");
 }
@@ -1187,7 +1215,7 @@ function validatetext() {
     //$("#textform").submit();
     
     loading();
-    go($("#textform"), '', '', unavailable, validatetext_complete, false);
+    go([$("#textform"), ''], '', unavailable(false), validatetext_complete, false);
 }
 
 function validatefile_complete(json, opaque) {
@@ -1255,7 +1283,7 @@ function validatefile() {
     }
     loading();
     $("#filename").val(myFile.name);
-    go($("#fileform"), '', '', unavailable, validatefile_complete, false);
+    go([$("#fileform"), ''], '', unavailable(false), validatefile_complete, false);
 }
 
 function handleIQ(oIQ) {
@@ -1365,7 +1393,7 @@ function appendChat(who, to, msg) {
 
     start_trans_id += msg.length;
 
-    go(false, '', micaurl, unavailable, function(json, opaque){
+    go(false, micaurl, unavailable(false), function(json, opaque){
             if(json.success)  {
                     appendBox(who, ts, json.result.human, msgclass, reverse);
             } else {
@@ -1413,7 +1441,7 @@ function newContact(who) {
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     start_trans_id = 1000000;
-    go(false, '', "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable, handleConnectedLoaded, false);
+    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
 
@@ -1623,7 +1651,7 @@ function sendMsg(oForm) {
 
 function quit() {
     var p = new JSJaCPresence();
-    p.setType("unavailable");
+    p.setType("unavailable(false)");
     con.send(p);
     con.disconnect();
 
@@ -1753,7 +1781,7 @@ function start_learning(mode, action, values) {
     if (values.version)
         url += "&version=" + values.version;
 
-    go(false, '', url,  unavailable, start_learning_complete, action);
+    go(false, url,  unavailable(false), start_learning_complete, action);
 }
 
 function getstory_complete(json, opaque) {
@@ -1763,8 +1791,13 @@ function getstory_complete(json, opaque) {
 }
 function getstory(uuid, type) {
     loading();
-    go(false, '', 'stories&type=' + type +'&uuid=' + uuid, 
-        unavailable, 
+    go(false, 'stories&type=' + type +'&uuid=' + uuid, 
+        unavailable(false), 
         getstory_complete, 
         false);
+}
+
+function new_manual_account_complete(json) {
+    $('#account_content').html(json.desc);
+    done();
 }

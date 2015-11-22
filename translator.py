@@ -23,28 +23,30 @@ class TranslateApiException(Exception):
         super(TranslateApiException, self).__init__(self.message, *args)
 
 class Translator(object):
-    def __init__(self, client_id, client_secret,
-            scope="http://api.microsofttranslator.com",
-            grant_type="client_credentials", app_id=None, debug=False):
+    def __init__(self, client_id, client_secret, scope, access_token_url,
+               grant_type = "client_credentials", app_id = None, test = False):
         self.client_id = client_id
         self.client_secret = client_secret
         self.scope = scope
         self.grant_type = grant_type
         self.access_token = None
+        self.test = test
+        self.access_token_url = access_token_url
 
     def get_access_token(self):
-        args = urllib_urlencode({
+        pre_args = {
             'client_id': self.client_id,
             'client_secret': self.client_secret,
             'scope': self.scope,
             'grant_type': self.grant_type
-        })
+        }
+        args = urllib_urlencode(pre_args)
         
         response = False
         try :
-            response = loads(urllib2_urlopen(
-                'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13', args, timeout=30
-            ).read())
+            data = urllib2_urlopen(self.access_token_url, args, timeout=30).read()
+            response = loads(data)
+            test_log(self.test, loc = self.access_token_url, data = pre_args, response = response, method = "post")
         except IOError, e :
             if response :
                 raise TranslateApiException(
@@ -54,8 +56,6 @@ class Translator(object):
             else :
                 raise TranslateApiException("Translation Service Authentication failed", str(e))
         
-
-        mdebug(str(response))
 
         if response and "error" in response:
             mdebug("Error in authentication response.")
@@ -70,9 +70,8 @@ class Translator(object):
         """
         if not self.access_token:
             self.access_token = self.get_access_token()
-
-        request = urllib2_Request(
-            "%s?%s" % (url, urllib_urlencode(p)),
+        final_url = "%s?%s" % (url, urllib_urlencode(p))
+        request = urllib2_Request(final_url,
             headers={'Authorization': 'Bearer %s' % self.access_token}
         )
 
@@ -88,7 +87,11 @@ class Translator(object):
                 rv.startswith("TranslateApiException"):
             raise TranslateApiException(rv)
 
+        # Log the results of microsoft for unit testing.
+
+        test_log(self.test, loc = final_url, response = rv, method = "get", data = {})
         return rv
+
 
     def translate(self, text, to_lang, from_lang=None,
             content_type='text/plain', category='general'):
@@ -114,9 +117,7 @@ class Translator(object):
             }
         if from_lang is not None:
             p['from'] = from_lang
-        return self.call(
-            "http://api.microsofttranslator.com/V2/Ajax.svc/Translate",
-            p)
+        return self.call(self.scope + "/V2/Ajax.svc/Translate", p)
 
     def translate_array(self, texts, to_lang, from_lang=None, **options):
         """Translates an array of text strings from one language to another.
@@ -156,6 +157,4 @@ class Translator(object):
         if from_lang is not None:
             p['from'] = from_lang
 
-        return self.call(
-                "http://api.microsofttranslator.com/V2/Ajax.svc/TranslateArray",
-                p)
+        return self.call(self.scope + "/V2/Ajax.svc/TranslateArray", p)
