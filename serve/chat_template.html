@@ -17,6 +17,10 @@
         <div class='row-fluid'>
         <div class='col-md-12 nopadding'>
         <t:slot name="incoming"/>
+        <!--(if not mobile)-->
+            <button data-role='none' onclick="$('#instructionsModal').modal({show: true});" class='btn btn-xs btn-default btn-primary'><t:slot name='mobileinstructions'/></button>
+            <br/>
+        <!--(end)-->
         <div id='pagesingle'/>
         </div>
         </div>

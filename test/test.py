@@ -501,9 +501,9 @@ urls += [
 
             # Make this the 'resetpassword' the last test. 
             # I really don't want to get the new password out of JSON right now.
-           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+#           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
         ]
 
