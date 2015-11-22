@@ -216,39 +216,47 @@ def run_tests() :
                 stop = True
                 break
 
-            print url["method"] + ": " + url["loc"]
-            if url["method"] == "get" :
-                r = s.get("http://localhost" + url["loc"])
-            elif url["method"] == "post" :
-                print "   Post data: " + str(url["data"])
-                r = s.post("http://localhost" + url["loc"], data = url["data"])
-            elif url["method"] == "login" :
-                login(s)
-            elif url["method"] == "logout" :
-                print "Logging out..."
-                r = s.get("http://localhost/disconnect")
+            while True :
+                print url["method"] + ": " + url["loc"]
+                if url["method"] == "get" :
+                    r = s.get("http://localhost" + url["loc"])
+                elif url["method"] == "post" :
+                    print "   Post data: " + str(url["data"])
+                    r = s.post("http://localhost" + url["loc"], data = url["data"])
+                elif url["method"] == "login" :
+                    login(s)
+                elif url["method"] == "logout" :
+                    print "Logging out..."
+                    r = s.get("http://localhost/disconnect")
 
-            if url["method"] != "login" :
-                assert(r.status_code == 200)
-                if url["method"] != "logout" :
-                    # The difference between 'success' and 'test_success' is for errors
-                    # that happen during tests which are tolerable in the user experience.
-                    # For example, if the translation API can't reach the internet, the
-                    # UI will just return that connectivity information to the user, but
-                    # it does not mean there's a failure in the system. But, it is indeed
-                    # a unit test failure, so we need to know about it and check for it.
-                    try :
-                        j = json_loads(r.text)
-                    except ValueError, e :
-                        print "Failed to parse JSON from: " + r.text
-                        assert(False)
+                if url["method"] != "login" :
+                    assert(r.status_code == 200)
 
-                    if "success" in url and url["success"] is not None :
-                        assert("success" in j)
-                        assert(j["success"] == url["success"])
-                    if "test_success" in url and url["test_success"] is not None :
-                        assert("test_success" in j)
-                        assert(j["test_success"] == url["test_success"])
+                    if url["method"] != "logout" :
+                        # The difference between 'success' and 'test_success' is for errors
+                        # that happen during tests which are tolerable in the user experience.
+                        # For example, if the translation API can't reach the internet, the
+                        # UI will just return that connectivity information to the user, but
+                        # it does not mean there's a failure in the system. But, it is indeed
+                        # a unit test failure, so we need to know about it and check for it.
+                        try :
+                            j = json_loads(r.text)
+                        except ValueError, e :
+                            print "Failed to parse JSON from: " + r.text
+                            assert(False)
+
+                        if "job_running" in j and j["job_running"] :
+                            print "There is a job running. Come back later."
+                            sleep(5)
+                            continue
+
+                        if "success" in url and url["success"] is not None :
+                            assert("success" in j)
+                            assert(j["success"] == url["success"])
+                        if "test_success" in url and url["test_success"] is not None :
+                            assert("test_success" in j)
+                            assert(j["test_success"] == url["test_success"])
+                break
 
     except KeyboardInterrupt:
         print "CTRL-C interrupt"
@@ -452,13 +460,50 @@ urls += [
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,zh-CHS') },
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,zh-CHS') },
 
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "short", confirm = "short", newaccount = "password") },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoop2@whoops.com", username = "bad:username", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+
+           { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=nosuchaccount", "method" : "get", "success" : True, "test_success" :  False, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=whoops2@whoops.com", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+
+           { "loc" : "/api?human=0&alien=account&pack=1", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "short", confirm = "short", changepassword = "1") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "notthesame", confirm = "foobarbaz", changepassword = "1") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = "wrongoldpassword", password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = test["password"], password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = "foobarbaz", password = test["password"], confirm = test["password"], changepassword = "1") },
+
 #           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 #           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 #           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+
+
+
+
+
+
+            # Make this the 'resetpassword' the last test. 
+            # I really don't want to get the new password out of JSON right now.
+           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
         ]
 

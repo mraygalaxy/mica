@@ -455,8 +455,7 @@ function process_edits(uuid, operation, batch) {
       }
       
       out += "<h4>" + local("areyousure") + "</h4>\n";
-      // 'learn_' is not a typo. It's used in form_loaded() so as not to clash with the id 'learn'
-      out += "<form ajaxfinish='install_pages_if_needed' id='learn_' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
+      out += "<form ajaxfinishid='learn_content' ajaxfinish='install_pages_if_needed' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
       out += "<table>"
       for(var x = 0; x < edits.length; x++) {
@@ -637,7 +636,7 @@ function process_reviews(uuid, batch) {
       var count = 0;
       var out = "";
       var form = "";
-      form += "<form id='learn_' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
+      form += "<form ajaxfinishid='learn_content' ajaxfinish='install_pages_if_needed' class='ajaxform' data-ajax='false' method='post' action='home'>"
       out += "<ol>";
 
       $("span.review").each(function(index) {
@@ -841,18 +840,6 @@ function reveal(id, hide) {
         }
     }
 }
-
-/*
-$.browser.device = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()));
-
-if ($.browser.device == true) {
-    modifyStyleRuleValue("width", "#main-nav:target", "50%");
-    modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "50%");
-} else {
-    modifyStyleRuleValue("width", "#main-nav:target", "30%");
-    modifyStyleRuleValue("width", "#main-nav:target + .page-wrap", "70%");
-}
-*/
 
 function offinstantspin(json, opaque) {
     $('#instantspin').attr('style', 'display: none');
@@ -1808,4 +1795,9 @@ function getstory(uuid, type) {
         unavailable(false), 
         getstory_complete, 
         false);
+}
+
+function new_manual_account_complete(json) {
+    $('#account_content').html(json.desc);
+    done();
 }

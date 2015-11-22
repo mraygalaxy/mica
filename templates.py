@@ -30,7 +30,7 @@ class MessagesElement(Element) :
         if req.messages.count("Exception") :
             req.messages = req.messages.replace("<", "&#60;").replace(">", "&#62;")
         xstring = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>"
-        mdebug("Rendering: " + xstring)
+        mverbose("Rendering: " + xstring)
         self.loader = XMLString(xstring)
 
     @renderer
