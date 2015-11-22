@@ -442,3 +442,20 @@ def test_log(test, **kwargs) :
         fh = open(test + "translator.log", 'a')
         fh.write(logentry + "\n")
         fh.close()
+
+def getFromDict(dataDict, mapList):
+    return reduce(lambda d, k: d[k], mapList, dataDict)
+
+def setInDict(dataDict, mapList, value):
+    getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
+
+def recursiveSetInDict(dataDict, mapList, value) :
+    for idx in range(0, len(mapList)) : 
+        sublist = mapList[:(idx + 1)]
+        try :
+            getFromDict(dataDict, sublist)
+        except KeyError, e :
+            if idx == (len(mapList) - 1) :
+                setInDict(dataDict, sublist, value)
+            else :
+                setInDict(dataDict, sublist, {})

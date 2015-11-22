@@ -4259,95 +4259,97 @@ class MICA(object):
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
+            mdebug("Token fetched successfully: " + str(service.token))
+
+            if who == "baidu" :
+                del service.token["token_type"]
+
+            lookup_url = creds["lookup_url"]
+
+            if "force_token" in creds and creds["force_token"] :
+                lookup_url += "?access_token=" + service.token["access_token"]
+
+            mdebug("Looking up to: " + lookup_url)
+
+            r = service.get(lookup_url)
         except MissingTokenError, e :
             for line in format_exc().splitlines() :
                 merr(line)
             return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
         except InvalidGrantError, e :
+            for line in format_exc().splitlines() :
+                merr(line)
             merr("Someone tried to use an old URL with an old Code")
             return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
         except requests_ConnectionError, e :
-            merr("Could not reach " + who + ": " + str(e))
+            for line in format_exc().splitlines() :
+                merr(line)
             return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
-
-        mdebug("Token fetched successfully: " + str(service.token))
-
-        if who == "baidu" :
-            del service.token["token_type"]
-
-        lookup_url = creds["lookup_url"]
-
-        if "force_token" in creds and creds["force_token"] :
-            lookup_url += "?access_token=" + service.token["access_token"]
-
-        mdebug("Looking up to: " + lookup_url)
-
-        r = service.get(lookup_url)
         
         mdebug("MICA returned content is: " + str(r.content))
         values = json_loads(r.content)
 
-        if who == "renren" :
-            values = values["response"]
-
-        if creds["verified_key"] :
-            vkeys = creds["verified_key"].split(",")
-            vdict = values
-            for vkey in vkeys :
-                if vkey not in vdict :
-                    raise exc.HTTPBadRequest()
-                    return False, _("We're sorry, but the oauth provider " + who + " is missing information (vkey " + vkey + ") in their login protocol. Please report this. Thank you.")
-                vdict = vdict[vkey]
-
-            if not vdict :
-                return False, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
-
-        email_found = False
-        email_key = creds["email_key"]
-        if email_key :
-            vkeys = email_key.split(",")
-            vdict = values
-            for vkey in vkeys :
-                if isinstance(vdict, dict) :
+        try :
+            if creds["verified_key"] :
+                vkeys = creds["verified_key"].split(",")
+                vdict = values
+                for vkey in vkeys :
                     if vkey not in vdict :
-                        mdebug("Key " + vkey + " not in " + str(vdict))
-                        authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
-                        req.session.value["states_urls"]["urls"][who] = authorization_url
-                        req.session.value["states_urls"]["states"][who] = state 
-                        req.session.save()
-                        out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
-                        out += authorization_url
-                        out += "'>" + _("You're welcome to try again") + "</a>"
-                        return False, out
-
+                        return False, _("We're sorry, but the oauth provider is missing information for your account") + ":  " + who + ": " + vkey + ": " + str(e)
                     vdict = vdict[vkey]
-            values["email"] = vdict
-            email_key = vkey
 
-        password = binascii_hexlify(os_urandom(4))
-        if "locale" not in values :
-            language = "en"
-        else :
-            language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
+                if not vdict :
+                    return False, _("You have successfully signed in with the 3rd party, but they cannot confirm that your account has been validated (that you are a real person). Please try again later.")
 
-        if email_key :
-            if isinstance(values[email_key], dict) :
-                values["email"] = None
+            email_found = False
+            email_key = creds["email_key"]
 
-                if "preferred" in values[email_key] :
-                    values["email"] = values[email_key]["preferred"]
+            if email_key :
+                vkeys = email_key.split(",")
+                vdict = values
+                for vkey in vkeys :
+                    if isinstance(vdict, dict) :
+                        if vkey not in vdict :
+                            mdebug("Key " + vkey + " not in " + str(vdict))
+                            authorization_url, state = service.authorization_url(creds["reauthorization_base_url"])
+                            req.session.value["states_urls"]["urls"][who] = authorization_url
+                            req.session.value["states_urls"]["states"][who] = state 
+                            req.session.save()
+                            out = _("We're sorry. You have declined to share your email address, but we need a valid email address in order to create an account for you") + ". <a class='btn btn-primary' href='"
+                            out += authorization_url
+                            out += "'>" + _("You're welcome to try again") + "</a>"
+                            return False, out
 
-                if values["email"] is None :
-                    for key, email in values[email_key] :
-                        if email is not None :
-                            values["email"] = email 
+                        vdict = vdict[vkey]
+                values["email"] = vdict
+                email_key = vkey
+
+            password = binascii_hexlify(os_urandom(4))
+            if "locale" not in values :
+                language = "en"
             else :
-                values["email"] = values[email_key]
+                language = values["locale"].split("-")[0] if values['locale'].count("-") else values["locale"].split("_")[0]
 
-        from_third_party = values
-        if email_key :
-            from_third_party["username"] = values["email"]
+            if email_key :
+                if isinstance(values[email_key], dict) :
+                    values["email"] = None
 
+                    if "preferred" in values[email_key] :
+                        values["email"] = values[email_key]["preferred"]
+
+                    if values["email"] is None :
+                        for key, email in values[email_key] :
+                            if email is not None :
+                                values["email"] = email 
+                else :
+                    values["email"] = values[email_key]
+
+            from_third_party = values
+            if email_key :
+                from_third_party["username"] = values["email"]
+        except KeyError, e :
+            return False, _("We're sorry, but the oauth provider is missing information for your account") + ":  " + who + ": " + str(e)
+            
         if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
                 return False, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
@@ -4362,8 +4364,10 @@ class MICA(object):
                 <a rel='external' data-role='none' class='btn btn-default' href='/help'>%(tutorial)s</a>
                 <br/><br/>%(happy)s!</h4>
                 <br/><a rel='external' data-role='none' class='btn btn-default' href='/'>%(start)s</a>
-                <script>$('#maindisplay').attr('style', 'display: none');</script>
-                <script>$('#leftpane').attr('style', 'display: none');</script>
+                <script>
+                    $('#maindisplay').attr('style', 'display: none');
+                    $('#leftpane').attr('style', 'display: none');
+                </script>
             """ % dict(tutorial = _("please read the tutorial"),
                        happy = _("Happy Learning"),
                        start = _("Start learning!"),

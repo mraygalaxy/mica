@@ -42,7 +42,7 @@ function switchlist_complete(json, opaque) {
 }
 
 function switchlist() {
-   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable(false), switchlist_complete, false);
+   go(false, 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable(false), switchlist_complete, false);
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
@@ -99,20 +99,20 @@ function form_loaded(data, do_forms) {
             $(this).on("submit", function(event, form) {
               loading();
               event.preventDefault();
-	      var aff = $(form).attr('ajaxfinish');
-	      if(form && aff == undefined) {
-                var closest = $(form).closest("[data-role='content']");
-                var destid = "#" + closest.attr('id');
-                if (destid == "#undefined")
-                    destid = "#" + $(form).attr('id') + "content";
+              var aff = $(form).attr('ajaxfinish');
+              if(form && aff == undefined) {
+                    var closest = $(form).closest("[data-role='content']");
+                    var destid = "#" + closest.attr('id');
+                    if (destid == "#undefined")
+                        destid = "#" + $(form).attr('id') + "content";
               }
-              go(form, destid, 'url_comes_from_form', unavailable(false), form_loaded_complete, true);
+              go([form, destid], 'url_comes_from_form', unavailable(false), form_loaded_complete, true);
             });
             $(this).find(":submit").click(function(event) {
                     event.preventDefault();
                     myform = $(this).closest("form");
                     myform.trigger('submit', myform);
-                });
+            });
         });
     } else {
         done();
@@ -159,24 +159,25 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
         if (where == 'stories') {
             loadstories(false, false);
         } else if (where == 'chat') {
-                if (!chat_loaded) {
-                   go(false, '', 'chat', unavailable(false), chat_success, false);
-                }
+            if (!chat_loaded) {
+               go(false, 'chat', unavailable(false), chat_success, false);
+            }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
                    var pageid = "home";
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go(false, '', pageid, unavailable(false), learn_success, false);
+
+                   go(false, pageid, unavailable(false), learn_success, false);
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '', 'account', unavailable(false), account_complete, true);
+               go(false, 'account', unavailable(false), account_complete, true);
         } else if (where == 'help') {
-               go(false, '', 'help', unavailable(false), help_complete, false);
+               go(false, 'help', unavailable(false), help_complete, false);
         } else if (where == 'privacy') {
-               go(false, '', 'privacy', unavailable(false), privacy_complete, false);
+               go(false, 'privacy', unavailable(false), privacy_complete, false);
         }
    }
    return true;

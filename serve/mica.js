@@ -73,8 +73,9 @@ function disconnect_complete(json, opaque) {
 }
 
 function disconnect() {
-    go(false, '', 'disconnect', unavailable(false), disconnect_complete, false);
+    go(false, 'disconnect', unavailable(false), disconnect_complete, false);
 }
+
 function connect_complete(json, opaque) {
     done();
     if (json.success) {
@@ -91,14 +92,22 @@ function local(msgid) {
 
 function go_callback(callback, data, opaque) {
     if(callback != false && callback != undefined) {
-       if (opaque) 
+       if (opaque)
            callback(data, opaque);
        else
            callback(data);
     }
 }
 
-function go(form, id, url, error, callback, opaque){
+function go(form_id, url, error, callback, opaque){
+    var form = false;
+    var id = '';
+
+    if (form_id) {
+        form = form_id[0];
+        id = form_id[1];
+    }
+
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
         console.log("AJAX Status code: " + XMLHttpRequest.status + " id: " + id);
         if (XMLHttpRequest.status == 401) {
@@ -254,7 +263,7 @@ function trans_poll_complete(json, uuid) {
 }
 
 function trans_poll(uuid) {
-   go(false, '', 'read&tstatus=1&uuid=' + uuid, 
+   go(false, 'read&tstatus=1&uuid=' + uuid, 
        unavailable(false),
        trans_poll_complete, 
        uuid);
@@ -281,7 +290,7 @@ function trans_start(uuid) {
 
 function trans(uuid) {
    trans_start(uuid);
-   go(false, '', 'home&translate=1&uuid=' + uuid, unavailable(false), trans_stop, uuid);
+   go(false, 'home&translate=1&uuid=' + uuid, unavailable(false), trans_stop, uuid);
 }
 
 function toggle_specific(prefix, name, check) {
@@ -555,10 +564,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
        if (password)
            url += "&password=" + password
 
-       go(false, '', url,
-          local("onlineoffline"),
-          offinstantspin,
-          false);
+       go(false, url, local("onlineoffline"), offinstantspin, false);
        }
 }
 
@@ -617,9 +623,9 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
       // popover is visable
       $('#ttip' + trans_id).popover('hide');
     } else {
-      loading(); 
-      // popover is not visable
-        go(false, '', 'home&view=1&uuid=' + uuid + '&multiple_select=1'
+        loading(); 
+        // popover is not visable
+        go(false, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
               + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
               unavailable(false), 
               multipoprefresh,
@@ -674,8 +680,9 @@ function restore_pageimg_width() {
 function finish_new_account_complete(json, opaque) {
     $("#newaccountresultdestination").html(json.desc);
 }
+
 function finish_new_account(code, who, state) {
-    go(false, '', who + "?connect=1&finish=1&code=" + code + "&state=" + state, unavailable(false), finish_new_account_complete, false);
+    go(false, "api?human=0&alien=" + who + "&connect=1&finish=1&code=" + code + "&state=" + state, unavailable(false), finish_new_account_complete, false);
 }
 
 function view(mode, uuid, page) {
@@ -694,11 +701,11 @@ function view(mode, uuid, page) {
         $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
         $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
 
-        go(false, '', url, unavailable(false), function(json, opaque) { $('#pagetext').html(json.desc) }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pagetext').html(json.desc) }, false);
 
         url += "&image=0";
 
-        go(false, '', url, unavailable(false), function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
     } else {
         $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
         if (view_images) {
@@ -708,7 +715,7 @@ function view(mode, uuid, page) {
             $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
         }
        
-        go(false, '', url, unavailable(false), function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
     }
 
     listreload(mode, uuid, page);
@@ -774,7 +781,7 @@ function memory_complete(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
     loading();
-    go(false, '', 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
+    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
         unavailable(false), 
         memory_complete,
         [id, memorized]);
@@ -790,7 +797,7 @@ function forget(id, uuid, nb_unit, page) {
 
 function memory_nostory(id, source, multiple_correct, memorized) {
     loading();
-    go(false, '', 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
+    go(false, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
         unavailable(false),
         memory_complete,
         id);
@@ -910,7 +917,7 @@ function install_highlight() {
         if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
-           go(false, '', 'instant&source=' + st + "&lang=en", 
+           go(false, 'instant&source=' + st + "&lang=en", 
               unavailable(false), 
               offinstantspin,
               false);
@@ -962,7 +969,7 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '', 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
+           go(false, 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
               unavailable(false), 
               list_reload_complete,
               "memolist");
@@ -970,14 +977,14 @@ function listreload(mode, uuid, page) {
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, '', 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
+           go(false, 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
                   unavailable(false), 
                   list_reload_complete,
                   'editslist');
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, '', 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+           go(false, 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable(false), 
                   list_reload_complete,
                   'history');
@@ -1004,12 +1011,12 @@ function installreading() {
             $('#imageButton').attr('class', 'btn btn-default');
             $('#textButton').attr('class', 'active btn btn-default');
             view_images = false;
-            go(false, '', 'home&switchmode=text', unavailable(false), false, false);
+            go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
             view_images = true; 
             $('#imageButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
-	        go(false, '', 'home&switchmode=images', unavailable(false), false, false);
+	        go(false, 'home&switchmode=images', unavailable(false), false, false);
         }
         show_both = false;
         $('#sideButton').attr('class', 'btn btn-default');
@@ -1021,12 +1028,12 @@ function installreading() {
             $('#sideButton').attr('class', 'btn btn-default');
             $('#textButton').attr('class', 'active btn btn-default');
             show_both = false;
-	        go(false, '', 'home&switchmode=text', unavailable(false), false, false);
+	        go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
             show_both = true; 
             $('#sideButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
-	        go(false, '', 'home&switchmode=both', unavailable(false), false, false);
+	        go(false, 'home&switchmode=both', unavailable(false), false, false);
         }
         current_view_mode = "both";
         view_images = false;
@@ -1035,7 +1042,7 @@ function installreading() {
     });
     
     $('#textButton').click(function () {
-        go(false, '', 'home&switchmode=text', unavailable(false), false, false);
+        go(false, 'home&switchmode=text', unavailable(false), false, false);
 	    if (show_both == false && view_images == false) {
 	   	    // already in text mode
 	   	    return;
@@ -1053,12 +1060,12 @@ function installreading() {
         if($('#meaningButton').attr('class') == 'active btn btn-default') {
             $('#meaningButton').attr('class', 'btn btn-default');
             current_meaning_mode = false;
-            go(false, '', 'read&meaningmode=false', unavailable(false), false, false);
+            go(false, 'read&meaningmode=false', unavailable(false), false, false);
             reveal_all(true);
        } else {
             $('#meaningButton').attr('class', 'active btn btn-default');
             current_meaning_mode = true;
-            go(false, '', 'read&meaningmode=true', unavailable(false), false, false);
+            go(false, 'read&meaningmode=true', unavailable(false), false, false);
             reveal_all(false);
        }
     });
@@ -1066,7 +1073,7 @@ function installreading() {
 
 function syncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('requesting') + "...";
-    go(false, '', 'storylist&uuid=' + uuid + "&sync=1",
+    go(false, 'storylist&uuid=' + uuid + "&sync=1",
         'sync error', storylist_complete,
         { element: name, label: local('started'), cleanup: unsyncstory});
 }
@@ -1098,7 +1105,7 @@ function storylist_complete(json, params) {
 
 function unsyncstory(name, uuid) {
     document.getElementById(name).innerHTML = local('stopping') + "...";
-    go(false, '', 'storylist&uuid=' + uuid + "&sync=0",
+    go(false, 'storylist&uuid=' + uuid + "&sync=0",
         'sync error', storylist_complete,
         { element: name, label: local('stopped'), cleanup: syncstory});
 }
@@ -1134,21 +1141,21 @@ function finishedloading(storylist, navto) {
 
 function loadstories(json, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, '', 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    go(false, 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
         unavailable(false), 
         storylist_complete,
         { element: 'storypages', navto: navto});
 }
 
 function reviewstory(uuid, which) {
-    go(false, '', 'home&reviewed=' + which + '&uuid=' + uuid,
+    go(false, 'home&reviewed=' + which + '&uuid=' + uuid,
         unavailable(false), 
         loadstories,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
-    go(false, '', 'home&finished=' + which + '&uuid=' + uuid,
+    go(false, 'home&finished=' + which + '&uuid=' + uuid,
         unavailable(false), 
         loadstories,
         (which == 1) ? "#finished" : "#reading");
@@ -1221,7 +1228,7 @@ function validatetext() {
     //$("#textform").submit();
     
     loading();
-    go($("#textform"), '', '', unavailable(false), validatetext_complete, false);
+    go([$("#textform"), ''], '', unavailable(false), validatetext_complete, false);
 }
 
 function validatefile_complete(json, opaque) {
@@ -1289,7 +1296,7 @@ function validatefile() {
     }
     loading();
     $("#filename").val(myFile.name);
-    go($("#fileform"), '', '', unavailable(false), validatefile_complete, false);
+    go([$("#fileform"), ''], '', unavailable(false), validatefile_complete, false);
 }
 
 function handleIQ(oIQ) {
@@ -1399,7 +1406,7 @@ function appendChat(who, to, msg) {
 
     start_trans_id += msg.length;
 
-    go(false, '', micaurl, unavailable(false), function(json, opaque){
+    go(false, micaurl, unavailable(false), function(json, opaque){
             if(json.success)  {
                     appendBox(who, ts, json.result.human, msgclass, reverse);
             } else {
@@ -1447,7 +1454,7 @@ function newContact(who) {
     $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     start_trans_id = 1000000;
-    go(false, '', "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
+    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
 
@@ -1787,7 +1794,7 @@ function start_learning(mode, action, values) {
     if (values.version)
         url += "&version=" + values.version;
 
-    go(false, '', url,  unavailable(false), start_learning_complete, action);
+    go(false, url,  unavailable(false), start_learning_complete, action);
 }
 
 function getstory_complete(json, opaque) {
@@ -1797,7 +1804,7 @@ function getstory_complete(json, opaque) {
 }
 function getstory(uuid, type) {
     loading();
-    go(false, '', 'stories&type=' + type +'&uuid=' + uuid, 
+    go(false, 'stories&type=' + type +'&uuid=' + uuid, 
         unavailable(false), 
         getstory_complete, 
         false);
