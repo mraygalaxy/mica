@@ -31,7 +31,7 @@ function switchinstall(initlist) {
 	}
 }
 
-function switchlist_complete(data, opaque) {
+function switchlist_complete(json, opaque) {
     done();
     if (json.success) {
        switchinstall(list_mode ? false : true);
@@ -42,7 +42,7 @@ function switchlist_complete(data, opaque) {
 }
 
 function switchlist() {
-   go(false, '', 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable, switchlist_complete, false);
+   go(false, 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable(false), switchlist_complete, false);
 }
 
 $("[data-role='header'],[data-role='footer']").toolbar();
@@ -91,28 +91,29 @@ function form_loaded_complete(data, opaque) {
     $('#reviewModal').modal('hide');
     form_loaded(data, true);
 }
+
 function form_loaded(data, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
             var destid ='';
-            $(this).on("submit", function(event, form) {
+            $(this).off().on("submit", function(event, form) {
               loading();
               event.preventDefault();
-	      var aff = $(form).attr('ajaxfinish');
-	      if(form && aff == undefined) {
-                var closest = $(form).closest("[data-role='content']");
-                var destid = "#" + closest.attr('id');
-                if (destid == "#undefined")
-                    destid = "#" + $(form).attr('id') + "content";
+              var aff = $(form).attr('ajaxfinish');
+              if(form && aff == undefined) {
+                    var closest = $(form).closest("[data-role='content']");
+                    var destid = "#" + closest.attr('id');
+                    if (destid == "#undefined")
+                        destid = "#" + $(form).attr('ajaxfinishid');
               }
-              go(form, destid, 'url_comes_from_form', unavailable, form_loaded_complete, true);
+              go([form, destid], 'url_comes_from_form', unavailable(false), form_loaded_complete, true);
             });
-            $(this).find(":submit").click(function(event) {
+            $(this).find(":submit").off().on("click", function(event) {
                     event.preventDefault();
                     myform = $(this).closest("form");
                     myform.trigger('submit', myform);
-                });
+            });
         });
     } else {
         done();
@@ -159,24 +160,25 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
         if (where == 'stories') {
             loadstories(false, false);
         } else if (where == 'chat') {
-                if (!chat_loaded) {
-                   go(false, '', 'chat', unavailable, chat_success, false);
-                }
+            if (!chat_loaded) {
+               go(false, 'chat', unavailable(false), chat_success, false);
+            }
         } else if (where == 'learn') {
                 if (!learn_loaded) {
                    var pageid = "home";
                    var lastmode = $("#lastmode");
                    if (lastmode != undefined)
                         pageid = lastmode.html();
-                   go(false, '', pageid, unavailable, learn_success, false);
+
+                   go(false, pageid, unavailable(false), learn_success, false);
                 }
         } else if (where == 'account') {
                loading();
-               go(false, '', 'account', unavailable, account_complete, true);
+               go(false, 'account', unavailable(false), account_complete, true);
         } else if (where == 'help') {
-               go(false, '', 'help', unavailable, help_complete, false);
+               go(false, 'help', unavailable(false), help_complete, false);
         } else if (where == 'privacy') {
-               go(false, '', 'privacy', unavailable, privacy_complete, false);
+               go(false, 'privacy', unavailable(false), privacy_complete, false);
         }
    }
    return true;
@@ -196,7 +198,7 @@ $(document).on('ready', function() {
 		$("div.view1").slideToggle(400);
 		$("div.tri1").toggleClass("toggle1");
 	});
-        form_loaded(false, true);
+    form_loaded(false, true);
 });
 
 
@@ -216,11 +218,11 @@ $(window).on("resize orientationchange", function(){
 
 $(document).ready(function () {
 	$(".modal").each(function() {
-	    $(this).on('shown.bs.modal', function() {
+	    $(this).off().on('shown.bs.modal', function() {
 		$(".affix").each(function() { $(this).removeClass('affix'); $(this).addClass('affix-top'); $(this).affix(); });
 		
 	    });
-	    $(this).on('hidden.bs.modal', function() {
+	    $(this).off().on('hidden.bs.modal', function() {
 		$(".affix-top").each(function() { $(this).removeClass('affix-top'); $(this).addClass('affix'); $(this).affix(); });
 		
 	    });

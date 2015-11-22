@@ -27,8 +27,11 @@ class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
         self.req = req
-        #mdebug("Rendering: " + req.messages)
-        self.loader = XMLString("<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>")
+        if req.messages.count("Exception") :
+            req.messages = req.messages.replace("<", "&#60;").replace(">", "&#62;")
+        xstring = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>"
+        mverbose("Rendering: " + xstring)
+        self.loader = XMLString(xstring)
 
     @renderer
     def messages(self, request, tag) :
@@ -59,9 +62,12 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
+        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
+
+        if hasattr(self.req, "template_dict") :
+            conditionals.update(self.req.template_dict)
 
         fh = open(cwd + 'serve/' + template_name, 'r')
         f = fh.read()
@@ -137,6 +143,19 @@ class ReadElement(CommonElement) :
                         nowords = _("No words memorized. Get to work!"),
                      )
         return tag
+
+class RowElement(CommonElement) :
+    @renderer
+    def row(self, request, tag) :
+        tag.fillSlots(
+            spinner = tags.img(src=self.req.mpath + '/'+ spinner, width='15px'),
+            transclass = 'transroman' if self.req.gp.already_romanized else 'trans',
+            )
+        return tag
+
+class Row1Element(RowElement) : pass
+class Row2Element(RowElement) : pass
+class Row3Element(RowElement) : pass
 
 class TranslationsElement(CommonElement) :
     @renderer
@@ -318,11 +337,32 @@ class FrontPageElement(CommonElement) :
 
     @renderer
     def thirdparty(self, request, tag) :
-        for link in generate_oauth_links(self.req.oauth) :
-            creds = link["creds"]
-            del link["creds"]
-            servicetag = tags.a(**link)
+        if "states_urls" in self.req.session.value :
+            states_urls = self.req.session.value["states_urls"]
+        else :
+            states_urls = dict(states = {}, urls = {})
+
+            for name, creds in self.req.oauth.iteritems() :
+                if name == "redirect" :
+                    continue
+                service = OAuth2Session(creds["client_id"], redirect_uri=self.req.oauth["redirect"] + name, scope = creds["scope"])
+
+                if name == "facebook" :
+                    service = facebook_compliance_fix(service)
+
+                if name == "weibo" :
+                    service = weibo_compliance_fix(service)
+
+                states_urls["urls"][name], states_urls["states"][name] = service.authorization_url(creds["authorization_base_url"])
+            self.req.session.value["states_urls"] = states_urls
+
+        for name, creds in self.req.oauth.iteritems() :
+            if name == "redirect" :
+                continue
+
+            servicetag = tags.a(**{ "onclick" : "loading()", "href" : states_urls["urls"][name], "title" : name, "data-ajax" : "false", "id" : "oauth_" + name})
             servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+
             tag(tags.td(servicetag))
 
         return tag
@@ -780,8 +820,8 @@ def run_template(req, which, content = False) :
         else :
             obj = which(req)
     except Exception, e :
-        return str(e)
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
+        raise e
 
     io = StringIO()
 

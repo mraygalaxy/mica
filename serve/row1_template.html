@@ -1,0 +1,30 @@
+<td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row" class='@!tmpclass!@' style='vertical-align: middle; text-align: center; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%%'>
+    <!--(if py and action == 'edit' and merge_end)-->
+        <t:attr name='class'>mergeright mergetop mergebottom</t:attr>
+    <!--(end)-->
+
+    <!--(if "timestamp" not in unit or not unit["punctuation"])-->
+        <span id='spanselect_@!trans_id!@' class='@!batch!@'>
+            <a style='color: black; font-weight: normal @!'; cursor: pointer' if 'punctuation' not in unit or not unit['punctuation'] else ''!@'
+               uniqueid='@!uhash!@'
+               nbunit='@!nb_unit!@'
+               transid='@!trans_id!@'
+               batchid='@!batchid!@'
+               operation='@!operation!@'
+               page='@!page!@'
+               pinyin="@!pinyin!@"
+               index='@!index!@'>
+                    <t:attr name='class'><t:slot name='transclass'/></t:attr>
+               <!--(if chat and 'select_idx' in unit)-->
+                    <t:attr name='onclick'>select_chat_option('@!unit['select_idx']!@');</t:attr>
+               <!--(end)-->
+               <!--(if not chat)-->
+                    <t:attr name='onclick'>select_toggle('@!trans_id!@')</t:attr>
+               <!--(end)-->
+               @!link!@
+               </a>
+        </span>
+    <!--(else)-->
+        @!chatlog!@
+    <!--(end)-->
+</td>
