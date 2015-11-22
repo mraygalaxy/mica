@@ -4429,9 +4429,6 @@ class MICA(object):
         mdebug("MICA returned content is: " + str(r.content))
         values = json_loads(r.content)
 
-        if who == "renren" :
-            values = values["response"]
-
         if creds["verified_key"] :
             vkeys = creds["verified_key"].split(",")
             vdict = values
