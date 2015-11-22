@@ -34,19 +34,11 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters, test
-from common import sdict
+from common import sdict, recursiveSetInDict
 from mica import go
 from pyquery import PyQuery as pq
 
 server_port = 9888
-
-'''
-Post: https://accounts.google.com/o/oauth2/token
-
-{u'code': u'4/sdRdEpg-UCxjF2bqlaFMIcXmzYcMqFfMZVUq1m3iDmE', u'client_secret': u'hIyf_eQqtPEbyMD7pLuKxejS', u'grant_type': u'authorization_code', u'client_id': u'195565572022-ogots3m7a0alrp6sbvm7a8i3458dc814.apps.googleusercontent.com', u'redirect_uri': u'http://localhost:20000/google'}
-
-    "GoogleToken" :      [ dict(inp = {u'code': u'4/sdRdEpg-UCxjF2bqlaFMIcXmzYcMqFfMZVUq1m3iDmE', u'client_secret': u'hIyf_eQqtPEbyMD7pLuKxejS', u'grant_type': u'authorization_code', u'client_id': u'195565572022-ogots3m7a0alrp6sbvm7a8i3458dc814.apps.googleusercontent.com', u'redirect_uri': u'http://localhost:20000/google'}
-'''
 
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
@@ -60,9 +52,10 @@ mock_rest = {
     #"" : [dict(inp = , outp = ),],
     #"" : [dict(inp = , outp = ),],
 }
-    
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    email_count = 0
+
     def my_parse(self, data) :
         url_parameters = {}
         parsed_data = parse_qs(data, keep_blank_values=1)
@@ -107,17 +100,16 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if path == "foo" :
             body = "bar"
         elif path in parameters["oauth"].keys() :
-            if "action" in url_parameters and url_parameters["action"] == "token" :
-                print "TOKEN REQUEST from: " + path
-                state = oauth["states"][path]
-                code = oauth["states"][path]
-                if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
-                    result = 401
-                    result_msg = "Bad Things"
-                    body = {"error" : "bad things"} 
-                    
-                oauth["tokens"][path] = binascii_hexlify(os_urandom(4))
-                body = sdict(access_token = oauth["tokens"][path], token_type = "Bearer", expires_in = 3597)
+            print "TOKEN REQUEST from: " + path
+            state = oauth["states"][path]
+            code = oauth["states"][path]
+            if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
+                result = 401
+                result_msg = "Bad Things"
+                body = {"error" : "bad things"} 
+                
+            oauth["tokens"][path] = binascii_hexlify(os_urandom(4))
+            body = sdict(access_token = oauth["tokens"][path], token_type = "Bearer", expires_in = 3597)
         else :
             body = self.check_mock_data(path, url_parameters)
 
@@ -155,20 +147,16 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if path == "foo" :
             body = "bar"
         elif path in parameters["oauth"].keys() :
-            if "action" in url_parameters and url_parameters["action"] == "lookup" :
-                def getFromDict(dataDict, mapList):
-                    return reduce(lambda d, k: d[k], mapList, dataDict)
-                def setInDict(dataDict, mapList, value):
-                    getFromDict(dataDict, mapList[:-1])[mapList[-1]] = value
-                body_dict = {}
+            body_dict = {}
 
-                if "email_key" in parameters["oauth"][path] and parameters["oauth"][path]["email_key"] :
-                    setInDict(body_dict, parameters["oauth"][path]["email_key"].split(","), path + "@holymother.com")
+            if "email_key" in parameters["oauth"][path] and parameters["oauth"][path]["email_key"] :
+                recursiveSetInDict(body_dict, parameters["oauth"][path]["email_key"].split(","), path + str(self.email_count) + "@holymother.com")
+                self.email_count += 1
 
-                if "verified_key" in parameters["oauth"][path] and parameters["oauth"][path]["verified_key"] :
-                    body_dict[parameters["oauth"][path]["verified_key"]] = True 
-                    setInDict(body_dict, parameters["oauth"][path]["verified_key"].split(","), True)
-                body = json_dumps(body_dict)
+            if "verified_key" in parameters["oauth"][path] and parameters["oauth"][path]["verified_key"] :
+                body_dict[parameters["oauth"][path]["verified_key"]] = True
+                recursiveSetInDict(body_dict, parameters["oauth"][path]["verified_key"].split(","), True)
+            body = json_dumps(body_dict)
         else :
             body = self.check_mock_data(path, url_parameters)
 
@@ -271,7 +259,7 @@ def run_tests() :
 
     return stop
 
-c = Client(base_url='unix://var/run/docker.sock')
+c = Client(base_url = 'unix://var/run/docker.sock')
 s = requests.Session()
 
 mica_options = dict(
@@ -470,9 +458,9 @@ for who in parameters["oauth"].keys() :
             oauth["states"][who] = state
             oauth["codes"][who] = binascii_hexlify(os_urandom(4))
             urls.append({ "method" : "logout", "loc" : "logout" })
-            urls.append(dict(loc = "/" + who + "?connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
-            parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who + "?action=token"
-            parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who + "?action=lookup&"
+            urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
+            parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who
+            parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
             break
         
 sleep(5)
