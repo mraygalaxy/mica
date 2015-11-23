@@ -1169,6 +1169,7 @@ function validatetext_complete(json, opaque) {
         db.openDoc(json.storykey, {
               error: function(err) {
                     alert("Boo. Doc failed: " + err);
+                    done();
               },
               success : function(doc) {
                    doc["txtsource"] = $("#textvalue").val();
@@ -1220,7 +1221,6 @@ function validatetext() {
 }
 
 function validatefile_complete(json, opaque) {
-    done();
     if(json.success) {
         db.openDoc(json.storykey, {
               error: function(err) {

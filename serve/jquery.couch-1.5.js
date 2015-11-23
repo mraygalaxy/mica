@@ -205,6 +205,7 @@
       $.ajax({
         type: "POST", url: this.urlPrefix + "/_session", dataType: "json",
         data: {name: options.name, password: options.password},
+        xhrFields: {withCredentials: true},
         beforeSend: function(xhr) {
             xhr.setRequestHeader('Accept', 'application/json');
         },
@@ -233,6 +234,7 @@
       $.ajax({
         type: "DELETE", url: this.urlPrefix + "/_session", dataType: "json",
         username : "_", password : "_",
+        xhrFields: {withCredentials: true},
         beforeSend: function(xhr) {
             xhr.setRequestHeader('Accept', 'application/json');
         },
@@ -626,6 +628,7 @@
           var versioned = maybeApplyVersion(doc);
           $.ajax({
             type: method, url: uri + encodeOptions(options),
+            xhrFields: {withCredentials: true},
             contentType: "application/json",
             dataType: "json", data: toJSON(doc),
             beforeSend : beforeSend,
@@ -987,7 +990,8 @@
     var timeStart;
     var defaultAjaxOpts = {
       contentType: "application/json",
-      headers:{"Accept": "application/json"}
+      headers:{"Accept": "application/json"},
+      xhrFields: {withCredentials: true},
     };
 
     options = $.extend({successStatus: 200}, options);
