@@ -9,7 +9,7 @@
 <p/>
 
 <a data-role='none' href='#' class='btn btn-default' onclick="process_edits('@!story['uuid']!@', 'all', true);"><t:slot name='tryrecco'/></a><p/>
-<!--(if story["filetype"] != 'chat')-->
+<!--(if "filetype" not in story or story["filetype"] != 'chat')-->
 <form ajaxfinish='install_pages_if_needed' data-ajax='false' class='ajaxform' action='edit' method='post'>
 <input type='hidden' name='retranslate' value='1'/>
 <input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
