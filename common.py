@@ -32,8 +32,8 @@ texts = {}
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
-#verbose = False
-verbose = True
+verbose = False
+#verbose = True
 
 if getdefaultencoding() != "utf-8" :
     if verbose :
