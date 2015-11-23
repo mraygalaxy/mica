@@ -9,12 +9,14 @@
 <p/>
 
 <a data-role='none' href='#' class='btn btn-default' onclick="process_edits('@!story['uuid']!@', 'all', true);"><t:slot name='tryrecco'/></a><p/>
+<!--(if story["filetype"] != 'chat')-->
 <form ajaxfinish='install_pages_if_needed' data-ajax='false' class='ajaxform' action='edit' method='post'>
 <input type='hidden' name='retranslate' value='1'/>
 <input type='hidden' name='page'><t:attr name='value'><t:slot name='nb_page'/></t:attr></input>
 <input type='hidden' name='uuid'><t:attr name='value'><t:slot name='uuid'/></t:attr></input>
 <button style='border: 2px solid black' data-role='none' class='btn btn-default' type='submit'><t:slot name='repage'/></button>
 </form>
+<!--(end)-->
 <p/>
 
 <!--(if list_mode)-->
@@ -36,7 +38,7 @@
                 </div>
                 <div class='panel-collapse collapse' id='collapse@!str(x[4])!@'>
 		    <div class='panel-body'>
-                    <!--(if len(x[3]))-->
+                    <!--(if len(x[3]) and isinstance(x[3], list))-->
                         <!--(if x[3][0] == '/')-->
                            @!x[3][1:-1]!@
                         <!--(else)-->

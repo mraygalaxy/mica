@@ -1450,7 +1450,6 @@ class MICA(object):
         mverbose("View Page " + str(page) + " story " + str(name) + " start...")
 
         if name :
-            mdebug("GETTING UNITS OUT AGAIN FROM SCRATCH........")
             try :
                 page_dict = req.db[self.story(req, name) + ":pages:" + str(page)]
             except couch_adapter.ResourceNotFound, e :
@@ -1460,7 +1459,6 @@ class MICA(object):
 
                 return False
         else :
-            mdebug("UNITS FROM EXISTING STORY PAGES........")
             page_dict = story["pages"]["0"]
 
         mverbose("View Page " + str(page) + " story " + str(name) + " fetched...")
@@ -1863,6 +1861,7 @@ class MICA(object):
 
                 mverbose("Entering online translation.")
                 result = self.translation_client.translate_array(requests, lang, from_lang = from_lang)
+                mverbose("Online Translation result: " + str(result))
 
                 if not len(result) or "TranslatedText" not in result[0] :
                     mdebug("Probably key expired: " + str(result))
@@ -2106,7 +2105,7 @@ class MICA(object):
     def operation(self, req, story, edit, offset):
         operation = edit["operation"]
 
-        processor = getattr(processors, processor_map[self.tofrom(story)])(self, params)
+        processor = self.processors[self.tofrom(story)]
 
         if operation == "split" :
             nb_unit = int(edit["nbunit"]) + offset
@@ -3303,18 +3302,6 @@ class MICA(object):
             merr(out)
             self.imemutex.release()
             raise e
-
-
-        # FIXME: The long-term solution to open all sqlite database handles
-        # inside the main routine and use couroutines to synchronize
-        # all DB accesses from the main processor, but that requires
-        # re-writing the processor, let's deal with that later.
-        # The goal is to allow sqlite to do normal caching.
-        # Currently, the RomanizedSource languages are still are
-        # not closing/re-opening their sqlite handles and may crash.
-        # We don't want to re-open them anyway and need to keep
-        # them open in the main thread.
-        # When we finish this fix, we can remove the imemutex lock below.
 
         cerror = False
         failed = True

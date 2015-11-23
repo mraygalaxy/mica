@@ -941,7 +941,10 @@ class ChineseSimplifiedToEnglish(Processor) :
                 mdebug("get_pinyin result: " + str(kv))
                 word, tone = kv[0], kv[1]
                 result.append(tone.split(" ")[0].strip().lower())
-            except:
+            except Exception, e:
+                mwarn("There was an exception getting pinyin for this character: " + str(char) + ": " + str(e))
+                for line in format_exc().splitlines() :
+                    merr(line)
                 result.append(char)
 
         return splitter.join(result)
@@ -967,6 +970,7 @@ class ChineseSimplifiedToEnglish(Processor) :
     def convertPinyin(self, char):
         return self.convertTone(self.get_pinyin(char))
 
+    # Longest-common-subsequence algorithm.
     def lcs(self, a, b):
         lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
         # row 0 and column 0 are initialized to 0 already
@@ -1200,10 +1204,12 @@ class ChineseSimplifiedToEnglish(Processor) :
         match_romanization = ""
         for triple in matches :
           char, source_idx, trans_idx = triple
-          mverbose("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
           pchar = self.convertPinyin(char)
-          tmatch += " " + pchar + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
+          mverbose("orig idx " + str(source_idx) + " trans idx " + str(trans_idx) + " => " + char)
+          tmatch += " " + str(pchar) + "(s" + str(source_idx) + ",t" + str(trans_idx) + "," + char + ")"
           match_romanization += pchar + " "
+
+        match_romanization = match_romanization.strip()
 
         mverbose("matches: \n" + tmatch.replace("\n",""))
           
@@ -1335,6 +1341,8 @@ class ChineseSimplifiedToEnglish(Processor) :
         for unit_idx in range(0, len(units)) :
             units[unit_idx]["online"] = True
             units[unit_idx]["punctuation"] = False 
+
+        mverbose("Units: " + str(units))
                           
         return units 
 
@@ -1359,6 +1367,8 @@ class ChineseSimplifiedToEnglish(Processor) :
       if source_idx > current_source_idx :
           unit["source"] = source[current_source_idx:source_idx]
           unit["sromanization"] = pinyin[current_source_idx:source_idx]
+
+      mverbose("Returning unit: " + str(unit))
 
       return unit
 
