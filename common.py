@@ -32,8 +32,12 @@ texts = {}
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd] + sys.path
 
+verbose = False
+#verbose = True
+
 if getdefaultencoding() != "utf-8" :
-    print "Correcting the default encoding back to UTF-8 from " + getdefaultencoding()
+    if verbose :
+        print "Correcting the default encoding back to UTF-8 from " + getdefaultencoding()
     reload(sys).setdefaultencoding("utf-8")
 
 try :
@@ -41,7 +45,8 @@ try :
     String = autoclass('java.lang.String')
 except ImportError, e :
     String = False
-    print("pyjnius not available. Probably on a server.")
+    if verbose :
+        print("pyjnius not available. Probably on a server.")
 
 gnutextkwargs = {}
 catalogs = threading.local()
@@ -117,7 +122,8 @@ def pre_init_localization(language, log = False) :
         log.debug(String(test))
         log.debug(String(test2))
     else :
-        print("Language set to: " + global_language)
+        if verbose :
+            print("Language set to: " + global_language)
         #print(test)
         #print(test2)
 
@@ -157,9 +163,6 @@ tutorials = {
         u"es" : "info_template.html", 
         u"py": "info_template.html",
 }
-
-verbose = False
-#verbose = True
 
 def prefix() :
    f = _getframe(2)
@@ -217,7 +220,7 @@ except ImportError, e :
     try :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
     except ImportError, e :
-        mdebug("pyjnius and pyobjus not available. Probably on a server.")
+        mverbose("pyjnius and pyobjus not available. Probably on a server.")
         mobile = False
 
 if not mobile :

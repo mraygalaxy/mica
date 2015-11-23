@@ -22,7 +22,7 @@ except ImportError, e :
     try :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
     except ImportError, e :
-        mdebug("pyjnius and pyobjus not available. Probably on a server.")
+        mverbose("pyjnius and pyobjus not available. Probably on a server.")
 
 
 def couchdb_pager(db, view_name='_all_docs',
@@ -321,7 +321,7 @@ class MicaServerCouchDB(object) :
         self.server = Server(url)
 
         if not self.cookie :
-            mdebug("No cookie for user: " + username)
+            mverbose("No cookie for user: " + username)
             
             username_unquoted = myquote(username)
             password_unquoted = myquote(password)
@@ -330,7 +330,7 @@ class MicaServerCouchDB(object) :
 
             tmp_server = Server(full_url)
 
-            mdebug("Requesting cookie.")
+            mverbose("Requesting cookie.")
             try :
                 code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
             except UnicodeDecodeError :
@@ -344,7 +344,7 @@ class MicaServerCouchDB(object) :
                 raise CommunicationError("MICA Unauthorized: " + username)
 
             self.cookie = message["Set-Cookie"].split(";", 1)[0].strip()
-            mdebug("Received cookie: " + self.cookie)
+            mverbose("Received cookie: " + self.cookie)
         else :
             mdebug("Reusing cookie: " + self.cookie)
 

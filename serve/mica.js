@@ -1787,7 +1787,7 @@ function start_learning(mode, action, values) {
     if (values.version)
         url += "&version=" + values.version;
 
-    go(false, url,  unavailable(false), start_learning_complete, action);
+    go(false, url, unavailable(false), start_learning_complete, action);
 }
 
 function getstory_complete(json, opaque) {
@@ -1797,10 +1797,8 @@ function getstory_complete(json, opaque) {
 }
 function getstory(uuid, type) {
     loading();
-    go(false, 'stories&type=' + type +'&uuid=' + uuid, 
-        unavailable(false), 
-        getstory_complete, 
-        false);
+    go(false, 'stories&type=' + type + '&uuid=' + uuid, 
+        unavailable(false), getstory_complete, false);
 }
 
 function new_manual_account_complete(json) {

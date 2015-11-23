@@ -50,7 +50,7 @@ if not mobile :
         uploads_enabled = False
         mdebug("Cannot find PythonMagick: uploads will be disabled on this server.")
 
-mdebug("Initial imports complete")
+mverbose("Initial imports complete")
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 import sys
@@ -81,7 +81,7 @@ if not mobile :
         mdebug("Could not import pdfminer. Full translation will not work.")
         pass
 
-mdebug("Imports complete.")
+mverbose("Imports complete.")
 
 pdf_punct = ",卜「,\,,\\,,【,\],\[,>,<,】,〈,@,；,&,*,\|,/,-,_,—,,,，,.,。,?,？,:,：,\:,\：,：,\：,\、,\“,\”,~,`,\",\',…,！,!,（,\(,）,\),口,」,了,丫,㊀,。,门,X,卩,乂,一,丁,田,口,匕,《,》,化,*,厂,主,竹,-,人,八,七,，,、,闩,加,。,』,〔,飞,『,才,廿,来,兀,〜,\.,已,I,幺,去,足,上,円,于,丄,又,…,〉".decode("utf-8")
 
@@ -90,7 +90,7 @@ for letter in (string_ascii_lowercase + string_ascii_uppercase) :
 
 pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x00-\x7F][" + pdf_punct + "]|[" + pdf_punct + "][\x00-\x7F])"
 
-mdebug("Punctuation complete.")
+mverbose("Punctuation complete.")
 
 multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
 # All the months are not the same.... not sure what to do about that
@@ -165,7 +165,7 @@ def itemhelp(pairs) :
     story["pr"] = str(pr)
     return pr
 
-mdebug("Setting up prefixes.")
+mverbose("Setting up prefixes.")
 username = getpwuid(os_getuid())[0]
 relative_prefix_suffix = "serve"
 relative_prefix = "/" + relative_prefix_suffix
@@ -403,7 +403,7 @@ class MICA(object):
             if processor_map[tofrom] :
                 self.processors[tofrom] = getattr(processors, processor_map[tofrom])(self, params)
         try :
-            mdebug("Checking database access")
+            mverbose("Checking database access")
             if mobile :
                 self.db = self.cs[params["local_database"]]
             else :
@@ -433,7 +433,7 @@ class MICA(object):
             rt.start()
 
         if not mobile :
-            mdebug("Starting view runner thread")
+            mverbose("Starting view runner thread")
             vt = Thread(target=self.view_runner_sched)
             vt.daemon = True
             vt.start()
@@ -548,12 +548,12 @@ class MICA(object):
         return _("Database optimized.")
 
     def view_runner_sched(self) :
-        mdebug("Execute the view runner one time to get started...")
+        mverbose("Execute the view runner one time to get started...")
         for username, db in self.dbs.iteritems() :
             self.view_runner(username, db)
 
         while True :
-            mdebug("View runner complete. Waiting until next time...")
+            mverbose("View runner complete. Waiting until next time...")
             sleep(1800)
             for username, db in self.dbs.iteritems() :
                 self.view_runner(username, db)
@@ -740,13 +740,15 @@ class MICA(object):
         else :
             if "desc" not in json :
                  json["desc"] = desc
-            json["success"] = True if not error else False
+
+            if "success" not in json :
+                json["success"] = True if not error else False
 
             if json["success"] and req.not_replicated :
                 mdebug("API request was true, but setting to false because of replication error.")
                 json["success"] = False
 
-            #mdebug("Dumping: " + str(json))
+            mverbose("Dumping: " + str(json))
             if not mobile :
                 json["cookie"] = req.session.value["cookie"]
 
@@ -755,6 +757,9 @@ class MICA(object):
 
             if "job_running" not in json :
                 json["job_running"] = False 
+
+            if "success" in json and not json["success"] :
+                json["test_success"] = False
 
             return json_dumps(json)
 
@@ -842,7 +847,11 @@ class MICA(object):
             for f in lgp.get_dictionaries() :
                 fname = params["scratch"] + f
                 size = os_path.getsize(fname)
-                mdebug("Exists FILE: " + str(size) + " " + fname)
+                emsg = "Exists FILE: " + str(size) + " " + fname
+                if mobile :
+                    mdebug(emsg)
+                else :
+                    mverbose(emsg)
                 assert(size != 0)
 
         self.db.detach_thread()
@@ -3909,45 +3918,51 @@ class MICA(object):
                                 return self.render_frontpage(req)
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
-            user["language"] = language
-            req.db[self.acct(username)] = user
-            req.session.value["language"] = language
-            req.session.save()
-            self.install_local_language(req)
-            req.accountpageresult = _("Success! Language changed")
-            json["test_success"] = True
+            if language in supported_map :
+                user["language"] = language
+                req.db[self.acct(username)] = user
+                req.session.value["language"] = language
+                req.session.save()
+                self.install_local_language(req)
+                req.accountpageresult = _("Success! Language changed")
+                json["test_success"] = True
+            else :
+                merr("No such language: " + language)
+                req.accountpageresult = "No such language: " + language
+                json["success"] = False
+
         elif req.http.params.get("changelearnlanguage") :
             language = req.http.params.get("learnlanguage")
-            user["learnlanguage"] = language
-            req.session.value["learnlanguage"] = language
-            req.session.save()
-            req.db[self.acct(username)] = user
-            self.install_local_language(req)
-            req.accountpageresult = _("Success! Learning Language changed")
-            json["test_success"] = True
+            if language in supported_map :
+                user["learnlanguage"] = language
+                req.session.value["learnlanguage"] = language
+                req.session.save()
+                req.db[self.acct(username)] = user
+                self.install_local_language(req)
+                req.accountpageresult = _("Success! Learning Language changed")
+                json["test_success"] = True
+            else :
+                merr("No such language: " + language)
+                req.accountpageresult = "No such language: " + language
+                json["success"] = False
         elif req.http.params.get("changeemail") :
             email = req.http.params.get("email")
-            email_user = self.userdb["org.couchdb.user:" + username]
-            email_user['email'] = email 
-            self.userdb["org.couchdb.user:" + username] = email_user
-            user["email"] = email 
-            req.db[self.acct(username)] = user
-            req.session.save()
-            req.accountpageresult = _("Success! Email changed")
-            json["test_success"] = True
-        elif req.http.params.get("setappchars") :
-            chars_per_line = int(req.http.params.get("setappchars"))
-            if chars_per_line > 1000 or chars_per_line < 5 :
-                # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
-                req.accountpageresult = _("Number of characters can't be greater than 1000 or less than 5")
+            if len(email) > 50 :
+                req.accountpageresult = _("Sorry. Why is your email so long?")
+            elif email.count(" ") :
+                req.accountpageresult = _("Sorry. Email with spaces in it?")
+            elif not email.count("@") :
+                req.accountpageresult = _("Sorry. Invalid email address.")
             else :
-                user["app_chars_per_line"] = chars_per_line
+                email_user = self.userdb["org.couchdb.user:" + username]
+                email_user['email'] = email 
+                self.userdb["org.couchdb.user:" + username] = email_user
+                user["email"] = email 
                 req.db[self.acct(username)] = user
-                req.session.value["app_chars_per_line"] = chars_per_line 
                 req.session.save()
-                # Same as before, but specifically for a mobile device
-                req.accountpageresult = _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line)
+                req.accountpageresult = _("Success! Email changed")
                 json["test_success"] = True
+
         elif req.http.params.get("tofrom") :
             tofrom = req.http.params.get("tofrom")
             remove = int(req.http.params.get("remove"))
@@ -3955,6 +3970,7 @@ class MICA(object):
             if tofrom not in processor_map :
                 # Someone supplied invalid input to the server indicating a dictionary that does not exist. 
                 req.accountpageresult = _("No such dictionary. Please try again") + ": " + tofrom
+                json["success"] = False
             else :
                 if "filters" not in user :
                    user["filters"] = {'files' : [], 'stories' : [] }
@@ -3992,44 +4008,78 @@ class MICA(object):
                             req.accountpageresult = _("Success! We will no longer distribute that dictionary to your devices") + ": " + supported[tofrom]
                     json["test_success"] = True
 
+        elif req.http.params.get("setappchars") :
+            try :
+                chars_per_line = int(req.http.params.get("setappchars"))
+
+                if chars_per_line > 1000 or chars_per_line < 5 :
+                    # This number of characters refers to a limit of the number of words or characters that are allowed to be displayed on a particular line of a page of a story. This allows the user to adapt the viewing mode manually to big screens and small screens.
+                    req.accountpageresult = _("Number of characters can't be greater than 1000 or less than 5")
+                else :
+                    user["app_chars_per_line"] = chars_per_line
+                    req.db[self.acct(username)] = user
+                    req.session.value["app_chars_per_line"] = chars_per_line 
+                    req.session.save()
+                    # Same as before, but specifically for a mobile device
+                    req.accountpageresult = _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line)
+                    json["test_success"] = True
+            except ValueError, e :
+                json["success"] = False
+                merr("That's not a number.")
+                req.accountpageresult = "Mysterious."
         elif req.http.params.get("setwebchars") :
-            chars_per_line = int(req.http.params.get("setwebchars"))
-            if chars_per_line > 1000 or chars_per_line < 5:
-                req.accountpageresult = _("Number of characters can't be greater than 1000 or less than 5")
-            else :
-                user["web_chars_per_line"] = chars_per_line
-                req.db[self.acct(username)] = user
-                req.session.value["web_chars_per_line"] = chars_per_line 
-                req.session.save()
-                # Same as before, but specifically for a website 
-                req.accountpageresult = _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line)
-                json["test_success"] = True
+            try :
+                chars_per_line = int(req.http.params.get("setwebchars"))
+                if chars_per_line > 1000 or chars_per_line < 5:
+                    req.accountpageresult = _("Number of characters can't be greater than 1000 or less than 5")
+                else :
+                    user["web_chars_per_line"] = chars_per_line
+                    req.db[self.acct(username)] = user
+                    req.session.value["web_chars_per_line"] = chars_per_line 
+                    req.session.save()
+                    # Same as before, but specifically for a website 
+                    req.accountpageresult = _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line)
+                    json["test_success"] = True
+            except ValueError, e :
+                json["success"] = False
+                merr("That's not a number.")
+                req.accountpageresult = "Mysterious."
         elif req.http.params.get("setappzoom") :
-            zoom = float(req.http.params.get("setappzoom"))
-            if zoom > 3.0 or zoom < 0.5 :
-                # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
-                req.accountpageresult = _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
-            else :
-                user["default_app_zoom"] = zoom 
-                req.db[self.acct(username)] = user
-                req.session.value["default_app_zoom"] = zoom
-                req.session.save()
-                # Same as before, but specifically for an application running on a mobile device
-                req.accountpageresult = _("Success! App zoom level set to:") + " " + str(zoom)
-                json["test_success"] = True
+            try :
+                zoom = float(req.http.params.get("setappzoom"))
+                if zoom > 3.0 or zoom < 0.5 :
+                    # The 'zoom-level' has a similar effect to the number of characters per line, except that it controls the whole layout of the application (zoom in or zoom out) and not just individual lines.
+                    req.accountpageresult = _("App Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
+                else :
+                    user["default_app_zoom"] = zoom 
+                    req.db[self.acct(username)] = user
+                    req.session.value["default_app_zoom"] = zoom
+                    req.session.save()
+                    # Same as before, but specifically for an application running on a mobile device
+                    req.accountpageresult = _("Success! App zoom level set to:") + " " + str(zoom)
+                    json["test_success"] = True
+            except ValueError, e :
+                json["success"] = False
+                merr("That's not a number.")
+                req.accountpageresult = "Mysterious."
         elif req.http.params.get("setwebzoom") :
-            zoom = float(req.http.params.get("setwebzoom"))
-            if zoom > 3.0 or zoom < 0.5 :
-                # Same as before, but specifically for an application running on the website 
-                req.accountpageresult = _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
-            else :
-                user["default_web_zoom"] = zoom 
-                req.db[self.acct(username)] = user
-                req.session.value["default_web_zoom"] = zoom
-                req.session.save()
-                # Same as before, but specifically for an application running on the website 
-                req.accountpageresult = _("Success! Web zoom level set to:") + " " + str(zoom)
-                json["test_success"] = True
+            try :
+                zoom = float(req.http.params.get("setwebzoom"))
+                if zoom > 3.0 or zoom < 0.5 :
+                    # Same as before, but specifically for an application running on the website 
+                    req.accountpageresult = _("Web Zoom level must be a decimal no greater than 3.0 and no smaller than 0.5")
+                else :
+                    user["default_web_zoom"] = zoom 
+                    req.db[self.acct(username)] = user
+                    req.session.value["default_web_zoom"] = zoom
+                    req.session.save()
+                    # Same as before, but specifically for an application running on the website 
+                    req.accountpageresult = _("Success! Web zoom level set to:") + " " + str(zoom)
+                    json["test_success"] = True
+            except ValueError, e :
+                json["success"] = False
+                merr("That's not a number.")
+                req.accountpageresult = "Mysterious."
         else :
             # Just show the account page normally.
             json["test_success"] = True
@@ -4860,9 +4910,12 @@ class MICA(object):
             return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]))
 
         if req.http.params.get("switchmode") :
-            req.session.value["view_mode"] = req.http.params.get("switchmode")
-            req.session.save()
-            return self.api(req)
+            rmode = req.http.params.get("switchmode")
+            if rmode in ["text", "images", "both"] :
+                req.session.value["view_mode"] = rmode
+                req.session.save()
+                return self.api(req)
+            return self.bad_api(req, "No such mode: " + rmode)
 
         if req.http.params.get("meaningmode") :
             req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
@@ -5139,7 +5192,7 @@ def go(p) :
     if not mobile :
         prelang = "en"
         try :
-            mdebug("Locale is: " + setlocale(LC_ALL, '')) # use user's preferred locale
+            mverbose("Locale is: " + setlocale(LC_ALL, '')) # use user's preferred locale
             # take first two characters of country code
             prelang = getlocale()[0][0:2]
         except Exception, e :
@@ -5147,7 +5200,7 @@ def go(p) :
 
         pre_init_localization(prelang)
 
-    mdebug("Verifying options.")
+    mverbose("Verifying options.")
 
     if mobile and "local_database" not in params :
         merr("local_database parameter missing on mobile platform.")
@@ -5174,7 +5227,10 @@ def go(p) :
     if "session_dir" not in params :
         params["session_dir"] = params["scratch"] + "mica_session/"
 
-    mdebug("Session dir: " + params["session_dir"])
+    if mobile :
+        mdebug("Session dir: " + params["session_dir"])
+    else :
+        mverbose("Session dir: " + params["session_dir"])
 
     sslport = int(params["sslport"])
     if sslport != -1 and (not params["cert"] or not params["privkey"]) :
@@ -5214,19 +5270,19 @@ def go(p) :
 
     if not mobile :
         if os_path.isdir("/tmp/mica_uploads") :
-            mdebug("Deleting old uploaded files.")
+            mverbose("Deleting old uploaded files.")
             shutil_rmtree("/tmp/mica_uploads")
         os_makedirs("/tmp/mica_uploads")
 
-    mdebug("Registering session adapter.")
+    mverbose("Registering session adapter.")
     registerAdapter(CDict, Session, IDict)
 
-    mdebug("Initializing logging.")
+    mverbose("Initializing logging.")
     mica_init_logging(params["log"], duplicate = params["duplicate_logger"])
 
     if params["tlog"] :
         if params["tlog"] != 1 :
-            mdebug("Initializing twisted log.")
+            mverbose("Initializing twisted log.")
             log.startLogging(DailyLogFile.fromFullPath(params["tlog"]), setStdout=True)
     else :
         mdebug("Skipping twisted log")
@@ -5295,7 +5351,7 @@ def go(p) :
             reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.TLSv1_METHOD), interface = params["host"])
             minfo("Point your browser at port: " + str(sslport) + ". (Bound to interface: " + params["host"] + ")")
         else :
-            mwarn("Disabling SSL access. Be careful =)")
+            mwarn("SSL not requested. Be careful =)")
             minfo("Point your browser at port: " + str(params["port"]) + ". (Bound to interface: " + params["host"] + ")")
             reactor.listenTCP(int(params["port"]), site, interface = params["host"])
 
@@ -5310,7 +5366,7 @@ def go(p) :
                 params["debug_host"] = None
                 exit(1)
 
-        minfo("Setting up serialization queues and coroutine.")
+        mverbose("Setting up serialization queues and coroutine.")
         if mobile :
             rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
         else :
