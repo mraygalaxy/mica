@@ -1236,6 +1236,7 @@ function validatefile_complete(json, opaque) {
                    var url = $('#creds').html() + "/" + $('#database').html() + "/" + doc._id;
                    console.log("Submitting to: " + url);
                    $('#filedata').ajaxSubmit({
+                        xhrFields: {withCredentials: true},
                         url: url,
                         success: function(response) {
                             done();
