@@ -160,6 +160,9 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
         if (where == 'stories') {
             loadstories(false, false);
         } else if (where == 'chat') {
+            if ("Notification" in window && Notification.permission != 'denied') {
+                Notification.requestPermission();
+            }
             if (!chat_loaded) {
                go(false, 'chat', unavailable(false), chat_success, false);
             }
@@ -248,3 +251,26 @@ if (authtype != 'cookie') {
         }
     });
 }
+
+function showNotifications(msgfrom, msg, lang) {
+    if ("Notification" in window) {
+        if (Notification.permission == 'granted') {
+            try {
+                var notification = new Notification("MICA Message from: " + msgfrom, 
+                    { dir: "auto", 
+                      body: msg, 
+                      lang: lang,
+                      tag: "mica",
+                      // Icon doesn't work. Try again later.
+                      //icon : window.location.href.split("#")[0] + local('favicon'),
+                    });
+            } catch (e) {
+                console.log("Couldn't make notification" + e);
+            }
+            // notification.onclose = …
+            // notification.onshow = …
+            // notification.onerror = …
+        }
+    }
+}
+

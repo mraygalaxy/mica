@@ -1387,6 +1387,9 @@ function appendChat(who, to, msg) {
         var peer = msgfrom;
         var msgclass = "msgleft";
         var reverse = false;
+        if (!document.hasFocus()) {
+            showNotifications(msgfrom, msg, chat_language.split("-")[0].split("_")[0]);
+        }
     }
 
     var micaurl = "chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;

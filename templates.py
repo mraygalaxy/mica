@@ -217,6 +217,7 @@ class TranslationsElement(CommonElement) :
                      startsync = _("Start Syncing"),
                      stopsync = _("Stop Syncing"),
                      requestfailed = _("Failed to issue request. We're sorry. Please report what you tried to do to the author. Thank you."),
+                     favicon = self.req.mpath + "/icon-120x120.png",
                 )
         return tag
 
