@@ -1059,10 +1059,10 @@ function installreading() {
 }
 
 function syncstory(name, uuid) {
-    document.getElementById(name).innerHTML = local('requesting') + "...";
+    document.getElementById(name).innerHTML = "<i class='glyphicon glyphicon-sort'></i> " + local('requesting') + "...";
     go(false, 'storylist&uuid=' + uuid + "&sync=1",
         'sync error', storylist_complete,
-        { element: name, label: local('started'), cleanup: unsyncstory});
+        { element: name, label: "<i class='glyphicon glyphicon-sort'></i> " + local('started'), cleanup: unsyncstory, uuid: uuid, name: name});
 }
 
 function storylist_complete(json, params) {
@@ -1076,11 +1076,7 @@ function storylist_complete(json, params) {
             trans_start(json.translist[tidx]);
         }
         translist = [];
- 
-        if (params.cleanup) {
-            document.getElementById(params.element).innerHTML = params.label;
-            document.getElementById(params.element).onclick = function() { params.cleanup(name, uuid); }; 
-        } else { 
+        if ("navto" in params) {
             finishedloading(json.storylist, params.navto);
         }
 
@@ -1088,13 +1084,18 @@ function storylist_complete(json, params) {
     } else if(json.reload) {
         loadstories(false, false);
     }
+
+    if (params.cleanup) {
+        document.getElementById(params.element).innerHTML = params.label;
+        document.getElementById(params.element).onclick = function() { params.cleanup(params.name, params.uuid); }; 
+    }
 }
 
 function unsyncstory(name, uuid) {
-    document.getElementById(name).innerHTML = local('stopping') + "...";
+    document.getElementById(name).innerHTML = "<i class='glyphicon glyphicon-sort'></i> " + local('stopping') + "...";
     go(false, 'storylist&uuid=' + uuid + "&sync=0",
         'sync error', storylist_complete,
-        { element: name, label: local('stopped'), cleanup: syncstory});
+        { element: name, label: "<i class='glyphicon glyphicon-sort'></i> " + local('stopped'), cleanup: syncstory, uuid: uuid, name: name});
 }
 
 function finishedloading(storylist, navto) {
@@ -1118,9 +1119,9 @@ function finishedloading(storylist, navto) {
    if (navto) {
        $.mobile.navigate(navto);
    } else if(firstload != false && !firstloaded) {
-       $.mobile.navigate(firstload);
-       firstload = false;  
-       firstloaded = true;
+        $.mobile.navigate(firstload);
+        firstload = false;  
+        firstloaded = true;
    }
 
     done();
@@ -1697,6 +1698,7 @@ function retrans_complete(json) {
 
 function start_learning_complete(json, action) {
     done();
+    $('.ui-listview').listview().listview('refresh');
     $('#loadingModal').modal('hide');
     if (json.success) {
         if (action == 'storyinit') {
@@ -1718,11 +1720,10 @@ function start_learning_complete(json, action) {
     }
 }
 
-function explode(uuid, name, rname, translated, finished, reviewed, ischat, romanized, syncstatus, newstory) {
+function explode(uuid, name, rname, translated, finished, reviewed, ischat, syncstatus, romanized, newstory) {
 
     exploded_uuid = uuid;
     exploded_name = name;
-    $.mobile.navigate('#explode');
     $("#explodedstory").html(rname);
     $("#readoption").attr('style', 'display: none');
     $("#reviewoption").attr('style', 'display: none');
@@ -1768,8 +1769,10 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, roma
     if (syncstatus) {
         $("#syncstatus").html("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('startsync') + "</a>");
     } else {
-        $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
+        $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
     }
+    $('#explodelist').listview().listview('refresh');
+    $.mobile.navigate('#explode');
 }
 
 function start_learning(mode, action, values) {

@@ -588,7 +588,7 @@ class MICA(object):
 
                         if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
-                        req.session.value["port"] = req.db.listen(username, req.session.value["password"], 5984)
+                        req.session.value["port"] = self.db.listen(username, req.session.value["password"], 5984)
                         req.session.save()
                     else :
                         # On the server, use cookies to talk to CouchDB

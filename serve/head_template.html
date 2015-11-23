@@ -116,7 +116,7 @@
     <div data-role='page' id='explode'>
         <h4>&#160;&#160;<b style='color: white' id='explodedstory'/></h4>
         <div data-role='content' id='explode_content'>
-		<ul data-role='listview' data-inset='true'>
+		<ul id='explodelist' data-role='listview' data-inset='true'>
                         
 		    <li id='readoption'><a onclick="start_learning('read', 'view', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
 		    <li id='reviewoption'><a onclick="start_learning('home', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
@@ -126,18 +126,18 @@
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
 		    <li id='reviewedoption'><a onclick="reviewstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-arrow-up'></i> <t:slot name='reviewed'/></a></li>
 		    <li id='romanizedoption'><a id='romanizedlink' onclick="getstory(exploded_uuid, 'pinyin')"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
-                    <!--(if mobile)-->
-                    <li id='syncstatus'></li>
-                    <!--(end)-->
+            <!--(if mobile)-->
+                <li id='syncstatus'></li>
+            <!--(end)-->
 
-                    <!--(if not mobile)-->
-                    <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
-		    <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
-		    <li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
-		    <li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
-		    <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
-		    <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
-                    <!--(end)-->
+            <!--(if not mobile)-->
+            <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
+                <li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
+                <li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
+                <li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
+                <li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
+                <li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
+            <!--(end)-->
 		</ul>
         </div>
     </div>
