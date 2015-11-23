@@ -153,6 +153,9 @@ function privacy_complete(json, opaque) {
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
        var where = data.toPage.split("#")[1];
+       if (where == "explode" || where == "reading") {
+           where = "stories";
+       }
        var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
        if (from != where) {
            loading();
