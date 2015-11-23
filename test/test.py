@@ -239,10 +239,14 @@ def run_tests() :
 
                 if "success" in url and url["success"] is not None :
                     assert("success" in j)
-                    assert(j["success"] == url["success"])
+                    if j["success"] != url["success"] :
+                        print("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
+                        assert(False) 
                 if "test_success" in url and url["test_success"] is not None :
                     assert("test_success" in j)
-                    assert(j["test_success"] == url["test_success"])
+                    if j["test_success"] != url["test_success"] :
+                        print("Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
+                        assert(False) 
 
                 break
 
@@ -370,7 +374,7 @@ for who in parameters["oauth"].keys() :
 urls += [
             { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
-            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : True, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5984', connect='1') },
+            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5984', connect='1') },
 
             { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
 
@@ -418,9 +422,10 @@ urls += [
 
            # Switch back to text-only
 
-#           { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=151", "method" : "get", "success" : True, "test_success" :  True },
-#           { "loc" : "/api?human=0&alien=read&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-#           { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" : True, "test_success" :  True },
+           { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=151", "method" : "get", "success" : True, "test_success" :  True },
+           { "loc" : "/api?human=0&alien=read&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
+           { "loc" : "/api?human=0&alien=home&switchmode=badviewmode", "method" : "get", "success" : False, "test_success" :  False },
+           { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" : True, "test_success" :  True },
 
             # Go to page 35
            { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=34", "method" : "get", "success" : True, "test_success" :  True },
@@ -433,7 +438,7 @@ urls += [
             # Go one page past the end
             # Javascript won't let us do this, but I might screw up
             # Will cause a replication error, requiring us to re-login
-           { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=220", "method" : "get", "success" : False, "test_success" :  True },
+           { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=220", "method" : "get", "success" : False, "test_success" :  False },
 
            # So, login again:
            { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
@@ -451,6 +456,8 @@ urls += [
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,es') },
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,zh-CHS') },
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,zh-CHS') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(remove=0, tofrom='nosuchdictionary') },
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "short", confirm = "short", newaccount = "password") },
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
@@ -481,15 +488,45 @@ urls += [
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = "foobarbaz", password = test["password"], confirm = test["password"], changepassword = "1") },
 
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(language = 'badlanguage', changelanguage = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(language = 'en', changelanguage = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(learnlanguage = 'badlanguage', changelearnlanguage = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'py', changelearnlanguage = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaytoolong@email.com', changeemail = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'email withspace@email.com', changeemail = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'emailwithoutatsymbol', changeemail = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = 'normal@email.com', changeemail = '1') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1001') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappchars = 'notanumber') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappchars = '70') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1001') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebchars = 'notanumber') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebchars = '70') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '3.1') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '0.4') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebzoom = 'notanumber') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebzoom = '1.0') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '3.1') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '0.4') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappzoom = 'notanumber') },
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
 #           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
-
-
-
-
-
-
 
             # Make this the 'resetpassword' the last test. 
             # I really don't want to get the new password out of JSON right now.

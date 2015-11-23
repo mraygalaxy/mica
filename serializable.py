@@ -24,7 +24,7 @@ class Serializable(object) :
         self.consumer.daemon = True
 
     def start(self) :
-        mdebug("Starting internal serializable consumer thread.")
+        mverbose("Starting internal serializable consumer thread.")
         self.consumer.start()
 
     def stop(self) :

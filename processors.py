@@ -647,7 +647,7 @@ class EnglishSource(RomanizedSource) :
     def test_dictionaries(self, preload = False, retest = False) :
         super(EnglishSource, self).test_dictionaries(preload = preload, retest = retest)
 
-        mdebug("Testing EnglishSource IPA database...")
+        mverbose("Testing EnglishSource IPA database...")
 
         db = create_engine('sqlite:///' + self.params["scratch"] + "engipa.db", listeners= [MyListener()])
         db.echo = False
