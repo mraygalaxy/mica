@@ -2222,7 +2222,7 @@ class MICA(object):
         source_lang = story['source_language'].encode('utf-8')
         target_lang = story['target_language'].encode('utf-8')
 
-        if filetype == 'txt' :
+        if filetype == 'txt' and 'txtsource' in story :
             # return API error if key is missing
             source = story['txtsource'] + '\n'
         else :
@@ -2240,11 +2240,6 @@ class MICA(object):
         else :
             mdebug("Remove spaces not requested.")
         
-        if filetype == "txt" :
-            if not source :
-                source = fp.read()
-            mdebug("Source: " + source)
-
         try :
             if filetype == "pdf" :
                 fp = open(sourcepath, 'rb')
@@ -2320,8 +2315,13 @@ class MICA(object):
                 device.close()
                 fp.close()
             else : # TXT format
+                if not source :
+                    fp = open(sourcepath, 'rb')
+                    source = fp.read()
+                    mverbose("Source: " + source)
+
                 de_source = source.decode("utf-8") if isinstance(source, str) else source
-                mdebug("Page input:\n " + source)
+                mverbose("Page input:\n " + source)
                 if removespaces :
                     de_source = de_source.replace(u' ', u'')
                     mdebug("After remove spaces:\n " + de_source)
@@ -2344,7 +2344,7 @@ class MICA(object):
 
             story = req.db[self.story(req, name)]
             story['new'] = False
-            if filetype == "txt" :
+            if filetype == "txt" and 'txtsource' in story :
                 del story['txtsource']
             req.db[self.story(req, name)] = story
             mdebug("Finihed resetting story to old.")
