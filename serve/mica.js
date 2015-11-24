@@ -1511,8 +1511,8 @@ function handlePresence(oJSJaCPacket) {
 function handleError(e) {
     if (first_reconnect) {
             first_reconnect = false;
-            CountBack(false, false, 0, false);
             finish = reconnect;
+            CountBack(false, false, 0, false);
     } else {
         document.getElementById('login_pane').style.display = '';
         document.getElementById('sendmsg_pane').style.display = 'none';
