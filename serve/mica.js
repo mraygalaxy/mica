@@ -1512,6 +1512,8 @@ function handleError(e) {
     if (first_reconnect) {
             first_reconnect = false;
             finish = reconnect;
+            if (con.connected())
+                con.disconnect();
             CountBack(false, false, 0, false);
     } else {
         document.getElementById('login_pane').style.display = '';
