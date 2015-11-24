@@ -4858,7 +4858,10 @@ class MICA(object):
 
         if req.http.params.get("uuid") :
             uuid = req.http.params.get("uuid") 
-            name = req.db[self.index(req, uuid)]["value"]
+            try :
+                name = req.db[self.index(req, uuid)]["value"]
+            except couch_adapter.ResourceNotFound, e :
+                name = False
             name_found = True if name else False
                 
             if not name :
@@ -4894,6 +4897,8 @@ class MICA(object):
                     story["date"] = timest()
                     req.db[self.story(req, name)] = story
                     story = req.db[self.story(req, name)]
+            else :
+                return self.bad_api(req, "We can't satisfy your request.")
 
         if req.http.params.get("delete") :
             return self.api(req, self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name]))
