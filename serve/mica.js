@@ -1149,6 +1149,12 @@ function finishstory(uuid, which) {
         (which == 1) ? "#finished" : "#reading");
 }
 
+function checkauth(xhr) {
+    if (authorization) {
+        xhr.setRequestHeader("Authorization", authorization);
+    }
+}
+
 $.fn.goDeep = function(levels, func){
     var iterateChildren = function(current, levelsDeep){
         func.call(current, levelsDeep);
@@ -1165,31 +1171,39 @@ $.fn.goDeep = function(levels, func){
 };
 
 function validatetext_complete(json, opaque) {
+    console.log("Completing text upload...");
     if(json.success) {
         db.openDoc(json.storykey, {
               error: function(err) {
-                    alert("Boo. Doc failed: " + err);
+                    console.log("Boo open doc failed: " + err);
+                    alert("Boo. open Doc failed: " + err);
                     done();
               },
               success : function(doc) {
+                   console.log("Doc created, saving text...");
                    doc["txtsource"] = $("#textvalue").val();
                    db.saveDoc(doc, {
+                        authorization: authorization,
                         error: function(saveerr) {
+                            console.log("Boo, couldn't save TXT contents: " + saveerr);
                             alert("Boo. Couldn't save TXT contents: " + saveerr);
                             // Need to call the API to delete this story,
                             // both the name and the UUID index
                             done();
                         },
                         success: function(response) {
+                            console.log("Yay. TXT saved. reloading stories.");
                             $('#uploadModal').modal('hide');
                             $.mobile.navigate('#stories');
                             loadstories(false, "#newstory");
                             done();
-                                
+                            console.log("Stories should be loaded now.");
                         }
                    });
               }
-            });
+            },
+            { beforeSend: checkauth }
+);
     } else {
         done();
         alert("Failed to add your story. Please try again.");
@@ -1224,6 +1238,7 @@ function validatefile_complete(json, opaque) {
     if(json.success) {
         db.openDoc(json.storykey, {
               error: function(err) {
+                    console.log("Boo. Doc failed: " + err);
                     alert("Boo. Doc failed: " + err);
                     done();
               },
@@ -1237,8 +1252,10 @@ function validatefile_complete(json, opaque) {
                    console.log("Submitting to: " + url);
                    $('#filedata').ajaxSubmit({
                         xhrFields: {withCredentials: true},
+                        beforeSend: checkauth,
                         url: url,
                         success: function(response) {
+                            console.log("Yay. file upload worked.");
                             done();
                             $('#uploadModal').modal('hide');
                             $.mobile.navigate('#stories');
@@ -1249,11 +1266,14 @@ function validatefile_complete(json, opaque) {
                             // both the name and the UUID index
                             done();
                             alert("Failed to submit your attachment.");
+                            console.log("Boo. Failed to submit attachment.");
                         }
                    });
 
               }
-            });
+            },
+            { beforeSend: checkauth }
+        );
     } else {
         done();
         alert("Failed to add your story. Please try again.");
