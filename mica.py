@@ -361,6 +361,7 @@ class MICA(object):
         self.general_processor = Processor(self, params)
         self.translation_client = Translator(params["trans_id"], params["trans_secret"], params["trans_scope"], params["trans_access_token_url"], test = params["test"])
         self.mutex = Lock()
+        self.jobsmutex = Lock()
         self.transmutex = Lock()
         self.imemutex = Lock()
         self.pid = "none"
@@ -2308,9 +2309,15 @@ class MICA(object):
                     pagecount += 1
 
                     if (pagecount % 10) == 0 :
-                       jobs = req.db["MICA:jobs"]
-                       jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
-                       req.db["MICA:jobs"] = jobs
+                        self.jobsmutex.acquire()
+                        try :
+                            jobs = req.db["MICA:jobs"]
+                            jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
+                            req.db["MICA:jobs"] = jobs
+                            self.jobsmutex.release()
+                        except Exception, e :
+                            self.jobsmutex.release()
+                            raise e
 
                 device.close()
                 fp.close()
@@ -2730,19 +2737,29 @@ class MICA(object):
         if self_delete and job["success"] :
             mdebug("Deleting job immediately. Not adding to list")
             try :
+                self.jobsmutex.acquire()
                 jobs = req.db["MICA:jobs"]
                 if job["uuid"] in jobs["list"] :
                     del jobs["list"][job["uuid"]]
                     req.db["MICA:jobs"] = jobs
+                self.jobsmutex.release()
             except Exception, e :
+                self.jobsmutex.release()
                 mdebug("Failed to delete immediately: " + str(e))
                 while True :
                     sleep(3600)
         else :
-            job["finished"] = True
-            jobs = req.db["MICA:jobs"]
-            jobs["list"][job["uuid"]] = job
-            req.db["MICA:jobs"] = jobs
+            try :
+                self.jobsmutex.acquire()
+                job["finished"] = True
+                jobs = req.db["MICA:jobs"]
+                job["_rev"] = jobs["list"][job["uuid"]]["_rev"]
+                jobs["list"][job["uuid"]] = job
+                req.db["MICA:jobs"] = jobs
+                self.jobsmutex.release()
+            except Exception, e :
+                self.jobsmutex.release()
+                raise e
 
     def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
         self.install_local_language(req)
@@ -2776,6 +2793,7 @@ class MICA(object):
         mdebug("Submitting job: " + str(job))
 
         try :
+            self.jobsmutex.acquire()
             jobs = req.db.try_get("MICA:jobs")
             if not jobs :
                 jobs = {"list" : {}}
@@ -2793,8 +2811,10 @@ class MICA(object):
             # cannot be completed in a single click. The request goes into a background job and is
             # processed in the background.
             out = _("Request submitted (" + description + "). Please refresh later. Thank You.")
+            self.jobsmutex.release()
                 
         except Exception, e :
+            self.jobsmutex.release()
             # If a background request that was submitted (like uploading a new story) fails to complete,
             # this message will appear to instruct them to try again.
             out = "Error: " + _("Please try your request again.") + ": " + _(description)
@@ -2855,12 +2875,18 @@ class MICA(object):
                         del req.db[self.story(req, name) + ":original:" + str(tmppage)]
                         pagecount += 1
                         if (pagecount % 10) == 0 :
-                           jobs = req.db["MICA:jobs"]
-                           # This appears when a story is being deleted from the database. The page
-                           # number will appear at the end of 'Deleted Page' to indicate how many
-                           # pages of the story have been deleted.
-                           jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
-                           req.db["MICA:jobs"] = jobs
+                            try :
+                                self.jobsmutex.acquire()
+                                jobs = req.db["MICA:jobs"]
+                                # This appears when a story is being deleted from the database. The page
+                                # number will appear at the end of 'Deleted Page' to indicate how many
+                                # pages of the story have been deleted.
+                                jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
+                                req.db["MICA:jobs"] = jobs
+                                self.jobsmutex.release()
+                            except Exception, e :
+                                self.jobsmutex.release()
+                                raise e
                     mdebug("Deleted.")
                 
             if name and story_found :
@@ -3514,9 +3540,16 @@ class MICA(object):
         out += "</table>"
 
         if len(finished) > 0 :
-            for job in finished :
-                del jobs["list"][job["uuid"]]
-            req.db["MICA:jobs"] = jobs
+            try :
+                self.jobsmutex.acquire()
+                curr_jobs = req.db["MICA:jobs"]
+                for job in finished :
+                    del curr_jobs["list"][job["uuid"]]
+                req.db["MICA:jobs"] = curr_jobs
+                self.jobsmutex.release()
+            except Exception, e :
+                self.jobsmutex.release()
+                raise e
 
         return self.api(req, self.render_mainpage(req, out), json = {"job_running" : True})
 
@@ -4544,9 +4577,15 @@ class MICA(object):
             return self.bad_api(req, self.warn_not_replicated(req)) 
 
         if not mobile :
-            jobs = req.db.try_get("MICA:jobs")
-            if not jobs :
-                req.db["MICA:jobs"] = {"list" : {}}
+            try :
+                self.jobsmutex.acquire()
+                jobs = req.db.try_get("MICA:jobs")
+                if not jobs :
+                    req.db["MICA:jobs"] = {"list" : {}}
+                self.jobsmutex.release()
+            except Exception, e :
+                self.jobsmutex.release()
+                raise e
             
         if "language" not in user :
             user["language"] = get_global_language()
@@ -4695,12 +4734,18 @@ class MICA(object):
                     except couch_adapter.ResourceConflict, e :
                         mdebug("Conflict: No big deal. Another thread killed the session correctly.") 
 
-            tmpjobs = req.db.try_get("MICA:jobs")
+            try :
+                self.jobsmutex.acquire()
+                tmpjobs = req.db.try_get("MICA:jobs")
 
-            if tmpjobs and len(tmpjobs["list"]) > 0 :
-                mdebug("Resettings jobs for user.")
-                tmpjobs["list"] = {} 
-                req.db["MICA:jobs"] = tmpjobs 
+                if tmpjobs and len(tmpjobs["list"]) > 0 :
+                    mdebug("Resettings jobs for user.")
+                    tmpjobs["list"] = {} 
+                    req.db["MICA:jobs"] = tmpjobs 
+                self.jobsmutex.release()
+            except Exception, e :
+                self.jobsmutex.release()
+                raise e
 
             self.first_request[username] = True 
 
