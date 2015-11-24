@@ -2753,7 +2753,6 @@ class MICA(object):
                 self.jobsmutex.acquire()
                 job["finished"] = True
                 jobs = req.db["MICA:jobs"]
-                job["_rev"] = jobs["list"][job["uuid"]]["_rev"]
                 jobs["list"][job["uuid"]] = job
                 req.db["MICA:jobs"] = jobs
                 self.jobsmutex.release()
