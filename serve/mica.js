@@ -1464,7 +1464,7 @@ function handleMessage(oJSJaCPacket) {
 }
 
 function handleConnectedLoaded(json, opaque) {
-    $("#pagesingle").html("");
+    $("#pagechatsingle").html("");
     $("#iResp").prepend(json.desc);
     //$("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
@@ -1473,7 +1473,7 @@ function newContact(who) {
     var peer = ("" + who).split("@")[0];
     $('#sendTo').val(who); 
     $("#missing").attr("style", "display: none");
-    $("#pagesingle").html(spinner + "&nbsp;" + local("loadingtext"));
+    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     start_trans_id = 1000000;
     go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
@@ -1508,18 +1508,20 @@ function handlePresence(oJSJaCPacket) {
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
+function force_disconnect() {
+    if(con && con.connected()) { 
+        con.disconnect(); 
+    }
+    con = false; 
+}
+
 function handleError(e) {
     console.log("chat error: " + e.firstChild.nodeName);
     if (first_reconnect) {
             first_reconnect = false;
             finish = reconnect;
             do_refresh = true;
-            if (con) { 
-                if(con.connected()) {
-                    con.disconnect();
-                }
-                con = false;
-            }
+            force_disconnect();
             CountBack(false, false, 0, false);
     } else {
         document.getElementById('login_pane').style.display = '';
@@ -1538,12 +1540,7 @@ function handleError(e) {
             CountBack('reconnect', false, secs, false);
         }
     }
-    if (con) {
-        if (con.connected()) {
-            con.disconnect();
-            con = false;
-        }
-    }
+    force_disconnect();
 }
 
 function handleConnected() {
