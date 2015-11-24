@@ -1509,15 +1509,22 @@ function handlePresence(oJSJaCPacket) {
 }
 
 function handleError(e) {
+    console.log("chat error: " + e.firstChild.nodeName);
     if (first_reconnect) {
             first_reconnect = false;
             finish = reconnect;
-            if (con.connected())
-                con.disconnect();
+            do_refresh = true;
+            if (con) { 
+                if(con.connected()) {
+                    con.disconnect();
+                }
+                con = false;
+            }
             CountBack(false, false, 0, false);
     } else {
         document.getElementById('login_pane').style.display = '';
         document.getElementById('sendmsg_pane').style.display = 'none';
+
         $("#chatLoading").attr("style", "display: none");
 
         if (e.firstChild.nodeName == "not-authorized") {
@@ -1527,12 +1534,16 @@ function handleError(e) {
             $("#err").html(local("chaterror") + ":<br/>" + ("Code: " + e.getAttribute('code') + "\nType: " + e.getAttribute('type') + "\nCondition: " + e.firstChild.nodeName + "\n" + local("secsleft")).htmlEnc() + ": <div style='display: inline' id='reconnect'>" + secs + "</div>");
             finish = reconnect;
             do_refresh = true;
-            CountBack(false, false, secs, false);
+            con = false;
+            CountBack('reconnect', false, secs, false);
         }
     }
-
-    if (con.connected())
-        con.disconnect();
+    if (con) {
+        if (con.connected()) {
+            con.disconnect();
+            con = false;
+        }
+    }
 }
 
 function handleConnected() {
@@ -1596,7 +1607,7 @@ function reconnect(unused) {
 function doLogin(oForm) {
     if (con != false) {
         console.log("In the middle of a login already.");
- 	return;
+        return;
     }
     ci = $("#msgArea").chineseInput({
         debug: true,
