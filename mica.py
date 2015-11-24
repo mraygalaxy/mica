@@ -2803,14 +2803,15 @@ class MICA(object):
             req.db["MICA:jobs"] = jobs
 
             mdebug("Starting job: " + str(job))
+            self.jobsmutex.release()
+
+            out = self.render_jobs(req, jobs)
 
             vt.start()
 
             # This happens when a user uploads a new story, or performs other long-running actions that
             # cannot be completed in a single click. The request goes into a background job and is
             # processed in the background.
-            out = _("Request submitted (" + description + "). Please refresh later. Thank You.")
-            self.jobsmutex.release()
                 
         except Exception, e :
             self.jobsmutex.release()
@@ -2857,8 +2858,9 @@ class MICA(object):
                 self.flush_pages(req, name)
                 if "filetype" not in tmp_story or tmp_story["filetype"] == "txt" :
                     mdebug("Deleting txt original contents.")
-                    if not tmp_story["new"] :
-                        del req.db[self.story(req, name) + ":original"]
+                    if "new" not in tmp_story or not tmp_story["new"] :
+                        if req.db.try_get(self.story(req, name) + ":original") :
+                            del req.db[self.story(req, name) + ":original"]
                 else :
                     if tmp_story["filetype"] == "chat" :
                         self.clear_chat(req, tmp_story["name"])
@@ -3550,7 +3552,7 @@ class MICA(object):
                 self.jobsmutex.release()
                 raise e
 
-        return self.api(req, self.render_mainpage(req, out), json = {"job_running" : True})
+        return out
 
     def render_multiple_select(self, req, story) :
         nb_unit = int(req.http.params.get("nb_unit"))
@@ -4235,7 +4237,6 @@ class MICA(object):
             return self.api(req, "changed")
 
         if not req.http.params.get("tzoffset") :
-            #return "<script>loadstories(false, false);</script>"
             return self.api(req, json = dict(reload = True))
 
         tzoffset = int(req.http.params.get("tzoffset"))
@@ -4945,10 +4946,10 @@ class MICA(object):
                 return self.bad_api(req, "We can't satisfy your request.")
 
         if req.http.params.get("delete") :
-            return self.api(req, self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name]))
+            return self.api(req, self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
 
         if req.http.params.get("storyinit") :
-            return self.api(req, self.new_job(req, self.storyinit, False, _("Initializing Story in Database"), name, False, args = [req, uuid, name]))
+            return self.api(req, self.new_job(req, self.storyinit, False, _("Initializing Story in Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
 
         if uuid :
             if not req.db.doc_exist(self.index(req, uuid)) :
@@ -4964,7 +4965,7 @@ class MICA(object):
             # Resetting means that we are dropping the translate contents of the original story. We are
             # not deleteing the story itself, nor the user's memorization data, only the translated
             # version of the story itself.
-            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]))
+            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
 
         if req.http.params.get("switchmode") :
             rmode = req.http.params.get("switchmode")
@@ -4989,7 +4990,7 @@ class MICA(object):
         jobs = req.db.try_get("MICA:jobs")
 
         if jobs and len(jobs["list"]) > 0 :
-            return self.render_jobs(req, jobs)
+            return self.api(req, self.render_mainpage(req, self.render_jobs(req, jobs)), json = {"job_running" : True})
 
         # Functions only go here if they are actions against the currently reading story
         # Functions above here can happen on any story

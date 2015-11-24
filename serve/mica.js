@@ -135,6 +135,7 @@ function go(form_id, url, error, callback, opaque){
     }
 
     function go_success(response) {
+        var go_to_messages = false;
         if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
             $(id).html(response);
         } else {
@@ -154,6 +155,10 @@ function go(form_id, url, error, callback, opaque){
                 if(!aff) {
                     try {
                         response = JSON.parse(response);
+                        if ("job_running" in response && response.job_running) {
+                            $("#messages_content").html(response.desc);
+                            go_to_messages = true;
+                        }
                     } catch(err) {
                         console.log("ERROR parsing: " + response);
                     }
@@ -178,6 +183,11 @@ function go(form_id, url, error, callback, opaque){
                     });
                 }
             }
+        }
+
+        if (go_to_messages) {
+            $.mobile.navigate("#messages");
+            setTimeout("loadstories(false, '#stories');", 5000);
         }
     }
 
@@ -1076,9 +1086,6 @@ function storylist_complete(json, params) {
             trans_start(json.translist[tidx]);
         }
         translist = [];
-        if ("navto" in params) {
-            finishedloading(json.storylist, params.navto);
-        }
 
         $("#" + params.element).html(json.storylist); 
     } else if(json.reload) {
@@ -1088,6 +1095,9 @@ function storylist_complete(json, params) {
     if (params.cleanup) {
         document.getElementById(params.element).innerHTML = params.label;
         document.getElementById(params.element).onclick = function() { params.cleanup(params.name, params.uuid); }; 
+    }
+    if ("navto" in params && "storylist" in json) {
+        finishedloading(json.storylist, params.navto);
     }
 }
 
@@ -1800,6 +1810,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
         $("#syncstatus").attr('style', 'display: block');
     }
     $('#explodelist').listview().listview('refresh');
+    $('.ui-listview').listview().listview('refresh');
     $.mobile.navigate('#explode');
 }
 
