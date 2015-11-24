@@ -258,30 +258,16 @@ def run_tests() :
 c = Client(base_url = 'unix://var/run/docker.sock')
 s = requests.Session()
 
-mica_options = dict(
-        image = 'micadev7', 
-        command = ['/home/mrhines/mica/restart.sh'], 
-        name = 'couchdev',
-        tty = True,
-        ports = [22, 5984, 6984, 7984],
-        host_config = c.create_host_config(port_bindings = {
-                "22/tcp":   ("0.0.0.0", 2222),
-                "5984/tcp": ("0.0.0.0", 5984),
-                "6984/tcp": ("0.0.0.0", 6984),
-                "7984/tcp": ("0.0.0.0", 7984),
-        })
-    )
-
 options = [
     dict(
         image = 'micadev7', 
         command = ['/home/mrhines/mica/restart.sh'], 
         name = 'couchdev',
         tty = True,
-        ports = [5984, 22, 6984, 7984],
+        ports = [5985, 22, 6984, 7984],
         host_config = c.create_host_config(port_bindings = {
                 "22/tcp":   ("0.0.0.0", 2222),
-                "5984/tcp": ("0.0.0.0", 5984),
+                "5984/tcp": ("0.0.0.0", 5985),
                 "6984/tcp": ("0.0.0.0", 6984),
                 "7984/tcp": ("0.0.0.0", 7984),
         })
@@ -374,9 +360,9 @@ for who in parameters["oauth"].keys() :
 urls += [
             { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
-            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5984', connect='1') },
+            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5985', connect='1') },
 
-            { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
+            { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
 
             { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
@@ -441,7 +427,7 @@ urls += [
            { "loc" : "/api?human=0&alien=home&view=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&page=220", "method" : "get", "success" : False, "test_success" :  False },
 
            # So, login again:
-           { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5984', connect='1') },
+           { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
 
             # Go one page before the beginning.
            { "loc" : "/api?human=0&alien=read&meaningmode=true", "method" : "get", "success" : True, "test_success" :  True },
@@ -540,8 +526,8 @@ sleep(5)
 
 urls.append({ "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() })
 
-stop = run_tests()
-#stop = False
+#stop = run_tests()
+stop = False
 
 if not stop :
     try:

@@ -1041,13 +1041,24 @@
    */
   function fullCommit(options) {
     var options = options || {};
+    var auth = "authorization" in options ? options.authorization : false;
+    if (auth)
+        delete options.authorization;
+
     if (typeof options.ensure_full_commit !== "undefined") {
       var commit = options.ensure_full_commit;
       delete options.ensure_full_commit;
       return function(xhr) {
         xhr.setRequestHeader('Accept', 'application/json');
         xhr.setRequestHeader("X-Couch-Full-Commit", commit.toString());
+        if (auth)
+            xhr.setRequestHeader("Authorization", auth);
       };
+    } else {
+        return function(xhr) {
+            if (auth)
+                xhr.setRequestHeader("Authorization", auth);
+        }
     }
   };
 

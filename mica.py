@@ -588,7 +588,7 @@ class MICA(object):
 
                         if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
-                        req.session.value["port"] = self.db.listen(username, req.session.value["password"], 5984)
+                        req.session.value["port"] = self.db.listen(username, req.session.value["password"], params["local_port"])
                         req.session.save()
                     else :
                         # On the server, use cookies to talk to CouchDB
@@ -2900,11 +2900,11 @@ class MICA(object):
 
     def render_privacy(self, req) :
         self.install_local_language(req)
-        return self.api(req, "<!DOCTYPE html>\n" + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8'))
+        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8'))
 
     def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
-        return self.api(req, "<!DOCTYPE html>\n" + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8')))
+        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8')))
 
     def render_mainpage(self, req, msg, pageid = "#messages") :
         if req.messages == "" :
@@ -2924,6 +2924,7 @@ class MICA(object):
         req.username = req.session.value['username']
         if mobile :
             req.database = params["local_database"]
+            # This port is the one that was actually selected on the device, in case there was a conflict
             req.credentials = 'http://127.0.0.1:' + str(req.session.value["port"])
         else :
             req.database = req.session.value["database"]
@@ -2943,7 +2944,7 @@ class MICA(object):
             req.oauth = params["oauth"]
         req.mica = self
         req.credentials = self.credentials()
-        return "<!DOCTYPE html>\n" + run_template(req, FrontPageElement)
+        return ("<!DOCTYPE html>\n" if not mobile else "") + run_template(req, FrontPageElement)
 
     def render_switchlang(self, req) :
         if not req.http.params.get("lang") :
@@ -4509,8 +4510,13 @@ class MICA(object):
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
                 return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
 
-            req.session.value["port"] = req.db.listen(username, req.session.value["password"], 5984)
-            req.session.save()
+            if mobile :
+                if "local_username" in params["local_username"] and params["local_username"] and "local_password" in params and params["local_password"] :
+                    # This is just for testing. It will break the app story uploads on mobile, but will allow us to connect to the device and debug things.
+                    req.session.value["port"] = req.db.listen(params["local_username"], params["local_password"], params["local_port"])
+                else :
+                    req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
+                req.session.save()
 
         req.action = "home"
         req.session.value['connected'] = True 
@@ -5399,11 +5405,11 @@ def second_splash() :
     encoded2 = base64_b64encode(contents)
     fh.close()
 
-    mdebug("Rendering template: " + output)
+    mverbose("Rendering template: " + output)
     outresult = output % dict(encoded1 = encoded1,
                          encoded2 = encoded2,
                          pleasewait = _("Please wait..."))
-    mdebug("Render complete.")
+    mverbose("Render complete.")
     return outresult 
 
 if __name__ == "__main__":
