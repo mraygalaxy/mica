@@ -1604,9 +1604,11 @@ function doLogin(oForm) {
     // reset
  
     try {
-        if (window.location.protocol !== "https:"){
+        if ($("#mobile").html() == 'false' && window.location.protocol !== "https:"){
+            console.log("Insecure chat.");
             httpbase = 'http://' + server + ':5280/http-bind/';
         } else {
+            console.log("Secure chat.");
             httpbase = 'https://' + server + ':5281/http-bind/';
         }
         
@@ -1725,19 +1727,20 @@ function start_learning_complete(json, action) {
         if (action == 'storyinit') {
            window.location.href = "/";
         } else {
-            var reloadstories = (action == 'view') ? false : true;
-            if (reloadstories) {
-                $.mobile.navigate('#stories');
-                loadstories(false, false);
-            } else {
-                $('#readingheader').affix();
-                $('#learn_content').html(json.desc);
-                $.mobile.navigate('#learn');
-            }
             install_pages_if_needed(json);
         }
     } else {
         alert(json.desc);
+    }
+
+    var reloadstories = (action == 'view') ? false : true;
+    if (reloadstories) {
+        $.mobile.navigate('#stories');
+        loadstories(false, false);
+    } else {
+        $('#readingheader').affix();
+        $('#learn_content').html(json.desc);
+        $.mobile.navigate('#learn');
     }
 }
 
@@ -1758,6 +1761,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
     $("#translateoption").attr('style', 'display: none');
     $("#romanizedoption").attr('style', 'display: none');
     $("#storyinitoption").attr('style', 'display: none');
+    $("#syncstatus").attr('style', 'display: none');
 
     if (translated) {
         if (romanized) {
@@ -1787,10 +1791,13 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
         $("#translateoption").attr('style', 'display: block');
     }
 
-    if (syncstatus) {
-        $("#syncstatus").html("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('startsync') + "</a>");
-    } else {
-        $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
+    if (!newstory) {
+        if (syncstatus) {
+            $("#syncstatus").html("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('startsync') + "</a>");
+        } else {
+            $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
+        }
+        $("#syncstatus").attr('style', 'display: block');
     }
     $('#explodelist').listview().listview('refresh');
     $.mobile.navigate('#explode');

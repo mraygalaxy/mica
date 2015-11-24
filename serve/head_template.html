@@ -1,6 +1,7 @@
 <html lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="allslots">
   <head t:render="head"/>
   <body id='cbody'>
+    <div id='mobile' style='display: none'><t:slot name='mobile'/></div>
     <div id='token' style='display: none'><t:slot name='token'/></div>
     <div id='creds' style='display: none'><t:slot name='creds'/></div>
     <div id='database' style='display: none'><t:slot name='database'/></div>
@@ -46,6 +47,7 @@
                     <li><a onclick="start_learning('home', 'view', {})"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
                     <li><a onclick="start_learning('edit', 'view', {})"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
                     <li><a onclick="start_learning('read', 'view', {})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
+                    <li><a href='#uploadModal' onclick="$('#settings').panel('close');" data-toggle='modal' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
                     <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
                     <li>
                         <a onclick="$.mobile.navigate('#account')" data-toggle='modal' href='#newAccountModal' data-keyboard='false'>
@@ -59,7 +61,6 @@
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
                     <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
                     <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
-                    <li><a href='#uploadModal' onclick="$('#settings').panel('close');" data-toggle='modal' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
                 </ul>
             </div>
 	<!--(if not mobile)-->
@@ -121,18 +122,28 @@
 		    <li id='notreviewedoption'><a onclick="reviewstory(exploded_uuid, 0)"><i class='glyphicon glyphicon-arrow-down'></i> <t:slot name='notreviewedoption'/></a></li>
 		    <li id='reviewedoption'><a onclick="reviewstory(exploded_uuid, 1)"><i class='glyphicon glyphicon-arrow-up'></i> <t:slot name='reviewed'/></a></li>
 		    <li id='romanizedoption'><a id='romanizedlink' onclick="getstory(exploded_uuid, 'pinyin')"><i class='glyphicon glyphicon-download-alt'></i> <t:slot name='romanized'/></a></li>
-		    <!--(if mobile)-->
+        <!-- the alignment of these (if) tags are very sensitive, they need to be matched across the page. and if you indent one, you can't use an else. it has to be at the same level as the other ones. -->
+        <!--(if mobile)-->
 			<li id='syncstatus'></li>
-		    <!--(end)-->
+        <!--(end)-->
 
-		    <!--(if not mobile)-->
+        <!--(if not mobile)-->
 		    <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
 			<li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
 			<li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
 			<li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
-			<li id='storyinitoption'><a onclick="start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/></a></li>
 			<li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
-		    <!--(end)-->
+        <!--(end)-->
+
+            <li id='storyinitoption'><a>
+        <!--(if not mobile)-->
+                <t:attr name='onclick'>start_learning('home', 'storyinit', {uuid: exploded_uuid, name: exploded_name})</t:attr>
+                <i class='glyphicon glyphicon-triangle-right'></i> <t:slot name='storyinit'/>
+        <!--(else)-->
+                <t:slot name='pleaseinitonline'/>
+        <!--(end)-->
+            </a>
+            </li>
 		</ul>
         </div>
     </div>

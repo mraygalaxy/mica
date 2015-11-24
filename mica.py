@@ -1449,7 +1449,7 @@ class MICA(object):
 
         return nb_pages 
     
-    def view_page_start(self, req, name, story, page, chars_per_line, start_trans_id = 0, chat = False) :
+    def view_page_start(self, req, name, story, page, chars_per_line, start_trans_id = 9000000, chat = False) :
         lines = []
         gp = self.processors[self.tofrom(story)]
 
@@ -3259,7 +3259,7 @@ class MICA(object):
             if timestamp :
                 timestamp = float(timestamp) / 1000.0
 
-            start_trans_id = int(req.http.params.get("start_trans_id", 0))
+            start_trans_id = int(req.http.params.get("start_trans_id", 12000000))
             story = {
                "name" : "ime",
                "target_language" : supported_map[req.http.params.get("target_language")],
@@ -3350,7 +3350,9 @@ class MICA(object):
             failed = False
             out["result"] = {"chars" : chars, "lens" : lens, "word" : orig}
 
-            select_idx = 5000000
+            # This '1' is important. It's the first index of the list of choices in the chat
+            # to choose from.
+            select_idx = 1
             for unit_idx in range(2, min(len(story["pages"]["0"]["units"]), (len(chars) * 2 + 1)), 2) :
                 story["pages"]["0"]["units"][unit_idx]["select_idx"] = select_idx
                 select_idx += 1
