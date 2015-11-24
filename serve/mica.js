@@ -1512,8 +1512,7 @@ function handleError(e) {
     if (first_reconnect) {
             first_reconnect = false;
             CountBack(false, false, 0, false);
-            if (con.connected())
-                con.disconnect();
+            finish = reconnect;
     } else {
         document.getElementById('login_pane').style.display = '';
         document.getElementById('sendmsg_pane').style.display = 'none';
