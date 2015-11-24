@@ -442,7 +442,10 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name) :
+    def doc_exist(self, name, true_if_deleted = False) :
+        if true_if_deleted :
+            mverbose("Mobile has no deleted-document detection.")
+
         try :
             result = self.db.doc_exist(String(self.dbname), String(name))
             if result == "error" :
@@ -663,7 +666,9 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name) :
+    def doc_exist(self, name, true_if_deleted = False) :
+        if true_if_deleted :
+            mverbose("Mobile has no deleted-document detection.")
         try :
             result = self.db.doc_exist__(String(self.dbname), String(name)).UTF8String()
             if result == "error" :
