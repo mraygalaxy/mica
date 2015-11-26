@@ -155,7 +155,7 @@ function privacy_complete(json, opaque) {
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
        var where = data.toPage.split("#")[1];
-       if (where == "explode" || where == "reading" || where == "newstory") {
+       if (where == "explode" || where == "reading" || where == "newstory" || where == "untranslated") {
            where = "stories";
        }
        var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
@@ -187,6 +187,8 @@ $(document).on("pagecontainerbeforechange", function (e, data) {
                go(false, 'help', unavailable(false), help_complete, false);
         } else if (where == 'privacy') {
                go(false, 'privacy', unavailable(false), privacy_complete, false);
+        } else if (from != where) {
+               $.mobile.navigate("#" + where); 
         }
    }
    return true;
