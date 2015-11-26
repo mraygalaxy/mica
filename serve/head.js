@@ -154,14 +154,17 @@ function privacy_complete(json, opaque) {
 
 $(document).on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
-       var where = data.toPage.split("#")[1];
-       if (where == "explode" || where == "reading" || where == "newstory") {
+        var where = data.toPage.split("#")[1];
+        if (where == "explode" || where == "reading" || where == "newstory") {
            where = "stories";
-       }
-       var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
-       if (from != where) {
+        }
+        if (where == "learn" && $("#learn_content").html() == "") {
+            where = "messages";
+        }
+        var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
+        if (from != where) {
            loading();
-       }
+        }
         if (where == 'stories') {
             loadstories(false, false);
         } else if (where == 'chat') {
