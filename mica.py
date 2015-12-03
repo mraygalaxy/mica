@@ -2432,11 +2432,12 @@ class MICA(object):
         mdebug("List complete.")
         for tmppage in allpages :
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
-            del req.db[self.story(req, name) + ":pages:" + str(tmppage)]
+            if req.db.doc_exist(self.story(req, name) + ":pages:" + str(tmppage), true_if_deleted = True) :
+                del req.db[self.story(req, name) + ":pages:" + str(tmppage)]
 
         mdebug("Completed flushing translated pages.")
             
-        if req.db.doc_exist(self.story(req, name) + ":final") :
+        if req.db.doc_exist(self.story(req, name) + ":final", true_if_deleted = True) :
             mdebug("Deleting final version from story " + name)
             del req.db[self.story(req, name) + ":final"]
 

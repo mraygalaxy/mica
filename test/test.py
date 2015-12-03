@@ -232,7 +232,7 @@ def run_tests() :
                     print "Failed to parse JSON from: " + r.text
                     assert(False)
 
-                if "job_running" in j and j["job_running"] :
+                if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
                     print "There is a job running. Come back later."
                     sleep(5)
                     continue
@@ -482,6 +482,8 @@ urls += [
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'py', changelearnlanguage = '1') },
 
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'zh', changelearnlanguage = '1') },
+
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaytoolong@email.com', changeemail = '1') },
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'email withspace@email.com', changeemail = '1') },
@@ -512,7 +514,15 @@ urls += [
 
            { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
-#           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=home&forget=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(), "check_job_running" : False },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
             # Make this the 'resetpassword' the last test. 
             # I really don't want to get the new password out of JSON right now.
@@ -526,8 +536,8 @@ sleep(5)
 
 urls.append({ "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() })
 
-#stop = run_tests()
-stop = False
+stop = run_tests()
+#stop = False
 
 if not stop :
     try:
