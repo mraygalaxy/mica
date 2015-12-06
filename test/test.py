@@ -324,11 +324,11 @@ if "test" not in parameters or not parameters["test"] :
 
 httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
-oresp.daemon = True
+#oresp.daemon = True
 oresp.start() 
 
 mthread = Thread(target=go, args = [parameters])
-mthread.daemon = True
+#mthread.daemon = True
 mthread.start() 
 
 wait_for_port_ready("mica", "localhost", parameters["port"])
@@ -519,6 +519,12 @@ urls += [
            { "loc" : "/api?human=0&alien=home&forget=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(), "check_job_running" : False },
 
            { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+           { "loc" : "/api?human=0&alien=home&delete=1&uuid=b2898b6c-83a8-4aaf-b39b-b6d919160dba&name=301_book1.pdf", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(), "check_job_running" : False },
 
            { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
