@@ -165,8 +165,21 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     def __delitem__(self, name) :
         doc = self.db[name]
+
+        revs = []
+
+        if "_conflicts" in doc :
+            mdebug("Adding conflict revisions.")
+            revs += doc["_conflicts"]
+        if "_deleted_conflicts" in doc :
+            mdebug("Adding deleted conflict revisions.")
+            revs += doc["_deleted_conflicts"]
+
+        for rev in revs :
+            olddoc = self.db.get(name, rev=rev)
+            self.db.delete(olddoc)
+
         del self.db[name]
-        #self.db.purge([doc])
 
     def delete_attachment(self, doc, filename) :
         self.db.delete_attachment(doc, filename)
@@ -249,6 +262,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     old = self.db.get(name, open_revs = "all")
                     for olddocp in old :
                         mdebug("Got old revision: " + str(olddocp))
+                        revs = olddocp["ok"]["_rev"]
                         olddoc = self.db.get(name, rev=olddocp["ok"]["_rev"])
                         mdebug("Got old doc too.")
                         mwarn("Purging old revision...")

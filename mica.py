@@ -2848,7 +2848,7 @@ class MICA(object):
     @serial
     def deletestory(self, req, uuid, name) : 
         mdebug("Checking for " + self.story(req, name) + " existence")
-        story_found = False if not name else req.db.doc_exist(self.story(req, name))
+        story_found = False if not name else req.db.doc_exist(self.story(req, name), true_if_deleted = True)
         if name and not story_found :
             mdebug(name + " does not exist. =(")
         else :
@@ -2894,14 +2894,21 @@ class MICA(object):
             if name and story_found :
                 mdebug("Deleting story.")
                 del req.db[self.story(req, name)]
+                mdebug("Re-checking...")
+                req.db.doc_exist(self.story(req, name), true_if_deleted = True)
+                mdebug("Done...")
             
             if req.db.doc_exist(self.index(req, uuid)) :
                 mdebug("Deleting index.")
                 del req.db[self.index(req, uuid)]
+                mdebug("Re-checking...")
+                req.db.doc_exist(self.index(req, uuid), true_if_deleted = True)
+                mdebug("Done...")
                 
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
             self.clear_story(req)
             uuid = False
+        mdebug("Delete complete.")
         return self.api(req)
 
     # This needs to be replaced with token authentication
@@ -3184,7 +3191,7 @@ class MICA(object):
         mverbose("Checking for deletes...")
         for (name, uuid) in to_delete :
             mverbose("Want to delete story: " + name)
-            self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, True, args = [req, uuid, name])
+            self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name])
         mverbose("Roll complete for period: " + period_key)
 
     def period_keys(self, req, period_key, current_day, peer, page) :
