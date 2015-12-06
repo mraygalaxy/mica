@@ -2892,17 +2892,14 @@ class MICA(object):
                     mdebug("Deleted.")
                 
             if name and story_found :
-                mdebug("Deleting story.")
-                del req.db[self.story(req, name)]
-                mdebug("Re-checking...")
-                req.db.doc_exist(self.story(req, name), true_if_deleted = True)
-                mdebug("Done...")
+                while req.db.doc_exist(self.story(req, name), true_if_deleted = True) :
+                    mdebug("Deleting story, revision: " + req.db[self.story(req, name)]["_rev"])
+                    del req.db[self.story(req, name)]
             
             if req.db.doc_exist(self.index(req, uuid)) :
                 mdebug("Deleting index.")
                 del req.db[self.index(req, uuid)]
-                mdebug("Re-checking...")
-                req.db.doc_exist(self.index(req, uuid), true_if_deleted = True)
+                mdebug("Re-checking..." + str(req.db.doc_exist(self.index(req, uuid), true_if_deleted = True)))
                 mdebug("Done...")
                 
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
