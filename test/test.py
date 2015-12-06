@@ -218,7 +218,12 @@ def run_tests() :
                     print "   Post data: " + str(url["data"])
                     r = s.post("http://localhost" + url["loc"], data = url["data"])
 
-                assert(r.status_code == 200)
+                if r.status_code != 200 :
+                    if r.status_code == 504 :
+                        print " Gateway timeout. Try the request again..."
+                        continue
+                    print " Bad status code: " + str(r.status_code)
+                    assert(False)
 
                 # The difference between 'success' and 'test_success' is for errors
                 # that happen during tests which are tolerable in the user experience.
@@ -324,11 +329,11 @@ if "test" not in parameters or not parameters["test"] :
 
 httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
-#oresp.daemon = True
+oresp.daemon = True
 oresp.start() 
 
 mthread = Thread(target=go, args = [parameters])
-#mthread.daemon = True
+mthread.daemon = True
 mthread.start() 
 
 wait_for_port_ready("mica", "localhost", parameters["port"])
@@ -530,6 +535,11 @@ urls += [
 
            { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
 
+            { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
+
+            { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
+
+           { "loc" : "/api?human=0&alien=storylist&tzoffset=-28800", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
             # Make this the 'resetpassword' the last test. 
             # I really don't want to get the new password out of JSON right now.
 #           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True, "data" : dict() },
@@ -548,7 +558,8 @@ stop = run_tests()
 if not stop :
     try:
         print "Done. Application left running..."
-        mthread.join()
+        while True :
+            sleep(10)
     except KeyboardInterrupt:
         print "CTRL-C interrupt"
 
