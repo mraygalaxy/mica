@@ -104,7 +104,7 @@ class Processor(object) :
     def get_chars(self, romanized, limit = 8, preload = False, retest = True) :
         return False
 
-    def get_ipa(self, source) :
+    def get_ipa_lang(self, source) :
         return False
     
     @serial
@@ -314,6 +314,10 @@ class RomanizedSource(Processor) :
         self.structs = {}
         self.matches = {}
 
+    @serial
+    def get_ipa(self, source) :
+        return self.get_ipa_lang(source)
+
     def get_dictionaries(self) :
         flist = deepcopy(self.files)
         del flist["idx_file"]
@@ -503,7 +507,7 @@ class RomanizedSource(Processor) :
                 if unit["multiple_correct"] == -1 :
                     self.score_and_rank_unit(unit, tone_keys)
 
-            ipa = self.get_ipa(try_source)
+            ipa = self.get_ipa_lang(try_source)
             if ipa :
                 unit["ipa_word"] = ipa[0]
                 unit["ipa_role"] = ipa[1]
@@ -519,7 +523,7 @@ class RomanizedSource(Processor) :
                 raise Exception("Can't translate this word. API has no result: " + str(uni))
 
             for unit in online_units :
-                ipa = self.get_ipa(uni)
+                ipa = self.get_ipa_lang(uni)
                 if ipa :
                     unit["ipa_word"] = ipa[0]
                     unit["ipa_role"] = ipa[1]
@@ -692,8 +696,7 @@ class EnglishSource(RomanizedSource) :
 
             trans.commit()
 
-    @serial
-    def get_ipa(self, source) :
+    def get_ipa_lang(self, source) :
         if "ipa" in self.srcdb :
             s = self.srcdb["ipa"].select().where(self.srcdb["ipa"].c.word_str == source)
             rs = s.execute()

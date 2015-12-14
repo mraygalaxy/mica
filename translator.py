@@ -4,6 +4,7 @@
 from urllib import urlencode as urllib_urlencode
 from urllib2 import urlopen as urllib2_urlopen, Request as urllib2_Request
 from json import loads, dumps
+from copy import deepcopy
 
 from common import *
 
@@ -70,6 +71,7 @@ class Translator(object):
         """
         if not self.access_token:
             self.access_token = self.get_access_token()
+        test_log(self.test, loc = self.access_token_url, texts = p["texts"], method = "post")
         final_url = "%s?%s" % (url, urllib_urlencode(p))
         request = urllib2_Request(final_url,
             headers={'Authorization': 'Bearer %s' % self.access_token}
@@ -89,7 +91,11 @@ class Translator(object):
 
         # Log the results of microsoft for unit testing.
 
-        test_log(self.test, loc = final_url, response = rv, method = "get", data = {})
+        if len(rv) > 0 and self.test :
+            rvc = deepcopy(rv)
+            for idx in range(0, len(rvc)) : 
+                rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
+            test_log(self.test, loc = final_url, response = rvc, method = "get", data = {})
         return rv
 
 

@@ -266,6 +266,10 @@ class MICA(object):
 
         return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
 
+    def prime_db(self, req, specific_views = False) :
+        username = req.session.value["username"].lower()
+        self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
+
     def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
         username = req.session.value["username"].lower()
 
@@ -287,7 +291,7 @@ class MICA(object):
 
             self.views_ready[username] = 0
             req.db = self.dbs[username]
-            self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]])
+            self.prime_db(req)
 
             mdebug("Installing view counter.")
             if username not in self.views_ready :
@@ -515,7 +519,7 @@ class MICA(object):
         req.db = savedb
 
     @serial
-    def view_runner(self, username, db) :
+    def view_runner(self, username, db, specific_views = False) :
         # This only primes views for logged-in users.
         # Scaling the backgrounding for all users will need more thought.
 
@@ -525,7 +529,12 @@ class MICA(object):
         mdebug("Priming views for user: " + username)
         self.views_ready[username] = 0
 
-        for (name, startend) in self.view_runs :
+        if specific_views :
+            runners = specific_views
+        else : 
+            runners = deepcopy(self.view_runs)
+
+        for (name, startend) in runners :
             if not db.doc_exist("_design/" + name.split("/")[0]) :
                 mdebug("View " + name + " does not yet exist. Loading...")
                 dbsave = self.db
@@ -749,7 +758,7 @@ class MICA(object):
                 mdebug("API request was true, but setting to false because of replication error.")
                 json["success"] = False
 
-            mverbose("Dumping: " + str(json))
+            #mverbose("Dumping: " + str(json))
             if not mobile :
                 json["cookie"] = req.session.value["cookie"]
 
@@ -996,7 +1005,9 @@ class MICA(object):
                     self.transmutex.release()
 
             try :
+                mverbose("Begin parsing.")
                 processor.parse_page(req, story, groups, str(iidx), progress = self.progress if not live else False)
+                mverbose("End parsing.")
                 online = 0
                 offline = 0
                 for unit in story["pages"][str(iidx)]["units"] :
@@ -2432,14 +2443,16 @@ class MICA(object):
         mdebug("List complete.")
         for tmppage in allpages :
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
-            if req.db.doc_exist(self.story(req, name) + ":pages:" + str(tmppage), true_if_deleted = True) :
+            while req.db.doc_exist(self.story(req, name) + ":pages:" + str(tmppage), true_if_deleted = True) :
                 del req.db[self.story(req, name) + ":pages:" + str(tmppage)]
 
         mdebug("Completed flushing translated pages.")
             
-        if req.db.doc_exist(self.story(req, name) + ":final", true_if_deleted = True) :
+        while req.db.doc_exist(self.story(req, name) + ":final", true_if_deleted = True) :
             mdebug("Deleting final version from story " + name)
             del req.db[self.story(req, name) + ":final"]
+
+        mdebug("Flush complete.")
 
     def view_check(self, req, name, recreate = False) :
        fh = open(cwd + "views/" + name + ".js", 'r')
@@ -2843,6 +2856,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         # 'Forgot' a story using the button in the side-panel.
+        self.prime_db(req, [('stories/all', True)])
         return self.api(req)
 
     @serial
@@ -2906,6 +2920,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         mdebug("Delete complete.")
+        self.prime_db(req, [('stories/all', True)])
         return self.api(req)
 
     # This needs to be replaced with token authentication
@@ -4911,6 +4926,7 @@ class MICA(object):
             try :
                 name = req.db[self.index(req, uuid)]["value"]
             except couch_adapter.ResourceNotFound, e :
+                mwarn("UUID " + uuid + " not found. =(")
                 name = False
             name_found = True if name else False
                 

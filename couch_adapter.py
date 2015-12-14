@@ -8,7 +8,7 @@ from traceback import format_exc
 
 try :
     from couchdb import Server
-    from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ServerError, ResourceConflict as couch_ResourceConflict
+    from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.") 
 
@@ -41,22 +41,36 @@ def couchdb_pager(db, view_name='_all_docs',
         if endkey_docid:
             options['endkey_docid'] = endkey_docid
     done = False
+    server_errors_left = 3
     while not done:
-        view = db.view(view_name, **options)
-        rows = []
-        # If we got a short result (< limit + 1), we know we are done.
-        if len(view) <= bulk:
-            done = True
-            rows = view.rows
-        else:
-            # Otherwise, continue at the new start position.
-            rows = view.rows[:-1]
-            last = view.rows[-1]
-            options['startkey'] = last.key
-            options['startkey_docid'] = last.id
+        try:
+            view = db.view(view_name, **options)
+            rows = []
+            # If we got a short result (< limit + 1), we know we are done.
+            if len(view) <= bulk:
+                done = True
+                rows = view.rows
+            else:
+                # Otherwise, continue at the new start position.
+                rows = view.rows[:-1]
+                last = view.rows[-1]
+                options['startkey'] = last.key
+                options['startkey_docid'] = last.id
 
-        for row in rows:
-            yield row
+            for row in rows:
+                yield row
+        except couch_ServerError, e :
+            # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
+            ((status, error),) = e.args
+            mwarn("Server error: " + str(status) + " " + str(error))
+            if status == 500 :
+                if server_errors_left > 0 :
+                    mwarn("Server errors left: " + str(server_errors_left))
+                    server_errors_left -= 1
+                    continue
+                else :
+                    merr("No server_errors_left remaining.")
+            raise e 
 
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):
@@ -141,7 +155,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ResourceConflict, e :
             mdebug("Set key conflict error: " + name)
             raise ResourceConflict(str(e), e)
-        except ServerError, e :
+        except couch_ServerError, e :
             mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
             raise CommunicationError("MICA Unvalidated: " + str(e))
 
