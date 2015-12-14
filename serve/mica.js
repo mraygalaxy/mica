@@ -110,6 +110,7 @@ function go(form_id, url, error, callback, opaque){
 
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
         console.log("AJAX Status code: " + XMLHttpRequest.status + " id: " + id);
+        // Need to handle 504's (busy) like our tests do and repeat the request
         if (XMLHttpRequest.status == 401) {
               window.location.href = "/";
         } else {
@@ -253,7 +254,7 @@ function trans_wait_poll(uuid) {
         secs = 5;
     }
     first_time = false;
-    CountBack(false, false, secs, uuid);
+    setTimeout("trans_poll('" + uuid + "');", 5000);
 }
 
 var first_time = false; 
@@ -1743,11 +1744,11 @@ function start_learning_complete(json, action) {
     $('.ui-listview').listview().listview('refresh');
     $('#loadingModal').modal('hide');
     if (json.success) {
-        if (action == 'storyinit') {
-           window.location.href = "/";
-        } else {
+        //if (action == 'storyinit') {
+        //   window.location.href = "/#stories";
+        //} else {
             install_pages_if_needed(json);
-        }
+        //}
     } else {
         alert(json.desc);
     }

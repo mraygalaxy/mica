@@ -152,12 +152,17 @@ function privacy_complete(json, opaque) {
     $("#privacy_content").html(json.desc);
 }
 
-$(document).on("pagecontainerbeforechange", function (e, data) {
+var firstpageload = true;
+
+$(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
-        if (where == "explode" || where == "reading" || where == "newstory" || where == "untranslated") {
+        if (firstpageload && (where == "explode" || where == "reading" || where == "newstory" || where == "untranslated")) {
            where = "stories";
         }
+
+        firstpageload = false;
+
         if (where == "learn" && $("#learn_content").html() == "") {
             where = "messages";
         }
