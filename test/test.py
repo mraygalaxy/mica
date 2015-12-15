@@ -709,8 +709,6 @@ tests_from_micadev9 = [
 
            { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
 
-        # Some kind of javascript error on switching to reading mode --- easily reproducible. Just try to read the newly translated story ---- reload the page a few times and it will be blank. It may or may not be related to the page switching bug that tries to detect what the last page we were on by the URL.
-
         # Next test: File uploaded-stories
 
         ]
