@@ -74,13 +74,16 @@ function chat_success(json, opaque) {
     chat_loaded = true;
 }
 
-learn_loaded = false;
+var learn_loaded = false;
 
 function learn_success(json, opaque) {
     if (json.success) {
         learn_loaded = true;
         $("#learn_content").html(json.desc);
         install_pages_if_needed(json);
+        if ($("#learn_content").html() == "") {
+           $.mobile.navigate("#messages"); 
+        }
     } else {
         alert(json.desc);
     }
@@ -163,12 +166,12 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
 
         firstpageload = false;
 
-        if (where == "learn" && $("#learn_content").html() == "") {
-            where = "messages";
-        }
         var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
         if (from != where) {
            loading();
+        } else {
+            console.log("We're already on this page. What's the dealio?");
+            return false; 
         }
         console.log("Going to: " + where + " from " + from);
         if (where == 'stories') {
@@ -181,14 +184,14 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
                go(false, 'chat', unavailable(false), chat_success, false);
             }
         } else if (where == 'learn') {
-                if (!learn_loaded) {
-                   var pageid = "home";
-                   var lastmode = $("#lastmode");
-                   if (lastmode != undefined)
-                        pageid = lastmode.html();
+            if (!learn_loaded) {
+               var pageid = "home";
+               var lastmode = $("#lastmode");
+               if (lastmode != undefined)
+                    pageid = lastmode.html();
 
-                   go(false, pageid, unavailable(false), learn_success, false);
-                }
+               go(false, pageid, unavailable(false), learn_success, false);
+            }
         } else if (where == 'account') {
                loading();
                go(false, 'account', unavailable(false), account_complete, true);
@@ -197,7 +200,7 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
         } else if (where == 'privacy') {
                go(false, 'privacy', unavailable(false), privacy_complete, false);
         } else if (from != where) {
-               $.mobile.navigate("#" + where); 
+        //       $.mobile.navigate("#" + where); 
                done();
         }
    }
