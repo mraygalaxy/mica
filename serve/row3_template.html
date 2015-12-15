@@ -9,8 +9,8 @@
             <div class="definition definition@!uhash!@" style="display: @!'none' if meaning_mode == 'false' else 'block'!@">
         <!--(end)-->
         <!--(if action in ["read", "edit"])-->
-                <a>
-                <t:attr name='class'><t:slot name='transclass'/></t:attr>
+            <a>
+            <t:attr name='class'><t:slot name='transclass'/></t:attr>
 
             <!--(if uuid)-->
                     <t:attr name='onclick'>memorize('@!uhash!@', '@!uuid!@', '@!nb_unit!@', '@!page!@');</t:attr>
@@ -19,10 +19,10 @@
             <!--(end)-->
         <!--(end)-->
 
-                @!row3_target!@
+            @!row3_target!@
             
         <!--(if action == "read" and "ipa_word" in unit and unit["ipa_word"])-->
-                <br>@!unit["ipa_word"]!@
+                <br/>@!unit["ipa_word"]!@
         <!--(end)-->
     
         <!--(if action in [ "read", "edit" ])-->
