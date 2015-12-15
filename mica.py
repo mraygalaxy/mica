@@ -897,7 +897,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    def parse(self, req, story, page = False, live = False) :
+    def parse(self, req, story, page = False, live = False, recount = True) :
         name = story['name']
         mverbose("Ready to translate: " + name + ". Counting pages...")
 
@@ -1061,6 +1061,9 @@ class MICA(object):
                 mdebug("Failure to sync: " + str(e))
             finally :
                 self.transmutex.release()
+
+        if recount :
+            self.nb_pages(req, story, force = True)
 
         mverbose("Translation complete.")
 
@@ -2921,7 +2924,7 @@ class MICA(object):
             uuid = False
         mdebug("Delete complete.")
         self.prime_db(req, [('stories/all', True)])
-        return self.api(req)
+        return self.api(req, json = {"uuid" : uuid})
 
     # This needs to be replaced with token authentication
     def api_validate(func):
@@ -3367,7 +3370,7 @@ class MICA(object):
             try :
                 #sys_settrace(tracefunc)
                 #start = timest()
-                self.parse(req, story, live = True)
+                self.parse(req, story, live = True, recount = False)
                 #sys_settrace(None)
                 #mdebug("Parse time: " + str(timest() - start) + " for " + str(orig))
                 #call_report()
@@ -3449,9 +3452,9 @@ class MICA(object):
             return self.api(req, json = {"translated" : { "translating" : 'error', "percent" : 25, "page" : 0, "pages" : 0 }})
         else :
             if "translating" not in story or not story["translating"] :
-                return self.api(req, json = {"translated" : { "translating" : 'no', "percent" : 0, "page" : 0, "pages" : 0 }})
+                return self.api(req, json = {"translated" : { "translating" : 'no', "percent" : 0, "page" : 0, "pages" : 0 }, "uuid" : uuid})
             else :
-                result = { "translated" : {"translating" : 'yes'}}
+                result = { "translated" : {"translating" : 'yes'}, "uuid" : uuid}
                 curr = float(int(story["translating_current"]))
                 total = float(int(story["translating_total"]))
 
@@ -3467,7 +3470,7 @@ class MICA(object):
         tmp_story["finished"] = finished 
         req.db[self.story(req, name)] = tmp_story 
         # Finished reviewing a story in review mode.
-        return self.api(req, _("Finished"))
+        return self.api(req, _("Finished"), json = {"uuid" : story["uuid"]})
 
     def render_reviewed(self, req, story) :
         name = story["name"]
@@ -3509,17 +3512,18 @@ class MICA(object):
                     
                 req.db[self.story(req, name) + ":final"] = final
         req.db[self.story(req, name)] = tmp_story 
-        return self.api(req, _("Reviewed"))
+        return self.api(req, _("Reviewed"), json = {"uuid" : uuid})
 
     def render_translate(self, req, story) :
         output = ""
         if story["translated"] :
             output += _("Story already translated. To re-translate, please select 'Forget'.")
         else :
+            pt = Thread(target = self.parse, args = [req, story])
+            pt.daemon = True
+            pt.start()
+            '''
             try :
-                self.parse(req, story)
-                self.nb_pages(req, story, force = True)
-                output += _("Translation complete!")
             except OSError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
@@ -3527,7 +3531,9 @@ class MICA(object):
                 output += self.warn_not_replicated(req)
             except Exception, e :
                 output += _("Failed to translate story") + ": " + str(e)
-        return self.api(req, output)
+            output += _("Translation complete!")
+            '''
+        return self.api(req, output, json = {"uuid" : story["uuid"]})
 
     def render_jobs(self, req, jobs) :
         out = _("MICA is busy processing the following. Please wait") + ":<br/>\n"
@@ -4986,7 +4992,7 @@ class MICA(object):
             # Resetting means that we are dropping the translate contents of the original story. We are
             # not deleteing the story itself, nor the user's memorization data, only the translated
             # version of the story itself.
-            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
+            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]), { "job_running" : True, "uuid" : uuid })
 
         if req.http.params.get("switchmode") :
             rmode = req.http.params.get("switchmode")
@@ -5059,7 +5065,6 @@ class MICA(object):
             page = req.http.params.get("page")
             try :
                 self.parse(req, story, page = page)
-                self.nb_pages(req, story, force = True)
             except OSError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :

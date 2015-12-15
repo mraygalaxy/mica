@@ -45,7 +45,7 @@ cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
 
 from params import parameters, test
-from common import sdict, recursiveSetInDict, timest
+from common import sdict, recursiveSetInDict, timest, getFromDict
 from mica import go
 from pyquery import PyQuery as pq
 
@@ -284,6 +284,13 @@ def run_tests() :
                     job_was_running = True
                     sleep(5)
                     continue
+
+                if "until" in url :
+                    v = getFromDict(j, url["until"]["path"])
+                    if v != url["until"]["equals"] : 
+                        tlog("  Until " + str(v) + " != " + url["until"]["equals"])
+                        sleep(5)
+                        continue
 
                 diff = stop - start
                 tlog("  Time: " + str(int(diff)) + " secs.")
@@ -644,11 +651,6 @@ tests_from_micadev9 = [
            common_urls["storylist"],
            common_urls["storylist"],
 
-           # This get is only to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : None, "test_success" :  None, "data" : dict(human = 0, alien = "home", translate = 1, name = "chinese_test"), "forward_keys" : ["uuid"], "check_job_running" : False},
-
            { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = "english_test", languagetype = "en,zh-CHS", uploadtext = "1") },
 
            { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test", "method" : "get", "success" : None, "test_success" :  None},
@@ -668,9 +670,48 @@ tests_from_micadev9 = [
            common_urls["storylist"],
 
            # This get is only to retrieve the UUID again for the story initialization.
+           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test", "method" : "get", "success" : None, "test_success" :  None},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = "chinese_test"), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "forward_keys" : ["uuid"], "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           # This get is only to retrieve the UUID again for the story initialization.
            { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test", "method" : "get", "success" : None, "test_success" :  None},
 
-           { "loc" : "/api", "method" : "get", "success" : None, "test_success" :  None, "data" : dict(human = 0, alien = "home", translate = 1, name = "english_test"), "forward_keys" : ["uuid"], "check_job_running" : False},
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(human = 0, alien = "home", translate = 1, name = "english_test"), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "forward_keys" : ["uuid"], "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "forward_keys" : ["uuid"], "check_job_running" : False},
+
+        # Some kind of javascript error on switching to reading mode --- easily reproducible. Just try to read the newly translated story ---- reload the page a few times and it will be blank. It may or may not be related to the page switching bug that tries to detect what the last page we were on by the URL.
+
+        # Next test: File uploaded-stories
 
         ]
 

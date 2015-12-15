@@ -73,6 +73,7 @@ class CommonElement(Element) :
         f = fh.read()
         fh.close()
         pt = pyratemp.Template(f)
+        #mverbose("Rendered: " + pt(**conditionals))
         self.loader = XMLString(pt(**conditionals))
         #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
