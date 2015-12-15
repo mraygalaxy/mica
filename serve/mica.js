@@ -765,10 +765,10 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
     }
 
     $('#pagenav').bootpag({
-        total: pages,
-        page: start + 1,
+        total: parseInt(pages),
+        page: parseInt(start) + 1,
         maxVisible: 5 
-    }).on('page', function(event, num){
+    }).on('page', function(event, num) {
         view(mode, uuid, num-1);
     });
 
@@ -982,7 +982,7 @@ function listreload(mode, uuid, page) {
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, 'read&uuid=' + uuid + '&reviewlist=1&page=' + page, 
+           go(false, 'home&uuid=' + uuid + '&reviewlist=1&page=' + page, 
                   unavailable(false), 
                   list_reload_complete,
                   'history');
@@ -1732,7 +1732,9 @@ function install_pages_if_needed(json) {
                       json.install_pages.view_mode,
                       json.install_pages.reload,
                       json.install_pages.meaning_mode)
+        console.log("Finish page installation.");
     }
+
 }
 
 function retrans_complete(json) {
@@ -1740,27 +1742,29 @@ function retrans_complete(json) {
 }
 
 function start_learning_complete(json, action) {
+    var reloadstories = (action == 'view') ? false : true;
     done();
     $('.ui-listview').listview().listview('refresh');
     $('#loadingModal').modal('hide');
+    if (!reloadstories) {
+        $('#readingheader').affix();
+        $('#learn_content').html(json.desc);
+        $.mobile.navigate('#learn');
+    }
     if (json.success) {
         //if (action == 'storyinit') {
         //   window.location.href = "/#stories";
         //} else {
+            learn_loaded = true;
             install_pages_if_needed(json);
         //}
     } else {
         alert(json.desc);
     }
 
-    var reloadstories = (action == 'view') ? false : true;
     if (reloadstories) {
         $.mobile.navigate('#stories');
         loadstories(false, false);
-    } else {
-        $('#readingheader').affix();
-        $('#learn_content').html(json.desc);
-        $.mobile.navigate('#learn');
     }
 }
 
