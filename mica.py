@@ -2435,7 +2435,7 @@ class MICA(object):
                 merr(line)
             return self.bad_api(req, str(e))
 
-        return self.api(req, json = {'storykey' : self.story(req, filename)})
+        return self.api(req, json = {'storykey' : self.story(req, filename), 'uuid' : new_uuid})
         
     def flush_pages(self, req, name):
         mdebug("Ready to flush translated pages.")
