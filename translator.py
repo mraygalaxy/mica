@@ -71,7 +71,6 @@ class Translator(object):
         """
         if not self.access_token:
             self.access_token = self.get_access_token()
-        test_log(self.test, loc = self.access_token_url, texts = p["texts"], method = "post")
         final_url = "%s?%s" % (url, urllib_urlencode(p))
         request = urllib2_Request(final_url,
             headers={'Authorization': 'Bearer %s' % self.access_token}
@@ -95,7 +94,7 @@ class Translator(object):
             rvc = deepcopy(rv)
             for idx in range(0, len(rvc)) : 
                 rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
-            test_log(self.test, loc = final_url, response = rvc, method = "get", data = {})
+            test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = rvc))
         return rv
 
 

@@ -57,11 +57,18 @@ mock_rest = {
     "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
                                outp = {"token_type": "http://schemas.xmlsoap.org/ws/2009/11/swt-token-profile-1.0", "access_token": "http%3a%2f%2fschemas.xmlsoap.org%2fws%2f2005%2f05%2fidentity%2fclaims%2fnameidentifier=micalearning&http%3a%2f%2fschemas.microsoft.com%2faccesscontrolservice%2f2010%2f07%2fclaims%2fidentityprovider=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&Audience=http%3a%2f%2fapi.microsofttranslator.com&ExpiresOn=1448071220&Issuer=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&HMACSHA256=p2YmU56ljSJjtcQOpViQaKZ1JpEOZJiCGQJf5otxmpA%3d", "expires_in": "599", "scope": "http://api.microsofttranslator.com"}),
                          ],
-    "TranslatorRequest" : [ dict(inp = {'texts': '["\\u708e\\u70ed", "\\u708e", "\\u70ed"]', 'from': 'zh-CHS', 'options': 'null', 'to': 'en'} ,
-                                 outp = [{"TranslatedText": "Hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}, {"TranslatedText": "Inflammation", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [12]}, {"TranslatedText": "It's hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [8]}]), ],
-
-#    "TranslatorRequest" : [ dict(inp = {'texts': "[\"\\u4ece\\u524d\\u6709\\u4e2a\\u5c0f\\u5b69\"]", 'from': 'zh-CHS', 'options': 'null', 'to': 'en'} ,
-#                                 outp = [{"TranslatedText": "\u4ece\u524d\u6709\u4e2a\u5c0f\u5b69", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [6]}], "method": "get"}]), ],
+    "TranslatorRequest" : [ 
+                            {"outp" : [{"TranslatedText": "Hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}, {"TranslatedText": "Inflammation", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [12]}, {"TranslatedText": "It's hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [8]}], "inp" : {'texts': '["\\u708e\\u70ed", "\\u708e", "\\u70ed"]', 'from': 'zh-CHS', 'options': 'null', 'to': 'en'} },
+                            {"outp" : [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "Take care of", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [12]}], "inp": {"texts": "[\"\\u7167\\u5e94\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "\u91c7\u53d6", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u4fdd\u5065", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u7684", "From": "en", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Take\", \"care\", \"of\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "Wonder", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u7422\\u78e8\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "Modern", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u73b0\\u4ee3\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "\u73b0\u4ee3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Modern\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "Come out", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u51fa\\u6765\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "\u6765\u5427", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u51fa", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Come\", \"out\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                          ],
 
     #"" : [dict(inp = , outp = ),],
     #"" : [dict(inp = , outp = ),],
@@ -82,18 +89,25 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = ""
 
         for key in mock_rest.keys() : 
+            if not path.count(key) :
+                continue
+
             found = False
-            if path.count(key) :
-                tlog("  MOCKING: " + key)
-                for pair in mock_rest[key] :
-                    if url_parameters == pair["inp"] :
-                        found = True
-                        body = json_dumps(pair["outp"])
-                    else :
-                        tlog("  WARNING. NEVER Seen this input. =(")
-                    break
-            if found :
+            for pair in mock_rest[key] :
+                if url_parameters != pair["inp"] :
+                    #tlog("  " + str(url_parameters) + " != " + str(pair["inp"]))
+                    continue
+
+                tlog("  MOCKING: " + key + ": " + str(url_parameters))
+                found = True
+                body = json_dumps(pair["outp"])
                 break
+
+            if not found :
+                tlog("  WARNING. NEVER Seen this input: " + str(url_parameters))
+                continue
+
+            break
 
         return body 
 
@@ -815,6 +829,7 @@ tests_from_micadev9 = [
            common_urls["storylist"],
            common_urls["storylist"],
 
+           { "stop" : True },
         ]
 
 #add_oauth_tests_from_micadev7()
@@ -827,7 +842,6 @@ urls.append(common_urls["logout"])
 tlog("Tests: " + str(len(urls)))
 
 stop = run_tests()
-#stop = False
 
 if not stop :
     try:

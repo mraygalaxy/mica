@@ -884,7 +884,7 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
-    @couch_adapter.repeatable(3)
+    @couch_adapter.repeatable(5)
     def progress(self, req, story, progress_idx, grouplen, page) :
         error = False
         if progress_idx % 10 == 0 :
@@ -2509,7 +2509,7 @@ class MICA(object):
             del req.session.value["current_story"]
             req.session.save()
 
-    @couch_adapter.repeatable(3)
+    @couch_adapter.repeatable(5)
     def set_page(self, req, story, page) :
         if "current_page" not in story or story["current_page"] != str(page) :
             mdebug("Setting story " + story["name"] + " to page: " + str(page))
@@ -3470,7 +3470,7 @@ class MICA(object):
                 result["translated"]["pages"] = str(story["translating_pages"]) if "translating_pages" in story else "1"
                 return self.api(req, json = result)
 
-    @couch_adapter.repeatable(3)
+    @couch_adapter.repeatable(5)
     def render_finished(self, req, story) :
         name = story["name"]
         finished = True if req.http.params.get("finished") == "1" else False
@@ -3480,7 +3480,7 @@ class MICA(object):
         # Finished reviewing a story in review mode.
         return self.api(req, _("Finished"), json = {"uuid" : story["uuid"]})
 
-    @couch_adapter.repeatable(3)
+    @couch_adapter.repeatable(5)
     def render_reviewed(self, req, story) :
         name = story["name"]
         uuid = story["uuid"]
