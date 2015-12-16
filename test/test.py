@@ -829,7 +829,11 @@ tests_from_micadev9 = [
            common_urls["storylist"],
            common_urls["storylist"],
 
-           { "stop" : True },
+           # Next tests: 
+           # 1. Template the story uploads and test more stories
+           # 2. break the chat system
+
+#           { "stop" : True },
         ]
 
 #add_oauth_tests_from_micadev7()
