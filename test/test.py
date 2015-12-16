@@ -269,8 +269,8 @@ def run_tests() :
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
-                        tlog("  Uploading file: " + fname) 
-                        r = s.put("http://localhost" + move_data_to_url(url), files = {url["upload"] : open(fname, 'rb')})
+                        tlog("  Uploading file: " + fname)
+                        r = s.put("http://localhost" + move_data_to_url(url), headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
                     else :
                         r = s.put("http://localhost" + url["loc"], data = json_dumps(url["data"]))
                 stop = timest()
@@ -735,7 +735,7 @@ tests_from_micadev9 = [
 
            { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf", "method" : "get", "success" : None, "test_success" :  None},
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf/asample1.pdf", "method" : "put", "success" : None, "test_success" :  None, "upload" : "asample1.pdf", "forward_keys" : ["_rev/rev"], "data" : {} },
+           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf/asample1.pdf", "method" : "put", "success" : None, "test_success" :  None, "upload" : "asample1.pdf", "upload_type" : "application/pdf", "forward_keys" : ["_rev/rev"], "data" : {} },
 
            common_urls["storylist"],
            common_urls["storylist"],
@@ -777,7 +777,7 @@ tests_from_micadev9 = [
 
            { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt", "method" : "get", "success" : None, "test_success" :  None},
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt/family.txt", "method" : "put", "success" : None, "test_success" :  None, "upload" : "family.txt", "forward_keys" : ["_rev/rev"], "data" : {} },
+           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt/family.txt", "method" : "put", "success" : None, "test_success" :  None, "upload_type" : "text/plain", "upload" : "family.txt", "forward_keys" : ["_rev/rev"], "data" : {} },
 
            common_urls["storylist"],
            common_urls["storylist"],
