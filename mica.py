@@ -292,6 +292,7 @@ class MICA(object):
             self.views_ready[username] = 0
             req.db = self.dbs[username]
             self.prime_db(req)
+            sleep(1)
 
             mdebug("Installing view counter.")
             if username not in self.views_ready :
@@ -883,7 +884,9 @@ class MICA(object):
             finally :
                 self.transmutex.release()
 
+    @couch_adapter.repeatable(3)
     def progress(self, req, story, progress_idx, grouplen, page) :
+        error = False
         if progress_idx % 10 == 0 :
             self.transmutex.acquire()
             try :
@@ -893,9 +896,13 @@ class MICA(object):
                 tmpstory["translating_total"] = grouplen 
                 req.db[self.story(req, story['name'])] = tmpstory
             except couch_adapter.ResourceConflict, e :
+                error = e
                 mdebug("Failure to sync translating_current. No big deal: " + str(e))
             finally :
                 self.transmutex.release()
+
+        if error :
+            raise error
 
     def parse(self, req, story, page = False, live = False, recount = True) :
         name = story['name']
@@ -3463,6 +3470,7 @@ class MICA(object):
                 result["translated"]["pages"] = str(story["translating_pages"]) if "translating_pages" in story else "1"
                 return self.api(req, json = result)
 
+    @couch_adapter.repeatable(3)
     def render_finished(self, req, story) :
         name = story["name"]
         finished = True if req.http.params.get("finished") == "1" else False
@@ -3472,6 +3480,7 @@ class MICA(object):
         # Finished reviewing a story in review mode.
         return self.api(req, _("Finished"), json = {"uuid" : story["uuid"]})
 
+    @couch_adapter.repeatable(3)
     def render_reviewed(self, req, story) :
         name = story["name"]
         uuid = story["uuid"]
