@@ -108,6 +108,10 @@ class Processor(object) :
         return False
     
     @serial
+    def get_ipa(self, source) :
+        return self.get_ipa_lang(source)
+
+    @serial
     def parse_page(self, req, story, groups, page, temp_units = False, progress = False, error = False) :
         if temp_units :
             story["temp_units"] = []
@@ -313,10 +317,6 @@ class RomanizedSource(Processor) :
         self.srcdb = False
         self.structs = {}
         self.matches = {}
-
-    @serial
-    def get_ipa(self, source) :
-        return self.get_ipa_lang(source)
 
     def get_dictionaries(self) :
         flist = deepcopy(self.files)
