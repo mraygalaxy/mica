@@ -1026,6 +1026,12 @@ class MICA(object):
 
                 mdebug("Translating page " + str(iidx) + " complete. Online: " + str(online) + ", Offline: " + str(offline))
                 if not live :
+                    mdebug("Storing to: " + page_key)
+                    doc = story["pages"][str(iidx)]
+
+                    # This 'translated_at' is because of bug: https://issues.apache.org/jira/browse/COUCHDB-1415
+                    # Supposedly fixed in CouchDB 2.0
+                    doc["translated_at"] = timest()
                     req.db[page_key] = story["pages"][str(iidx)]
                     del story["pages"][str(iidx)]
 
