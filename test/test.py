@@ -825,8 +825,9 @@ tests_from_micadev10 = [
            common_urls["login"],
 
            # Next tests: 
-           # 1. Template the story uploads and test more stories
-           # 2. break the chat system
+           # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
+           # 2. Template the story uploads and test more stories
+           # 3. break the chat system
 
             # Make this the 'resetpassword' the last test. 
             # I really don't want to get the new password out of JSON right now.
