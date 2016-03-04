@@ -760,7 +760,7 @@ class MICA(object):
                 json["success"] = False
 
             #mverbose("Dumping: " + str(json))
-            if not mobile :
+            if not mobile and "cookie" in req.session.value :
                 json["cookie"] = req.session.value["cookie"]
 
             if "test_success" not in json :

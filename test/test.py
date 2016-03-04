@@ -13,6 +13,7 @@ from threading import Thread
 from binascii import hexlify as binascii_hexlify
 from logging.handlers import RotatingFileHandler 
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
+from copy import deepcopy
 
 import requests
 import docker
@@ -26,6 +27,7 @@ logger = getLogger("micatest")
 logger.setLevel(level=DEBUG)
 streamhandler = StreamHandler(sys.stderr)
 logger.addHandler(streamhandler)
+
 
 def tlog(*objs):
     logger.debug(*objs)
@@ -43,6 +45,8 @@ requests_log.propagate = True
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
+
+record = open(cwd + "../logs/test.log", 'w')
 
 from params import parameters, test
 from common import sdict, recursiveSetInDict, timest, getFromDict
@@ -241,11 +245,21 @@ def move_data_to_url(url) :
     return temp_url
 
 def run_tests() :
+    # Flatten the nested test groups into a single list of tests
+    flat_urls = []
+    for head_url in urls :
+        if isinstance(head_url, list) :
+            for sub_url in head_url :
+                flat_urls.append(sub_url)
+        else :
+            flat_urls.append(head_url)
+
+    tlog("Tests: " + str(len(flat_urls)))
     stop_test = False
     last_json = {}
     try:
-        for tidx in range(0, len(urls)) :
-            url = urls[tidx]
+        for tidx in range(0, len(flat_urls)) :
+            url = flat_urls[tidx]
             if "stop" in url and url["stop"] :
                 tlog("Stop requested.")
                 stop_test = True
@@ -273,7 +287,11 @@ def run_tests() :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
-            tlog("Test " + str(tidx) + ": " + url["method"].upper() + ": " + url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") + ", data: " + (str(url["data"]) if "data" in url else "none"))
+            tlogmsg = "Test " + str(tidx) + ": " + url["method"].upper() + ": " + url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") + ", data: " + (str(url["data"]) if "data" in url else "none")
+            tlog(tlogmsg)
+
+            record.write(tlogmsg + "\n")
+            record.flush()
 
             while True :
                 if url["method"] == "get" :
@@ -355,7 +373,7 @@ options = [
         hostname = 'jabber',
         name = 'jabber',
         tty = True,
-        ports = [5222, 22, 5280, 5223, 5281],
+        ports = [5280, 22, 5222, 5223, 5281],
         host_config = c.create_host_config(port_bindings = {
                 "22/tcp":   ("0.0.0.0", 4444),
                 "5222/tcp": ("0.0.0.0", 5222),
@@ -458,13 +476,65 @@ def add_oauth_tests_from_micadev10() :
 common_urls = { 
                 "storylist" :
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
+
+                "storylist_triple" : [
+                    { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
+                ],
+
                 "logout" :
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
+
                 "login" : 
                     { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
+
+                "relogin" : [
+                    { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
+                ],
                 "account" :
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
             }
+
+def init_and_translate(storyname) :
+    return [
+        # Need to retrieve the UUID again for the story initialization.
+        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = storyname), "check_job_running" : False},
+    ] + common_urls["storylist_triple"] + [
+        # This get is only to retrieve the UUID again for the story initialization.
+        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = storyname), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "check_job_running" : False},
+        { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
+    ] + common_urls["storylist_triple"]
+
+def file_story(filename, languagetype, filetype, mimetype) :
+    return [
+           { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = filetype, filename = filename, languagetype = languagetype, uploadfile = "1") },
+
+           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None},
+
+           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {} },
+
+        ] + common_urls["storylist_triple"]
+
+def txt_story(storyname, languagetype, source) :
+    
+    return [
+        { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = storyname, languagetype = languagetype, uploadtext = "1") },
+        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None },
+        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"] },
+
+    ] + common_urls["storylist_triple"]
+
 
 tests_from_micadev10 = [
             common_urls["logout"],
@@ -621,221 +691,70 @@ tests_from_micadev10 = [
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
 
            common_urls["account"],
+           common_urls["relogin"],
 
-           common_urls["logout"],
-           common_urls["login"],
+           txt_story("chinese_test", "zh-CHS,en", "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"),
+           init_and_translate("chinese_test"),
 
+           txt_story("english_test", "en,zh-CHS", "this is a test"),
+           init_and_translate("english_test"),
 
-           { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = "chinese_test", languagetype = "zh-CHS,en", uploadtext = "1") },
+           file_story("asample1.pdf", "zh-CHS,en", "pdf", "application/pdf"),
+           init_and_translate("asample1.pdf"),
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test", "method" : "get", "success" : None, "test_success" :  None },
+           file_story("family.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("family.txt"),
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:chinese_test", "format" : 2, "filetype" : "txt", "source_language" : "zh-CHS", "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : "chinese_test", "translated": False, "new" : True, "target_language" : "en", "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"] },
+           file_story("asample2.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("asample2.txt"),
 
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
+           file_story("bao.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("bao.txt"),
 
-           # Need to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test", "method" : "get", "success" : None, "test_success" :  None},
+           file_story("book1234.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("book1234.txt"),
 
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = "chinese_test"), "check_job_running" : False},
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
+           file_story("little_bear.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("little_bear.txt"),
 
-           { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = "english_test", languagetype = "en,zh-CHS", uploadtext = "1") },
+           file_story("little_bird.txt", "zh-CHS,en", "txt", "text/plain"),
+           init_and_translate("little_bird.txt"),
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:english_test", "format" : 2, "filetype" : "txt", "source_language" : "en", "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : "english_test", "translated": False, "new" : True, "target_language" : "zh-CHS", "txtsource" :"this is a test"}, "forward_keys" : ["_rev"] },
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # Need to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = "english_test"), "check_job_running" : False},
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # This get is only to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:chinese_test", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = "chinese_test"), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           # This get is only to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:english_test", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(human = 0, alien = "home", translate = 1, name = "english_test"), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = "pdf", filename = "asample1.pdf", languagetype = "zh-CHS,en", uploadfile = "1") },
-
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf/asample1.pdf", "method" : "put", "success" : None, "test_success" :  None, "upload" : "asample1.pdf", "upload_type" : "application/pdf", "forward_keys" : ["_rev/rev"], "data" : {} },
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # Need to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf", "method" : "get", "success" : None, "test_success" :  None },
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = "asample1.pdf"), "check_job_running" : False },
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # This get is only to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:asample1.pdf", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(human = 0, alien = "home", translate = 1, name = "asample1.pdf"), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = "txt", filename = "family.txt", languagetype = "zh-CHS,en", uploadfile = "1") },
-
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt/family.txt", "method" : "put", "success" : None, "test_success" :  None, "upload_type" : "text/plain", "upload" : "family.txt", "forward_keys" : ["_rev/rev"], "data" : {} },
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # Need to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt", "method" : "get", "success" : None, "test_success" :  None },
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = "family.txt"), "check_job_running" : False },
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           # This get is only to retrieve the UUID again for the story initialization.
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:family.txt", "method" : "get", "success" : None, "test_success" :  None},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" :  True, "data" : dict(human = 0, alien = "home", translate = 1, name = "family.txt"), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", reviewed = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 0), "check_job_running" : False},
-
-           { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", finished = 1), "check_job_running" : False},
-
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
+#           { "stop" : True },
 
            # Tests that cause purges and long map reduces.
-           common_urls["storylist"],
-           common_urls["storylist"],
-
            { "loc" : "/api?human=0&alien=home&forget=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           common_urls["storylist"],
-           common_urls["storylist"],
+           common_urls["storylist_triple"],
 
            { "loc" : "/api?human=0&alien=home&delete=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a&name=bao_gong_interrogates_a_rock.txt", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           common_urls["storylist"],
-           common_urls["storylist"],
+           common_urls["storylist_triple"],
+
+           common_urls["relogin"],
 
            # Long-running, but excellent test to delete a large story:
-           common_urls["storylist"],
-
-           common_urls["logout"],
-           common_urls["login"],
-
            { "loc" : "/api?human=0&alien=home&forget=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           common_urls["storylist"],
-           common_urls["storylist"],
-           common_urls["storylist"],
+           common_urls["storylist_triple"],
 
            { "loc" : "/api?human=0&alien=home&delete=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&name=301_book1.pdf", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           common_urls["storylist"],
-           common_urls["storylist"],
-
-           common_urls["logout"],
-           common_urls["login"],
+           common_urls["storylist_triple"],
+           common_urls["relogin"],
 
            # Next tests: 
            # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
            # 2. Template the story uploads and test more stories
            # 3. break the chat system
 
-            # Make this the 'resetpassword' the last test. 
-            # I really don't want to get the new password out of JSON right now.
+           # Make this the 'resetpassword' the last test. 
+           # I really don't want to get the new password out of JSON right now.
            { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True },
 
            common_urls["account"],
 
-#           { "stop" : True },
+#          { "stop" : True },
         ]
 
 add_oauth_tests_from_micadev10()
@@ -844,10 +763,10 @@ sleep(5)
 
 urls.append(common_urls["logout"])
 
-tlog("Tests: " + str(len(urls)))
-
 stop = run_tests()
 #stop = True 
+
+record.close()
 
 if not stop :
     try:
