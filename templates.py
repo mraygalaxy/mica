@@ -12,6 +12,7 @@ from cStringIO import StringIO
 from common import *
 from os import path as os_path
 from re import compile as re_compile
+from traceback import format_exc, print_stack
 
 import pyratemp
 
@@ -23,6 +24,11 @@ for l, readable in lang.iteritems() :
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 
+def unicheck(var) :
+    if isinstance(var, unicode) :
+        return var.encode("utf-8")
+    return var
+
 class MessagesElement(Element) :
     def __init__(self, req) :
         super(MessagesElement, self).__init__() 
@@ -31,7 +37,7 @@ class MessagesElement(Element) :
             req.messages = req.messages.replace("<", "&#60;").replace(">", "&#62;")
         xstring = "<div xmlns:t='http://twistedmatrix.com/ns/twisted.web.template/0.1' t:render='messages'><div class='img-rounded jumbotron' style='padding: 10px; margin: 0 auto'><t:attr name='style'><t:slot name='error_visible'/></t:attr> " + req.messages + "</div></div>"
         #mverbose("Rendering: " + xstring)
-        self.loader = XMLString(xstring)
+        self.loader = XMLString(unicheck(xstring))
 
     @renderer
     def messages(self, request, tag) :
@@ -74,7 +80,7 @@ class CommonElement(Element) :
         fh.close()
         pt = pyratemp.Template(f)
         #mverbose("Rendered: " + pt(**conditionals))
-        self.loader = XMLString(pt(**conditionals))
+        self.loader = XMLString(unicheck(pt(**conditionals)))
         #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
     @renderer
@@ -445,7 +451,9 @@ class FrontPageElement(CommonElement) :
                 div = tags.div(**{"class" : "item", "style" : "text-align: center"})
 
             div(tags.br(), tags.br(), tags.br())
-            p = XMLString("<div>" + page + "</div>")
+            if isinstance(page, unicode) :
+                page = page.encode("utf-8")
+            p = XMLString("<div>" + unicheck(page) + "</div>")
             div(tags.h1(style="margin: 0 auto; width: 70%")(p.load()))
             div(tags.br(), tags.br(), tags.br())
 
@@ -838,6 +846,8 @@ def run_template(req, which, content = False) :
         else :
             obj = which(req)
     except Exception, e :
+        for line in format_exc().splitlines() :
+            mwarn(line)
         merr("Failed to instantiate element: " + str(e) + " \n" + str(content))
         raise e
 

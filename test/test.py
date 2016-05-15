@@ -23,6 +23,7 @@ import BaseHTTPServer
 import httplib
 import logging
 
+
 logger = getLogger("micatest")
 logger.setLevel(level=DEBUG)
 streamhandler = StreamHandler(sys.stderr)
@@ -34,14 +35,15 @@ def tlog(*objs):
 
 environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+level = logging.WARN
 '''
 httplib.HTTPConnection.debuglevel = 2
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(logging.DEBUG)
-requests_log.propagate = True
 '''
+logging.basicConfig()
+logging.getLogger().setLevel(level)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(level)
+requests_log.propagate = True
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
@@ -52,6 +54,7 @@ from params import parameters, test
 from common import sdict, recursiveSetInDict, timest, getFromDict
 from mica import go
 from pyquery import PyQuery as pq
+import couch_adapter
 
 server_port = 9888
 
@@ -199,6 +202,28 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
         result = self.socket.accept()
         result[0].settimeout(10)
         return result
+
+def change_timeout(timeout) :
+    tlog("Changing timeout to " + str(timeout))
+    s = requests.Session()
+    r = s.post("http://localhost:5985/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]})
+    if r.status_code not in [200, 201] :
+        raise Exception("Failed to login for timeout change")
+
+    r = s.get("http://localhost:5985/_config")
+
+    if r.status_code not in [200, 201] :
+        raise Exception("Failed to lookup configuration")
+
+    config = r.json()
+
+    r = s.put("http://localhost:5985/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"")
+
+    if r.status_code not in [200, 201] :
+        raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
+
+    # Old timeout is returned
+    return r.text
 
 def oauth_responder(httpd_server) :
     sa = httpd_server.socket.getsockname()
@@ -763,8 +788,18 @@ sleep(5)
 
 urls.append(common_urls["logout"])
 
-stop = run_tests()
-#stop = True 
+try :
+    old_timeout = int(change_timeout(5)[1:-2])
+except Exception, e :
+    tlog(str(e))
+
+stop = True
+try :
+    stop = run_tests()
+except Exception, e :
+    pass
+
+change_timeout(old_timeout)
 
 record.close()
 
