@@ -226,14 +226,13 @@ class MICA(object):
     def tofrom(self, story) :
         return story["source_language"] + "," + story["target_language"]
 
-    def authenticate(self, username, password, auth_url, from_third_party = False) :
+    def authenticate(self, username, password, auth_url) :
         mdebug("Authenticating to: " + str(auth_url))
 
         username = username.lower()
         lookup_username = username
 
-        if from_third_party :
-            lookup_username = from_third_party["username"].lower()
+        if not password :
             password = params["admin_pass"]
             username = params["admin_user"].lower()
 
@@ -270,7 +269,7 @@ class MICA(object):
         username = req.session.value["username"].lower()
         self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
 
-    def verify_db(self, req, dbname, password = False, cookie = False, users = False, from_third_party = False) :
+    def verify_db(self, req, dbname, cookie = False, password = False) :
         username = req.session.value["username"].lower()
 
         if username not in self.dbs or not self.dbs[username] : 
@@ -280,13 +279,19 @@ class MICA(object):
                 self.dbs[username] = self.db
             else :
                 address = req.session.value["address"] if "address" in req.session.value else self.credentials()
-                if not from_third_party :
-                    cs = self.db_adapter(address, username, password, cookie)
-                else :
-                    cs = self.db_adapter(address, params["admin_user"], params["admin_pass"], cookie)
-
-                req.session.value["cookie"] = cs.cookie
-                req.session.save()
+                # In the past, we were interacting with user databases using their
+                # own credentials, but due to CouchDB timeouts, we need a reliable
+                # way to refresh the cookie without setting our own timeout and
+                # without storing user passwords in memory. At the most, they
+                # should remain salted and unrecoverable in couchdb.
+                # Thus, we depend on the admin password to perform all those
+                # interactions, but javascript (via chat) still depeneds on 
+                # directly communicating with couchdb. We are already doing it
+                # this way for oauth-based databases, so it's not a big deal.
+                cs = self.db_adapter(address, params["admin_user"], params["admin_pass"], cookie, refresh = True)
+                if password :
+                    req.session.value["cookie"] = cs.get_cookie(address, username, password)
+                    req.session.save()
                 self.dbs[username] = cs[dbname]
 
             self.views_ready[username] = 0
@@ -380,7 +385,7 @@ class MICA(object):
             self.cs = self.db_adapter(params["couch"])
         else :
             if params["admin_user"] and params["admin_pass"] :
-                self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
+                self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"], refresh = True)
                 self.userdb = self.cs["_users"]
 
         self.first_request = {}
@@ -463,15 +468,15 @@ class MICA(object):
         if not self.userdb.doc_exist("org.couchdb.user:" + username) :
             mdebug("Creating user in _user database...")
             user_doc = { "name" : username,
-                           "password" : password,
-                           "roles": [] if admin else [username + "_master"],
-                           "type": "user",
-                           "mica_database" : dbname,
-                           "language" : language,
-                           "learnlanguage" : "en",
-                           "date" : timest(),
-                           "email" : email,
-                           "source" : source,
+                         "password" : password,
+                         "roles": [] if admin else [username + "_master"],
+                         "type": "user",
+                         "mica_database" : dbname,
+                         "language" : language,
+                         "learnlanguage" : "en",
+                         "date" : timest(),
+                         "email" : email,
+                         "source" : source,
                           }
             try :
                 self.userdb["org.couchdb.user:" + username] = user_doc 
@@ -588,7 +593,6 @@ class MICA(object):
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
                 username = req.session.value["username"]
-                cookie = False
                 if username not in self.dbs :
                     if mobile :
                         # Couchbase mobile can do cookie authentication, we're just not using it yet....
@@ -601,12 +605,8 @@ class MICA(object):
                             mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                         req.session.value["port"] = self.db.listen(username, req.session.value["password"], params["local_port"])
                         req.session.save()
-                    else :
-                        # On the server, use cookies to talk to CouchDB
-                        cookie = req.session.value["cookie"]
-                        mdebug("Reusing old cookie: " + str(cookie) + " for user " + username)
                 try :
-                    self.verify_db(req, req.session.value["database"], cookie = cookie)
+                    self.verify_db(req, req.session.value["database"])
                     resp = self.render(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
@@ -3881,10 +3881,10 @@ class MICA(object):
                             try :
                                 auth_user['password'] = newpassword
                                 del self.dbs[username]
-                                self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                                self.verify_db(req, "_users")
                                 req.db["org.couchdb.user:" + username] = auth_user
                                 del self.dbs[username]
-                                self.verify_db(req, req.session.value["database"], newpassword)
+                                self.verify_db(req, req.session.value["database"], password = newpassword)
                                 req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed")
                                 json["test_success"] = True
                             except Exception, e :
@@ -3896,17 +3896,17 @@ class MICA(object):
             else :
                 newpassword = binascii_hexlify(os_urandom(4))
 
-                auth_user, reason = self.authenticate(username, False, req.session.value["address"], from_third_party = {"username" : username})
+                auth_user, reason = self.authenticate(username, False, req.session.value["address"])
                 if not auth_user :
                     req.accountpageresult = _("Could not lookup your account! Try again") + ": " + str(reason)
                 else :
                     try :
                         auth_user['password'] = newpassword
                         del self.dbs[username]
-                        self.verify_db(req, "_users", cookie = req.session.value["cookie"])
+                        self.verify_db(req, "_users")
                         req.db["org.couchdb.user:" + username] = auth_user
                         del self.dbs[username]
-                        self.verify_db(req, req.session.value["database"], newpassword)
+                        self.verify_db(req, req.session.value["database"], password = newpassword)
                         req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ": " + newpassword
                         json["test_success"] = True
                     except Exception, e :
@@ -4488,6 +4488,8 @@ class MICA(object):
                 return False, _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
             req.messages = "<h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>" 
 
+        from_third_party["password"] = password
+
         return True, from_third_party
 
     def render_connect(self, req, from_third_party) :
@@ -4496,9 +4498,8 @@ class MICA(object):
 
         if from_third_party :
             username = from_third_party["email"].lower()
-            req.session.value["from_third_party"] = True 
+            password = from_third_party["password"]
         else :
-            req.session.value["from_third_party"] = False 
             if params["mobileinternet"] and params["mobileinternet"].connected() == "none" :
                 # Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
                 return self.bad_api(req, _("To login for the first time and begin synchronization with the website, you must activate internet access."))
@@ -4531,7 +4532,7 @@ class MICA(object):
 
         mdebug("authenticating...")
 
-        auth_user, reason = self.authenticate(username, password, address, from_third_party = from_third_party)
+        auth_user, reason = self.authenticate(username, password, address)
 
         if not auth_user :
             mwarn("Login failed; " + str(reason))
@@ -4543,7 +4544,7 @@ class MICA(object):
         req.session.save()
 
         mdebug("verifying...")
-        self.verify_db(req, auth_user["mica_database"], password = password, from_third_party = from_third_party)
+        self.verify_db(req, auth_user["mica_database"], password = password)
 
         if not mobile :
             if "temp_jabber_pw" not in params :
@@ -4555,7 +4556,7 @@ class MICA(object):
                     # If the userdb times out, we do have to reacquire it,
                     # even though its used in other places. Login-time will be the only
                     # place it gets updated.
-                    self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"])
+                    self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"], refresh = True)
                     self.userdb = self.cs["_users"]
                     if self.userdb :
                         self.db = self.userdb

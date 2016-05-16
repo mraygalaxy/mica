@@ -25,52 +25,6 @@ except ImportError, e :
         mverbose("pyjnius and pyobjus not available. Probably on a server.")
 
 
-def couchdb_pager(db, view_name='_all_docs',
-                  startkey=None, startkey_docid=None,
-                  endkey=None, endkey_docid=None, bulk=5000, stale = False):
-    # Request one extra row to resume the listing there later.
-    options = {'limit': bulk + 1}
-    if stale :
-        options["stale"] = stale
-    if startkey:
-        options['startkey'] = startkey
-        if startkey_docid:
-            options['startkey_docid'] = startkey_docid
-    if endkey:
-        options['endkey'] = endkey
-        if endkey_docid:
-            options['endkey_docid'] = endkey_docid
-    done = False
-    server_errors_left = 3
-    while not done:
-        try:
-            view = db.view(view_name, **options)
-            rows = []
-            # If we got a short result (< limit + 1), we know we are done.
-            if len(view) <= bulk:
-                done = True
-                rows = view.rows
-            else:
-                # Otherwise, continue at the new start position.
-                rows = view.rows[:-1]
-                last = view.rows[-1]
-                options['startkey'] = last.key
-                options['startkey_docid'] = last.id
-
-            for row in rows:
-                yield row
-        except couch_ServerError, e :
-            # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
-            ((status, error),) = e.args
-            mwarn("Server error: " + str(status) + " " + str(error))
-            if status == 500 :
-                if server_errors_left > 0 :
-                    mwarn("Server errors left: " + str(server_errors_left))
-                    server_errors_left -= 1
-                    continue
-                else :
-                    merr("No server_errors_left remaining.")
-            raise e 
 
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):
@@ -130,40 +84,73 @@ class repeatable(object):
                 
         return wrapped_f
 
+def reauth(func):
+    def wrapper(self, *args, **kwargs):
+        try :
+            result = func(self, *args, **kwargs)
+        except Unauthorized, e :
+            mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
+            try :
+                self.server.cookie = False
+                self.server.auth()
+                self.db.resource.headers["Cookie"] = self.server.cookie
+                result = func(self, *args, **kwargs)
+            except Exception, e :
+                raise CommunicationError("Failed to re-authenticate: " + str(e))
+
+        return result
+    return wrapper
+
 class MicaDatabase(object) :
     def try_get(self, name) :
         return self.__getitem__(name, false_if_not_found = True)
 
-class MicaDatabaseCouchDB(MicaDatabase) :
-    def __init__(self, db) :
-        self.db = db
+def check_for_unauthorized(e) :
+    ((status, error),) = e.args
+    mwarn("Server error: " + str(status) + " " + str(error))
+    if int(status) == 413 :
+        mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
+    if int(status) == 403 :
+        raise Unauthorized
+    raise CommunicationError("MICA Unvalidated: " + str(e))
 
+
+class MicaDatabaseCouchDB(MicaDatabase) :
+    def __init__(self, db, server) :
+        self.db = db
+        self.username = False
+        self.password = False
+        self.server = server
+
+    @reauth
     def get_security(self) :
         return self.db.security
 
+    @reauth
     def set_security(self, doc) :
         self.db.security = doc
 
+    @reauth
     def __setitem__(self, name, doc) :
         try :
             self.db[name] = doc
-        except Unauthorized, e :
-            raise CommunicationError("MICA Unauthorized: " + str(e))
         except couch_ResourceNotFound, e :
+            if name.count("org.couchdb.user") :
+                raise Unauthorized
             mdebug("Set key not found error: " + name)
             raise ResourceNotFound(str(e), e)
         except couch_ResourceConflict, e :
             mdebug("Set key conflict error: " + name)
             raise ResourceConflict(str(e), e)
         except couch_ServerError, e :
-            mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
-            raise CommunicationError("MICA Unvalidated: " + str(e))
+            check_for_unauthorized(e)
 
+    @reauth
     def __getitem__(self, name, false_if_not_found = False) :
         try :
             return self.db[name]
-        except Unauthorized, e :
-            raise CommunicationError("MICA Unauthorized: " + str(e))
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
             '''
             out = ""
@@ -177,27 +164,36 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             else :
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
 
+    @reauth
     def __delitem__(self, name) :
-        doc = self.db[name]
+        try :
+            doc = self.db[name]
 
-        revs = []
+            revs = []
 
-        if "_conflicts" in doc :
-            mdebug("Adding conflict revisions.")
-            revs += doc["_conflicts"]
-        if "_deleted_conflicts" in doc :
-            mdebug("Adding deleted conflict revisions.")
-            revs += doc["_deleted_conflicts"]
+            if "_conflicts" in doc :
+                mdebug("Adding conflict revisions.")
+                revs += doc["_conflicts"]
+            if "_deleted_conflicts" in doc :
+                mdebug("Adding deleted conflict revisions.")
+                revs += doc["_deleted_conflicts"]
 
-        for rev in revs :
-            olddoc = self.db.get(name, rev=rev)
-            self.db.delete(olddoc)
+            for rev in revs :
+                olddoc = self.db.get(name, rev=rev)
+                self.db.delete(olddoc)
 
-        del self.db[name]
+            del self.db[name]
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
+    @reauth
     def delete_attachment(self, doc, filename) :
-        self.db.delete_attachment(doc, filename)
+        try :
+            self.db.delete_attachment(doc, filename)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
+    @reauth
     def put_attachment(self, name, filename, contents, new_doc = False) :
         if not new_doc :
             trydelete = True
@@ -214,8 +210,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 try :
                     doc["_rev"] = self.db[name]["_rev"]
                     mdebug("Old revision found.")
-                except Unauthorized, e :
-                    raise CommunicationError("MICA Unauthorized: " + str(e))
+                except couch_ServerError, e :
+                    check_for_unauthorized(e)
                 except couch_ResourceNotFound, e :
                     mdebug("No old revision found.")
                     pass
@@ -231,6 +227,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
         return self.db.put_attachment(doc, contents, filename)
 
+    @reauth
     def get_attachment(self, name, filename) :
         obj = self.db.get_attachment(name, filename)
         if obj is not None :
@@ -238,6 +235,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         else :
             raise CommunicationError("No such attachment: " + name + " => " + filename)
 
+    @reauth
     def get_attachment_to_path(self, name, filename, path) :
         sourcebytes = 0
         obj = self.db.get_attachment(name, filename)
@@ -262,11 +260,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
     def get_attachment_meta(self, name, filename) :
         return self.__getitem__(name)["_attachments"][filename]
 
+    @reauth
     def doc_exist(self, name, true_if_deleted = False) :
         try :
             self.db[name]
-        except Unauthorized, e :
-            raise CommunicationError("MICA Unauthorized: " + str(e))
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
             #mdebug(str(e.args))
             ((error, reason),) = e.args
@@ -285,14 +284,67 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     return False
                 except couch_ResourceNotFound, e :
                     merr( "Failed to purge old revisions.")
-                except Unauthorized, e :
-                    raise CommunicationError("MICA Unauthorized: " + str(e))
+                except couch_ServerError, e :
+                    check_for_unauthorized(e)
 
                 mdebug("Doc was deleted, returning true")
                 return None 
             return False
         return True
 
+    def couchdb_pager(self, view_name='_all_docs',
+                      startkey=None, startkey_docid=None,
+                      endkey=None, endkey_docid=None, bulk=5000, stale = False):
+        # Request one extra row to resume the listing there later.
+        options = {'limit': bulk + 1}
+        if stale :
+            options["stale"] = stale
+        if startkey:
+            options['startkey'] = startkey
+            if startkey_docid:
+                options['startkey_docid'] = startkey_docid
+        if endkey:
+            options['endkey'] = endkey
+            if endkey_docid:
+                options['endkey_docid'] = endkey_docid
+        done = False
+        server_errors_left = 3
+        while not done:
+            try:
+                view = self.db.view(view_name, **options)
+                rows = []
+                # If we got a short result (< limit + 1), we know we are done.
+                if len(view) <= bulk:
+                    done = True
+                    rows = view.rows
+                else:
+                    # Otherwise, continue at the new start position.
+                    rows = view.rows[:-1]
+                    last = view.rows[-1]
+                    options['startkey'] = last.key
+                    options['startkey_docid'] = last.id
+
+                for row in rows:
+                    yield row
+            except couch_ServerError, e :
+                # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
+                ((status, error),) = e.args
+                mwarn("Server error: " + str(status) + " " + str(error))
+                if status == 403 :
+                    mwarn("Re-authenticating.")
+                    self.server.cookie = False
+                    self.server.auth()
+                    self.db.resource.headers["Cookie"] = self.server.cookie
+                    continue
+                elif status == 500 :
+                    if server_errors_left > 0 :
+                        mwarn("Server errors left: " + str(server_errors_left))
+                        server_errors_left -= 1
+                        continue
+                    else :
+                        merr("No server_errors_left remaining.")
+                raise e 
+    @reauth
     def view(self, *args, **kwargs) :
         view_name = args[0]
         mverbose("Query view: " + view_name)
@@ -310,16 +362,17 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             for result in self.db.view(*args, **kwargs) :
                 yield result
         else :
-            args = [self.db]
             kwargs["view_name"] = view_name
             kwargs["bulk"] = 50
 
-            for result in couchdb_pager(*args, **kwargs) :
+            for result in self.couchdb_pager(**kwargs) :
                 yield result
 
+    @reauth
     def compact(self, *args, **kwargs) :
         self.db.compact(*args, **kwargs)
 
+    @reauth
     def cleanup(self, *args, **kwargs) :
         self.db.cleanup(*args, **kwargs)
 
@@ -338,45 +391,71 @@ class MicaDatabaseCouchDB(MicaDatabase) :
     def detach_thread(self) :
         pass
 
-       
 # FIXME: need try's here so we return our "NotFound"
 #        instead of our not found
 
 class MicaServerCouchDB(object) :
-    def __init__(self, url, username = False, password = False, cookie = False) :
-        self.url = url
-        self.cookie = cookie
-        self.server = Server(url)
+    def get_cookie(self, url, username, password) :
+        username_unquoted = myquote(username)
+        password_unquoted = myquote(password)
+
+        full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
+
+        tmp_server = Server(full_url)
+
+        mverbose("Requesting cookie.")
+        try :
+            code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+        except UnicodeDecodeError :
+            # CouchDB folks messed up badly. This is ridiculous that I have
+            # to do this
+            username_unquoted = username_unquoted.encode("latin1").decode("latin1")
+            password_unquoted = password_unquoted.encode("latin1").decode("latin1")
+            code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+
+        if (code != 200) :
+            raise CommunicationError("MICA Unauthorized: " + username)
+
+        cookie = message["Set-Cookie"].split(";", 1)[0].strip()
+        mverbose("Received cookie: " + cookie)
+
+        return cookie
+
+    def auth(self, username = False, password = False) :
+        if not username or not password :
+            assert(self.username)
+            assert(self.password)
+            assert(self.refresh)
+
+            username = self.username
+            password = self.password
 
         if not self.cookie :
             mverbose("No cookie for user: " + username)
             
-            username_unquoted = myquote(username)
-            password_unquoted = myquote(password)
-
-            full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
-
-            tmp_server = Server(full_url)
-
-            mverbose("Requesting cookie.")
-            try :
-                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
-            except UnicodeDecodeError :
-                # CouchDB folks messed up badly. This is ridiculous that I have
-                # to do this
-                username_unquoted = username_unquoted.encode("latin1").decode("latin1")
-                password_unquoted = password_unquoted.encode("latin1").decode("latin1")
-                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
-
-            if (code != 200) :
-                raise CommunicationError("MICA Unauthorized: " + username)
-
-            self.cookie = message["Set-Cookie"].split(";", 1)[0].strip()
-            mverbose("Received cookie: " + self.cookie)
+            self.cookie = self.get_cookie(self.url, username, password)
         else :
-            mdebug("Reusing cookie: " + self.cookie)
+            mverbose("Reusing cookie: " + self.cookie)
 
+        assert(self.cookie)
         self.server.resource.headers["Cookie"] = self.cookie
+        
+    def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
+        self.url = url
+        self.cookie = cookie
+        self.refresh = refresh
+        if refresh :
+            self.username = username
+            self.password = password
+
+        self.server = Server(url)
+
+        if refresh :
+            assert(self.url)
+            assert(self.username)
+            assert(self.password)
+
+        self.auth(username, password)
 
     def __getitem__(self, dbname) :
         try :
@@ -384,7 +463,7 @@ class MicaServerCouchDB(object) :
                 db = self.server[dbname]
             else :
                 db = self.server.create(dbname)
-            return MicaDatabaseCouchDB(db)
+            return MicaDatabaseCouchDB(db, self)
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: dbname: " + dbname + " " + str(e))
 
