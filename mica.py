@@ -179,13 +179,14 @@ def prefix(uri) :
     return (address, path)
 
 class Params(object) :
-    def __init__(self, environ, session):
+    def __init__(self, environ):
         self.pid = "none"
         self.http = Request(environ)  
         self.not_replicated = False
         self.human = True if int(self.http.params.get("human", "1")) else False
         self.messages = ""
         self.action = self.http.path[1:] if len(self.http.path) > 0 else None
+        self.environ = environ
         minfo("Request: " + self.http.url + " action: " + self.action)
         self.api = False
         if self.action is None or self.action == "":
@@ -199,18 +200,6 @@ class Params(object) :
             self.api = True
             self.action = operation 
 
-        self.session = session
-        
-        if 'connected' not in self.session.value :
-            mdebug("New session. Setting connected to false.")
-            self.session.value['connected'] = False
-
-        if "language" not in self.session.value and "HTTP_ACCEPT_LANGUAGE" in environ:
-            self.session.value["language"] = environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
-            mdebug("Setting session language to browser language: " + self.session.value["language"])
-            self.session.save()
-                
-        self.session.save()
         self.unparsed_uri = self.http.url
         self.uri = self.http.path
         self.active = None 
@@ -223,149 +212,6 @@ class Params(object) :
             self.bootstrappath = self.uri + "/.." + relative_prefix + "/bootstrap"
 
 class MICA(object):
-    def tofrom(self, story) :
-        return story["source_language"] + "," + story["target_language"]
-
-    def authenticate(self, username, password, auth_url) :
-        mdebug("Authenticating to: " + str(auth_url))
-
-        username = username.lower()
-        lookup_username = username
-
-        if not password :
-            password = params["admin_pass"]
-            username = params["admin_user"].lower()
-
-        lookup_username_unquoted = myquote(str(lookup_username))
-        username_unquoted = myquote(str(username))
-        userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
-
-        for attempt in range(0, 4) :
-            try :
-                mdebug("Authentication attempt #" + str(attempt))
-                ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
-                ureq.add_header('Accept', 'application/json')
-                ureq.add_header("Content-type", "application/x-www-form-urlencoded")
-                ureq.add_header('Authorization', userData)
-                res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
-                rr = res.read()
-                mdebug("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
-                return json_loads(rr), False
-            except urllib2_HTTPError, e : 
-                if e.code == 401 :
-                    return False, _("Invalid credentials. Please try again") + "."
-                mdebug("HTTP error: " + username + " " + str(e))
-                error = "(HTTP code: " + str(e.code) + ")"
-            except urllib2_URLError, e :
-                mdebug("URL Error: " + username + " " + str(e))
-                error = "(URL error: " + str(e.reason) + ")"
-            except Exception, e :
-                mdebug("Unknown error: " + username + " " + str(e))
-                error = "(Unknown error: " + str(e) + ")"
-
-        return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
-
-    def prime_db(self, req, specific_views = False) :
-        username = req.session.value["username"].lower()
-        self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
-
-    def verify_db(self, req, dbname, cookie = False, password = False) :
-        username = req.session.value["username"].lower()
-
-        if username not in self.dbs or not self.dbs[username] : 
-            mdebug("Database not set. Requesting object.")
-            if mobile :
-                mdebug("Setting mobile db to prexisting object.")
-                self.dbs[username] = self.db
-            else :
-                address = req.session.value["address"] if "address" in req.session.value else self.credentials()
-                # In the past, we were interacting with user databases using their
-                # own credentials, but due to CouchDB timeouts, we need a reliable
-                # way to refresh the cookie without setting our own timeout and
-                # without storing user passwords in memory. At the most, they
-                # should remain salted and unrecoverable in couchdb.
-                # Thus, we depend on the admin password to perform all those
-                # interactions, but javascript (via chat) still depeneds on 
-                # directly communicating with couchdb. We are already doing it
-                # this way for oauth-based databases, so it's not a big deal.
-                cs = self.db_adapter(address, params["admin_user"], params["admin_pass"], cookie, refresh = True)
-                if password :
-                    req.session.value["cookie"] = cs.get_cookie(address, username, password)
-                    req.session.save()
-                self.dbs[username] = cs[dbname]
-
-            self.views_ready[username] = 0
-            req.db = self.dbs[username]
-            self.prime_db(req)
-            sleep(1)
-
-            mdebug("Installing view counter.")
-            if username not in self.views_ready :
-                self.views_ready[username] = 0
-
-        req.db = self.dbs[username]
-
-        if req.db.doc_exist(self.acct(username)) :
-            user = req.db[self.acct(username)]
-
-    def acct(self, name) :
-        return "MICA:accounts:" + name
-
-    def key_common(self, req) :
-        return "MICA:" + req.session.value['username']
-        
-    def story(self, req, key) :
-        return self.key_common(req) + ":stories:" + key
-
-    # How many days since 1970 instead of seconds
-    def current_day(self) :
-        return (int(timest()) / (60*60*24))
-    
-    def current_period(self, period_key, current_day = False):
-        return int(current_day if current_day else self.current_day()) / counts[period_key] 
-
-    def chat_name(self, period, index, peer, current_day, extra = "") :
-        return "chat;" + period + ";" + str(index) + ";" + peer + extra
-
-    def chat(self, req, period, index, peer, current_day, extra = "") :
-        return self.story(req, self.chat_name(period, index, peer, current_day, extra))
-
-    def chat_period_name(self, period_key, peer, current_day, extra = "") :
-        return self.chat_name(period_key, self.current_period(period_key, current_day), peer, extra)
-
-    def chat_period(self, req, period_key, peer, current_day, extra = "") :
-        return self.chat(req, period_key, self.current_period(period_key, current_day), peer, extra)
-
-    def index(self, req, key) :
-        return self.key_common(req) + ":story_index:" + key 
-    
-    def merge(self, req, key) :
-        return self.key_common(req) + ":mergegroups:" + key 
-    
-    def splits(self, req, key) :
-        return self.key_common(req) + ":splits:" + key 
-    
-    def tones(self, req, key) :
-        return self.key_common(req) + ":tonechanges:" + key 
-    
-    def memorized(self, req, key):
-        return self.key_common(req) + ":memorized:" + key 
-    
-    def credentials(self) :
-        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"] + (params["couch_path"] if ("couch_path" in params and params["couch_path"] != "") else ""))
-
-    def install_local_language(self, req, language = False) :
-        if language :
-            l = language
-        elif "language" in req.session.value :
-            l = req.session.value["language"]
-        else :
-            l = get_global_language()
-
-        catalogs.language = l.split("-")[0]
-
-        return l
-        
     def __init__(self, db_adapter):
         self.serial = Serializable(params["serialize_couch_on_mobile"])
         self.general_processor = Processor(self, params)
@@ -417,6 +263,7 @@ class MICA(object):
             mverbose("Checking database access")
             if mobile :
                 self.db = self.cs[params["local_database"]]
+                self.sessiondb = self.db
             else :
                 if self.userdb :
                     self.db = self.userdb
@@ -424,9 +271,44 @@ class MICA(object):
 
                     if "mica_admin" not in self.cs :
                         self.make_account(self, "mica_admin", "password", "owner@example.com", "mica", admin = True, dbname = "mica_admin")
+
+                    self.verify_db(False, "mica_admin", username = "mica_admin")
+                    self.sessiondb = self.dbs["mica_admin"]
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
-                                   
+            self.db = self.sessiondb
+            self.view_check(self, "sessions")
+
+            if not params["keepsession"] :
+                current_session_time = int(timest())
+                while True :
+                    session_delete = []
+                    
+                    for result in self.sessiondb.view('sessions/all') :
+                        sid = result["key"][0]
+
+                        if sid == "debug" :
+                            continue
+
+                        session = result["value"]
+                        last_refresh = int(float(session["last_refresh"]))
+
+                        session_diff = (current_session_time - last_refresh)
+                        if session_diff >= MicaSession.sessionTimeout :
+                            mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(MicaSession.sessionTimeout))
+                            session_delete.append(sid)
+
+                    if len(session_delete) > 0 :
+                        for sid in session_delete :
+                            del self.sessiondb[self.session(str(sid))]
+                            mdebug("Deleted session: " + str(sid))
+
+                        session_delete = []
+                        continue
+
+                    break
+                        
+
         except TypeError, e :
             out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
             for line in format_exc().splitlines() :
@@ -449,6 +331,153 @@ class MICA(object):
             vt.daemon = True
             vt.start()
 
+    def tofrom(self, story) :
+        return story["source_language"] + "," + story["target_language"]
+
+    def authenticate(self, username, password, auth_url) :
+        mdebug("Authenticating to: " + str(auth_url))
+
+        username = username.lower()
+        lookup_username = username
+
+        if not password :
+            password = params["admin_pass"]
+            username = params["admin_user"].lower()
+
+        lookup_username_unquoted = myquote(str(lookup_username))
+        username_unquoted = myquote(str(username))
+        userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
+
+        for attempt in range(0, 4) :
+            try :
+                mdebug("Authentication attempt #" + str(attempt))
+                ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
+                ureq.add_header('Accept', 'application/json')
+                ureq.add_header("Content-type", "application/x-www-form-urlencoded")
+                ureq.add_header('Authorization', userData)
+                res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
+                rr = res.read()
+                mdebug("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
+                return json_loads(rr), False
+            except urllib2_HTTPError, e : 
+                if e.code == 401 :
+                    return False, _("Invalid credentials. Please try again") + "."
+                mdebug("HTTP error: " + username + " " + str(e))
+                error = "(HTTP code: " + str(e.code) + ")"
+            except urllib2_URLError, e :
+                mdebug("URL Error: " + username + " " + str(e))
+                error = "(URL error: " + str(e.reason) + ")"
+            except Exception, e :
+                mdebug("Unknown error: " + username + " " + str(e))
+                error = "(Unknown error: " + str(e) + ")"
+
+        return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server. Please try again later when you have better internet access by tapping the 'M' at the top to login.") + ""#": " + error)
+
+    def prime_db(self, req, specific_views = False) :
+        username = req.session.value["username"].lower()
+        self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
+
+    def verify_db(self, req, dbname, cookie = False, password = False, username = False) :
+        if not username :
+            username = req.session.value["username"].lower()
+
+        if username not in self.dbs or not self.dbs[username] : 
+            mdebug("Database not set. Requesting object.")
+            if mobile :
+                mdebug("Setting mobile db to prexisting object.")
+                self.dbs[username] = self.db
+            else :
+                address = req.session.value["address"] if (req and "address" in req.session.value) else self.credentials()
+                # In the past, we were interacting with user databases using their
+                # own credentials, but due to CouchDB timeouts, we need a reliable
+                # way to refresh the cookie without setting our own timeout and
+                # without storing user passwords in memory. At the most, they
+                # should remain salted and unrecoverable in couchdb.
+                # Thus, we depend on the admin password to perform all those
+                # interactions, but javascript (via chat) still depeneds on 
+                # directly communicating with couchdb. We are already doing it
+                # this way for oauth-based databases, so it's not a big deal.
+                cs = self.db_adapter(address, params["admin_user"], params["admin_pass"], cookie, refresh = True)
+                if password :
+                    req.session.value["cookie"] = cs.get_cookie(address, username, password)
+                    req.session.save()
+                self.dbs[username] = cs[dbname]
+
+            self.views_ready[username] = 0
+
+            mdebug("Installing view counter.")
+            if username not in self.views_ready :
+                self.views_ready[username] = 0
+
+        if req :
+            req.db = self.dbs[username]
+            self.prime_db(req)
+            sleep(1)
+
+        if self.dbs[username].doc_exist(self.acct(username)) :
+            user = self.dbs[username][self.acct(username)]
+
+    def session(self, sid) :
+        return "MICA:sessions:" + sid
+
+    def acct(self, name) :
+        return "MICA:accounts:" + name
+
+    def key_common(self, username) :
+        return "MICA:" + username 
+        
+    def story(self, req, key) :
+        return self.key_common(req.session.value['username']) + ":stories:" + key
+
+    # How many days since 1970 instead of seconds
+    def current_day(self) :
+        return (int(timest()) / (60*60*24))
+    
+    def current_period(self, period_key, current_day = False):
+        return int(current_day if current_day else self.current_day()) / counts[period_key] 
+
+    def chat_name(self, period, index, peer, current_day, extra = "") :
+        return "chat;" + period + ";" + str(index) + ";" + peer + extra
+
+    def chat(self, req, period, index, peer, current_day, extra = "") :
+        return self.story(req, self.chat_name(period, index, peer, current_day, extra))
+
+    def chat_period_name(self, period_key, peer, current_day, extra = "") :
+        return self.chat_name(period_key, self.current_period(period_key, current_day), peer, extra)
+
+    def chat_period(self, req, period_key, peer, current_day, extra = "") :
+        return self.chat(req, period_key, self.current_period(period_key, current_day), peer, extra)
+
+    def index(self, req, key) :
+        return self.key_common(req.session.value['username']) + ":story_index:" + key 
+    
+    def merge(self, req, key) :
+        return self.key_common(req.session.value['username']) + ":mergegroups:" + key 
+    
+    def splits(self, req, key) :
+        return self.key_common(req.session.value['username']) + ":splits:" + key 
+    
+    def tones(self, req, key) :
+        return self.key_common(req.session.value['username']) + ":tonechanges:" + key 
+    
+    def memorized(self, req, key):
+        return self.key_common(req.session.value['username']) + ":memorized:" + key 
+    
+    def credentials(self) :
+        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"] + (params["couch_path"] if ("couch_path" in params and params["couch_path"] != "") else ""))
+
+    def install_local_language(self, req, language = False) :
+        if language :
+            l = language
+        elif "language" in req.session.value :
+            l = req.session.value["language"]
+        else :
+            l = get_global_language()
+
+        catalogs.language = l.split("-")[0]
+
+        return l
+        
     def runloop(self) :
         mdebug("Runloop running.")
         sleep(5)
@@ -590,6 +619,28 @@ class MICA(object):
 
     @serial
     def run_render(self, req) :
+        req.s.mica = self 
+        req.session = IDict(req.s)
+
+        if 'connected' not in req.session.value :
+            mdebug("New session. Setting connected to false.")
+            req.session.value['connected'] = False
+            req.session.save()
+
+        if "language" not in req.session.value and "HTTP_ACCEPT_LANGUAGE" in req.environ:
+            req.session.value["language"] = req.environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
+            mdebug("Setting session language to browser language: " + req.session.value["language"])
+            req.session.save()
+
+        req.source = req.environ["REMOTE_ADDR"]
+        req.db = False
+        req.dest = ""#prefix(req.unparsed_uri)
+        req.front_ads = False
+        req.couch_cookie = False
+
+        if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
+            req.front_ads = True
+
         try:
             if "connected" in req.session.value and req.session.value["connected"] :
                 username = req.session.value["username"]
@@ -687,21 +738,33 @@ class MICA(object):
 
         return resp
             
+    def expired(self, uid):
+        if params["keepsession"] :
+            return
+
+        if uid == "debug" :
+            return
+
+        mdebug("Session " + uid + " has expired.")
+
+        skey = self.mica.session(self.value["session_uid"])
+
+        if self.mica.sessiondb.doc_exist(skey) :
+            del self.mica.sessiondb[skey]
+
+        del sessions[uid]
+        
     def __call__(self, environ, start_response):
         try :
             # Hack to make WebOb work with Twisted
             setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
 
-            req = Params(environ, start_response.im_self.request.session)
+            req = Params(environ)
 
-            req.source = environ["REMOTE_ADDR"]
-            req.db = False
-            req.dest = ""#prefix(req.unparsed_uri)
-            req.front_ads = False
-            req.couch_cookie = False
-
-            if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
-                req.front_ads = True
+            if start_response.im_self.request.s.uid not in sessions :
+                sessions[start_response.im_self.request.s.uid] = True
+                start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid))
+            req.s = start_response.im_self.request.s
 
             resp = self.run_render(req)
 
@@ -2481,7 +2544,6 @@ class MICA(object):
                del req.db["_design/" + name]
        except Exception, e :
            mwarn("Deleting design document: " + str(e))
-           pass
 
        if not req.db.doc_exist("_design/" + name) :
            mdebug("View " + name + " does not exist. Uploading.")
@@ -4790,6 +4852,8 @@ class MICA(object):
                 raise e
 
             self.first_request[username] = True 
+            req.session.value["last_refresh"] = str(timest())
+            req.session.save()
 
     def render_bulkreview(self, req, name) :
         count = int(req.http.params.get("count"))
@@ -5105,47 +5169,48 @@ class IDict(Interface):
 class CDict(object):
     implements(IDict)
     def __init__(self, session):
+        self.mica = session.mica
         start = {}
         uid = session.uid
 
         if params["keepsession"] :
-            sfn = params["session_dir"] + "debug.session"
+            skey = self.mica.session("debug")
         else :
-            sfn = params["session_dir"] + uid + ".session"
+            skey = self.mica.session(uid)
 
-        if os_path.isfile(sfn) :
-            mdebug("Loading existing session file: " + sfn)
+        if self.mica.sessiondb.doc_exist(skey) :
+            mdebug("Loading existing session: " + skey)
+            '''
             fh = open(sfn, 'r')
             sc = fh.read().strip()
             fh.close()
             if sc != "" :
                 start = json_loads(sc)
+            '''
+            start = self.mica.sessiondb[skey]
         else :
-            mdebug("No session existing session file: " + sfn)
+            mdebug("No session existing: " + skey)
 
         self.value = start 
         self.value["session_uid"] = uid
+
     def save(self) :
         if params["keepsession"] :
-            sfn = params["session_dir"] + "debug.session"
+            skey = self.mica.session("debug")
         else :
-            sfn = params["session_dir"] + self.value["session_uid"] + ".session"
+            skey = self.mica.session(self.value["session_uid"])
 
-        #mdebug("Saving to session file: " + sfn)
-        fh = open(sfn, 'w')
-        fh.write(json_dumps(self.value))
-        fh.close()
-        pass
+        mdebug("Saving to session: " + skey)
+        try :
+            old_doc = self.mica.sessiondb[skey]
+            self.value["_rev"] = old_doc["_rev"]
+        except couch_adapter.ResourceNotFound, e :
+            pass
 
-sessions = set()
+        self.mica.sessiondb[skey] = self.value
 
-def expired(uid):
-   sfn = params["session_dir"] + uid + ".session"
-   mdebug("Session " + uid + " has expired.")
-   sessions.remove(uid)
-   mdebug("Removing session file.")
-   os_remove(sfn)
-        
+sessions = {} 
+
 class GUIDispatcher(Resource) :
     def __init__(self, mica) :
 
@@ -5171,11 +5236,7 @@ class GUIDispatcher(Resource) :
         request.setHeader('Access-Control-Max-Age', 2520)
         request.setHeader('Content-Type', 'text/html; charset=utf-8')
 
-        s = request.getSession()
-        request.session = IDict(s)
-        if s.uid not in sessions :
-            sessions.add(s.uid)
-            s.notifyOnExpire(lambda: expired(s.uid))
+        request.s = request.getSession()
 
         if name.count(relative_prefix_suffix):
             return self.serve
@@ -5196,7 +5257,7 @@ class NONSSLRedirect(object) :
         pass
 
     def __call__(self, environ, start_response):
-        req = Params(environ, start_response.im_self.request.session)
+        req = Params(environ)
         (req.dest, req.path) = prefix(req.unparsed_uri)
         address = req.dest.split(":", 1)[0]
         tossl = "https://" + address + ":" + str(params["sslport"]) + "/" + req.path 
@@ -5213,11 +5274,7 @@ class NONSSLDispatcher(Resource) :
         self.app = WSGIResource(reactor, reactor.threadpool, self.nonssl)
 
     def getChild(self, name, request) :
-        s = request.getSession()
-        request.session = IDict(s)
-        if s.uid not in sessions :
-            sessions.add(s.uid)
-            s.notifyOnExpire(lambda: expired(s.uid))
+        request.s = request.getSession()
         return self.app
 
 def get_options() :
@@ -5324,14 +5381,6 @@ def go(p) :
             merr("This is a mobile deployment and you have specified admin credentials to be used on the server-side for account management. Don't do that.")
             exit(1)
 
-    if "session_dir" not in params :
-        params["session_dir"] = params["scratch"] + "mica_session/"
-
-    if mobile :
-        mdebug("Session dir: " + params["session_dir"])
-    else :
-        mverbose("Session dir: " + params["session_dir"])
-
     sslport = int(params["sslport"])
     if sslport != -1 and (not params["cert"] or not params["privkey"]) :
         merr("Need locations of SSL certificate and private key (options -C and -K). You can generate self-signed ones if you want, see the README.")
@@ -5355,18 +5404,6 @@ def go(p) :
 
     if "serialize_couch_on_mobile" not in params :
         params["serialize_couch_on_mobile"] = False
-
-    if not params["keepsession"] :
-        if os_path.isdir(params["session_dir"]) :
-            mdebug("Destroying all session files")
-            try :
-                shutil_rmtree(params["session_dir"])
-            except Exception, e :
-                merr("Failed to remove tree: " + str(e))
-
-    if not os_path.isdir(params["session_dir"]) :
-        mdebug("Making new session folder.")
-        os_makedirs(params["session_dir"])
 
     if not mobile :
         if os_path.isdir("/tmp/mica_uploads") :
