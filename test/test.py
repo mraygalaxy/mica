@@ -269,10 +269,10 @@ def move_data_to_url(url) :
 
     return temp_url
 
-def run_tests() :
+def run_tests(test_urls) :
     # Flatten the nested test groups into a single list of tests
     flat_urls = []
-    for head_url in urls :
+    for head_url in test_urls :
         if isinstance(head_url, list) :
             for sub_url in head_url :
                 flat_urls.append(sub_url)
@@ -318,7 +318,9 @@ def run_tests() :
             record.write(tlogmsg + "\n")
             record.flush()
 
-            while True :
+            retry_attempts = 0
+
+            while retry_attempts < 3 :
                 if url["method"] == "get" :
                     r = s.get("http://localhost" + move_data_to_url(url))
                 elif url["method"] == "post" :
@@ -333,9 +335,18 @@ def run_tests() :
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
+
                     if r.status_code == 504 :
                         tlog("  Gateway timeout. Try the request again...")
+                        retry_attempts += 1
                         continue
+
+                    if r.status_code == 401 and url["loc"].count("/couch"):
+                        tlog("  Our token may have expired. Login again and retry the test.")
+                        retry_attempts += 1
+                        run_tests(common_urls["relogin"])
+                        continue
+
                     tlog("  Bad status code: " + str(r.status_code))
                     assert(False)
 
@@ -381,6 +392,11 @@ def run_tests() :
                         tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
                         assert(False) 
 
+                break
+
+            if retry_attempts >= 3 :
+                tlog(" Failed to retry last run after 3 attempts.")
+                stop_test = True
                 break
 
     except KeyboardInterrupt:
@@ -795,7 +811,7 @@ except Exception, e :
 
 stop = True
 try :
-    stop = run_tests()
+    stop = run_tests(urls)
 except Exception, e :
     pass
 
