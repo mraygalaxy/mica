@@ -195,64 +195,73 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def put_attachment(self, name, filename, contents, new_doc = False) :
-        if not new_doc :
-            trydelete = True
-            if self.doc_exist(name, true_if_deleted = True) is True :
-                mdebug("Deleting original @ " + name)
+        try :
+            if not new_doc :
+                trydelete = True
+                if self.doc_exist(name, true_if_deleted = True) is True :
+                    mdebug("Deleting original @ " + name)
+                    doc = self.db[name]
+                    del self.db[name]
+                    self.db.purge([doc])
+                    trydelete = False 
+
+                doc = { "foo" : "bar"}
+
+                if trydelete :
+                    try :
+                        doc["_rev"] = self.db[name]["_rev"]
+                        mdebug("Old revision found.")
+                    except couch_ServerError, e :
+                        check_for_unauthorized(e)
+                    except couch_ResourceNotFound, e :
+                        mdebug("No old revision found.")
+                        pass
+
+                mdebug("Going to write: " + str(doc))
+                self.db[name] = doc
                 doc = self.db[name]
-                del self.db[name]
-                self.db.purge([doc])
-                trydelete = False 
+            else :
+                doc = new_doc
 
-            doc = { "foo" : "bar"}
+            if type(contents) != file :
+                mdebug("Putting attachment of length: " + str(len(contents)))
 
-            if trydelete :
-                try :
-                    doc["_rev"] = self.db[name]["_rev"]
-                    mdebug("Old revision found.")
-                except couch_ServerError, e :
-                    check_for_unauthorized(e)
-                except couch_ResourceNotFound, e :
-                    mdebug("No old revision found.")
-                    pass
-
-            mdebug("Going to write: " + str(doc))
-            self.db[name] = doc
-            doc = self.db[name]
-        else :
-            doc = new_doc
-
-        if type(contents) != file :
-            mdebug("Putting attachment of length: " + str(len(contents)))
-
-        return self.db.put_attachment(doc, contents, filename)
+            return self.db.put_attachment(doc, contents, filename)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def get_attachment(self, name, filename) :
-        obj = self.db.get_attachment(name, filename)
-        if obj is not None :
-            return obj.read()
-        else :
-            raise CommunicationError("No such attachment: " + name + " => " + filename)
+        try :
+            obj = self.db.get_attachment(name, filename)
+            if obj is not None :
+                return obj.read()
+            else :
+                raise CommunicationError("No such attachment: " + name + " => " + filename)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def get_attachment_to_path(self, name, filename, path) :
-        sourcebytes = 0
-        obj = self.db.get_attachment(name, filename)
-        if obj is not None :
-            fh = open(path, 'wb')
-            while True :
-                byte = obj.read(1)
-                sourcebytes += 1
-                if byte :
-                    fh.write(byte)
-                else :
-                    break
+        try :
+            sourcebytes = 0
+            obj = self.db.get_attachment(name, filename)
+            if obj is not None :
+                fh = open(path, 'wb')
+                while True :
+                    byte = obj.read(1)
+                    sourcebytes += 1
+                    if byte :
+                        fh.write(byte)
+                    else :
+                        break
 
-            fh.close()
-        else :
-            raise CommunicationError("No such attachment: " + name + " => " + filename)
-        return sourcebytes
+                fh.close()
+            else :
+                raise CommunicationError("No such attachment: " + name + " => " + filename)
+            return sourcebytes
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
             
     def listen(self, username, password, port) :
         return port 
@@ -370,11 +379,17 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def compact(self, *args, **kwargs) :
-        self.db.compact(*args, **kwargs)
+        try :
+            self.db.compact(*args, **kwargs)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def cleanup(self, *args, **kwargs) :
-        self.db.cleanup(*args, **kwargs)
+        try :
+            self.db.cleanup(*args, **kwargs)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     def close(self) :
         pass
