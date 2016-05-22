@@ -5,6 +5,7 @@ from json import loads, dumps
 from uuid import uuid4
 from time import sleep
 from traceback import format_exc
+from httplib import IncompleteRead 
 
 try :
     from couchdb import Server
@@ -86,17 +87,29 @@ class repeatable(object):
 
 def reauth(func):
     def wrapper(self, *args, **kwargs):
+        retry_auth = False
+        permanent_error = False
         try :
             result = func(self, *args, **kwargs)
         except Unauthorized, e :
             mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
-            try :
-                self.server.cookie = False
-                self.server.auth()
-                self.db.resource.headers["Cookie"] = self.server.cookie
-                result = func(self, *args, **kwargs)
-            except Exception, e :
-                raise CommunicationError("Failed to re-authenticate: " + str(e))
+            retry_auth = True
+        except IncompleteRead, e :
+            mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
+            retry_auth = True
+        except Exception , e :
+            permanent_error = e
+        finally :
+            if retry_auth :
+                try :
+                    self.server.cookie = False
+                    self.server.auth()
+                    self.db.resource.headers["Cookie"] = self.server.cookie
+                    result = func(self, *args, **kwargs)
+                except Exception, e :
+                    raise CommunicationError("Failed to re-authenticate: " + str(e))
+            elif permanent_error :
+                raise permanent_error
 
         return result
     return wrapper
@@ -152,13 +165,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
-            '''
-            out = ""
-            for line in format_exc().splitlines() :
-                out += line + "\n"
-            mwarn(out)
-            mwarn(name + ":" + str(e))
-            '''
+            if name.count("org.couchdb.user") :
+                raise Unauthorized
             if false_if_not_found :
                 return False
             else :
@@ -301,6 +309,16 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             return False
         return True
 
+    def reauthorize(self) :
+        try :
+            mwarn("Re-authenticating.")
+            self.server.cookie = False
+            self.server.auth()
+            self.db.resource.headers["Cookie"] = self.server.cookie
+            mwarn("Authenticated.")
+        except Exception, e :
+            raise CommunicationError("Failed to re-authenticate: " + str(e))
+
     def couchdb_pager(self, view_name='_all_docs',
                       startkey=None, startkey_docid=None,
                       endkey=None, endkey_docid=None, bulk=5000, stale = False):
@@ -318,7 +336,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 options['endkey_docid'] = endkey_docid
         done = False
         server_errors_left = 3
+        yielded_rows = {}
         while not done:
+            #mdebug("errors left: " + str(server_errors_left))
             try:
                 view = self.db.view(view_name, **options)
                 rows = []
@@ -334,26 +354,36 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     options['startkey_docid'] = last.id
 
                 for row in rows:
-                    yield row
+                    #mdebug("Row is: " + str(row))
+                    if row["key"] is None or (("id" in row and row["id"] not in yielded_rows) or row["value"]["_id"] not in yielded_rows) :
+                        if row["key"] is not None :
+                            _id = row["id"] if "id" in row else row["value"]["_id"]
+                            yielded_rows[_id] = True
+                        yield row
+                    else :
+                        mdebug("Row already yielded")
+            except Unauthorized, e :
+                mdebug("Direct unauthorized")
+                self.reauthorize()
+                done = False
+                continue
             except couch_ServerError, e :
                 # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
                 ((status, error),) = e.args
                 mwarn("Server error: " + str(status) + " " + str(error))
                 if status == 403 :
-                    mwarn("Re-authenticating.")
-                    self.server.cookie = False
-                    self.server.auth()
-                    self.db.resource.headers["Cookie"] = self.server.cookie
+                    self.reauthorize()
+                    done = False
                     continue
                 elif status == 500 :
                     if server_errors_left > 0 :
                         mwarn("Server errors left: " + str(server_errors_left))
                         server_errors_left -= 1
+                        done = False
                         continue
                     else :
                         merr("No server_errors_left remaining.")
                 raise e 
-    @reauth
     def view(self, *args, **kwargs) :
         view_name = args[0]
         mverbose("Query view: " + view_name)
@@ -368,8 +398,27 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             del kwargs["username"]
 
         if "keys" in kwargs :
-            for result in self.db.view(*args, **kwargs) :
-                yield result
+            yielded_keys = {}
+            while True :
+                try :
+                    for result in self.db.view(*args, **kwargs) :
+                        #mdebug("result is: " + str(result))
+                        if result["key"] is None or (("id" in result and result["id"] not in yielded_keys) or result["value"]["_id"] not in yielded_keys) :
+                            if result["key"] is not None :
+                                _id = result["id"] if "id" in result else result["value"]["_id"]
+                                yielded_keys[_id] = True
+                            yield result
+                    break
+
+                except Unauthorized, e :
+                    mdebug("Direct unauthorized")
+                    self.reauthorize()
+                except couch_ServerError, e :
+                    try :
+                       check_for_unauthorized(e)
+                       raise CommunicationError("Failed to perform view: " + str(e))
+                    except Unauthorized :
+                        self.reauthorize()
         else :
             kwargs["view_name"] = view_name
             kwargs["bulk"] = 50
@@ -437,6 +486,7 @@ class MicaServerCouchDB(object) :
         return cookie
 
     def auth(self, username = False, password = False) :
+        mdebug("Reauth start")
         if not username or not password :
             assert(self.username)
             assert(self.password)
@@ -446,14 +496,15 @@ class MicaServerCouchDB(object) :
             password = self.password
 
         if not self.cookie :
-            mverbose("No cookie for user: " + username)
+            mdebug("No cookie for user: " + username)
             
             self.cookie = self.get_cookie(self.url, username, password)
         else :
-            mverbose("Reusing cookie: " + self.cookie)
+            mdebug("Reusing cookie: " + self.cookie)
 
         assert(self.cookie)
         self.server.resource.headers["Cookie"] = self.cookie
+        mdebug("Reauth done")
         
     def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
         self.url = url
