@@ -377,7 +377,7 @@ class MICA(object):
         username = req.session.value["username"].lower()
         self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
 
-    def verify_db(self, req, dbname, cookie = False, password = False, username = False) :
+    def verify_db(self, req, dbname, cookie = False, password = False, username = False, prime = True) :
         if not username :
             username = req.session.value["username"].lower()
 
@@ -411,8 +411,9 @@ class MICA(object):
 
         if req :
             req.db = self.dbs[username]
-            self.prime_db(req)
-            sleep(1)
+            if prime :
+                self.prime_db(req)
+                sleep(1)
 
         if self.dbs[username].doc_exist(self.acct(username)) :
             user = self.dbs[username][self.acct(username)]
@@ -657,7 +658,7 @@ class MICA(object):
                         req.session.value["port"] = self.db.listen(username, req.session.value["password"], params["local_port"])
                         req.session.save()
                 try :
-                    self.verify_db(req, req.session.value["database"])
+                    self.verify_db(req, req.session.value["database"], prime = False)
                     resp = self.render(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
@@ -805,6 +806,7 @@ class MICA(object):
         return contents
 
     def api(self, req, desc = "", json = False, error = False) :
+        req.session.save()
         if not json :
             json = {}
         human = True if int(req.http.params.get("human", "1")) else False
@@ -838,6 +840,7 @@ class MICA(object):
             return json_dumps(json)
 
     def bad_api(self, req, desc, json = {}) :
+        req.session.save()
         return self.api(req, desc = desc, json = json, error = True)
 
     def get_polyphome_hash(self, correct, source) :
@@ -2555,17 +2558,16 @@ class MICA(object):
 
         if "chats" not in req.session.value :
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
-            req.session.save()
 
         for period_key in multipliers.keys() :
             if period_key not in req.session.value["chats"] :
                 req.session.value["chats"][period_key] = {}
-                req.session.save()
 
             if peer in req.session.value["chats"][period_key] :
                 mdebug("Clearing chat with peer from session cache:" + peer)
                 del req.session.value["chats"][period_key][peer]
-                req.session.save()
+
+        req.session.save()
             
     def clear_story(self, req) :
         uuid = False
@@ -3846,7 +3848,7 @@ class MICA(object):
                     if chat :
                         output += "<table style='width: 100%'>\n"
                     req.session.value["last_view_mode"] = req.action
-                    req.session.save();
+                    req.session.save()
                     output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
                     self.set_page(req, story, page)
                     if chat :
@@ -4062,7 +4064,6 @@ class MICA(object):
                 user["language"] = language
                 req.db[self.acct(username)] = user
                 req.session.value["language"] = language
-                req.session.save()
                 self.install_local_language(req)
                 req.accountpageresult = _("Success! Language changed")
                 json["test_success"] = True
@@ -4076,7 +4077,6 @@ class MICA(object):
             if language in supported_map :
                 user["learnlanguage"] = language
                 req.session.value["learnlanguage"] = language
-                req.session.save()
                 req.db[self.acct(username)] = user
                 self.install_local_language(req)
                 req.accountpageresult = _("Success! Learning Language changed")
@@ -4099,7 +4099,6 @@ class MICA(object):
                 self.userdb["org.couchdb.user:" + username] = email_user
                 user["email"] = email 
                 req.db[self.acct(username)] = user
-                req.session.save()
                 req.accountpageresult = _("Success! Email changed")
                 json["test_success"] = True
 
@@ -4134,7 +4133,6 @@ class MICA(object):
 
                 if not replication_failed :
                     req.db[self.acct(username)] = user
-                    req.session.save()
 
                     if mobile :
                         if remove == 0 :
@@ -4159,7 +4157,6 @@ class MICA(object):
                     user["app_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["app_chars_per_line"] = chars_per_line 
-                    req.session.save()
                     # Same as before, but specifically for a mobile device
                     req.accountpageresult = _("Success! Mobile Characters-per-line in a story set to:") + " " + str(chars_per_line)
                     json["test_success"] = True
@@ -4176,7 +4173,6 @@ class MICA(object):
                     user["web_chars_per_line"] = chars_per_line
                     req.db[self.acct(username)] = user
                     req.session.value["web_chars_per_line"] = chars_per_line 
-                    req.session.save()
                     # Same as before, but specifically for a website 
                     req.accountpageresult = _("Success! Web Characters-per-line in a story set to:") + " " + str(chars_per_line)
                     json["test_success"] = True
@@ -4194,7 +4190,6 @@ class MICA(object):
                     user["default_app_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_app_zoom"] = zoom
-                    req.session.save()
                     # Same as before, but specifically for an application running on a mobile device
                     req.accountpageresult = _("Success! App zoom level set to:") + " " + str(zoom)
                     json["test_success"] = True
@@ -4212,7 +4207,6 @@ class MICA(object):
                     user["default_web_zoom"] = zoom 
                     req.db[self.acct(username)] = user
                     req.session.value["default_web_zoom"] = zoom
-                    req.session.save()
                     # Same as before, but specifically for an application running on the website 
                     req.accountpageresult = _("Success! Web zoom level set to:") + " " + str(zoom)
                     json["test_success"] = True
@@ -4236,7 +4230,6 @@ class MICA(object):
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
             req.session.value["jabber_key"] = binascii_hexlify(os_urandom(4))
-            req.session.save()
 
         if req.http.params.get("history") :
             def by_date(story):
@@ -4293,7 +4286,6 @@ class MICA(object):
 
         if "chats" not in req.session.value :
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
-            req.session.save()
 
         story = {
            "target_language" : supported_map[req.session.value["language"]],
@@ -4335,7 +4327,6 @@ class MICA(object):
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
-            req.session.save()
 
             return self.api(req, "changed")
 
@@ -4590,7 +4581,6 @@ class MICA(object):
         if mobile :
             req.session.value["password"] = password
 
-        req.session.save()
 
         mdebug("authenticating...")
 
@@ -4603,7 +4593,6 @@ class MICA(object):
 
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"] 
-        req.session.save()
 
         mdebug("verifying...")
         self.verify_db(req, auth_user["mica_database"], password = password)
@@ -4644,7 +4633,6 @@ class MICA(object):
             if tmpuser and "filters" in tmpuser :
                 mdebug("Found old filters.")
                 req.session.value["filters"] = tmpuser["filters"]
-                req.session.save()
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
                 return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
@@ -4655,11 +4643,8 @@ class MICA(object):
                     req.session.value["port"] = req.db.listen(params["local_username"], params["local_password"], params["local_port"])
                 else :
                     req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
-                req.session.save()
-
         req.action = "home"
         req.session.value['connected'] = True 
-        req.session.save()
 
         if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
             req.session.value['last_username'] = username
@@ -4667,12 +4652,10 @@ class MICA(object):
         elif 'last_username' in req.session.value :
             del req.session.value['last_username']
             req.session.value['last_remember'] = ''
-        req.session.save()
 
         self.clear_story(req)
 
         req.session.value["last_refresh"] = str(timest())
-        req.session.save()
 
         user = req.db.try_get(self.acct(username))
         if not user :
@@ -4689,6 +4672,7 @@ class MICA(object):
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
+                req.session.save()
                 raise e
             
         if "language" not in user :
@@ -4734,7 +4718,6 @@ class MICA(object):
         req.session.value["learnlanguage"] = user["learnlanguage"]
 
         req.db[self.acct(username)] = user
-        req.session.save()
 
         if not mobile :
             try :
@@ -4765,8 +4748,6 @@ class MICA(object):
                         else :
                             mdebug("File " + f + " already exists.")
                             lgp.test_dictionaries(retest = True)
-
-
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
                 for line in format_exc().splitlines() :
@@ -4780,6 +4761,7 @@ class MICA(object):
                     out += line + "\n"
                 mwarn(out)
 
+        req.session.save()
         return False
 
     def render_logged_in_check(self, req) :
@@ -5078,18 +5060,15 @@ class MICA(object):
             rmode = req.http.params.get("switchmode")
             if rmode in ["text", "images", "both"] :
                 req.session.value["view_mode"] = rmode
-                req.session.save()
                 return self.api(req)
             return self.bad_api(req, "No such mode: " + rmode)
 
         if req.http.params.get("meaningmode") :
             req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
-            req.session.save()
             return self.api(req)
 
         if req.http.params.get("switchlist") :
             req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
-            req.session.save()
             return self.api(req)
 
         # We want the job list to appear before using any story-related functions
@@ -5107,13 +5086,13 @@ class MICA(object):
                 if req.session.value["current_story"] != uuid :
                     self.clear_story(req)
                 req.session.value["current_story"] = uuid
-                req.session.save()
             else :
                 uuid = req.session.value["current_story"]
         elif uuid :
             self.clear_story(req)
             req.session.value["current_story"] = uuid
-            req.session.save()
+
+        req.session.save()
             
         if uuid : 
             tmp_story = story
@@ -5200,7 +5179,7 @@ class CDict(object):
         else :
             skey = self.mica.session(self.value["session_uid"])
 
-        mdebug("Saving to session: " + skey)
+        mverbose("Saving to session: " + skey)
         try :
             old_doc = self.mica.sessiondb[skey]
             self.value["_rev"] = old_doc["_rev"]

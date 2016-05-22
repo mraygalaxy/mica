@@ -92,7 +92,7 @@ def reauth(func):
         try :
             result = func(self, *args, **kwargs)
         except Unauthorized, e :
-            mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
+            mverbose("Couch return unauthorized, likely due to a timeout: " + str(e))
             retry_auth = True
         except IncompleteRead, e :
             mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
@@ -486,7 +486,7 @@ class MicaServerCouchDB(object) :
         return cookie
 
     def auth(self, username = False, password = False) :
-        mdebug("Reauth start")
+        mverbose("Reauth start")
         if not username or not password :
             assert(self.username)
             assert(self.password)
@@ -496,7 +496,7 @@ class MicaServerCouchDB(object) :
             password = self.password
 
         if not self.cookie :
-            mdebug("No cookie for user: " + username)
+            mverbose("No cookie for user: " + username)
             
             self.cookie = self.get_cookie(self.url, username, password)
         else :
@@ -504,7 +504,7 @@ class MicaServerCouchDB(object) :
 
         assert(self.cookie)
         self.server.resource.headers["Cookie"] = self.cookie
-        mdebug("Reauth done")
+        mverbose("Reauth done")
         
     def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
         self.url = url
