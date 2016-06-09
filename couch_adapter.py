@@ -5,7 +5,7 @@ from json import loads, dumps
 from uuid import uuid4
 from time import sleep
 from traceback import format_exc
-from httplib import IncompleteRead 
+from httplib import IncompleteRead, CannotSendRequest
 
 try :
     from couchdb import Server
@@ -96,6 +96,9 @@ def reauth(func):
             retry_auth = True
         except IncompleteRead, e :
             mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
+            retry_auth = True
+        except CannotSendRequest, e :
+            mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
         except Exception , e :
             permanent_error = e
