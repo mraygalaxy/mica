@@ -58,6 +58,8 @@ import couch_adapter
 
 server_port = 9888
 
+test_timeout = 5
+
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
 mock_rest = {
@@ -321,6 +323,10 @@ def run_tests(test_urls) :
             retry_attempts = 0
 
             while retry_attempts < 3 :
+                if "sleep" in url :
+                    tlog("Sleeping for " + str(url["sleep"]) + " seconds...")
+                    break
+                    
                 if url["method"] == "get" :
                     r = s.get("http://localhost" + move_data_to_url(url))
                 elif url["method"] == "post" :
@@ -481,6 +487,8 @@ httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
 oresp.daemon = True
 oresp.start() 
+
+parameters["timeout"] = test_timeout * 2
 
 mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
@@ -734,6 +742,10 @@ tests_from_micadev10 = [
            common_urls["account"],
            common_urls["relogin"],
 
+           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+
+           common_urls["relogin"],
+
            txt_story("chinese_test", "zh-CHS,en", "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"),
            init_and_translate("chinese_test"),
 
@@ -774,6 +786,10 @@ tests_from_micadev10 = [
 
            common_urls["relogin"],
 
+           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+
+           common_urls["relogin"],
+
            # Long-running, but excellent test to delete a large story:
            { "loc" : "/api?human=0&alien=home&forget=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
@@ -783,6 +799,10 @@ tests_from_micadev10 = [
 
            common_urls["storylist_triple"],
            common_urls["relogin"],
+
+           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+
+           common_urls["login"],
 
            # Next tests: 
            # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
