@@ -2,6 +2,7 @@
 # coding: utf-8
 
 from __future__ import print_function
+from traceback import format_exc, print_stack
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs, environ
 from docker import Client
@@ -23,12 +24,10 @@ import BaseHTTPServer
 import httplib
 import logging
 
-
 logger = getLogger("micatest")
 logger.setLevel(level=DEBUG)
 streamhandler = StreamHandler(sys.stderr)
 logger.addHandler(streamhandler)
-
 
 def tlog(*objs):
     logger.debug(*objs)
@@ -271,16 +270,29 @@ def move_data_to_url(url) :
 
     return temp_url
 
+def flatten(head_url) :
+    flat_urls = []
+    if isinstance(head_url, list) :
+        for sub_url in head_url :
+            flat_urls.append(sub_url)
+    else :
+        flat_urls.append(head_url)
+    return flat_urls
+
 def run_tests(test_urls) :
     # Flatten the nested test groups into a single list of tests
     flat_urls = []
     for head_url in test_urls :
-        if isinstance(head_url, list) :
-            for sub_url in head_url :
-                flat_urls.append(sub_url)
-        else :
-            flat_urls.append(head_url)
+        flatcount = 1
 
+        if "repeat" in head_url :
+            for x in range(0, head_url["repeat"]) :
+                for sub_url in flatten(head_url["urls"]) :
+                    flat_urls += flatten(sub_url)
+        else :
+            flat_urls += flatten(head_url)
+
+            
     tlog("Tests: " + str(len(flat_urls)))
     stop_test = False
     last_json = {}
@@ -314,7 +326,7 @@ def run_tests(test_urls) :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
-            tlogmsg = "Test " + str(tidx) + ": " + url["method"].upper() + ": " + url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") + ", data: " + (str(url["data"]) if "data" in url else "none")
+            tlogmsg = "Test " + str(tidx) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
 
             record.write(tlogmsg + "\n")
@@ -324,7 +336,8 @@ def run_tests(test_urls) :
 
             while retry_attempts < 3 :
                 if "sleep" in url :
-                    tlog("Sleeping for " + str(url["sleep"]) + " seconds...")
+                    tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
+                    sleep(url["sleep"])
                     break
                     
                 if url["method"] == "get" :
@@ -740,11 +753,13 @@ tests_from_micadev10 = [
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
 
            common_urls["account"],
-           common_urls["relogin"],
 
-           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+           { "repeat" : 10, "urls" : [
+               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               common_urls["login"],
+               ]
+           },
 
-           common_urls["relogin"],
 
            txt_story("chinese_test", "zh-CHS,en", "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"),
            init_and_translate("chinese_test"),
@@ -786,9 +801,11 @@ tests_from_micadev10 = [
 
            common_urls["relogin"],
 
-           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
-
-           common_urls["relogin"],
+           { "repeat" : 2, "urls" : [
+               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               common_urls["login"],
+               ]
+           },
 
            # Long-running, but excellent test to delete a large story:
            { "loc" : "/api?human=0&alien=home&forget=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
@@ -800,9 +817,11 @@ tests_from_micadev10 = [
            common_urls["storylist_triple"],
            common_urls["relogin"],
 
-           { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
-
-           common_urls["login"],
+           { "repeat" : 2, "urls" : [
+               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               common_urls["login"],
+               ]
+           },
 
            # Next tests: 
            # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
@@ -833,7 +852,9 @@ stop = True
 try :
     stop = run_tests(urls)
 except Exception, e :
-    pass
+    for line in format_exc().splitlines() :
+        tlog(line)
+    #pass
 
 change_timeout(old_timeout)
 
