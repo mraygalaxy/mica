@@ -291,10 +291,14 @@ class MICA(object):
                             continue
 
                         session = result["value"]
-                        last_refresh = int(float(session["last_refresh"]))
+
+                        last_refresh = 0
+
+                        if "last_refresh" in session :
+                            last_refresh = int(float(session["last_refresh"]))
 
                         session_diff = (current_session_time - last_refresh)
-                        if session_diff >= MicaSession.sessionTimeout :
+                        if "last_refresh" not in session or session_diff >= MicaSession.sessionTimeout :
                             mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(MicaSession.sessionTimeout))
                             session_delete.append(sid)
 
