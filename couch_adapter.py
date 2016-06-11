@@ -97,9 +97,9 @@ def reauth(func):
         except IncompleteRead, e :
             mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
-#        except CannotSendRequest, e :
-#            mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
-#            retry_auth = True
+        except CannotSendRequest, e :
+            mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
+            retry_auth = True
         except Exception , e :
             permanent_error = e
         finally :
@@ -419,9 +419,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 except IncompleteRead, e :
                     mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
                     self.reauthorize()
-#                except CannotSendRequest, e :
-#                    mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
-#                    self.reauthorize()
+                except CannotSendRequest, e :
+                    mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
+                    self.reauthorize()
                 except couch_ServerError, e :
                     try :
                        check_for_unauthorized(e)
