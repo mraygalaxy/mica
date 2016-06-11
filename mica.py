@@ -294,9 +294,8 @@ class MICA(object):
                         last_refresh = int(float(session["last_refresh"]))
 
                         session_diff = (current_session_time - last_refresh)
-                        sessionTimeout = params["timeout"] if "timeout" in params else MicaSession.sessionTimeout
-                        if session_diff >= sessionTimeout :
-                            mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(sessionTimeout))
+                        if session_diff >= MicaSession.sessionTimeout :
+                            mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(MicaSession.sessionTimeout))
                             session_delete.append(sid)
 
                     if len(session_delete) > 0 :
@@ -747,12 +746,19 @@ class MICA(object):
         if uid == "debug" :
             return
 
-        mdebug("Session " + uid + " has expired.")
+        skey = sessions[uid]
+        mdebug("Session " + uid + " has expired: " + sessions[uid])
 
-        skey = self.mica.session(self.value["session_uid"])
+        try :
+            if self.sessiondb.doc_exist(skey) :
+                value = self.sessiondb[skey]
+                if "username" in value :
+                    self.clean_dbs(value["username"])
+                del self.sessiondb[skey]
 
-        if self.mica.sessiondb.doc_exist(skey) :
-            del self.mica.sessiondb[skey]
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
 
         del sessions[uid]
         
@@ -2617,22 +2623,23 @@ class MICA(object):
         else :
             return msg
 
+    def clean_dbs(self, username) :
+        if username in self.dbs :
+            del self.dbs[username]
+
+        if username in self.view_runs :
+            del self.view_runs[username]
+
     def clean_session(self, req) :
         mwarn("Loggin out user now.")
         req.session.value['connected'] = False
+        req.session.save()
 
         if 'username' in req.session.value :
             if mobile :
                 req.db.stop_replication()
 
-            username = req.session.value['username']
-            if username in self.dbs :
-                del self.dbs[username]
-
-            if username in self.view_runs :
-                del self.view_runs[username]
-
-            req.session.save()
+            self.clean_dbs(req.session.value['username'])
 
     def check_all_views(self, req) :
         self.view_check(req, "stories")
@@ -4955,8 +4962,6 @@ class MICA(object):
             connect_result = self.render_connect(req, from_third_party)
             if connect_result :
                 # There was an error with anything
-                #req.messages = connect_result
-                #return self.render_frontpage(req)
                 return connect_result
 
             # This is a response to an ajax request to complete the
@@ -5188,6 +5193,7 @@ class CDict(object):
             pass
 
         self.mica.sessiondb[skey] = self.value
+        sessions[self.value["session_uid"]] = skey
 
 sessions = {} 
 
@@ -5323,6 +5329,10 @@ params = None
 def go(p) :
     global params
     params = p
+
+    if "timeout" in params :
+        MicaSession.sessionTimeout = params["timeout"]
+        mdebug("Overrode timeout to " + str(MicaSession.sessionTimeout))
 
     sys_settrace(None)
 
