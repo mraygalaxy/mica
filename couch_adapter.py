@@ -176,11 +176,20 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def __delitem__(self, name) :
+        revs = []
+
         try :
+            docs = self.db.get(name, open_revs = "all")
+            for doc in docs :
+                if "_deleted" in doc["ok"] :
+                    continue
+                mdebug("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
+                self.db.delete(olddoc)
+                mdebug("DELETE Deleted.")
+
+            '''
             doc = self.db[name]
-
-            revs = []
-
             if "_conflicts" in doc :
                 mdebug("Adding conflict revisions.")
                 revs += doc["_conflicts"]
@@ -191,10 +200,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             for rev in revs :
                 olddoc = self.db.get(name, rev=rev)
                 self.db.delete(olddoc)
-
-            del self.db[name]
+            #del self.db[name]
+            '''
         except couch_ServerError, e :
             check_for_unauthorized(e)
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            raise e
 
     @reauth
     def delete_attachment(self, doc, filename) :
@@ -208,7 +221,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         try :
             if not new_doc :
                 trydelete = True
-                if self.doc_exist(name, true_if_deleted = True) is True :
+                if self.doc_exist(name, purge_if_deleted = True) is True :
                     mdebug("Deleting original @ " + name)
                     doc = self.db[name]
                     del self.db[name]
@@ -280,7 +293,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         return self.__getitem__(name)["_attachments"][filename]
 
     @reauth
-    def doc_exist(self, name, true_if_deleted = False) :
+    def doc_exist(self, name, purge_if_deleted = False) :
         try :
             self.db[name]
         except couch_ServerError, e :
@@ -289,20 +302,21 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             #mdebug(str(e.args))
             ((error, reason),) = e.args
             mdebug("Doc exist returns not found: " + reason)
-            if true_if_deleted and reason == "deleted" :
+            if purge_if_deleted and reason == "deleted" :
                 try :
                     old = self.db.get(name, open_revs = "all")
                     for olddocp in old :
-                        mdebug("Got old revision: " + str(olddocp))
-                        revs = olddocp["ok"]["_rev"]
-                        olddoc = self.db.get(name, rev=olddocp["ok"]["_rev"])
-                        mdebug("Got old doc too.")
-                        mwarn("Purging old revision...")
-                        self.db.purge([olddoc])
-                        mwarn("Purged")
+                        if "_deleted" in olddocp["ok"] :
+                            continue
+                        mdebug("EXIST Found undeleted revision: " + name + ": " + olddocp["ok"]["_rev"])
+                        olddoc = self.db.get(name, rev = olddocp["ok"]["_rev"])
+                        self.db.delete(olddocp)
+                        mdebug("EXIST Deleted.")
                     return False
                 except couch_ResourceNotFound, e :
-                    merr( "Failed to purge old revisions.")
+                    for line in format_exc().splitlines() :
+                        merr(line)
+                    merr("Failed to purge old revisions.")
                 except couch_ServerError, e :
                     check_for_unauthorized(e)
 
@@ -623,8 +637,8 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name, true_if_deleted = False) :
-        if true_if_deleted :
+    def doc_exist(self, name, purge_if_deleted = False) :
+        if purge_if_deleted :
             mverbose("Mobile has no deleted-document detection.")
 
         try :
@@ -847,8 +861,8 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name, true_if_deleted = False) :
-        if true_if_deleted :
+    def doc_exist(self, name, purge_if_deleted = False) :
+        if purge_if_deleted :
             mverbose("Mobile has no deleted-document detection.")
         try :
             result = self.db.doc_exist__(String(self.dbname), String(name)).UTF8String()

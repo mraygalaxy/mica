@@ -2534,12 +2534,12 @@ class MICA(object):
         mdebug("List complete.")
         for tmppage in allpages :
             mdebug("Deleting page " + str(tmppage) + " from story " + name)
-            while req.db.doc_exist(self.story(req, name) + ":pages:" + str(tmppage), true_if_deleted = True) :
+            while req.db.doc_exist(self.story(req, name) + ":pages:" + str(tmppage), purge_if_deleted = True) :
                 del req.db[self.story(req, name) + ":pages:" + str(tmppage)]
 
         mdebug("Completed flushing translated pages.")
             
-        while req.db.doc_exist(self.story(req, name) + ":final", true_if_deleted = True) :
+        while req.db.doc_exist(self.story(req, name) + ":final", purge_if_deleted = True) :
             mdebug("Deleting final version from story " + name)
             del req.db[self.story(req, name) + ":final"]
 
@@ -2953,7 +2953,7 @@ class MICA(object):
     @serial
     def deletestory(self, req, uuid, name) : 
         mdebug("Checking for " + self.story(req, name) + " existence")
-        story_found = False if not name else req.db.doc_exist(self.story(req, name), true_if_deleted = True)
+        story_found = False if not name else req.db.doc_exist(self.story(req, name), purge_if_deleted = True)
         if name and not story_found :
             mdebug(name + " does not exist. =(")
         else :
@@ -2997,14 +2997,14 @@ class MICA(object):
                     mdebug("Deleted.")
                 
             if name and story_found :
-                while req.db.doc_exist(self.story(req, name), true_if_deleted = True) :
+                while req.db.doc_exist(self.story(req, name), purge_if_deleted = True) :
                     mdebug("Deleting story, revision: " + req.db[self.story(req, name)]["_rev"])
                     del req.db[self.story(req, name)]
             
             if req.db.doc_exist(self.index(req, uuid)) :
                 mdebug("Deleting index.")
                 del req.db[self.index(req, uuid)]
-                mdebug("Re-checking..." + str(req.db.doc_exist(self.index(req, uuid), true_if_deleted = True)))
+                mdebug("Re-checking..." + str(req.db.doc_exist(self.index(req, uuid), purge_if_deleted = True)))
                 mdebug("Done...")
                 
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
@@ -3300,8 +3300,8 @@ class MICA(object):
     def period_keys(self, req, period_key, current_day, peer, page) :
         origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
         pagekey = self.chat_period(req, period_key, peer, current_day) + ":pages:" + str(page)
-        req.db.doc_exist(origkey, true_if_deleted = True)
-        req.db.doc_exist(pagekey, true_if_deleted = True)
+        req.db.doc_exist(origkey, purge_if_deleted = True)
+        req.db.doc_exist(pagekey, purge_if_deleted = True)
 
         return origkey, pagekey
 
