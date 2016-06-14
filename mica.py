@@ -92,9 +92,6 @@ pdf_expr = r"([" + pdf_punct + "][" + pdf_punct + "]|[\x00-\x7F][\x00-\x7F]|[\x0
 
 mverbose("Punctuation complete.")
 
-multipliers = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
-# All the months are not the same.... not sure what to do about that
-counts = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
 period_mapping = {"days" : "week", "weeks" : "month", "months" : "year", "years" : "decade", "decades" : "decade"}
 period_story_mapping = {"week" : "%a", "month" : "%m/%d", "year" : "%b", "decade" : "%Y"}
 period_view_mapping = {"days" : "%a %I:%M:%S %p", "weeks" : "%m/%d %I:%M:%S %p", "months" : "%m/%d %I:%M:%S %p", "years" : "%m/%d %I:%M:%S %p", "decades" : "%m/%d/%y %I:%M:%S %p"}
@@ -278,6 +275,7 @@ class MICA(object):
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
             self.db = self.sessiondb
             self.view_check(self, "sessions")
+            self.view_check(self, "conflicts")
 
             if not params["keepsession"] :
                 current_session_time = int(timest())
@@ -436,10 +434,10 @@ class MICA(object):
 
     # How many days since 1970 instead of seconds
     def current_day(self) :
-        return (int(timest()) / (60*60*24))
+        return (int(timest()) / (params["seconds_in_day"]))
     
     def current_period(self, period_key, current_day = False):
-        return int(current_day if current_day else self.current_day()) / counts[period_key] 
+        return int(current_day if current_day else self.current_day()) / params["counts"][period_key] 
 
     def chat_name(self, period, index, peer, current_day, extra = "") :
         return "chat;" + period + ";" + str(index) + ";" + peer + extra
@@ -2061,7 +2059,7 @@ class MICA(object):
                 if period != "days" :
                     rname += "From "
 
-                rname += datetime_datetime.fromtimestamp((((int(howmany) * counts[period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
+                rname += datetime_datetime.fromtimestamp((((int(howmany) * params["counts"][period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
             notsure = []
             notsure.append("\n<li><a onclick=\"explode('")
             notsure.append(story['uuid'] + "', '" + story['name'] + "'")
@@ -2570,7 +2568,7 @@ class MICA(object):
         if "chats" not in req.session.value :
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
 
-        for period_key in multipliers.keys() :
+        for period_key in params["multipliers"].keys() :
             if period_key not in req.session.value["chats"] :
                 req.session.value["chats"][period_key] = {}
 
@@ -2654,6 +2652,7 @@ class MICA(object):
         self.view_check(req, "chats")
         if not mobile :
             self.view_check(req, "download")
+            self.view_check(req, "conflicts")
 
     '''
     All stories up to and including mica version 0.4.x only supported
@@ -3265,7 +3264,7 @@ class MICA(object):
             [x, period, howmany, peer] = tmp_story["name"].split(";")
 
             period_difference = self.current_period(period_key) - int(howmany)
-            period_difference_max = multipliers[period_key] - 1
+            period_difference_max = params["multipliers"][period_key] - 1
             if period_difference < period_difference_max :
                 continue
 
@@ -3273,8 +3272,8 @@ class MICA(object):
 
             pages = self.nb_pages(req, tmp_story)
             for page_nb in range(0, pages) :
-                origkey = self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":original:" + str(page_nb)
-                pagekey = self.chat_period(req, period_key, peer, (int(howmany) * counts[period])) + ":pages:" + str(page_nb)
+                origkey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":original:" + str(page_nb)
+                pagekey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":pages:" + str(page_nb)
                 orig = req.db.try_get(origkey)
                 if orig :
                     mverbose("Got original to roll.")
@@ -3285,7 +3284,7 @@ class MICA(object):
                         old_units = page["units"]
 
                         mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
-                        self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * counts[period_key])
+                        self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * params["counts"][period_key])
                         mverbose("add for roll returned")
                     else :
                         mwarn("Couldn't find page to roll: " + pagekey)
@@ -3985,6 +3984,7 @@ class MICA(object):
                         self.verify_db(req, req.session.value["database"], password = newpassword)
                         req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed") + ": " + newpassword
                         json["test_success"] = True
+                        json["oldpassword"] = newpassword
                     except Exception, e :
                         out = ""
                         for line in format_exc().splitlines() :
@@ -5159,6 +5159,7 @@ class CDict(object):
     implements(IDict)
     def __init__(self, session):
         self.mica = session.mica
+        self.sessionmutex = Lock()
         start = {}
         uid = session.uid
 
@@ -5169,13 +5170,6 @@ class CDict(object):
 
         if self.mica.sessiondb.doc_exist(skey) :
             mdebug("Loading existing session: " + skey)
-            '''
-            fh = open(sfn, 'r')
-            sc = fh.read().strip()
-            fh.close()
-            if sc != "" :
-                start = json_loads(sc)
-            '''
             start = self.mica.sessiondb[skey]
         else :
             mdebug("No session existing: " + skey)
@@ -5190,14 +5184,18 @@ class CDict(object):
             skey = self.mica.session(self.value["session_uid"])
 
         mverbose("Saving to session: " + skey)
+        self.sessionmutex.acquire()
         try :
             old_doc = self.mica.sessiondb[skey]
             self.value["_rev"] = old_doc["_rev"]
+            mverbose("Using revision: " + old_doc["_rev"])
         except couch_adapter.ResourceNotFound, e :
-            pass
+            mverbose("Old session not found.")
 
         self.mica.sessiondb[skey] = self.value
         sessions[self.value["session_uid"]] = skey
+
+        self.sessionmutex.release()
 
 sessions = {} 
 
@@ -5333,6 +5331,16 @@ params = None
 def go(p) :
     global params
     params = p
+
+    if "multipliers" not in params :
+        params["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+        # All the months are not the same.... not sure what to do about that
+
+    if "counts" not in params :
+        params["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+
+    if "seconds_in_day" not in params :
+        params["seconds_in_day"] = 60*60*24
 
     if "timeout" in params :
         MicaSession.sessionTimeout = params["timeout"]

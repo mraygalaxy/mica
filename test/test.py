@@ -428,7 +428,7 @@ s = requests.Session()
 
 options = [
     dict(
-        image = 'jabber4',
+        image = 'jabber5',
         command = ['/home/mrhines/mica/restart.sh'],
         hostname = 'jabber',
         name = 'jabber',
@@ -502,6 +502,10 @@ oresp.daemon = True
 oresp.start() 
 
 parameters["timeout"] = test_timeout * 2
+
+parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+parameters["seconds_in_day"] = 1
 
 mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
@@ -714,6 +718,10 @@ tests_from_micadev10 = [
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = "foobarbaz", password = test["password"], confirm = test["password"], changepassword = "1") },
 
+           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True },
+
+           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(password = test["password"], confirm = test["password"], changepassword = "1"), "forward_keys" : ["oldpassword"] },
+
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(language = 'badlanguage', changelanguage = '1') },
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(language = 'en', changelanguage = '1') },
@@ -827,12 +835,6 @@ tests_from_micadev10 = [
            # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
            # 2. Template the story uploads and test more stories
            # 3. break the chat system
-
-           # Make this the 'resetpassword' the last test. 
-           # I really don't want to get the new password out of JSON right now.
-           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True },
-
-           common_urls["account"],
 
 #          { "stop" : True },
         ]
