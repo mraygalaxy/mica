@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 from common import *
 from json import loads, dumps
 from uuid import uuid4
@@ -24,8 +25,6 @@ except ImportError, e :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
     except ImportError, e :
         mverbose("pyjnius and pyobjus not available. Probably on a server.")
-
-
 
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):

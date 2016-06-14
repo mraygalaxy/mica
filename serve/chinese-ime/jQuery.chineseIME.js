@@ -424,7 +424,7 @@
 		*/
                 var chat_language = chat_target_language;
                     
-                var micaurl = "chat_ime&ime=1&source=" + self.currentText + "&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+                var micaurl = "chat_ime&ime=1&mode=read&source=" + self.currentText + "&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
                 if (micaurl == self.last_api) {
                         console.log("Ignoring duplicate api request from wierd keypress");
