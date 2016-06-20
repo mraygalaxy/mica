@@ -97,7 +97,7 @@ period_story_mapping = {"week" : "%a", "month" : "%m/%d", "year" : "%b", "decade
 period_view_mapping = {"days" : "%a %I:%M:%S %p", "weeks" : "%m/%d %I:%M:%S %p", "months" : "%m/%d %I:%M:%S %p", "years" : "%m/%d %I:%M:%S %p", "decades" : "%m/%d/%y %I:%M:%S %p"}
 translated_periods = { "days" : _("days"), "day" : _("day"), "weeks" : _("weeks"), 
                 "week" : _("week"), "months" : _("months"), "month" : _("month"),
-                "years" : _("year"), "year" : _("years") }
+                "years" : _("year"), "year" : _("years"), "decade" : _("decades") }
 
 def parse_lt_objs (lt_objs, page_number):
     text_content = [] 
@@ -3716,6 +3716,8 @@ class MICA(object):
         
         if memorized :
             unit["date"] = timest()
+            unit["source_language"] = req.session.value["language"]
+            unit["target_language"] = req.session.value["learnlanguage"]
             if not req.db.doc_exist(self.memorized(req, unit["hash"])) :
                 req.db[self.memorized(req, unit["hash"])] = unit
         else :

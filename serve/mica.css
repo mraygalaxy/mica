@@ -66,6 +66,7 @@ div.transroman {
 
 div.romangrey {
     background: grey;
+    color: white;
 }
 
 div.romanblue {
@@ -240,10 +241,15 @@ html, body, div[data-role = "page"] {
 }
 
 body {
-    background-image: url("/serve/alien.jpg");
+/*    background-image: url("/serve/alien.jpg"); */
+    background-color: #0f001a; 
     margin: 0;
     padding-top: 55px;
     color: white;
+}
+
+.ui-overlay-a {
+    background-color: #0f001a; 
 }
 .ui-content {
     background-image: url("/serve/alien.jpg");
