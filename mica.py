@@ -2916,6 +2916,8 @@ class MICA(object):
             # this message will appear to instruct them to try again.
             out = "Error: " + _("Please try your request again.") + ": " + _(description)
             out += str(e)
+            mdebug("Error submitting job: " + str(e))
+            return out
 
         self.jobsmutex.release()
 
