@@ -319,6 +319,8 @@ class MICA(object):
         except couch_adapter.ResourceNotFound, e :
             mwarn("Account document @ " + self.acct('mica_admin') + " not found: " + str(e))
         except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
             mwarn("Database not available yet: " + str(e))
 
         if mobile and params["serialize_couch_on_mobile"] :

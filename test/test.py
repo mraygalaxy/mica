@@ -844,6 +844,14 @@ tests_from_micadev10 = [
 #          { "stop" : True },
         ]
 
+def add_chat_tests_from_micadev10() :
+    chatfname = cwd + 'chats.txt'
+    chatfd = open(chatfname, 'r')
+    for line in chatfd.readline() :
+        urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
+    close(chatfd)
+    
+add_chat_tests_from_micadev10()
 add_oauth_tests_from_micadev10()
 urls += tests_from_micadev10
 sleep(5)
