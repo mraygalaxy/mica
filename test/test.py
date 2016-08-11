@@ -444,7 +444,7 @@ options = [
     ),
 
     dict(
-        image = 'couchdb4', 
+        image = 'couchdb5',
         command = ['couchdb'], 
         name = 'couchdb',
         tty = True,
