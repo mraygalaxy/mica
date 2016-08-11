@@ -53,6 +53,7 @@ from params import parameters, test
 from common import sdict, recursiveSetInDict, timest, getFromDict
 from mica import go
 from pyquery import PyQuery as pq
+from sys import argv
 import couch_adapter
 
 server_port = 9888
@@ -490,6 +491,10 @@ for option in options :
     hostname = "localhost"
 
     wait_for_port_ready(option["name"], hostname, port)
+
+if len(sys.argv) > 1 and sys.argv[1] == "stop" :
+    tlog("Containers are created. Stopping now.")
+    exit(0)
 
 urls = []
 if "test" not in parameters or not parameters["test"] :
