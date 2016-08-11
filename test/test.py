@@ -847,18 +847,28 @@ tests_from_micadev10 = [
 def add_chat_tests_from_micadev10() :
     chatfname = cwd + 'chats.txt'
     chatfd = open(chatfname, 'r')
-    for line in chatfd.readline() :
-        urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
-    close(chatfd)
+    tlog("Reading in chat tests...")
+    urls.append(common_urls["relogin"])
+    while True :
+        line = chatfd.readline().strip()
+        if not line :
+            break
+        if line.count("source=") :
+            urls.append({"loc" : "/api?" + line, "method" : "get", "success" : None, "test_success" : True})
+        else :
+            urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
+            
+    chatfd.close()
+    urls.append(common_urls["logout"])
     
-add_chat_tests_from_micadev10()
-add_oauth_tests_from_micadev10()
-urls += tests_from_micadev10
-sleep(5)
-
-urls.append(common_urls["logout"])
-
 try :
+    add_chat_tests_from_micadev10()
+    add_oauth_tests_from_micadev10()
+    urls += tests_from_micadev10
+    sleep(5)
+
+    urls.append(common_urls["logout"])
+
     old_timeout = int(change_timeout(5)[1:-2])
 except Exception, e :
     tlog(str(e))

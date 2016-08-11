@@ -302,6 +302,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             #mdebug(str(e.args))
             ((error, reason),) = e.args
             mdebug("Doc exist returns not found: " + reason)
+            return False
+
         return True
 
     def reauthorize(self) :

@@ -319,8 +319,6 @@ class MICA(object):
         except couch_adapter.ResourceNotFound, e :
             mwarn("Account document @ " + self.acct('mica_admin') + " not found: " + str(e))
         except Exception, e :
-            for line in format_exc().splitlines() :
-                merr(line)
             mwarn("Database not available yet: " + str(e))
 
         if mobile and params["serialize_couch_on_mobile"] :
@@ -839,12 +837,11 @@ class MICA(object):
 
             if "test_success" not in json :
                 json["test_success"] = True
+                if "success" in json and not json["success"] :
+                    json["test_success"] = False
 
             if "job_running" not in json :
                 json["job_running"] = False
-
-            if "success" in json and not json["success"] :
-                json["test_success"] = False
 
             #mverbose("Dumping: " + str(json))
             return json_dumps(json)
@@ -3391,6 +3388,10 @@ class MICA(object):
             mverbose("Add complete")
 
     def render_chat_ime(self, req) :
+        if "chats" not in req.session.value :
+            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
+            req.session.save()
+
         self.imemutex.acquire()
         try :
             self.install_local_language(req, req.http.params.get("lang"))
@@ -3426,7 +3427,7 @@ class MICA(object):
                     mdebug("No result from search for: " + orig)
                     if not gp.already_romanized :
                         self.imemutex.release()
-                        return self.bad_api(req, _("No result"))
+                        return self.bad_api(req, _("No result"), json = { "test_success" : True })
 
                     source = orig
                 else :
@@ -4252,6 +4253,12 @@ class MICA(object):
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
             req.session.value["jabber_key"] = binascii_hexlify(os_urandom(4))
+            req.session.save()
+
+        if "chats" not in req.session.value :
+            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
+            req.session.save()
+
 
         if req.http.params.get("history") :
             def by_date(story):
@@ -4305,10 +4312,6 @@ class MICA(object):
             return self.api(req, out)
 
         req.main_server = params["main_server"]
-
-        if "chats" not in req.session.value :
-            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
-            req.session.save()
 
         story = {
            "target_language" : supported_map[req.session.value["language"]],
