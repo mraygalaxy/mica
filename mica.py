@@ -2896,8 +2896,9 @@ class MICA(object):
 
         mdebug("Submitting job: " + str(job))
 
+        self.jobsmutex.acquire()
+
         try :
-            self.jobsmutex.acquire()
             jobs = req.db.try_get("MICA:jobs")
             if not jobs :
                 jobs = {"list" : {}}
@@ -2908,20 +2909,24 @@ class MICA(object):
             req.db["MICA:jobs"] = jobs
 
             mdebug("Starting job: " + str(job))
-            self.jobsmutex.release()
 
-            out = self.render_jobs(req, jobs)
-
-            vt.start()
-
-            # This happens when a user uploads a new story, or performs other long-running actions that
-            # cannot be completed in a single click. The request goes into a background job and is
-            # processed in the background.
-                
         except Exception, e :
             self.jobsmutex.release()
             # If a background request that was submitted (like uploading a new story) fails to complete,
             # this message will appear to instruct them to try again.
+            out = "Error: " + _("Please try your request again.") + ": " + _(description)
+            out += str(e)
+
+        self.jobsmutex.release()
+
+        try :
+            # This happens when a user uploads a new story, or performs other long-running actions that
+            # cannot be completed in a single click. The request goes into a background job and is
+            # processed in the background.
+                
+            out = self.render_jobs(req, jobs)
+            vt.start()
+        except Exception, e :
             out = "Error: " + _("Please try your request again.") + ": " + _(description)
             out += str(e)
 
