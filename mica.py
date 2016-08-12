@@ -3392,6 +3392,8 @@ class MICA(object):
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
             req.session.save()
 
+        hard_error = False
+        result_now = False
         self.imemutex.acquire()
         try :
             self.install_local_language(req, req.http.params.get("lang"))
@@ -3426,8 +3428,8 @@ class MICA(object):
                 if not char_result :
                     mdebug("No result from search for: " + orig)
                     if not gp.already_romanized :
-                        self.imemutex.release()
-                        return self.bad_api(req, _("No result"), json = { "test_success" : True })
+                        result_now = self.bad_api(req, _("No result"), json = { "test_success" : True })
+                        return
 
                     source = orig
                 else :
@@ -3456,8 +3458,15 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 out += line + "\n"
             merr(out)
-            self.imemutex.release()
-            raise e
+            hard_error = e
+
+        finally :
+            if hard_error :
+                self.imemutex.release()
+                raise hard_error
+            if result_now :
+                self.imemutex.release()
+                return result_now
 
         cerror = False
         failed = True
@@ -3476,7 +3485,6 @@ class MICA(object):
                 cerror = e
             finally :
                 if cerror :
-                    self.imemutex.release()
                     raise cerror
 
             if peer :

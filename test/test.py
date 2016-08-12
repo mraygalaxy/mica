@@ -361,7 +361,7 @@ def run_tests(test_urls) :
                         retry_attempts += 1
                         continue
 
-                    if r.status_code == 401 and url["loc"].count("/couch"):
+                    if r.status_code == 401 :
                         tlog("  Our token may have expired. Login again and retry the test.")
                         retry_attempts += 1
                         run_tests(common_urls["relogin"])
@@ -508,9 +508,9 @@ oresp.start()
 
 parameters["timeout"] = test_timeout * 2
 
-parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
-parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
-parameters["seconds_in_day"] = 1
+#parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+#parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+#parameters["seconds_in_day"] = 60*60*24 
 
 mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
@@ -860,6 +860,8 @@ def add_chat_tests_from_micadev10() :
             
     chatfd.close()
     urls.append(common_urls["logout"])
+    urls.append({ "stop" : True })
+
     
 try :
     add_chat_tests_from_micadev10()
