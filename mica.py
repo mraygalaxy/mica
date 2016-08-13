@@ -217,6 +217,7 @@ class MICA(object):
         self.jobsmutex = Lock()
         self.transmutex = Lock()
         self.imemutex = Lock()
+        self.rollmutex = Lock()
         self.pid = "none"
         self.dbs = {}
         self.userdb = False
@@ -592,6 +593,43 @@ class MICA(object):
                     pass
 
             self.views_ready[username] += 1
+
+        '''
+        mdebug("Auditing stories")
+
+        for result in db.view("stories/all", startkey=[username], endkey=[username, {}]) :
+            tmp_story = result["value"]
+            tmp_storyname = tmp_story["name"]
+
+            story_view_original = 0
+            story_view_original_found = 0
+            story_view_pages = 0
+            story_view_pages_found = 0
+            stories = {}
+
+            for oresult in db.view('stories/original', startkey=[username, tmp_storyname], endkey=[username, tmp_storyname, {}]) :
+                story_view_original = oresult['value']
+                break
+
+            for presult in db.view('stories/pages', startkey=[username, tmp_storyname], endkey=[username, tmp_storyname, {}]) :
+                story_view_pages = presult['value']
+                if tmp_storyname not in stories :
+                    stories[tmp_storyname] = []
+                break
+
+            for sresult in db.view('stories/allpages', startkey=[username, tmp_storyname], endkey=[username, tmp_storyname, {}]) :
+                page = int(sresult["key"][2])
+                if page not in stories[tmp_storyname] :
+                    stories[tmp_storyname].append(page)
+            
+            if "nb_pages" in tmp_story :
+                if tmp_story["nb_pages"] != story_view_pages :
+                    mdebug("Story " + tmp_storyname + " says it has " + str(tmp_story["nb_pages"]) + " pages.")
+                mdebug("Story " + tmp_storyname + " actually has: " + str(story_view_original) + " originals and " + str(story_view_pages) + " pages.")
+                mdebug("Story " + tmp_storyname + " pages: " + str(stories[tmp_storyname]))
+            else :
+                mdebug("Story " + tmp_storyname + " says unknown pages.")
+        '''
 
         return _("Database optimized.")
 
@@ -1979,7 +2017,9 @@ class MICA(object):
                     finished = True
 
             except ArgumentOutOfRangeException, e :
-                error = "Missing results. Probably we timed out. Trying again: " + str(e)
+                error = "Missing results (1). Probably we timed out. Trying again: " + str(e)
+            except ArgumentException, e :
+                error = "Missing results (2). Probably we timed out. Trying again: " + str(e)
             except TranslateApiException, e :
                 error = "First-try translation failed: " + str(e)
             except IOError, e :
@@ -1989,6 +2029,8 @@ class MICA(object):
             except socket_timeout, e :
                 error = "Response was probably too slow. Will try again: " + str(e)
             except Exception, e :
+                for line in format_exc().splitlines() :
+                    merr(line)
                 error = "Unknown fatal translation error: " + str(e)
                 stop = True
             finally :
@@ -2018,6 +2060,21 @@ class MICA(object):
               <ul id='listview_collapse""" + name + """' data-role='listview' data-inset='true'>
               """
 
+    def roll_peer(self, req, peer) :
+        if "chats" not in req.session.value :
+            req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
+            req.session.save()
+        rolled = True
+        while rolled :
+            rolled = False
+            self.roll_period(req, "years", "decades", peer)
+            if self.roll_period(req, "months", "years", peer) :
+                rolled = True
+            if self.roll_period(req, "weeks", "months", peer) :
+                rolled = True
+            if self.roll_period(req, "days", "weeks", peer) :
+                rolled = True
+
     def makestorylist(self, req, tzoffset):
         translist = []
         untrans_count = 0
@@ -2029,6 +2086,7 @@ class MICA(object):
         noreview = [self.storyTemplate("Reviewing")]
         untrans = [self.storyTemplate("Untranslated")]
         finish = [self.storyTemplate("Finished")]
+        peer_list = {} 
 
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -2121,6 +2179,7 @@ class MICA(object):
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
+                       peer_list[story["name"].split(";")[3]] = True
                        chatting[period_mapping[period]] += notsure
                        chatting[period_mapping[period]].append(closing)
                    else :
@@ -2131,6 +2190,9 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
 
+        for peer in peer_list :
+            mdebug("We should roll chat periods for peer: " + str(peer))
+            self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist]
 
     def memocount(self, req, story, page):
@@ -2873,6 +2935,8 @@ class MICA(object):
             job["success"] = True
             mdebug("Complete job: " + str(job))
         except Exception, e :
+            for line in format_exc().splitlines() :
+                mwarn(line)
             mdebug("Error job: " + str(job) + " " + str(e))
             job["success"] = False
             job["result"] = str(e)
@@ -2993,8 +3057,9 @@ class MICA(object):
                                 # This appears when a story is being deleted from the database. The page
                                 # number will appear at the end of 'Deleted Page' to indicate how many
                                 # pages of the story have been deleted.
-                                jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
-                                req.db["MICA:jobs"] = jobs
+                                if req.job_uuid in jobs["list"] :
+                                    jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
+                                    req.db["MICA:jobs"] = jobs
                                 self.jobsmutex.release()
                             except Exception, e :
                                 self.jobsmutex.release()
@@ -3260,47 +3325,63 @@ class MICA(object):
         return self.api(req, out, json = {"test_success" : test_success} )
 
     def roll_period(self, req, period_key, period_next_key, peer) :
-        to_delete = []
+        error = False
+        self.imemutex.acquire()
+        rolled = False
+        try :
+            to_delete = []
 
-        for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
-            tmp_story = result["value"]
-            tmp_storyname = tmp_story["name"]
+            for result in req.db.view('chats/all', startkey=[req.session.value['username'], period_key, peer], endkey=[req.session.value['username'], period_key, peer, {}]) :
+                tmp_story = result["value"]
+                tmp_storyname = tmp_story["name"]
 
-            [x, period, howmany, peer] = tmp_story["name"].split(";")
+                [x, period, howmany, peer] = tmp_story["name"].split(";")
 
-            period_difference = self.current_period(period_key) - int(howmany)
-            period_difference_max = params["multipliers"][period_key] - 1
-            if period_difference < period_difference_max :
-                continue
+                period_difference = self.current_period(period_key) - int(howmany)
+                period_difference_max = params["multipliers"][period_key] - 1
+                if period_difference < period_difference_max :
+                    continue
 
-            to_delete.append((tmp_story["name"], tmp_story["uuid"]))
+                rolled = True
 
-            pages = self.nb_pages(req, tmp_story)
-            for page_nb in range(0, pages) :
-                origkey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":original:" + str(page_nb)
-                pagekey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":pages:" + str(page_nb)
-                orig = req.db.try_get(origkey)
-                if orig :
-                    mverbose("Got original to roll.")
-                    old_messages = orig["messages"]
-                    page = req.db.try_get(pagekey)
-                    if page :
-                        mverbose("Got page to roll.")
-                        old_units = page["units"]
+                to_delete.append((tmp_story["name"], tmp_story["uuid"]))
 
-                        mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
-                        self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * params["counts"][period_key])
-                        mverbose("add for roll returned")
+                pages = self.nb_pages(req, tmp_story)
+                for page_nb in range(0, pages) :
+                    origkey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":original:" + str(page_nb)
+                    pagekey = self.chat_period(req, period_key, peer, (int(howmany) * params["counts"][period])) + ":pages:" + str(page_nb)
+                    orig = req.db.try_get(origkey)
+                    if orig :
+                        mverbose("Got original to roll.")
+                        old_messages = orig["messages"]
+                        page = req.db.try_get(pagekey)
+                        if page :
+                            mverbose("Got page to roll.")
+                            old_units = page["units"]
+
+                            mdebug("Rolling " + str(len(old_messages)) + " messages of period " + period_key + " from peer " + peer + " to next period " + period_next_key)
+                            self.add_period(req, period_next_key, peer, old_messages, old_units, tmp_story, int(howmany) * params["counts"][period_key])
+                            mverbose("add for roll returned")
+                        else :
+                            mwarn("Couldn't find page to roll: " + pagekey)
                     else :
-                        mwarn("Couldn't find page to roll: " + pagekey)
-                else :
-                    mwarn("Couldn't find original to roll: " + origkey)
+                        mwarn("Couldn't find original to roll: " + origkey)
 
-        mverbose("Checking for deletes...")
-        for (name, uuid) in to_delete :
-            mverbose("Want to delete story: " + name)
-            self.new_job(req, self.deletestory, False, _("Rotating Old Merged Chats From Database"), name, False, args = [req, uuid, name])
-        mverbose("Roll complete for period: " + period_key)
+            mverbose("Checking for deletes...")
+            for (name, uuid) in to_delete :
+                mverbose("Want to delete story: " + name)
+                self.deletestory(req, uuid, name)
+            mverbose("Roll complete for period: " + period_key)
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            error = e
+        finally :
+            self.imemutex.release()
+            if error :
+                raise e
+
+        return rolled
 
     def period_keys(self, req, period_key, current_day, peer, page) :
         origkey = self.chat_period(req, period_key, peer, current_day) + ":original:" + str(page)
@@ -3320,19 +3401,20 @@ class MICA(object):
         return story
 
     def add_period(self, req, period_key, peer, messages, new_units, story, current_day = False) :
+            story = self.add_period_story(req, period_key, peer, current_day, story)
             if peer not in req.session.value["chats"][period_key] :
                 mdebug("Peer not in session. Checking for story...")
-                story = self.add_period_story(req, period_key, peer, current_day, story)
                 csession = story
             else :
                 csession = req.session.value["chats"][period_key][peer]
+                mdebug("Using csession: " + str(csession["name"]) + " should be " + self.chat_period_name(period_key, peer, current_day))
 
             page = str(max(0, int(csession["nb_pages"]) - 1))
 
             changed_page = False
             while True :
                 origkey, pagekey = self.period_keys(req, period_key, current_day, peer, page)
-                mdebug("Adding message period " + period_key + " to page key: " + pagekey)
+                mdebug("Adding message to period " + period_key + " to page key: " + pagekey)
 
                 chat_orig = req.db.try_get(origkey)
                 chat_page = False
@@ -4276,10 +4358,7 @@ class MICA(object):
             tzoffset = int(req.http.params.get("tzoffset"))
 
             if not mobile :
-                self.roll_period(req, "years", "decades", peer)
-                self.roll_period(req, "months", "years", peer)
-                self.roll_period(req, "weeks", "months", peer)
-                self.roll_period(req, "days", "weeks", peer)
+                self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
 
             out = "<table width='100%'>\n"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
@@ -4678,14 +4757,14 @@ class MICA(object):
                 else :
                     req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
         req.action = "home"
-        req.session.value['connected'] = True
+        req.session.value["connected"] = True
 
         if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
-            req.session.value['last_username'] = username
-            req.session.value['last_remember'] = 'checked'
+            req.session.value["last_username"] = username
+            req.session.value["last_remember"] = 'checked'
         elif 'last_username' in req.session.value :
-            del req.session.value['last_username']
-            req.session.value['last_remember'] = ''
+            del req.session.value["last_username"]
+            req.session.value["last_remember"] = ''
 
         self.clear_story(req)
 

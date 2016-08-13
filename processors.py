@@ -941,7 +941,11 @@ class ChineseSimplifiedToEnglish(Processor) :
                 s = self.tonedb["tones"].select().where(self.tonedb["tones"].c.word == key)
                 rs = s.execute()
                 kv = rs.fetchone()
-                mdebug("get_pinyin result: " + str(kv))
+                mdebug("get_pinyin result: " + str(kv) + " for " + str(char))
+                if kv is None :
+                    # This typically happens when we get english instead of characters
+                    result.append(char)
+                    continue
                 word, tone = kv[0], kv[1]
                 result.append(tone.split(" ")[0].strip().lower())
             except Exception, e:

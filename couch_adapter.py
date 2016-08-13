@@ -183,10 +183,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             for doc in docs :
                 if "_deleted" in doc["ok"] :
                     continue
-                mdebug("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                mverbose("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
                 olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
                 self.db.delete(olddoc)
-                mdebug("DELETE Deleted.")
+                mverbose("DELETE Deleted.")
 
             '''
             doc = self.db[name]
@@ -301,7 +301,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ResourceNotFound, e :
             #mdebug(str(e.args))
             ((error, reason),) = e.args
-            mdebug("Doc exist returns not found: " + reason)
+            mverbose("Doc exist returns not found: " + reason)
             return False
 
         return True
