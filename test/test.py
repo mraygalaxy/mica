@@ -374,23 +374,28 @@ def run_tests(test_urls) :
                     break
                     
                 if url["method"] == "get" :
-                    r = s.get("http://localhost" + move_data_to_url(url))
+                    udest = "http://localhost" + move_data_to_url(url)
+                    r = s.get(udest)
                 elif url["method"] == "post" :
-                    r = s.post("http://localhost" + url["loc"], data = url["data"])
+                    udest = "http://localhost" + url["loc"]
+                    r = s.post(udest, data = url["data"])
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
-                        r = s.put("http://localhost" + move_data_to_url(url), headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
+                        udest = "http://localhost" + move_data_to_url(url)
+                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
                     else :
-                        r = s.put("http://localhost" + url["loc"], data = json_dumps(url["data"]))
+                        udest = "http://localhost" + url["loc"]
+                        r = s.put(udest, data = json_dumps(url["data"]))
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
 
                     if r.status_code == 504 :
-                        tlog("  Gateway timeout. Try the request again...")
+                        tlog("  Gateway timeout to: " + udest + ", Try the request again...")
                         retry_attempts += 1
+                        run_tests(common_urls["relogin"])
                         continue
 
                     if r.status_code == 401 :
@@ -401,6 +406,8 @@ def run_tests(test_urls) :
 
                     tlog("  Bad status code: " + str(r.status_code))
                     assert(False)
+                else :
+                    retry_attempts = 0
 
                 # The difference between 'success' and 'test_success' is for errors
                 # that happen during tests which are tolerable in the user experience.
@@ -880,25 +887,27 @@ def add_chat_tests_from_micadev10() :
     chatfname = cwd + 'chats.txt'
     chatfd = open(chatfname, 'r')
     tlog("Reading in chat tests...")
-    urls.append(common_urls["relogin"])
+    #urls.append(common_urls["relogin"])
     while True :
         line = chatfd.readline().strip()
         if not line :
             break
-        if line.count("source=") :
+        if line == "storylist" :
+            urls.append(common_urls["storylist"])
+        elif line.count("source=") :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : None, "test_success" : True})
         else :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
             
     chatfd.close()
-    urls.append(common_urls["logout"])
-    urls.append({ "stop" : True })
+    #urls.append(common_urls["logout"])
+    #urls.append({ "stop" : True })
 
     
 try :
-    add_chat_tests_from_micadev10()
     add_oauth_tests_from_micadev10()
     urls += tests_from_micadev10
+    add_chat_tests_from_micadev10()
     sleep(5)
 
     urls.append(common_urls["logout"])

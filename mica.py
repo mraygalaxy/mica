@@ -786,6 +786,7 @@ class MICA(object):
         if uid == "debug" :
             return
 
+        self.sessionmutex.acquire()
         skey = sessions[uid]
         mdebug("Session " + uid + " has expired: " + sessions[uid])
 
@@ -801,6 +802,7 @@ class MICA(object):
                 merr(line)
 
         del sessions[uid]
+        self.sessionmutex.release()
 
     def __call__(self, environ, start_response):
         try :
@@ -2926,6 +2928,7 @@ class MICA(object):
                 raise e
 
     def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
+        setattr(current_thread(), "in_a_job", True)
         self.install_local_language(req)
 
         try :
@@ -2940,6 +2943,8 @@ class MICA(object):
             mdebug("Error job: " + str(job) + " " + str(e))
             job["success"] = False
             job["result"] = str(e)
+
+        delattr(current_thread(), "in_a_job")
 
         self.run_job_complete(req, cleanup, self_delete, job)
 
@@ -5186,7 +5191,7 @@ class MICA(object):
         # User must wait.
         jobs = req.db.try_get("MICA:jobs")
 
-        if jobs and len(jobs["list"]) > 0 :
+        if jobs and len(jobs["list"]) > 0 and req.action not in ["chat_ime"] :
             rjobs = self.render_jobs(req, jobs)
             return self.api(req, self.render_mainpage(req, rjobs) if req.human else rjobs, json = {"job_running" : True} )
 
@@ -5279,7 +5284,13 @@ class CDict(object):
         self.value = start
         self.value["session_uid"] = uid
 
-    def save(self) :
+    def save(self, ignore_expired = False) :
+        in_a_job = False
+        try :
+            in_a_job = getattr(current_thread(), "in_a_job")
+        except AttributeError, e :
+            pass
+
         if params["keepsession"] :
             skey = self.mica.session("debug")
         else :
@@ -5292,10 +5303,27 @@ class CDict(object):
             self.value["_rev"] = old_doc["_rev"]
             mverbose("Using revision: " + old_doc["_rev"])
         except couch_adapter.ResourceNotFound, e :
+            if in_a_job :
+                mwarn("3) We expired, but we're just a background job, so it's fine.")
+                self.sessionmutex.release()
+                return
             mverbose("Old session not found.")
 
-        self.mica.sessiondb[skey] = self.value
-        sessions[self.value["session_uid"]] = skey
+        try :
+            self.mica.sessiondb[skey] = self.value
+            sessions[self.value["session_uid"]] = skey
+        except couch_adapter.ResourceConflict, e :
+            if in_a_job :
+                mwarn("1) We expired, but we're just a background job, so it's fine.")
+            else :
+                self.sessionmutex.release()
+                raise e
+        except couch_adapter.ResourceNotFound, e :
+            if in_a_job :
+                mwarn("2) We expired, but we're just a background job, so it's fine.")
+            else :
+                self.sessionmutex.release()
+                raise e
 
         self.sessionmutex.release()
 

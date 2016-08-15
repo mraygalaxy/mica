@@ -204,6 +204,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             '''
         except couch_ServerError, e :
             check_for_unauthorized(e)
+        except Unauthorized, e :
+            raise e
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
