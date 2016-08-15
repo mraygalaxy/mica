@@ -13,6 +13,11 @@ class ArgumentOutOfRangeException(Exception):
         self.message = message.replace('ArgumentOutOfRangeException: ', '')
         super(ArgumentOutOfRangeException, self).__init__(self.message)
 
+class ArgumentException(Exception):
+    def __init__(self, message):
+        self.message = message.replace('ArgumentException: ', '')
+        super(ArgumentException, self).__init__(self.message)
+
 class OnlineTranslateException(Exception):
     def __init__(self, message, *args):
         self.message = message.replace('OnlineTranslateException: ', '')
@@ -85,6 +90,10 @@ class Translator(object):
             raise ArgumentOutOfRangeException(rv)
 
         if isinstance(rv, basestring) and \
+                rv.startswith("ArgumentException"):
+            raise ArgumentOutOfRangeException(rv)
+
+        if isinstance(rv, basestring) and \
                 rv.startswith("TranslateApiException"):
             raise TranslateApiException(rv)
 
@@ -93,6 +102,7 @@ class Translator(object):
         if len(rv) > 0 and self.test :
             rvc = deepcopy(rv)
             for idx in range(0, len(rvc)) : 
+                mwarn("RVC idx: " + str(idx) + " is " + str(type(rvc[idx])) + ", " + str(rvc))
                 rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
             test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = rvc))
         return rv

@@ -1,7 +1,7 @@
 var last_data = '';
-var first_time = true;
+var first_time = false;
 var debug = false;
-//var debug = true; 
+//var debug = true;
 function unavailable(error) {
     if (!error) {
         error = local('requestfailed');
@@ -53,7 +53,7 @@ var spinner = "<img src='data:image/gif;base64,R0lGODlhLgAuAPMPAAAAABERESIiIjMzM
 
 if ("object" in params)
     active = params["object"];
-    
+
 if ("liststate" in params)
     liststate = params["liststate"];
 
@@ -114,7 +114,7 @@ function go(form_id, url, error, callback, opaque){
         if (XMLHttpRequest.status == 401) {
               window.location.href = "/";
         } else {
-            
+
             var aff = $(form).attr('ajaxfinish');
             if(form && aff != undefined) {
 			    eval(aff + "('" + error + "')");
@@ -137,7 +137,14 @@ function go(form_id, url, error, callback, opaque){
 
     function go_success(response) {
         var go_to_messages = false;
-        if(response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1)) {
+        var htmlresp = false;
+        try {
+            JSON.parse(response);
+        } catch(err) {
+            htmlresp = true;
+        }
+
+        if(htmlresp && (response.indexOf(local("notsynchronized")) != -1 || (response.indexOf("<h4>Exception:</h4>") != -1 && response.indexOf("<h4>") != -1))) {
             $(id).html(response);
         } else {
             var aff = false;
@@ -159,6 +166,7 @@ function go(form_id, url, error, callback, opaque){
                         if ("job_running" in response && response.job_running) {
                             $("#messages_content").html(response.desc);
                             go_to_messages = true;
+                            firstloaded = false;
                         }
                     } catch(err) {
                         console.log("ERROR parsing: " + response);
@@ -236,7 +244,7 @@ function CountBack(id, barid, left, opaque) {
                 document.getElementById(barid).style.width = ((secs - left) / secs) * 100 + "%";
             setTimeout("CountBack('" + id + "', '" + barid + "', " + newSecs + ", '" + opaque + "');", 990);
         } else {
-            if(opaque != false) 
+            if(opaque != false)
                 finish(opaque);
         }
     } else {
@@ -257,8 +265,6 @@ function trans_wait_poll(uuid) {
     setTimeout("trans_poll('" + uuid + "');", 5000);
 }
 
-var first_time = false; 
-
 function trans_poll_complete(json, uuid) {
     if (json.translated.pages == 0) {
     	json.translated.pages = json.translated.page;
@@ -268,17 +274,18 @@ function trans_poll_complete(json, uuid) {
         $("#translationstatus" + uuid).html(spinner + "&nbsp;&nbsp;" + local("working") + ": " + local("page") + ": " + json.translated.page + "/" + json.translated.pages + ", " + json.translated.percent + "%");
         trans_wait_poll(uuid);
     } else {
+        firstloaded = false;
         $("#translationstatus" + uuid).html(local('donereload'));
         loadstories(false, false);
     }
 }
 
 function trans_poll(uuid) {
-   go(false, 'read&tstatus=1&uuid=' + uuid, 
+   go(false, 'read&tstatus=1&uuid=' + uuid,
        unavailable(false),
-       trans_poll_complete, 
+       trans_poll_complete,
        uuid);
-} 
+}
 
 function trans_stop(json, uuid) {
     finish = false;
@@ -333,9 +340,8 @@ function toggle(name, check) {
    toggle_specific('trans', name, check);
 }
 
-      
 function prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation) {
-  	  var op = { 
+  	  var op = {
   	  			"operation": operation,
   	  			"uuid" : uuid,
   	  			"units" : chars.length,
@@ -367,7 +373,7 @@ function prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin
           } else {
               for(var x = 0; x < chars.length; x++) {
                  if (x > 0 && ((parseInt(transids[x]) - 1) != parseInt(transids[x-1]))) {
-                     consecutive = false; 
+                     consecutive = false;
                      break;
                  }
                  if (!consecutive) {
@@ -387,12 +393,12 @@ function prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin
               out = local("notconsecutive");
           }
       }
-      
+
       op["out"] = out
-      
+
       return op;
 }
-  
+
 function process_edits(uuid, operation, batch) {
       var uhashes = [];
       var transids = [];
@@ -418,9 +424,9 @@ function process_edits(uuid, operation, batch) {
         operations.push($(this).attr('operation'));
         select_toggle($(this).attr("transid"));
       });
-      
+
       var out = "";
-      
+
       if (batch) {
 			var t_uhashes = [];
 			var t_transids = [];
@@ -455,16 +461,16 @@ function process_edits(uuid, operation, batch) {
 	    		t_pages.push(pages[x]);
 	    		t_operations.push(operations[x]);
 		    }
-		    
+
 		    // handle the last batch...
-		    
+
 		    if (t_uhashes.length > 0) {
 				edits.push(prepare_one_edit(batch, uuid, t_uhashes, t_transids, t_nbunits, t_chars, t_pinyin, t_indexes, t_pages, t_operations[0]));
 		    }
       } else {
 		  edits.push(prepare_one_edit(batch, uuid, uhashes, transids, nbunits, chars, pinyin, indexes, pages, operation));
       }
-      
+
       out += "<h4>" + local("areyousure") + "</h4>\n";
       out += "<form ajaxfinishid='learn_content' ajaxfinish='install_pages_if_needed' class='ajaxform chattable' data-ajax='false' method='post' action='edit'>"
       var editcount = 1;
@@ -474,7 +480,7 @@ function process_edits(uuid, operation, batch) {
       	  out += "<td>#" + editcount + ")&nbsp;</td>";
       	  	
       	  if (edits[x]["operation"] == "split") {
-      	  	  out += "<td>" + local("split") + " "; 
+      	  	  out += "<td>" + local("split") + " ";
 	      	  if (edits[x]["failed"] == true) {
 		      	  out += "(INVALID)"
 	      	  } else {
@@ -482,20 +488,20 @@ function process_edits(uuid, operation, batch) {
 	      	  }
 	      	  out += ":&nbsp;</td><td>" + edits[x]["chars"] + "(" + edits[x]["pinyin"] + ")</td>";
 	      } else {
-      	  	  out += "<td>" + local("merge") + " "; 
+      	  	  out += "<td>" + local("merge") + " ";
 	      	  if (edits[x]["failed"] == true) {
 		      	  out += "(" + local("invalid") + ")"
 	      	  } else {
 		      	  editcount += 1;
 	      	  }
-	      	  
+
 			  out += ":&nbsp;</td>";
 	      	  for (var y = 0; y < edits[x]["units"]; y++) {
 	      	  	  if (edits[x]["chars" + y] == undefined)
 			          out += "<td>" + edits[x]["chars"] + "</td>"
-			      else 
+			      else
 			          out += "<td>" + edits[x]["chars" + y] + "</td>"
-			          
+			
 	      	  	  if (edits[x]["pinyin" + y] == undefined)
 			          out += "<td>&nbsp;" + edits[x]["pinyin"];
 			      else
@@ -535,7 +541,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
         var languagepair = languageitem;
         var pair = languagepair.split(",")
         var source = pair[0];
-        var target = pair[1];  
+        var target = pair[1];
      }
 
      var chars = [];
@@ -560,7 +566,7 @@ function process_instant(with_spaces, lang, source, target, username, password) 
                   allchars += " ";
 	  }
      }
-        
+
      if (allchars == "") {
          alert(local("notselected"));
      } else {
@@ -633,11 +639,11 @@ function multiselect(uuid, index, nb_unit, trans_id, spy, page) {
       // popover is visable
       $('#ttip' + trans_id).popover('hide');
     } else {
-        loading(); 
+        loading();
         // popover is not visable
         go(false, 'home&view=1&uuid=' + uuid + '&multiple_select=1'
-              + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page, 
-              unavailable(false), 
+              + '&index=' + index + '&nb_unit=' + nb_unit + '&trans_id=' + trans_id + "&page=" + page,
+              unavailable(false),
               multipoprefresh,
               [trans_id, spy]);
     }
@@ -663,7 +669,7 @@ function process_reviews(uuid, batch) {
 
       out += "</ol>";
       form += "<input type='hidden' name='count' value='" + count + "'/>\n";
-      
+
       form += "<input type='hidden' name='bulkreview' value='1'/>";
       form += "<button style='border: 2px solid black' data-role='none' style='border: 2px solid black' class='btn btn-default' type='submit'>" + local("submit") + "</button>";
       form += "</form>"
@@ -699,17 +705,17 @@ function view(mode, uuid, page) {
     $("#gotoval").val(page + 1);
     $("#pagetotal").html(current_pages);
     var url = mode + '&view=1&uuid=' + uuid + '&page=' + page;
-   
+
     window.scrollTo(0, 0);
     if (show_both) {
         curr_img_num += 1;
 
         $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
-    
+
         $('#pageimg' + curr_img_num).affix();
-        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width); 
-        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width); 
-        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width); 
+        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width);
+        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width);
+        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width);
 
         go(false, url, unavailable(false), function(json, opaque) { $('#pagetext').html(json.desc) }, false);
 
@@ -724,18 +730,18 @@ function view(mode, uuid, page) {
         } else {
             $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
         }
-       
+
         go(false, url, unavailable(false), function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
     }
 
     listreload(mode, uuid, page);
-   	   
+   	
     current_page = page;
     current_mode = mode;
     current_uuid = uuid;
     $('#loadingModal').modal('hide');
 
-    /* 
+    /*
      * For some strange reason, each time JQM tries
      * to show the page, bootstrap receives some kind
      * of trigger event to remove the affix properties
@@ -745,7 +751,7 @@ function view(mode, uuid, page) {
     $('#readingheader').affix();
     $('#readingheader').on('affix-top.bs.affix', function() {
             return false;
-    }); 
+    });
 }
 
 function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
@@ -767,7 +773,7 @@ function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode
     $('#pagenav').bootpag({
         total: parseInt(pages),
         page: parseInt(start) + 1,
-        maxVisible: 5 
+        maxVisible: 5
     }).on('page', function(event, num) {
         view(mode, uuid, num-1);
     });
@@ -791,8 +797,8 @@ function memory_complete(data, opaque) {
 
 function memory(id, uuid, nb_unit, memorized, page) {
     loading();
-    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page, 
-        unavailable(false), 
+    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page,
+        unavailable(false),
         memory_complete,
         [id, memorized]);
 }
@@ -825,7 +831,7 @@ function reveal_all(hide) {
     //var curr = $("html").scrollTop(),
     var changed = {};
     $("div.reveal").each(
-    function() { 
+    function() {
         var id = $(this).attr('revealid');
         if (changed[id] == undefined) {
             changed[id] = true;
@@ -860,17 +866,17 @@ function offinstantspin(json, opaque) {
         $("#selectedresult").html("(" + json.desc.whole.source + "): " + json.desc.whole.target);
         var pieceresult = "";
         for (var x = 0; x < json.desc.online.length; x++) {
-            pieceresult += "(" + json.desc.online[x].char + "): "; 
-            pieceresult += json.desc.online[x].target + "<br/>"; 
+            pieceresult += "(" + json.desc.online[x].char + "): ";
+            pieceresult += json.desc.online[x].target + "<br/>";
         }
         $("#piecemealresult").html(pieceresult);
         var offlineresult = "";
         for (var x = 0; x < json.desc.offline.length; x++) {
-            offlineresult += "(" + json.desc.offline[x].request + "): "; 
+            offlineresult += "(" + json.desc.offline[x].request + "): ";
             if (json.desc.offline[x].target) {
-                offlineresult += json.desc.offline[x].target; 
+                offlineresult += json.desc.offline[x].target;
             } else {
-                offlineresult += local('noinstant'); 
+                offlineresult += local('noinstant');
             }
             offlineresult += "<br/>";
         }
@@ -915,8 +921,8 @@ function install_highlight() {
         if(st != '') {
            $('#instantspin').attr('style', 'display: inline');
            $.mobile.navigate('#instant');
-           go(false, 'instant&source=' + st + "&lang=en", 
-              unavailable(false), 
+           go(false, 'instant&source=' + st + "&lang=en",
+              unavailable(false),
               offinstantspin,
               false);
         }
@@ -944,8 +950,8 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
             rules = sheet.rules;
         }
 
-        if( !rules ) { 
-            continue; 
+        if( !rules ) {
+            continue;
         }
 
         for (var j = 0, k = rules.length; j < k; j++) {
@@ -967,23 +973,23 @@ function listreload(mode, uuid, page) {
        if (mode == "read") {
            if (list_mode)
                $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, 'read&uuid=' + uuid + '&memolist=1&page=' + page, 
-              unavailable(false), 
+           go(false, 'read&uuid=' + uuid + '&memolist=1&page=' + page,
+              unavailable(false),
               list_reload_complete,
               "memolist");
 
        } else if (mode == "edit") {
            if (list_mode)
                $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, 'edit&uuid=' + uuid + '&editslist=1&page=' + page, 
-                  unavailable(false), 
+           go(false, 'edit&uuid=' + uuid + '&editslist=1&page=' + page,
+                  unavailable(false),
                   list_reload_complete,
                   'editslist');
        } else if (mode == "home") {
            if (list_mode)
                $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, 'home&uuid=' + uuid + '&reviewlist=1&page=' + page, 
-                  unavailable(false), 
+           go(false, 'home&uuid=' + uuid + '&reviewlist=1&page=' + page,
+                  unavailable(false),
                   list_reload_complete,
                   'history');
        }
@@ -1011,7 +1017,7 @@ function installreading() {
             view_images = false;
             go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
-            view_images = true; 
+            view_images = true;
             $('#imageButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
 	        go(false, 'home&switchmode=images', unavailable(false), false, false);
@@ -1028,7 +1034,7 @@ function installreading() {
             show_both = false;
 	        go(false, 'home&switchmode=text', unavailable(false), false, false);
         } else {
-            show_both = true; 
+            show_both = true;
             $('#sideButton').attr('class', 'active btn btn-default');
             $('#textButton').attr('class', 'btn btn-default');
 	        go(false, 'home&switchmode=both', unavailable(false), false, false);
@@ -1038,7 +1044,7 @@ function installreading() {
         $('#imageButton').attr('class', 'btn btn-default');
         view(current_mode, current_uuid, current_page);
     });
-    
+
     $('#textButton').click(function () {
         go(false, 'home&switchmode=text', unavailable(false), false, false);
 	    if (show_both == false && view_images == false) {
@@ -1088,14 +1094,14 @@ function storylist_complete(json, params) {
         }
         translist = [];
 
-        $("#" + params.element).html(json.storylist); 
+        $("#" + params.element).html(json.storylist);
     } else if(json.reload) {
         loadstories(false, false);
     }
 
     if (params.cleanup) {
         document.getElementById(params.element).innerHTML = params.label;
-        document.getElementById(params.element).onclick = function() { params.cleanup(params.name, params.uuid); }; 
+        document.getElementById(params.element).onclick = function() { params.cleanup(params.name, params.uuid); };
     }
     if ("navto" in params && "storylist" in json) {
         finishedloading(json.storylist, params.navto);
@@ -1131,7 +1137,7 @@ function finishedloading(storylist, navto) {
        $.mobile.navigate(navto);
    } else if(firstload != false && !firstloaded) {
         $.mobile.navigate(firstload);
-        firstload = false;  
+        firstload = false;
         firstloaded = true;
    }
 
@@ -1141,21 +1147,21 @@ function finishedloading(storylist, navto) {
 function loadstories(json, navto) {
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
     go(false, 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
-        unavailable(false), 
+        unavailable(false),
         storylist_complete,
         { element: 'storypages', navto: navto});
 }
 
 function reviewstory(uuid, which) {
     go(false, 'home&reviewed=' + which + '&uuid=' + uuid,
-        unavailable(false), 
+        unavailable(false),
         loadstories,
         (which == 1) ? "#reading" : "#reviewing");
 }
 
 function finishstory(uuid, which) {
     go(false, 'home&finished=' + which + '&uuid=' + uuid,
-        unavailable(false), 
+        unavailable(false),
         loadstories,
         (which == 1) ? "#finished" : "#reading");
 }
@@ -1240,7 +1246,7 @@ function validatetext() {
     }
 
     //$("#textform").submit();
-    
+
     loading();
     go([$("#textform"), ''], '', unavailable(false), validatetext_complete, false);
 }
@@ -1258,7 +1264,7 @@ function validatefile_complete(json, opaque) {
                    $('.couchform input#_db').val($('#database').html());
                    $('.couchform input#_id').val(doc._id);
                    $('.couchform input#_rev').val(doc._rev);
-                  
+
                    var url = $('#creds').html() + "/" + $('#database').html() + "/" + doc._id;
                    console.log("Submitting to: " + url);
                    $('#filedata').ajaxSubmit({
@@ -1310,7 +1316,7 @@ function validatefile() {
     }
 
     var myFile = $('#_attachments').prop('files')[0];
-    if (myFile.size > (30*1024*1024)) { 
+    if (myFile.size > (30*1024*1024)) {
         alert("Your file is too big.");
         return;
     }
@@ -1337,7 +1343,7 @@ function messageNotify(val) {
   }, 1000);
 }
 
-window.onfocus=function() { 
+window.onfocus=function() {
     document.title = "MICA";
     clearInterval(flashTimer);
 }
@@ -1394,24 +1400,24 @@ function appendChat(who, to, msg) {
     var languagepair = $('#chattextlanguage').val();
     var pair = languagepair.split(",");
     var chat_source_language = pair[0];
-    var chat_target_language = pair[1];  
+    var chat_target_language = pair[1];
 
     /* For now, assume that the target language
      * is the same as the language the user's native
-     * language. We can fix this later. 
+     * language. We can fix this later.
      */
     var chat_language = chat_target_language;
     var msgfrom = who_to_readable(who);
     var msgto = who_to_readable(to);
 
-    /* 
+    /*
      * 'peer' means who we are talking to, regardless who the message comes from.
      *
      * If we have 'group' chats in the future, just set the 'peer' value to some kind
-     * of unique ID, like "group_UUID". Simple one-on-one chats will have document keys 
+     * of unique ID, like "group_UUID". Simple one-on-one chats will have document keys
      * equal to the name of the peer, but with a group chat, we'll need to choose something
      * unique for the peer value. Theoretically, the server-side shouldn't change too much.
-     */ 
+     */
     if (who == chat_username) {
         var peer = msgto;
         var msgclass = "msgright";
@@ -1472,7 +1478,7 @@ function handleConnectedLoaded(json, opaque) {
 
 function newContact(who) {
     var peer = ("" + who).split("@")[0];
-    $('#sendTo').val(who); 
+    $('#sendTo').val(who);
     $("#missing").attr("style", "display: none");
     $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
@@ -1510,10 +1516,10 @@ function handlePresence(oJSJaCPacket) {
 }
 
 function force_disconnect() {
-    if(con && con.connected()) { 
-        con.disconnect(); 
+    if(con && con.connected()) {
+        con.disconnect();
     }
-    con = false; 
+    con = false;
 }
 
 function handleError(e) {
@@ -1553,7 +1559,7 @@ function handleConnected() {
     if ($('#sendTo').val() != "") {
         newContact($('#sendTo').val());
     }
-    var roster = new JSJaCIQ(jid); 
+    var roster = new JSJaCIQ(jid);
     // 'roster_1' is just some kind of unique ID in the message protocol. Can be anything, I guess.
     roster.setIQ(null, 'get', 'roster_1');
     roster.setQuery(NS_ROSTER);
@@ -1566,7 +1572,7 @@ function handleConnected() {
 	          console.log("Buddy: "  + node.childNodes.item(x).attributes.jid.value);
               }
 	}
-        
+
     }});
 }
 
@@ -1618,11 +1624,11 @@ function doLogin(oForm) {
     });
 
     var server = oForm.server.value, oArgs = new Object();
-        
+
     oDbg = new JSJaCConsoleLogger(3);
     document.getElementById('err').innerHTML = '';
     // reset
- 
+
     try {
         if ($("#mobile").html() == 'false' && window.location.protocol !== "https:"){
             console.log("Insecure chat.");
@@ -1631,7 +1637,7 @@ function doLogin(oForm) {
             console.log("Secure chat.");
             httpbase = 'https://' + server + ':5281/http-bind/';
         }
-        
+
         // set up the connection
         con = new JSJaCHttpBindingConnection({
             oDbg: oDbg,
@@ -1648,7 +1654,7 @@ function doLogin(oForm) {
         oArgs.resource = 'mica' + local('jabber_key');
         oArgs.pass = oForm.password.value;
         oArgs.register = false;
-	jid = chat_username + "@" + oArgs.domain; 
+	jid = chat_username + "@" + oArgs.domain;
         con.connect(oArgs);
     } catch (e) {
         document.getElementById('err').innerHTML = e.toString();
@@ -1738,7 +1744,7 @@ function install_pages_if_needed(json) {
 }
 
 function retrans_complete(json) {
-   install_pages_if_needed(json); 
+   install_pages_if_needed(json);
 }
 
 function start_learning_complete(json, action) {
@@ -1796,7 +1802,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
         $("#reviewoption").attr('style', 'display: block');
         $("#editoption").attr('style', 'display: block');
         $("#forgetoption").attr('style', 'display: block');
-        
+
         if (finished) {
             $("#notfinishedoption").attr('style', 'display: block');
         } else if(reviewed) {
@@ -1850,7 +1856,7 @@ function getstory_complete(json, opaque) {
 }
 function getstory(uuid, type) {
     loading();
-    go(false, 'stories&type=' + type + '&uuid=' + uuid, 
+    go(false, 'stories&type=' + type + '&uuid=' + uuid,
         unavailable(false), getstory_complete, false);
 }
 

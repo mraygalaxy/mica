@@ -53,6 +53,7 @@ from params import parameters, test
 from common import sdict, recursiveSetInDict, timest, getFromDict
 from mica import go
 from pyquery import PyQuery as pq
+from sys import argv
 import couch_adapter
 
 server_port = 9888
@@ -67,15 +68,47 @@ mock_rest = {
                          ],
     "TranslatorRequest" : [ 
                             {"outp" : [{"TranslatedText": "Hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}, {"TranslatedText": "Inflammation", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [12]}, {"TranslatedText": "It's hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [8]}], "inp" : {'texts': '["\\u708e\\u70ed", "\\u708e", "\\u70ed"]', 'from': 'zh-CHS', 'options': 'null', 'to': 'en'} },
-                            {"outp" : [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                             {"outp": [{"TranslatedText": "Take care of", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [12]}], "inp": {"texts": "[\"\\u7167\\u5e94\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                            {"outp": [{"TranslatedText": "\u91c7\u53d6", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u4fdd\u5065", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u7684", "From": "en", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Take\", \"care\", \"of\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                             {"outp": [{"TranslatedText": "Wonder", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u7422\\u78e8\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                            {"outp": [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                             {"outp": [{"TranslatedText": "Modern", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u73b0\\u4ee3\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                            {"outp": [{"TranslatedText": "\u73b0\u4ee3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Modern\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                             {"outp": [{"TranslatedText": "Come out", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u51fa\\u6765\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Baise", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u767e\\u8272\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Business", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u751f\\u610f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Centimetre", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [10]}], "inp": {"texts": "[\"\\u5398\\u7c73\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Cheap", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u4fbf\\u5b9c\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Collection", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [10]}], "inp": {"texts": "[\"\\u6c47\\u96c6\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "How", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"\\u600e\\u4e48\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Husband", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [7]}], "inp": {"texts": "[\"\\u8001\\u516c\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Internet", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u7f51\\u7edc\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Nausea", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u6076\\u5fc3\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Promise", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [7]}], "inp": {"texts": "[\"\\u51fa\\u606f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Relationship", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [12]}], "inp": {"texts": "[\"\\u5173\\u7cfb\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Reporting", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [9]}], "inp": {"texts": "[\"\\u6c47\\u62a5\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Story", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u6545\\u4e8b\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Things", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u4e1c\\u897f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "View", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [4]}], "inp": {"texts": "[\"\\u8bf4\\u6cd5\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp": [{"TranslatedText": "Where", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u54ea\\u91cc\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
+                            {"outp" : [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u91c7\u53d6", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u4fdd\u5065", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u7684", "From": "en", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Take\", \"care\", \"of\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u73b0\u4ee3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Modern\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                             {"outp": [{"TranslatedText": "\u6765\u5427", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u51fa", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Come\", \"out\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4e08\u592b", "From": "en", "OriginalTextSentenceLengths": [7], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Husband\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4e1a\u52a1", "From": "en", "OriginalTextSentenceLengths": [8], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Business\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4e8b\u60c5", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Things\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4e92\u8054\u7f51", "From": "en", "OriginalTextSentenceLengths": [8], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Internet\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u4fbf\u5b9c", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Cheap\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u5173\u7cfb", "From": "en", "OriginalTextSentenceLengths": [12], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Relationship\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u5398\u7c73", "From": "en", "OriginalTextSentenceLengths": [10], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Centimetre\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u5728\u54ea\u91cc", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Where\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u5982\u4f55", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"How\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u6076\u5fc3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Nausea\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u627f\u8bfa", "From": "en", "OriginalTextSentenceLengths": [7], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Promise\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u62a5\u544a", "From": "en", "OriginalTextSentenceLengths": [9], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Reporting\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u6545\u4e8b", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Story\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u767e\u8272", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Baise\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u89c6\u56fe", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"View\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
+                            {"outp": [{"TranslatedText": "\u96c6\u5408", "From": "en", "OriginalTextSentenceLengths": [10], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Collection\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
                           ],
 
     #"" : [dict(inp = , outp = ),],
@@ -341,26 +374,31 @@ def run_tests(test_urls) :
                     break
                     
                 if url["method"] == "get" :
-                    r = s.get("http://localhost" + move_data_to_url(url))
+                    udest = "http://localhost" + move_data_to_url(url)
+                    r = s.get(udest)
                 elif url["method"] == "post" :
-                    r = s.post("http://localhost" + url["loc"], data = url["data"])
+                    udest = "http://localhost" + url["loc"]
+                    r = s.post(udest, data = url["data"])
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
-                        r = s.put("http://localhost" + move_data_to_url(url), headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
+                        udest = "http://localhost" + move_data_to_url(url)
+                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
                     else :
-                        r = s.put("http://localhost" + url["loc"], data = json_dumps(url["data"]))
+                        udest = "http://localhost" + url["loc"]
+                        r = s.put(udest, data = json_dumps(url["data"]))
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
 
                     if r.status_code == 504 :
-                        tlog("  Gateway timeout. Try the request again...")
+                        tlog("  Gateway timeout to: " + udest + ", Try the request again...")
                         retry_attempts += 1
+                        run_tests(common_urls["relogin"])
                         continue
 
-                    if r.status_code == 401 and url["loc"].count("/couch"):
+                    if r.status_code == 401 :
                         tlog("  Our token may have expired. Login again and retry the test.")
                         retry_attempts += 1
                         run_tests(common_urls["relogin"])
@@ -368,6 +406,8 @@ def run_tests(test_urls) :
 
                     tlog("  Bad status code: " + str(r.status_code))
                     assert(False)
+                else :
+                    retry_attempts = 0
 
                 # The difference between 'success' and 'test_success' is for errors
                 # that happen during tests which are tolerable in the user experience.
@@ -444,7 +484,7 @@ options = [
     ),
 
     dict(
-        image = 'couchdb4', 
+        image = 'couchdb5',
         command = ['couchdb'], 
         name = 'couchdb',
         tty = True,
@@ -491,6 +531,10 @@ for option in options :
 
     wait_for_port_ready(option["name"], hostname, port)
 
+if len(sys.argv) > 1 and sys.argv[1] == "stop" :
+    tlog("Containers are created. Stopping now.")
+    exit(0)
+
 urls = []
 if "test" not in parameters or not parameters["test"] :
     parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
@@ -503,9 +547,9 @@ oresp.start()
 
 parameters["timeout"] = test_timeout * 2
 
-parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
-parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
-parameters["seconds_in_day"] = 1
+#parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+#parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+#parameters["seconds_in_day"] = 60*60*24 
 
 mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
@@ -839,13 +883,35 @@ tests_from_micadev10 = [
 #          { "stop" : True },
         ]
 
-add_oauth_tests_from_micadev10()
-urls += tests_from_micadev10
-sleep(5)
+def add_chat_tests_from_micadev10() :
+    chatfname = cwd + 'chats.txt'
+    chatfd = open(chatfname, 'r')
+    tlog("Reading in chat tests...")
+    #urls.append(common_urls["relogin"])
+    while True :
+        line = chatfd.readline().strip()
+        if not line :
+            break
+        if line == "storylist" :
+            urls.append(common_urls["storylist"])
+        elif line.count("source=") :
+            urls.append({"loc" : "/api?" + line, "method" : "get", "success" : None, "test_success" : True})
+        else :
+            urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
+            
+    chatfd.close()
+    #urls.append(common_urls["logout"])
+    #urls.append({ "stop" : True })
 
-urls.append(common_urls["logout"])
-
+    
 try :
+    add_oauth_tests_from_micadev10()
+    urls += tests_from_micadev10
+    add_chat_tests_from_micadev10()
+    sleep(5)
+
+    urls.append(common_urls["logout"])
+
     old_timeout = int(change_timeout(5)[1:-2])
 except Exception, e :
     tlog(str(e))
