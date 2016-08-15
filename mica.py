@@ -5372,7 +5372,7 @@ class GUIDispatcher(Resource) :
             return self.app
 
 class MicaSession(Session) :
-    sessionTimeout = 5
+    sessionTimeout = 600 # timeout for sessions that don't actually login
 
     def timeout(self, timeout) :
         mdebug("Setting new timeout to: " + str(timeout))
