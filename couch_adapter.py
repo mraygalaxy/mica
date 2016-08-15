@@ -12,7 +12,7 @@ try :
     from couchdb import Server
     from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
 except ImportError, e :
-    mdebug("couchdb not available. Probably on mobile.") 
+    mdebug("couchdb not available. Probably on mobile.")
 
 jnius_detachable = False
 try :
@@ -64,7 +64,7 @@ class NotImplementedError(Exception) :
 
 class repeatable(object):
     def __init__(self, retries = 3):
-        self.retries = retries 
+        self.retries = retries
 
     def __call__(self, f):
         def wrapped_f(*args):
@@ -73,7 +73,7 @@ class repeatable(object):
             while True :
                 try :
                     return f(*args)
-                except ResourceConflict, e : 
+                except ResourceConflict, e :
                     for line in format_exc().splitlines() :
                         mwarn(line)
                     tries = tries - 1
@@ -81,7 +81,7 @@ class repeatable(object):
                         merr("Ran out of tries =(")
                         raise e
                     mwarn("atomic Tries left: " + str(tries))
-                
+
         return wrapped_f
 
 def reauth(func):
@@ -176,11 +176,20 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def __delitem__(self, name) :
+        revs = []
+
         try :
+            docs = self.db.get(name, open_revs = "all")
+            for doc in docs :
+                if "_deleted" in doc["ok"] :
+                    continue
+                mverbose("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
+                self.db.delete(olddoc)
+                mverbose("DELETE Deleted.")
+
+            '''
             doc = self.db[name]
-
-            revs = []
-
             if "_conflicts" in doc :
                 mdebug("Adding conflict revisions.")
                 revs += doc["_conflicts"]
@@ -191,10 +200,16 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             for rev in revs :
                 olddoc = self.db.get(name, rev=rev)
                 self.db.delete(olddoc)
-
-            del self.db[name]
+            #del self.db[name]
+            '''
         except couch_ServerError, e :
             check_for_unauthorized(e)
+        except Unauthorized, e :
+            raise e
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            raise e
 
     @reauth
     def delete_attachment(self, doc, filename) :
@@ -208,12 +223,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         try :
             if not new_doc :
                 trydelete = True
-                if self.doc_exist(name, true_if_deleted = True) is True :
+                if self.doc_exist(name) is True :
                     mdebug("Deleting original @ " + name)
                     doc = self.db[name]
                     del self.db[name]
                     self.db.purge([doc])
-                    trydelete = False 
+                    trydelete = False
 
                 doc = { "foo" : "bar"}
 
@@ -259,9 +274,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             if obj is not None :
                 fh = open(path, 'wb')
                 while True :
-                    byte = obj.read(1)
-                    sourcebytes += 1
+                    byte = obj.read(4096)
                     if byte :
+                        sourcebytes += len(byte)
                         fh.write(byte)
                     else :
                         break
@@ -272,15 +287,15 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             return sourcebytes
         except couch_ServerError, e :
             check_for_unauthorized(e)
-            
+
     def listen(self, username, password, port) :
-        return port 
+        return port
 
     def get_attachment_meta(self, name, filename) :
         return self.__getitem__(name)["_attachments"][filename]
 
     @reauth
-    def doc_exist(self, name, true_if_deleted = False) :
+    def doc_exist(self, name) :
         try :
             self.db[name]
         except couch_ServerError, e :
@@ -288,27 +303,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ResourceNotFound, e :
             #mdebug(str(e.args))
             ((error, reason),) = e.args
-            mdebug("Doc exist returns not found: " + reason)
-            if true_if_deleted and reason == "deleted" :
-                try :
-                    old = self.db.get(name, open_revs = "all")
-                    for olddocp in old :
-                        mdebug("Got old revision: " + str(olddocp))
-                        revs = olddocp["ok"]["_rev"]
-                        olddoc = self.db.get(name, rev=olddocp["ok"]["_rev"])
-                        mdebug("Got old doc too.")
-                        mwarn("Purging old revision...")
-                        self.db.purge([olddoc])
-                        mwarn("Purged")
-                    return False
-                except couch_ResourceNotFound, e :
-                    merr( "Failed to purge old revisions.")
-                except couch_ServerError, e :
-                    check_for_unauthorized(e)
-
-                mdebug("Doc was deleted, returning true")
-                return None 
+            mverbose("Doc exist returns not found: " + reason)
             return False
+
         return True
 
     def reauthorize(self) :
@@ -385,7 +382,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         continue
                     else :
                         merr("No server_errors_left remaining.")
-                raise e 
+                raise e
     def view(self, *args, **kwargs) :
         view_name = args[0]
         mverbose("Query view: " + view_name)
@@ -393,7 +390,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             keylist = []
             username = kwargs["username"]
             for key in kwargs["keys"] :
-                keylist.append([username, key]) 
+                keylist.append([username, key])
             kwargs["keys"] = keylist
 
         if "username" in kwargs :
@@ -505,7 +502,7 @@ class MicaServerCouchDB(object) :
 
         if not self.cookie :
             mverbose("No cookie for user: " + username)
-            
+
             self.cookie = self.get_cookie(self.url, username, password)
         else :
             mdebug("Reusing cookie: " + self.cookie)
@@ -513,7 +510,7 @@ class MicaServerCouchDB(object) :
         assert(self.cookie)
         self.server.resource.headers["Cookie"] = self.cookie
         mverbose("Reauth done")
-        
+
     def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
         self.url = url
         self.cookie = cookie
@@ -623,10 +620,7 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name, true_if_deleted = False) :
-        if true_if_deleted :
-            mverbose("Mobile has no deleted-document detection.")
-
+    def doc_exist(self, name) :
         try :
             result = self.db.doc_exist(String(self.dbname), String(name))
             if result == "error" :
@@ -659,7 +653,7 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
                     self.db.view_seed(String(uuid), String(username), String(key))
                     seed = True
 
-                params["keys"] = uuid 
+                params["keys"] = uuid
             if stale :
                 params["stale"] = stale
 
@@ -686,14 +680,14 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
         except Exception, err :
             err_msg = "Error getting view: " + name + " " + str(err)
         except CommunicationError, e :
-            err_msg = str(err) 
+            err_msg = str(err)
         finally :
             self.updateView("$('#viewstat').removeClass('alert-danger');")
             if seed and uuid:
                 self.db.view_seed_cleanup(String(uuid))
             if err_msg :
                 raise CommunicationError(err_msg)
-                
+
     def compact(self, *args, **kwargs) :
         if len(args) > 0 :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
@@ -763,7 +757,7 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
         if port == -1 :
             raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
 
-        return port 
+        return port
 
 class AndroidMicaServerCouchbaseMobile(object) :
     def __init__(self, db_already_local) :
@@ -834,7 +828,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         if attach is None :
             raise ResourceNotFound("Could not find attachment for document: " + name)
         #print "Pyobjus returned attachment of type: " + str(type(attach))
-        return attach 
+        return attach
 
     def get_attachment_meta(self, name, filename) :
         try :
@@ -847,9 +841,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         return loads(meta)
 
-    def doc_exist(self, name, true_if_deleted = False) :
-        if true_if_deleted :
-            mverbose("Mobile has no deleted-document detection.")
+    def doc_exist(self, name) :
         try :
             result = self.db.doc_exist__(String(self.dbname), String(name)).UTF8String()
             if result == "error" :
@@ -886,7 +878,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
                     seed = True
 
-                params["keys"] = uuid 
+                params["keys"] = uuid
             if stale :
                 params["stale"] = stale
 
@@ -909,7 +901,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
                     result_obj = self.db.view_next_(row)
 
                     try :
-                        result = result_obj.UTF8String() 
+                        result = result_obj.UTF8String()
                     except Exception, e :
                         raise CommunicationError("Could string from result: " + str(e))
 
@@ -918,14 +910,14 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         except Exception, err :
             err_msg = "Error getting view: " + name + " " + str(err)
         except CommunicationError, e :
-            err_msg = str(err) 
+            err_msg = str(err)
         finally :
             self.updateView("$('#viewstat').removeClass('alert-danger');")
             if seed and uuid:
                 self.db.view_seed_cleanup_(String(uuid))
             if err_msg :
                 raise CommunicationError(err_msg)
-                
+
     def compact(self, *args, **kwargs) :
         if len(args) > 0 :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
@@ -992,7 +984,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         if port == -1 :
             raise CommunicationError("We failed to start the listener service for Couch. Check log for errors.")
 
-        return port 
+        return port
 
     def detach_thread(self) :
         pass

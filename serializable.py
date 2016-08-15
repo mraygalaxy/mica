@@ -70,10 +70,10 @@ class Serializable(object) :
                     resp = func(*args, **kwargs)
                 error = False
             except Exception, e :
+                merr(str(e))
                 err = ""
                 for line in format_exc().splitlines() :
-                    err += line + "\n"
-                merr(err)
+                    merr(line)
                 resp = False
                 error = e
 
