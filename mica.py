@@ -297,8 +297,8 @@ class MICA(object):
                             last_refresh = int(float(session["last_refresh"]))
 
                         session_diff = (current_session_time - last_refresh)
-                        if "last_refresh" not in session or session_diff >= MicaSession.sessionTimeout :
-                            mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(MicaSession.sessionTimeout))
+                        if "last_refresh" not in session or session_diff >= params["timeout"] :
+                            mdebug("SESSION EXPIRED: " + str(sid) + " last refresh: " + str(last_refresh) + " diff: " + str(session_diff) + " > " + str(params["timeout"]))
                             session_delete.append(sid)
 
                     if len(session_delete) > 0 :
@@ -660,8 +660,6 @@ class MICA(object):
 
     @serial
     def run_render(self, req) :
-        req.s.mica = self
-        req.session = IDict(req.s)
 
         if 'connected' not in req.session.value :
             mdebug("New session. Setting connected to false.")
@@ -779,30 +777,33 @@ class MICA(object):
 
         return resp
 
-    def expired(self, uid):
+    def expired(self, uid, mica, session):
+        mdebug("Session " + uid + " has expired.")
+
         if params["keepsession"] :
+            mdebug("Need to keep the session")
             return
 
         if uid == "debug" :
+            mdebug("Not expiring debug session.")
             return
 
-        self.sessionmutex.acquire()
-        skey = sessions[uid]
-        mdebug("Session " + uid + " has expired: " + sessions[uid])
+        session.sessionmutex.acquire()
+        skey = mica.session(uid)
 
         try :
-            if self.sessiondb.doc_exist(skey) :
-                value = self.sessiondb[skey]
+            if mica.sessiondb.doc_exist(skey) :
+                value = mica.sessiondb[skey]
                 if "username" in value :
-                    self.clean_dbs(value["username"])
-                del self.sessiondb[skey]
+                    mica.clean_dbs(value["username"])
+                del mica.sessiondb[skey]
 
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
 
         del sessions[uid]
-        self.sessionmutex.release()
+        session.sessionmutex.release()
 
     def __call__(self, environ, start_response):
         try :
@@ -810,12 +811,13 @@ class MICA(object):
             setattr(environ['wsgi.input'], "readline", environ['wsgi.input']._wrapped.readline)
 
             req = Params(environ)
+            req.s = start_response.im_self.request.s
+            req.s.mica = self
+            req.session = IDict(req.s)
 
             if start_response.im_self.request.s.uid not in sessions :
-                sessions[start_response.im_self.request.s.uid] = True
-                start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid))
-            req.s = start_response.im_self.request.s
-
+                sessions[start_response.im_self.request.s.uid] = True 
+                start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, self, req.session))
             resp = self.run_render(req)
 
         except exc.HTTPUnauthorized, e :
@@ -836,7 +838,7 @@ class MICA(object):
                 webob_response = Response(resp)
                 if not mobile and 'cookie' in req.session.value :
                     cook = req.session.value["cookie"].split("=")[1]
-                    webob_response.set_cookie("AuthSession", cook, max_age=604800)
+                    webob_response.set_cookie("AuthSession", cook, max_age=params["timeout"])
                 r = webob_response(environ, start_response)
 
             else :
@@ -4763,6 +4765,7 @@ class MICA(object):
                     req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
         req.action = "home"
         req.session.value["connected"] = True
+        req.s.timeout(params["timeout"])
 
         if req.http.params.get('remember') and req.http.params.get('remember') == 'on' :
             req.session.value["last_username"] = username
@@ -5298,32 +5301,33 @@ class CDict(object):
 
         mverbose("Saving to session: " + skey)
         self.sessionmutex.acquire()
-        try :
-            old_doc = self.mica.sessiondb[skey]
-            self.value["_rev"] = old_doc["_rev"]
-            mverbose("Using revision: " + old_doc["_rev"])
-        except couch_adapter.ResourceNotFound, e :
-            if in_a_job :
-                mwarn("3) We expired, but we're just a background job, so it's fine.")
-                self.sessionmutex.release()
-                return
-            mverbose("Old session not found.")
+        if "connected" in self.value and self.value["connected"] :
+            try :
+                old_doc = self.mica.sessiondb[skey]
+                self.value["_rev"] = old_doc["_rev"]
+                mverbose("Using revision: " + old_doc["_rev"])
+            except couch_adapter.ResourceNotFound, e :
+                if in_a_job :
+                    mwarn("3) We expired, but we're just a background job, so it's fine.")
+                    self.sessionmutex.release()
+                    return
+                mverbose("Old session not found.")
 
-        try :
-            self.mica.sessiondb[skey] = self.value
-            sessions[self.value["session_uid"]] = skey
-        except couch_adapter.ResourceConflict, e :
-            if in_a_job :
-                mwarn("1) We expired, but we're just a background job, so it's fine.")
-            else :
-                self.sessionmutex.release()
-                raise e
-        except couch_adapter.ResourceNotFound, e :
-            if in_a_job :
-                mwarn("2) We expired, but we're just a background job, so it's fine.")
-            else :
-                self.sessionmutex.release()
-                raise e
+            try :
+                self.mica.sessiondb[skey] = self.value
+                sessions[self.value["session_uid"]] = True 
+            except couch_adapter.ResourceConflict, e :
+                if in_a_job :
+                    mwarn("1) We expired, but we're just a background job, so it's fine.")
+                else :
+                    self.sessionmutex.release()
+                    raise e
+            except couch_adapter.ResourceNotFound, e :
+                if in_a_job :
+                    mwarn("2) We expired, but we're just a background job, so it's fine.")
+                else :
+                    self.sessionmutex.release()
+                    raise e
 
         self.sessionmutex.release()
 
@@ -5368,7 +5372,11 @@ class GUIDispatcher(Resource) :
             return self.app
 
 class MicaSession(Session) :
-    sessionTimeout = 604800 # one week
+    sessionTimeout = 5
+
+    def timeout(self, timeout) :
+        mdebug("Setting new timeout to: " + str(timeout))
+        self.sessionTimeout = timeout
 
 class NONSSLRedirect(object) :
     def __init__(self):
@@ -5458,6 +5466,32 @@ def get_options() :
 slaves = {}
 params = None
 
+class MicaSite(Site) :
+    def __init__(self, *args, **kwargs) :
+        Site.__init__(self, *args, **kwargs)
+    
+    def getSession(self, uid):
+        if uid in self.sessions :
+            return self.sessions[uid]
+
+        if params["keepsession"] :
+            skey = self.mica.session("debug")
+        else :
+            skey = self.mica.session(uid)
+
+        try :
+            if self.mica.sessiondb.doc_exist(skey) :
+                mdebug("Loading existing session: " + skey)
+                start = self.mica.sessiondb[skey]
+                session = self.sessions[uid] = self.sessionFactory(self, uid)
+                session.timeout(params["timeout"])
+                session.startCheckingExpiration()
+                return session
+        except Exception, e :
+            merr("Error checking for DB session: " + str(e))
+
+        raise KeyError
+
 def go(p) :
     global params
     params = p
@@ -5472,9 +5506,8 @@ def go(p) :
     if "seconds_in_day" not in params :
         params["seconds_in_day"] = 60*60*24
 
-    if "timeout" in params :
-        MicaSession.sessionTimeout = params["timeout"]
-        mdebug("Overrode timeout to " + str(MicaSession.sessionTimeout))
+    if "timeout" not in params :
+        params["timeout"] = 604800
 
     sys_settrace(None)
 
@@ -5588,9 +5621,10 @@ def go(p) :
         ct.start()
 
         reactor._initThreadPool()
-        site = Site(GUIDispatcher(mica))
+        site = MicaSite(GUIDispatcher(mica))
         site.sessionFactory = MicaSession
-        nonsslsite = Site(NONSSLDispatcher())
+        site.mica = mica
+        nonsslsite = MicaSite(NONSSLDispatcher())
         nonsslsite.sessionFactory = MicaSession
 
         if sslport != -1 :
