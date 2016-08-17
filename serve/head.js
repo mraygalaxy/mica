@@ -36,7 +36,7 @@ function switchinstall(initlist) {
 function switchlist_complete(json, opaque) {
     done();
     if (json.success) {
-       switchinstall(list_mode ? false : true);
+       switchinstall(json.list_mode);
        listreload(current_mode, current_uuid, current_page);
     } else {
         alert(json.desc);
@@ -216,7 +216,6 @@ $(document).on("pagecreate", function () {
         $(".ui-panel-wrapper").css("height", height + 1);
     });
 });
-switchinstall(true);
 $(document).on('ready', function() {
 	$("div.view1").hide();
 
@@ -225,6 +224,7 @@ $(document).on('ready', function() {
 		$("div.tri1").toggleClass("toggle1");
 	});
     form_loaded(false, true);
+    switchstart();
 });
 
 
