@@ -86,6 +86,8 @@ def gettext(message):
     try :
         result = texts[catalogs.language].ugettext(message)
         return result
+    except KeyError, e :
+        return texts[global_language].ugettext(message)
     except AttributeError, e :
         return texts[global_language].ugettext(message)
 
