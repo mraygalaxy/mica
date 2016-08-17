@@ -816,7 +816,6 @@ class HeadElement(CommonElement):
                      help = _("Help"),
                      # The software's privacy policy, such as what user information we keep and do not keep.
                      privacy = _("Privacy"),
-                     switchclick = 'switchlist()' if ("connected" in self.req.session.value and self.req.session.value["connected"] and "current_story" in self.req.session.value) else "", 
                      uploadstory = _("New Story"),
                      # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                      newaccount = _("New Account"),

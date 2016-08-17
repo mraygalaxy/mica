@@ -2194,9 +2194,9 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
 
-        for peer in peer_list :
-            mdebug("We should roll chat periods for peer: " + str(peer))
-            self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
+        #for peer in peer_list :
+        #    mdebug("We should roll chat periods for peer: " + str(peer))
+        #    self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist]
 
     def memocount(self, req, story, page):
@@ -4758,11 +4758,12 @@ class MICA(object):
                 return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
 
             if mobile :
-                if "local_username" in params["local_username"] and params["local_username"] and "local_password" in params and params["local_password"] :
+                if "local_username" in params and params["local_username"] and "local_password" in params and params["local_password"] :
                     # This is just for testing. It will break the app story uploads on mobile, but will allow us to connect to the device and debug things.
                     req.session.value["port"] = req.db.listen(params["local_username"], params["local_password"], params["local_port"])
                 else :
                     req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
+
         req.action = "home"
         req.session.value["connected"] = True
         req.s.timeout(params["timeout"])
@@ -5188,7 +5189,7 @@ class MICA(object):
 
         if req.http.params.get("switchlist") :
             req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
-            return self.api(req)
+            return self.api(req, json = {"list_mode" : req.session.value["list_mode"]})
 
         # We want the job list to appear before using any story-related functions
         # User must wait.
