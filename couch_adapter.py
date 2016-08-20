@@ -91,7 +91,7 @@ def reauth(func):
         try :
             result = func(self, *args, **kwargs)
         except Unauthorized, e :
-            mverbose("Couch return unauthorized, likely due to a timeout: " + str(e))
+            mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
             retry_auth = True
         except IncompleteRead, e :
             mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
@@ -99,24 +99,30 @@ def reauth(func):
         except CannotSendRequest, e :
             mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
-        except Exception , e :
+        except Exception, e :
             permanent_error = e
         finally :
             if retry_auth :
-                try :
-                    self.server.cookie = False
-                    self.server.auth()
-                    self.db.resource.headers["Cookie"] = self.server.cookie
-                    result = func(self, *args, **kwargs)
-                except Exception, e :
-                    raise CommunicationError("Failed to re-authenticate: " + str(e))
+                self.reauthorize()
+                result = func(self, *args, **kwargs)
             elif permanent_error :
                 raise permanent_error
 
         return result
     return wrapper
 
-class MicaDatabase(object) :
+class AuthBase(object) :
+    def reauthorize(self) :
+        try :
+            mdebug("Re-authenticating.")
+            self.server.cookie = False
+            self.server.auth()
+            self.db.resource.headers["Cookie"] = self.server.cookie
+            mdebug("Authenticated.")
+        except Exception, e :
+            raise CommunicationError("Failed to re-authenticate: " + str(e))
+
+class MicaDatabase(AuthBase) :
     def try_get(self, name) :
         return self.__getitem__(name, false_if_not_found = True)
 
@@ -185,8 +191,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     continue
                 mverbose("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
                 olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
-                self.db.delete(olddoc)
-                mverbose("DELETE Deleted.")
+                if olddoc is not None :
+                    mverbose("DELETE Deleted.")
+                    self.db.delete(olddoc)
 
             '''
             doc = self.db[name]
@@ -308,16 +315,6 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
         return True
 
-    def reauthorize(self) :
-        try :
-            mwarn("Re-authenticating.")
-            self.server.cookie = False
-            self.server.auth()
-            self.db.resource.headers["Cookie"] = self.server.cookie
-            mwarn("Authenticated.")
-        except Exception, e :
-            raise CommunicationError("Failed to re-authenticate: " + str(e))
-
     def couchdb_pager(self, view_name='_all_docs',
                       startkey=None, startkey_docid=None,
                       endkey=None, endkey_docid=None, bulk=5000, stale = False):
@@ -368,6 +365,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 continue
             except couch_ServerError, e :
                 # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
+                for line in format_exc().splitlines() :
+                    mwarn(line)
                 ((status, error),) = e.args
                 mwarn("Server error: " + str(status) + " " + str(error))
                 if status == 403 :
@@ -463,7 +462,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 # FIXME: need try's here so we return our "NotFound"
 #        instead of our not found
 
-class MicaServerCouchDB(object) :
+class MicaServerCouchDB(AuthBase) :
     def get_cookie(self, url, username, password) :
         username_unquoted = myquote(username)
         password_unquoted = myquote(password)
@@ -528,6 +527,7 @@ class MicaServerCouchDB(object) :
 
         self.auth(username, password)
 
+    @reauth
     def __getitem__(self, dbname) :
         try :
             if dbname in self.server :
@@ -538,9 +538,11 @@ class MicaServerCouchDB(object) :
         except Unauthorized, e :
             raise CommunicationError("MICA Unauthorized: dbname: " + dbname + " " + str(e))
 
+    @reauth
     def __delitem__(self, name) :
         del self.server[name]
 
+    @reauth
     def __contains__(self, dbname) :
         return True if dbname in self.server else False
 
