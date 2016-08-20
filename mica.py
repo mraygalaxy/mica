@@ -265,7 +265,7 @@ class MICA(object):
             else :
                 if self.userdb :
                     self.db = self.userdb
-                    self.view_check(self, "accounts")
+                    self.view_check("mica_admin", "accounts")
 
                     if "mica_admin" not in self.cs :
                         self.make_account(self, "mica_admin", "password", "owner@example.com", "mica", admin = True, dbname = "mica_admin")
@@ -275,8 +275,8 @@ class MICA(object):
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
             self.db = self.sessiondb
-            self.view_check(self, "sessions")
-            self.view_check(self, "conflicts")
+            self.view_check("mica_admin", "sessions")
+            self.view_check("mica_admin", "conflicts")
 
             if not params["keepsession"] :
                 current_session_time = int(timest())
@@ -315,11 +315,12 @@ class MICA(object):
         except TypeError, e :
             out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
             for line in format_exc().splitlines() :
-                out += line + "\n"
-            mwarn(out)
+                mwarn(line)
         except couch_adapter.ResourceNotFound, e :
             mwarn("Account document @ " + self.acct('mica_admin') + " not found: " + str(e))
         except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
             mwarn("Database not available yet: " + str(e))
 
         if mobile and params["serialize_couch_on_mobile"] :
@@ -414,9 +415,9 @@ class MICA(object):
 
         if req :
             req.db = self.dbs[username]
-            if prime :
-                self.prime_db(req)
-                sleep(1)
+            #if prime :
+            #    self.prime_db(req)
+            #    sleep(1)
 
         if self.dbs[username].doc_exist(self.acct(username)) :
             user = self.dbs[username][self.acct(username)]
@@ -511,6 +512,7 @@ class MICA(object):
                          "email" : email,
                          "source" : source,
                           }
+            mdebug("Putting doc: " + str(user_doc))
             try :
                 self.userdb["org.couchdb.user:" + username] = user_doc
             except couch_adapter.CommunicationError, e :
@@ -528,13 +530,13 @@ class MICA(object):
             mdebug("Installing security on admin database.")
             new_security = {"admins" :
                             {
-                              "names" : ["mica_admin", username],
-                              "roles" : [] if admin else [username + "_master"]
+                              "names" : ["mica_admin"],
+                              "roles" : [username + "_master"] if admin else []
                             },
                         "members" :
                             {
-                              "names" : ["mica_admin" if admin else "nobody"],
-                              "roles" : []
+                              "names" : ["mica_admin" if admin else "nobody", username],
+                              "roles" : [username + "_master"]
                             }
                         }
             newdb.set_security(new_security)
@@ -552,10 +554,7 @@ class MICA(object):
                                            'email' : email,
                                            'filters' : {'files' : [], 'stories' : [] },
                                          }
-        savedb = req.db
-        req.db = newdb
-        self.check_all_views(req)
-        req.db = savedb
+        self.check_all_views(username)
 
     @serial
     def view_runner(self, username, db, specific_views = False) :
@@ -576,10 +575,7 @@ class MICA(object):
         for (name, startend) in runners :
             if not db.doc_exist("_design/" + name.split("/")[0]) :
                 mdebug("View " + name + " does not yet exist. Loading...")
-                dbsave = self.db
-                self.db = db
-                self.view_check(self, name.split("/")[0], recreate = True)
-                self.db = dbsave
+                self.view_check(username, name.split("/")[0], recreate = True)
                 mdebug("Done.")
                 continue
 
@@ -2609,21 +2605,28 @@ class MICA(object):
 
         mdebug("Flush complete.")
 
-    def view_check(self, req, name, recreate = False) :
+    def view_check(self, username, name, recreate = False) :
        fh = open(cwd + "views/" + name + ".js", 'r')
        vc = fh.read()
        fh.close()
 
+       db = False
+       if mobile :
+           db = self.db
+       else :
+           dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
+           db = self.cs[dbname]
+       
        try :
            if recreate :
                mdebug("Recreate design document requested for view: " + name)
-               del req.db["_design/" + name]
+               del db["_design/" + name]
        except Exception, e :
            mwarn("Deleting design document: " + str(e))
 
-       if not req.db.doc_exist("_design/" + name) :
+       if not db.doc_exist("_design/" + name) :
            mdebug("View " + name + " does not exist. Uploading.")
-           req.db["_design/" + name] = json_loads(vc)
+           db["_design/" + name] = json_loads(vc)
 
     def clear_chat(self, req, story_name):
         peer = story_name.split(";")[-1]
@@ -2707,16 +2710,16 @@ class MICA(object):
 
             self.clean_dbs(req.session.value['username'])
 
-    def check_all_views(self, req) :
-        self.view_check(req, "stories")
-        self.view_check(req, "tonechanges")
-        self.view_check(req, "mergegroups")
-        self.view_check(req, "splits")
-        self.view_check(req, "memorized")
-        self.view_check(req, "chats")
+    def check_all_views(self, username) :
+        self.view_check(username, "stories")
+        self.view_check(username, "tonechanges")
+        self.view_check(username, "mergegroups")
+        self.view_check(username, "splits")
+        self.view_check(username, "memorized")
+        self.view_check(username, "chats")
         if not mobile :
-            self.view_check(req, "download")
-            self.view_check(req, "conflicts")
+            self.view_check(username, "download")
+            self.view_check(username, "conflicts")
 
     '''
     All stories up to and including mica version 0.4.x only supported
@@ -3023,7 +3026,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         # 'Forgot' a story using the button in the side-panel.
-        self.prime_db(req, [('stories/all', True)])
+        #self.prime_db(req, [('stories/all', True)])
         return self.api(req)
 
     @serial
@@ -3088,7 +3091,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         mdebug("Delete complete.")
-        self.prime_db(req, [('stories/all', True)])
+        #self.prime_db(req, [('stories/all', True)])
         return self.api(req, json = {"uuid" : uuid})
 
     # This needs to be replaced with token authentication
@@ -4136,24 +4139,29 @@ class MICA(object):
                                         req.accountpageresult = _("Success! New user was created") + ": " + newusername
                                         json["test_success"] = True
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
+            mdebug("1")
             if mobile :
                 req.accountpageresult = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
             else :
+                mdebug("2")
                 username = req.http.params.get("username").lower()
 
                 if not self.userdb :
                     # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
                     req.accountpageresult = _("Server not configured correctly. Can't make accounts")
                 else :
+                    mdebug("3")
                     if not self.userdb.doc_exist("org.couchdb.user:" + username) :
                         req.accountpageresult = _("No such account. Cannot delete it.")
                     else :
+                        mdebug("4")
                         auth_user = self.userdb["org.couchdb.user:" + username]
 
                         bad_role_length = False
+                        mdebug("5")
                         if req.session.value["username"] != username :
                             if not req.session.value["isadmin"] :
-                                # This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
+                                # Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
                                 req.accountpageresult = _("Go away and die.")
                             else :
                                 role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
@@ -4161,8 +4169,10 @@ class MICA(object):
                                 if role_length == 0 :
                                     bad_role_length = True
                                     req.accountpageresult = _("Admin accounts can't be deleted by other people. The admin must delete their own account.")
+                        mdebug("6")
 
                         if not bad_role_length :
+                            mdebug("7")
                             dbname = auth_user["mica_database"]
                             mdebug("Confirming database before delete: " + dbname)
 
@@ -4811,7 +4821,7 @@ class MICA(object):
 
         if "story_format" not in user :
             mwarn("Story format is missing. Upgrading design document for story upgrades.")
-            self.view_check(req, "stories", recreate = True)
+            self.view_check(req.session.value["username"], "stories", recreate = True)
             user["story_format"] = story_format
 
         if "app_chars_per_line" not in user :
@@ -4905,7 +4915,7 @@ class MICA(object):
                 req.session.save()
 
         if username not in self.first_request :
-            self.check_all_views(req)
+            self.check_all_views(username)
 
             if params["transcheck"] :
                 for result in req.db.view("stories/translating", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -4926,9 +4936,9 @@ class MICA(object):
                         self.flush_pages(req, tmp_storyname)
 
                 if "upgrading" not in req.db["_design/stories"]["views"] :
-                    self.view_check(req, "stories", recreate = True)
+                    self.view_check(req.session.value["username"], "stories", recreate = True)
 
-                for result in req.db.view("stories/upgrading", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+                for result in req.db.view("stories/upgrading", startkey=[req.session.value["username"]], endkey=[req.session.value['username'], {}]) :
                     tmp_storyname = result["key"][1]
                     tmp_story = req.db[self.story(req, tmp_storyname)]
                     mdebug("Killing stale upgrade session: " + tmp_storyname)
