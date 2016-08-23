@@ -100,6 +100,8 @@ def reauth(func):
             mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
         except Exception, e :
+            for line in format_exc().splitlines() :
+                mwarn(line)
             permanent_error = e
         finally :
             if retry_auth :

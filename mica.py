@@ -261,7 +261,8 @@ class MICA(object):
             mverbose("Checking database access")
             if mobile :
                 self.db = self.cs[params["local_database"]]
-                self.sessiondb = self.db
+                self.sessiondb = self.cs["sessiondb"]
+                self.filedb = self.cs["filedb"]
             else :
                 if self.userdb :
                     self.db = self.userdb
@@ -269,14 +270,46 @@ class MICA(object):
 
                     if "mica_admin" not in self.cs :
                         self.make_account(self, "mica_admin", "password", "owner@example.com", "mica", admin = True, dbname = "mica_admin")
+                    if "file_admin" not in self.cs :
+                        self.make_account(self, "files", "password", "owner@example.com", "mica", admin = False, dbname = "files", extra_roles = ["nobody"])
 
                     self.verify_db(False, "mica_admin", username = "mica_admin")
+                    self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
+                    self.filedb = self.dbs["files"]
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
-            self.db = self.sessiondb
+
+            #self.db = self.sessiondb
             self.view_check("mica_admin", "sessions")
             self.view_check("mica_admin", "conflicts")
+            self.view_check("files", "readonly")
+
+            if not mobile :
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        if not self.filedb.doc_exist("MICA:filelisting_" + f) :
+                            self.filedb["MICA:filelisting_" + f] = {"foo" : "bar"}
+
+                mdebug("Checking if files exist............")
+                for name, lgp in self.processors.iteritems() :
+                    for f in lgp.get_dictionaries() :
+                        listing = self.filedb["MICA:filelisting_" + f]
+                        fname = params["scratch"] + f
+
+                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f) :
+                            if os_path.isfile(fname) :
+                                minfo("Opening dict file: " + f)
+                                fh = open(fname, 'r')
+                                minfo("Uploading " + f + " to file listing...")
+                                self.filedb.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
+                                fh.close()
+                                minfo("Uploaded.")
+                            else :
+                                minfo("Cannot Upload " + f + ", not generated yet.")
+                        else :
+                            mdebug("File " + f + " already exists.")
+                            lgp.test_dictionaries(retest = True)
 
             if not params["keepsession"] :
                 current_session_time = int(timest())
@@ -492,7 +525,7 @@ class MICA(object):
 
         self.db.detach_thread()
 
-    def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en") :
+    def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en", extra_roles = []) :
         username = username.lower()
 
         if not dbname :
@@ -503,7 +536,7 @@ class MICA(object):
             mdebug("Creating user in _user database...")
             user_doc = { "name" : username,
                          "password" : password,
-                         "roles": [] if admin else [username + "_master"],
+                         "roles": [] if admin else [username + "_master", "nobody"],
                          "type": "user",
                          "mica_database" : dbname,
                          "language" : language,
@@ -536,7 +569,7 @@ class MICA(object):
                         "members" :
                             {
                               "names" : ["mica_admin" if admin else "nobody", username],
-                              "roles" : [username + "_master"]
+                              "roles" : [username + "_master"] + extra_roles
                             }
                         }
             newdb.set_security(new_security)
@@ -901,7 +934,7 @@ class MICA(object):
 
         try :
             if not os_path.isfile(fname) :
-                self.db.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
+                self.filedb.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
                 mdebug("Exported " + f + " to " + fname)
 
             exported = True
@@ -913,13 +946,10 @@ class MICA(object):
         return exported
 
     @serial
-    def size_check(self, f, req = False) :
+    def size_check(self, f) :
         fname = params["scratch"] + f
         size = os_path.getsize(fname)
-        if req :
-            meta = req.db.get_attachment_meta("MICA:filelisting_" + f, f)
-        else :
-            meta = self.db.get_attachment_meta("MICA:filelisting_" + f, f)
+        meta = self.filedb.get_attachment_meta("MICA:filelisting_" + f, f)
         if size == meta["length"] :
             return True
         else :
@@ -976,7 +1006,7 @@ class MICA(object):
                     mverbose(emsg)
                 assert(size != 0)
 
-        self.db.detach_thread()
+        self.filedb.detach_thread()
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -2707,6 +2737,7 @@ class MICA(object):
         if 'username' in req.session.value :
             if mobile :
                 req.db.stop_replication()
+                self.filedb.stop_replication()
 
             self.clean_dbs(req.session.value['username'])
 
@@ -4114,7 +4145,7 @@ class MICA(object):
                 email = req.http.params.get("email")
                 language = req.http.params.get("language")
 
-                if newusername == "mica_admin" :
+                if newusername in ["mica_admin", "files"] :
                     req.accountpageresult = _("Invalid account name! Try again")
                 else :
                     if len(newpassword) < 8 :
@@ -4255,9 +4286,9 @@ class MICA(object):
 
                 replication_failed = False
                 if mobile :
-                    req.db.stop_replication()
+                    self.filedb.stop_replication()
 
-                    if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+                    if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
                         req.accountpageresult = _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom
                         replication_failed = True
 
@@ -4452,8 +4483,12 @@ class MICA(object):
 
             if mobile :
                 req.db.stop_replication()
+                self.filedb.stop_replication()
+
                 if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return self.bad_api(req, _("Failed to change synchronization. Please try again") + ": " + tofrom)
+                    return self.bad_api(req, _("Failed to change primary synchronization. Please try again") + ": " + tofrom)
+                if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
+                    return self.bad_api(req, _("Failed to change file synchronization. Please try again") + ": " + tofrom)
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
@@ -4858,28 +4893,8 @@ class MICA(object):
 
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
-                        if not req.db.doc_exist("MICA:filelisting_" + f) :
-                            req.db["MICA:filelisting_" + f] = {"foo" : "bar"}
-
-                mdebug("Checking if files exist............")
-                for name, lgp in self.processors.iteritems() :
-                    for f in lgp.get_dictionaries() :
-                        listing = req.db["MICA:filelisting_" + f]
-                        fname = params["scratch"] + f
-
-                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f, req = req) :
-                            if os_path.isfile(fname) :
-                                minfo("Opening dict file: " + f)
-                                fh = open(fname, 'r')
-                                minfo("Uploading " + f + " to file listing...")
-                                req.db.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
-                                fh.close()
-                                minfo("Uploaded.")
-                            else :
-                                minfo("Cannot Upload " + f + ", not generated yet.")
-                        else :
-                            mdebug("File " + f + " already exists.")
-                            lgp.test_dictionaries(retest = True)
+                        if req.db.doc_exist("MICA:filelisting_" + f) :
+                            del req.db["MICA:filelisting_" + f]
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
                 for line in format_exc().splitlines() :

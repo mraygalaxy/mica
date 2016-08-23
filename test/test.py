@@ -925,7 +925,7 @@ try :
 
     urls.append(common_urls["logout"])
 
-    old_timeout = int(change_timeout(5)[1:-2])
+    old_timeout = int(change_timeout(6)[1:-2])
 except Exception, e :
     tlog(str(e))
 
