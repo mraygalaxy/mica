@@ -4894,6 +4894,7 @@ class MICA(object):
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
                         if req.db.doc_exist("MICA:filelisting_" + f) :
+                            mdebug("Deleting old file: " + f)
                             del req.db["MICA:filelisting_" + f]
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
