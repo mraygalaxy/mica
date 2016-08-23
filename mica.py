@@ -262,7 +262,7 @@ class MICA(object):
             if mobile :
                 self.db = self.cs[params["local_database"]]
                 self.sessiondb = self.cs["sessiondb"]
-                self.filedb = self.cs["filedb"]
+                self.filedb = self.cs["files"]
             else :
                 if self.userdb :
                     self.db = self.userdb
@@ -280,10 +280,11 @@ class MICA(object):
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
 
-            #self.db = self.sessiondb
-            self.view_check("mica_admin", "sessions")
-            self.view_check("mica_admin", "conflicts")
-            self.view_check("files", "readonly")
+            if not mobile :
+                self.view_check("mica_admin", "conflicts")
+                self.view_check("files", "readonly")
+                self.view_check("files", "download")
+                self.view_check("mica_admin", "sessions")
 
             if not mobile :
                 for name, lgp in self.processors.iteritems() :
@@ -1828,6 +1829,7 @@ class MICA(object):
         return largest_hcode, largest_index, largest_target, color, add_count
 
     def view_page(self, req, uuid, name, story, action, output, page, chars_per_line, meaning_mode, start_trans_id = 0, tzoffset = 0, chat = False, history = False) :
+        mdebug("View Page " + str(page) + " story " + str(name) + " querying...")
         output = [output]
         gp = self.processors[self.tofrom(story)]
         req.gp = gp
@@ -1836,7 +1838,6 @@ class MICA(object):
         if not result :
             return self.warn_not_replicated(req, harmless = True)
 
-        mverbose("View Page " + str(page) + " story " + str(name) + " querying...")
         lines, units = result
 
         sources = {}
@@ -2705,7 +2706,7 @@ class MICA(object):
         self.clear_story(req)
 
         if mobile :
-            msg = _("This account is not fully synchronized. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
+            msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if not harmless :
                 if "connected" in req.session.value and req.session.value["connected"] :
@@ -3159,14 +3160,6 @@ class MICA(object):
         if req.messages == "" :
             req.messages = msg if msg else "<div></div>"
 
-        body = u"""
-            if (window.location.hash == "") {
-               $.mobile.navigate('""" + pageid + u"""');
-            } else {
-               $.mobile.navigate(window.location.hash);
-            }
-        """
-
         req.mica = self
         req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
         req.user = req.db.try_get(self.acct(req.session.value['username']))
@@ -3180,12 +3173,24 @@ class MICA(object):
             req.credentials = self.credentials()
         contents = run_template(req, HeadElement)
         fh = open(cwd + 'serve/head.js')
-        bootscript = fh.read()
-        fh.close()
-        bootscript += body
+
+        bootscript = self.bootscript() + u"""
+            if (window.location.hash == "") {
+               $.mobile.navigate('""" + pageid + u"""');
+            } else {
+               $.mobile.navigate(window.location.hash);
+            }
+        """
+
         contents = contents.replace(u"BOOTSCRIPTHEAD", bootscript)
 
         return contents
+
+    def bootscript(self) :
+        fh = open(cwd + 'serve/head.js')
+        bootscript = fh.read()
+        fh.close()
+        return bootscript
 
     def render_frontpage(self, req) :
         self.install_local_language(req)
@@ -3193,7 +3198,7 @@ class MICA(object):
             req.oauth = params["oauth"]
         req.mica = self
         req.credentials = self.credentials()
-        return ("<!DOCTYPE html>\n" if not mobile else "") + run_template(req, FrontPageElement)
+        return ("<!DOCTYPE html>\n" if not mobile else "") + run_template(req, FrontPageElement).replace(u"BOOTSCRIPTHEAD", self.bootscript())
 
     def render_switchlang(self, req) :
         if not req.http.params.get("lang") :
@@ -3972,9 +3977,10 @@ class MICA(object):
 
             if req.http.params.get("page") and not req.http.params.get("retranslate") :
                 page = req.http.params.get("page")
-                mdebug("Request for page: " + str(page))
-                if page == "-1" :
+                mdebug("Request for page: " + str(page) + str(type(page)) + " start_page " + str(start_page))
+                if page == u'-1' or page == '-1' or page == -1 :
                     page = start_page
+                mdebug("Request for page: " + str(page) + str(type(page)) + " start_page " + str(start_page))
 
                 if req.http.params.get("image") :
                     nb_image = req.http.params.get("image")
@@ -4801,13 +4807,15 @@ class MICA(object):
             if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
                 return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+            if not self.filedb.replicate(address, "files", "password", "files", "files", self.get_filter_params(req)) :
+                return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
 
-            if mobile :
-                if "local_username" in params and params["local_username"] and "local_password" in params and params["local_password"] :
-                    # This is just for testing. It will break the app story uploads on mobile, but will allow us to connect to the device and debug things.
-                    req.session.value["port"] = req.db.listen(params["local_username"], params["local_password"], params["local_port"])
-                else :
-                    req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
+        if mobile :
+            if "local_username" in params and params["local_username"] and "local_password" in params and params["local_password"] :
+                # This is just for testing. It will break the app story uploads on mobile, but will allow us to connect to the device and debug things.
+                req.session.value["port"] = req.db.listen(params["local_username"], params["local_password"], params["local_port"])
+            else :
+                req.session.value["port"] = req.db.listen(username, req.session.value["password"], params["local_port"])
 
         req.action = "home"
         req.session.value["connected"] = True
@@ -5096,7 +5104,7 @@ class MICA(object):
             if not mobile and req.http.params.get("username") and  req.http.params.get("username") == "demo" :
                 # The demo account is provided for users who want to give the software a try without committing to it.
                 mwarn("Demo account bad request.")
-                raise exc.HTTPBadRequest(_("Demo Account is readonly. You must install the mobile application for interactive use of the demo account."))
+                return self.bad_api(req, _("Demo Account is readonly. You must install the mobile application for interactive use of the demo account."))
 
             # We could be connecting for both local accounts and oauth
             connect_result = self.render_connect(req, from_third_party)
@@ -5259,6 +5267,8 @@ class MICA(object):
                 if (int(start_page) + 1) > pages :
                     mwarn("Can't load a start page that's higher than the number of pages. Clamping to last page.")
                     start_page = pages - 1
+
+            start_page = str(max(0, int(str(start_page))))
 
         for param in ["multiple_select", "reviewlist", "editslist", "memorizednostory", "memorized", "storyupgrade", "memolist", "oprequest" ] :
             if req.http.params.get(param) :

@@ -83,6 +83,16 @@ class CommonElement(Element) :
         self.loader = XMLString(unicheck(pt(**conditionals)))
         #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
+    def pullpush(self) :
+        pull = self.req.db.pull_percent() if self.req.db else "0"
+        if pull == "100.0" :
+            pull = "100"
+        push = self.req.db.push_percent() if self.req.db else "0"
+        if push == "100.0" :
+            push = "100"
+
+        return pull, push
+
     @renderer
     def languages(self, request, tag) :
         if "learnlanguage" in self.req.session.value :
@@ -392,9 +402,10 @@ class FrontPageElement(CommonElement) :
     @renderer
     def head(self, request, tag) :
         return HTMLElement(self.req)
-
+        
     @renderer
     def advertise(self, request, tag) :
+        pull, push = self.pullpush()
         tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
                       offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works"),
@@ -420,6 +431,8 @@ class FrontPageElement(CommonElement) :
                       changelang = _("Change Language"),
                       signinwith = _("Sign in with"),
                       headjs = self.req.mpath + "/head.js",
+                      pull = pull,
+                      push = push,
                       )
         return tag
 
@@ -664,6 +677,7 @@ class AccountElement(CommonElement):
 
     @renderer
     def accountslots(self, request, tag) :
+        pull, push = self.pullpush()
         tag.fillSlots(
                         account = _("Account"),
                         username = self.req.session.value["username"],
@@ -698,6 +712,8 @@ class AccountElement(CommonElement):
                         resultshow = 'display: block; padding: 10px' if self.req.accountpageresult else 'display: none',
                         result = (self.req.accountpageresult + ".") if self.req.accountpageresult else '',
                         delete = _("Delete"),
+                        pull = pull,
+                        push = push,
 
                      )
         return tag
@@ -747,12 +763,7 @@ class HeadElement(CommonElement):
 
     @renderer
     def allslots(self, request, tag) :
-        pull = self.req.db.pull_percent() if self.req.db else ""
-        if pull == "100.0" :
-            pull = "100"
-        push = self.req.db.push_percent() if self.req.db else ""
-        if push == "100.0" :
-            push = "100"
+        pull, push = self.pullpush()
         viewstat = self.req.view_percent
         if viewstat == "100.0" :
             viewstat = "100"

@@ -549,9 +549,9 @@ class MicaServerCouchDB(AuthBase) :
         return True if dbname in self.server else False
 
 class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
-    def __init__(self, db) :
+    def __init__(self, db, name) :
         self.db = db
-        self.dbname = 'mica'
+        self.dbname = name
         mdebug("Android CouchBase Mobile python adapter initialized")
 
     def __setitem__(self, name, doc) :
@@ -768,8 +768,7 @@ class AndroidMicaServerCouchbaseMobile(object) :
         self.db = db_already_local
 
     def __getitem__(self, dbname) :
-        self.dbname = dbname
-        return AndroidMicaDatabaseCouchbaseMobile(self.db)
+        return AndroidMicaDatabaseCouchbaseMobile(self.db, dbname)
 
     def __delitem__(self, name) :
         try :
@@ -781,9 +780,9 @@ class AndroidMicaServerCouchbaseMobile(object) :
         return True if self.db.exists(dbname) else False
 
 class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
-    def __init__(self, db) :
+    def __init__(self, db, name) :
         self.db = db
-        self.dbname = 'mica'
+        self.dbname = name
         mdebug("ios CouchBase Mobile python adapter initialized")
 
     def __setitem__(self, name, doc) :
@@ -998,8 +997,7 @@ class iosMicaServerCouchbaseMobile(object) :
         self.db = db_already_local
 
     def __getitem__(self, dbname) :
-        self.dbname = dbname
-        return iosMicaDatabaseCouchbaseMobile(self.db)
+        return iosMicaDatabaseCouchbaseMobile(self.db, dbname)
 
     def __delitem__(self, name) :
         try :
@@ -1009,4 +1007,3 @@ class iosMicaServerCouchbaseMobile(object) :
 
     def __contains__(self, dbname) :
         return True if self.db.exists(dbname) else False
-
