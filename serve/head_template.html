@@ -113,6 +113,25 @@
     <div data-role='page' id='explode'>
         <h4>&#160;&#160;<b style='color: white' id='explodedstory'/></h4>
         <div data-role='content' id='explode_content'>
+        <table>
+        <!--(if mobile)-->
+        <td style='width: 2px'/>
+        <td><i class='glyphicon glyphicon-download'></i></td>
+        <td style='width: 2px'/>
+        <td style='width: 2px'/>
+        <td class='badge' id='pullstat2'><t:slot name='pull'/></td>
+        <td style='width: 2px'/>
+        <td><i class='glyphicon glyphicon-upload'></i></td>
+        <td style='width: 2px'/>
+        <td class='badge' id='pushstat2'><t:slot name='push'/></td>
+        <td style='width: 2px'/>
+        <!--(end)-->
+        <td><a href=''><span class='badge' id='viewstat2'><t:slot name='viewstat'/></span></a></td>
+        <td style='width: 2px'/>
+        <!--(if not mobile)-->
+        <td><i class='glyphicon glyphicon-eye-open'></i></td>
+        <!--(end)-->
+        </table>
 		<ul id='explodelist' data-role='listview' data-inset='true'>
 		    <li id='readoption'><a onclick="start_learning('read', 'view', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
 		    <li id='reviewoption'><a onclick="start_learning('home', 'view', {uuid: exploded_uuid})" ><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>

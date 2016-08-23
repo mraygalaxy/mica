@@ -1,4 +1,18 @@
 <div lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="accountslots">
+	<table>
+	<!--(if mobile)-->
+	<td style='width: 2px'/>
+	<td><i class='glyphicon glyphicon-download'></i></td>
+	<td style='width: 2px'/>
+	<td style='width: 2px'/>
+	<td class='badge' id='pullstat3'><t:slot name='pull'/></td>
+	<td style='width: 2px'/>
+	<td><i class='glyphicon glyphicon-upload'></i></td>
+	<td style='width: 2px'/>
+	<td class='badge' id='pushstat3'><t:slot name='push'/></td>
+	<td style='width: 2px'/>
+	<!--(end)-->
+</table>
 <div class='img-rounded jumbotron' style='padding: 5px'><t:attr name='style'><t:slot name='resultshow'/></t:attr><t:slot name='result'/></div>
 <p/>
 <h4>
@@ -48,7 +62,7 @@
         </form>
     </td></tr><tr><td>
         <h4><b><t:slot name='learninglanguage'/></b>?</h4>
-        <form class='ajaxform' data-ajax='false' action='account' method='post'>
+        <form class='ajaxform' data-ajax='false' action='account' method='post' onclick='reset_chat();'>
         <select name="learnlanguage" t:render='learnlanguages'/>
         <input type='hidden' name='changelearnlanguage' value='1'/>
         <button type='submit' class='btn btn-default btn-primary'><t:slot name='changelearnlang'/></button>

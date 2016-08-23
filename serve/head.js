@@ -5,19 +5,26 @@ var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456
  * seem to be visible from Android. No idea why.
  */
 function pushstat(info) {
+    console.log("Setting push to " + info);
     if (info == "100.0")
         info = "100";
     $("#pushstat").html(info);
+    $("#pushstat2").html(info);
+    $("#pushstat3").html(info);
 }
 function pullstat(info) {
+    console.log("Setting pull to " + info);
     if (info == "100.0")
         info = "100";
     $("#pullstat").html(info);
+    $("#pullstat2").html(info);
+    $("#pullstat3").html(info);
 }
 function viewstat(info) {
     if (info == "100.0")
         info = "100";
     $("#viewstat").html(info);
+    $("#viewstat2").html(info);
 }
 
 function local(msgid) {
@@ -156,6 +163,12 @@ function privacy_complete(json, opaque) {
 }
 
 var firstpageload = true;
+
+function reset_chat() {
+    chat_loaded = false;
+    first_reconnect = true;
+    force_disconnect();
+}
 
 $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
