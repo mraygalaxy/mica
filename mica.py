@@ -2225,9 +2225,10 @@ class MICA(object):
                    noreview += notsure
                    noreview.append(closing)
 
-        #for peer in peer_list :
-        #    mdebug("We should roll chat periods for peer: " + str(peer))
-        #    self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
+        if req.http.params.get("force_rotate") :
+            for peer in peer_list :
+                mdebug("We should roll chat periods for peer: " + str(peer))
+                self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist]
 
     def memocount(self, req, story, page):
@@ -5350,11 +5351,11 @@ class CDict(object):
         mverbose("Saving to session: " + skey)
         self.sessionmutex.acquire()
         if "connected" in self.value and self.value["connected"] :
-            try :
+            if self.mica.sessiondb.doc_exist(skey) :
                 old_doc = self.mica.sessiondb[skey]
                 self.value["_rev"] = old_doc["_rev"]
                 mverbose("Using revision: " + old_doc["_rev"])
-            except couch_adapter.ResourceNotFound, e :
+            else :
                 if in_a_job :
                     mwarn("3) We expired, but we're just a background job, so it's fine.")
                     self.sessionmutex.release()
