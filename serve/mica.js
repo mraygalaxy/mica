@@ -795,36 +795,36 @@ function memory_complete(data, opaque) {
     }
 }
 
-function memory(id, uuid, nb_unit, memorized, page) {
+function memory(id, uuid, nb_unit, memorized, page, source_language, target_language) {
     loading();
-    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page,
+    go(false, 'read&uuid=' + uuid + '&memorized=' + memorized + '&nb_unit=' + nb_unit + '&page=' + page + '&source_language=' + source_language + '&target_language=' + target_language,
         unavailable(false),
         memory_complete,
         [id, memorized]);
 }
 
-function memorize(id, uuid, nb_unit, page) {
-    memory(id, uuid, nb_unit, 1, page);
+function memorize(id, uuid, nb_unit, page, source_language, target_language) {
+    memory(id, uuid, nb_unit, 1, page, source_language, target_language);
 }
 
-function forget(id, uuid, nb_unit, page) {
-    memory(id, uuid, nb_unit, 0, page);
+function forget(id, uuid, nb_unit, page, source_language, target_language) {
+    memory(id, uuid, nb_unit, 0, page, source_language, target_language);
 }
 
-function memory_nostory(id, source, multiple_correct, memorized) {
+function memory_nostory(id, source, multiple_correct, memorized, source_language, target_language) {
     loading();
-    go(false, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct,
+    go(false, 'read&source=' + source + '&memorizednostory=' + memorized + '&multiple_correct=' + multiple_correct + '&source_language=' + source_language + '&target_language=' + target_language,
         unavailable(false),
         memory_complete,
         [id, memorized]);
 }
 
-function memorize_nostory(id, source, multiple_correct) {
-    memory_nostory(id, source, multiple_correct, 1);
+function memorize_nostory(id, source, multiple_correct, source_language, target_language) {
+    memory_nostory(id, source, multiple_correct, 1, source_language, target_language);
 }
 
-function forget_nostory(id, source, multiple_correct) {
-    memory_nostory(id, source, multiple_correct, 0);
+function forget_nostory(id, source, multiple_correct, source_language, target_language) {
+    memory_nostory(id, source, multiple_correct, 0, source_language, target_language);
 }
 
 function reveal_all(hide) {

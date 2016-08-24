@@ -237,7 +237,7 @@ class MICA(object):
         self.views_ready = {}
         self.view_runs = [ #name , #startend key or regular keys
                 ('accounts/all', True),
-                ('memorized/allcount', True),
+                ('memorized2/allcount', True),
                 ('chats/all', True),
                 ('stories/original', True),
                 ('stories/pages', True),
@@ -246,7 +246,7 @@ class MICA(object):
                 ('stories/translating', True),
                 ('stories/upgrading', True),
                 ('stories/alloriginal', True),
-                ('memorized/all', False),
+                ('memorized2/all', False),
                 ('tonechanges/all', False),
                 ('mergegroups/all', False),
                 ('splits/all', False),
@@ -1355,7 +1355,7 @@ class MICA(object):
         if _units :
             mverbose("Input units: " + str(len(_units)))
             for unit in _units :
-                if name == "memorized" :
+                if name == "memorized2" :
                     if "hash" in unit :
                         sources.append(unit["hash"])
                 else :
@@ -1849,7 +1849,7 @@ class MICA(object):
         elif action == "home" :
             sources['tonechanges'] = self.view_keys(req, "tonechanges", units)
         elif action == "read" :
-            sources['memorized'] = self.view_keys(req, "memorized", units)
+            sources['memorized2'] = self.view_keys(req, "memorized2", units)
 
         mverbose("View Page " + str(page) + " story " + str(name) + " building...")
         batch = -1
@@ -1896,7 +1896,7 @@ class MICA(object):
                         req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
 
                     if action == 'read' :
-                        if unit["hash"] in sources['memorized'] :
+                        if unit["hash"] in sources['memorized2'] :
                             memorized = True
 
                 if "timestamp" in unit and unit["punctuation"] :
@@ -1916,6 +1916,8 @@ class MICA(object):
                     uuid = uuid,
                     action = action,
                     nb_unit = nb_unit,
+                    source_language = story["source_language"] if "source_language" in story else "zh-CHS",
+                    target_language = story["target_language"] if "target_language" in story else "en",
                     uhash = uhash,
                     meaning_mode = meaning_mode,
                     quoted_source = myquote(source),
@@ -2241,7 +2243,7 @@ class MICA(object):
             return False
         units = page_dict["units"]
 
-        memorized = self.view_keys(req, "memorized", units)
+        memorized = self.view_keys(req, "memorized2", units)
 
         for x in range(0, len(units)) :
             unit = units[x]
@@ -2749,7 +2751,7 @@ class MICA(object):
         self.view_check(username, "tonechanges")
         self.view_check(username, "mergegroups")
         self.view_check(username, "splits")
-        self.view_check(username, "memorized")
+        self.view_check(username, "memorized2")
         self.view_check(username, "chats")
         if not mobile :
             self.view_check(username, "download")
@@ -2806,7 +2808,7 @@ class MICA(object):
         try :
             mdebug("First checking analytics...")
             # upgrade the analytics
-            design_docs = [ "memorized", "mergegroups", "tonechanges", "splits" ]
+            design_docs = [ "memorized2", "mergegroups", "tonechanges", "splits" ]
 
             for ddoc in design_docs :
                 if req.db.doc_exist("_design/" + ddoc) :
@@ -3830,6 +3832,8 @@ class MICA(object):
         memorized = int(req.http.params.get("memorizednostory"))
         multiple_correct = int(req.http.params.get("multiple_correct"))
         source = req.http.params.get("source")
+        source_language = req.http.params.get("source_language")
+        target_language = req.http.params.get("target_language")
         mdebug("Received memorization request without story: " + str(memorized) + " " + str(multiple_correct) + " " + source)
         nshash = self.get_polyphome_hash(multiple_correct, source)
 
@@ -3838,6 +3842,8 @@ class MICA(object):
             unit["multiple_correct"] = multiple_correct
             unit["date"] = timest()
             unit["hash"] = nshash
+            unit["source_language"] = source_language
+            unit["target_language"] = target_language
             if not req.db.doc_exist(self.memorized(req, nshash)) :
                 req.db[self.memorized(req, nshash)] = unit
         else :
@@ -3850,6 +3856,8 @@ class MICA(object):
         memorized = int(req.http.params.get("memorized"))
         nb_unit = int(req.http.params.get("nb_unit"))
         page = req.http.params.get("page")
+        source_language = req.http.params.get("source_language")
+        target_language = req.http.params.get("target_language")
 
         # FIXME This is kind of stupid - looking up the whole page
         # just to get the hash of one unit.
@@ -3863,8 +3871,8 @@ class MICA(object):
 
         if memorized :
             unit["date"] = timest()
-            unit["source_language"] = req.session.value["language"]
-            unit["target_language"] = req.session.value["learnlanguage"]
+            unit["source_language"] = source_language
+            unit["target_language"] = target_language
             if not req.db.doc_exist(self.memorized(req, unit["hash"])) :
                 req.db[self.memorized(req, unit["hash"])] = unit
         else :
@@ -3942,7 +3950,7 @@ class MICA(object):
         req.story = story
 
         if req.memresult :
-            for result in req.db.view('memorized/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
+            for result in req.db.view('memorized2/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], story["source_language"] if "source_language" in story else "zh-CHS", {}]) :
                 req.memallcount = str(result['value'])
 
             if req.list_mode :
@@ -4068,7 +4076,7 @@ class MICA(object):
             mdebug("Compacting...")
             self.serial.safe_execute(False, req.db.compact)
             self.serial.safe_execute(False, req.db.cleanup)
-            design_docs = ["memorized", "stories", "mergegroups",
+            design_docs = ["memorized2", "stories", "mergegroups",
                            "tonechanges", "accounts", "splits", "chats" ]
 
             if not mobile :
