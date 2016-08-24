@@ -1792,6 +1792,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
     $("#romanizedoption").attr('style', 'display: none');
     $("#storyinitoption").attr('style', 'display: none');
     $("#syncstatus").attr('style', 'display: none');
+    $("#originaloption").attr('style', 'display: none');
 
     if (translated) {
         if (romanized) {
@@ -1802,6 +1803,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
         $("#reviewoption").attr('style', 'display: block');
         $("#editoption").attr('style', 'display: block');
         $("#forgetoption").attr('style', 'display: block');
+        $("#originaloption").attr('style', 'display: block');
 
         if (finished) {
             $("#notfinishedoption").attr('style', 'display: block');
@@ -1819,6 +1821,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
     } else {
         $("#deleteoption").attr('style', 'display: block');
         $("#translateoption").attr('style', 'display: block');
+        $("#originaloption").attr('style', 'display: block');
     }
 
     if (!newstory) {

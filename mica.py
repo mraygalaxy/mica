@@ -722,9 +722,11 @@ class MICA(object):
                         mdebug("Trying to restart replication...")
 
                         if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                            mdebug("Refreshing session failed to restart replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+                            mdebug("Refreshing session failed to restart main replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                         req.session.value["port"] = self.db.listen(username, req.session.value["password"], params["local_port"])
                         req.session.save()
+                        if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
+                            mdebug("Refreshing session failed to restart file replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                 try :
                     self.verify_db(req, req.session.value["database"], prime = False)
                     resp = self.render(req)
