@@ -13,9 +13,9 @@
             <t:attr name='class'><t:slot name='transclass'/></t:attr>
 
             <!--(if uuid)-->
-                    <t:attr name='onclick'>memorize('@!uhash!@', '@!uuid!@', '@!nb_unit!@', '@!page!@');</t:attr>
+                    <t:attr name='onclick'>memorize('@!uhash!@', '@!uuid!@', '@!nb_unit!@', '@!page!@', '@!source_language!@', '@!target_language!@');</t:attr>
             <!--(else)-->
-                    <t:attr name='onclick'>memorize_nostory('@!uhash!@', '@!quoted_source!@', '@!unit['multiple_correct']!@');</t:attr>
+                    <t:attr name='onclick'>memorize_nostory('@!uhash!@', '@!quoted_source!@', '@!unit['multiple_correct']!@', '@!source_language!@', '@!target_language!@');</t:attr>
             <!--(end)-->
         <!--(end)-->
 
