@@ -7,7 +7,7 @@ from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs, environ
 from docker import Client
 from json import loads as json_loads, dumps as json_dumps
-from time import sleep
+from time import sleep, time
 from urlparse import urlparse, parse_qs
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from threading import Thread
@@ -34,6 +34,7 @@ def tlog(*objs):
 
 environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+start_time = int(time())
 level = logging.WARN
 '''
 httplib.HTTPConnection.debuglevel = 2
@@ -372,7 +373,8 @@ def run_tests(test_urls) :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
-            tlogmsg = "Test " + str(tidx) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
+            secs = int(time()) - start_time
+            tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
 
             record.write(tlogmsg + "\n")
@@ -600,6 +602,9 @@ common_urls = {
                 "storylist" :
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
 
+                "storylist_rotate" :
+                    { "loc" : "/api?human=0&alien=storylist&tzoffset=18000&force_rotate=1", "method" : "get", "success" :  True, "test_success" : True },
+
                 "storylist_triple" : [
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
@@ -820,7 +825,7 @@ tests_from_micadev10 = [
            common_urls["account"],
 
            { "repeat" : 10, "urls" : [
-               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
                common_urls["login"],
                ]
            },
@@ -867,7 +872,7 @@ tests_from_micadev10 = [
            common_urls["relogin"],
 
            { "repeat" : 2, "urls" : [
-               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
                common_urls["login"],
                ]
            },
@@ -883,15 +888,12 @@ tests_from_micadev10 = [
            common_urls["relogin"],
 
            { "repeat" : 2, "urls" : [
-               { "sleep" : test_timeout * 3,  "loc" : "sleep", "method" : "none" }, 
+               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
                common_urls["login"],
                ]
            },
 
-           # Next tests: 
-           # 1. Try to get rid of purges. Test this by forgetting a story and then re-translating it.
-           # 2. Template the story uploads and test more stories
-           # 3. break the chat system
+           common_urls["storylist_rotate"],
 
 #          { "stop" : True },
         ]
@@ -906,7 +908,7 @@ def add_chat_tests_from_micadev10() :
         if not line :
             break
         if line == "storylist" :
-            urls.append(common_urls["storylist"])
+            urls.append(common_urls["storylist_rotate"])
         elif line.count("source=") :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : None, "test_success" : True})
         else :
@@ -920,7 +922,7 @@ def add_chat_tests_from_micadev10() :
 try :
     add_oauth_tests_from_micadev10()
     urls += tests_from_micadev10
-#    add_chat_tests_from_micadev10()
+    add_chat_tests_from_micadev10()
     sleep(5)
 
     urls.append(common_urls["logout"])
@@ -943,7 +945,8 @@ record.close()
 
 if not stop :
     try:
-        tlog("Done. Application left running...")
+        secs = int(time()) - start_time
+        tlog("Done in " + str(secs) + " secs. Application left running...")
         while True :
             sleep(10)
     except KeyboardInterrupt:
