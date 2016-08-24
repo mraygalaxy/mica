@@ -1188,12 +1188,12 @@ $.fn.goDeep = function(levels, func){
 };
 
 function validatetext_complete(json, opaque) {
-    console.log("Completing text upload...");
     if(json.success) {
+        console.log("Completing text upload to key " + json.storykey + "...");
         db.openDoc(json.storykey, {
               error: function(err) {
-                    console.log("Boo open doc failed: " + err);
-                    alert("Boo. open Doc failed: " + err);
+                    console.log("Boo open doc " + json.storykey + " failed: " + err);
+                    alert("Boo. open Doc " + json.storykey + " failed: " + err);
                     done();
               },
               success : function(doc) {
