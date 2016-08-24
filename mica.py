@@ -3950,7 +3950,8 @@ class MICA(object):
         req.story = story
 
         if req.memresult :
-            for result in req.db.view('memorized2/allcount', startkey=[req.session.value['username']], endkey=[req.session.value['username'], story["source_language"] if "source_language" in story else "zh-CHS", {}]) :
+            slang = story["source_language"] if "source_language" in story else "zh-CHS"
+            for result in req.db.view('memorized2/allcount', startkey=[req.session.value['username'], slang], endkey=[req.session.value['username'], slang, {}]) :
                 req.memallcount = str(result['value'])
 
             if req.list_mode :
