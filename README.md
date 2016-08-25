@@ -1,6 +1,7 @@
 MICA: Memory-Interposed Chinese Assistant
 =========================================
 
+
 MICA is a language-learning memory-assisted software program
 for Chinese that tracks what words you know and don't know
 as you read through stories. The motivation is that there are
