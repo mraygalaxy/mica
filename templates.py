@@ -318,7 +318,7 @@ class ChatElement(CommonElement) :
                       username = self.req.session.value["username"].replace("@", "%40"),
                       beep = self.req.mpath + "/beep.wav",
                       # Incoming chat messages
-                      incoming = _("HEY Your Chat Username is: ") + self.req.session.value["username"].replace("@", "%40") + "@" + self.req.main_server,
+                      incoming = _("Your Chat Username is: ") + self.req.session.value["username"].replace("@", "%40") + "@" + self.req.main_server,
                       # Send a chat message
                       sendmsg = _("Send Message"),
                       # Destination of chat receiver
