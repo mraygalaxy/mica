@@ -4929,7 +4929,6 @@ class MICA(object):
                     out += line + "\n"
                 mwarn(out)
 
-        req.session.save()
         return False
 
     def render_logged_in_check(self, req) :
@@ -5348,13 +5347,13 @@ class CDict(object):
         else :
             skey = self.mica.session(self.value["session_uid"])
 
-        mverbose("Saving to session: " + skey)
+        mdebug("Saving to session: " + skey)
         self.sessionmutex.acquire()
         if "connected" in self.value and self.value["connected"] :
             if self.mica.sessiondb.doc_exist(skey) :
                 old_doc = self.mica.sessiondb[skey]
                 self.value["_rev"] = old_doc["_rev"]
-                mverbose("Using revision: " + old_doc["_rev"])
+                mdebug("Using revision: " + old_doc["_rev"])
             else :
                 if in_a_job :
                     mwarn("3) We expired, but we're just a background job, so it's fine.")
@@ -5370,12 +5369,16 @@ class CDict(object):
                     mwarn("1) We expired, but we're just a background job, so it's fine.")
                 else :
                     self.sessionmutex.release()
+                    for line in format_exc().splitlines() :
+                        merr(line)
                     raise e
             except couch_adapter.ResourceNotFound, e :
                 if in_a_job :
                     mwarn("2) We expired, but we're just a background job, so it's fine.")
                 else :
                     self.sessionmutex.release()
+                    for line in format_exc().splitlines() :
+                        merr(line)
                     raise e
 
         self.sessionmutex.release()

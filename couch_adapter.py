@@ -79,7 +79,7 @@ class repeatable(object):
                     tries = tries - 1
                     if tries == 0 :
                         merr("Ran out of tries =(")
-                        raise e
+                        raise CommunicationError("Unauthorized: " + str(e))
                     mwarn("atomic Tries left: " + str(tries))
 
         return wrapped_f
@@ -88,6 +88,7 @@ def reauth(func):
     def wrapper(self, *args, **kwargs):
         retry_auth = False
         permanent_error = False
+        regular_error = False
         try :
             result = func(self, *args, **kwargs)
         except Unauthorized, e :
@@ -99,6 +100,8 @@ def reauth(func):
         except CannotSendRequest, e :
             mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
+        except CommunicationError, e :
+            regular_error = e
         except Exception, e :
             for line in format_exc().splitlines() :
                 mwarn(line)
@@ -107,8 +110,10 @@ def reauth(func):
             if retry_auth :
                 self.reauthorize()
                 result = func(self, *args, **kwargs)
+            elif regular_error :
+                raise regular_error 
             elif permanent_error :
-                raise permanent_error
+                raise CommunicationError("Unauthorized: " + str(permanent_error))
 
         return result
     return wrapper
@@ -218,7 +223,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
-            raise e
+            raise CommunicationError("Problem during delete: " + str(e))
 
     @reauth
     def delete_attachment(self, doc, filename) :
@@ -536,17 +541,23 @@ class MicaServerCouchDB(AuthBase) :
                 db = self.server[dbname]
             else :
                 db = self.server.create(dbname)
-            return MicaDatabaseCouchDB(db, self)
-        except Unauthorized, e :
-            raise CommunicationError("MICA Unauthorized: dbname: " + dbname + " " + str(e))
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
+        return MicaDatabaseCouchDB(db, self)
 
     @reauth
     def __delitem__(self, name) :
-        del self.server[name]
+        try :
+            del self.server[name]
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def __contains__(self, dbname) :
-        return True if dbname in self.server else False
+        try :
+            return True if dbname in self.server else False
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
 class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def __init__(self, db, name) :
