@@ -102,6 +102,10 @@ def reauth(func):
             retry_auth = True
         except CommunicationError, e :
             regular_error = e
+        except ResourceNotFound, e :
+            regular_error = e
+        except ResourceConflict, e :
+            regular_error = e
         except Exception, e :
             for line in format_exc().splitlines() :
                 mwarn(line)
@@ -121,10 +125,17 @@ def reauth(func):
 class AuthBase(object) :
     def reauthorize(self) :
         try :
-            mdebug("Re-authenticating.")
-            self.server.cookie = False
-            self.server.auth()
-            self.db.resource.headers["Cookie"] = self.server.cookie
+            try :
+                mdebug("Re-authenticating database.")
+                getattr(self, "server")
+                self.server.cookie = False
+                self.server.auth()
+                self.db.resource.headers["Cookie"] = self.server.cookie
+            except AttributeError, e :
+                mdebug("Re-authenticating server.")
+                self.cookie = False
+                self.auth()
+
             mdebug("Authenticated.")
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
@@ -470,6 +481,23 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 #        instead of our not found
 
 class MicaServerCouchDB(AuthBase) :
+    def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
+        self.url = url
+        self.cookie = cookie
+        self.refresh = refresh
+        if refresh :
+            self.username = username
+            self.password = password
+
+        self.couch_server = Server(url)
+
+        if refresh :
+            assert(self.url)
+            assert(self.username)
+            assert(self.password)
+
+        self.auth(username, password)
+
     def get_cookie(self, url, username, password) :
         username_unquoted = myquote(username)
         password_unquoted = myquote(password)
@@ -514,33 +542,16 @@ class MicaServerCouchDB(AuthBase) :
             mdebug("Reusing cookie: " + self.cookie)
 
         assert(self.cookie)
-        self.server.resource.headers["Cookie"] = self.cookie
+        self.couch_server.resource.headers["Cookie"] = self.cookie
         mverbose("Reauth done")
-
-    def __init__(self, url = False, username = False, password = False, cookie = False, refresh = False) :
-        self.url = url
-        self.cookie = cookie
-        self.refresh = refresh
-        if refresh :
-            self.username = username
-            self.password = password
-
-        self.server = Server(url)
-
-        if refresh :
-            assert(self.url)
-            assert(self.username)
-            assert(self.password)
-
-        self.auth(username, password)
 
     @reauth
     def __getitem__(self, dbname) :
         try :
-            if dbname in self.server :
-                db = self.server[dbname]
+            if dbname in self.couch_server :
+                db = self.couch_server[dbname]
             else :
-                db = self.server.create(dbname)
+                db = self.couch_server.create(dbname)
         except couch_ServerError, e :
             check_for_unauthorized(e)
         return MicaDatabaseCouchDB(db, self)
@@ -548,14 +559,14 @@ class MicaServerCouchDB(AuthBase) :
     @reauth
     def __delitem__(self, name) :
         try :
-            del self.server[name]
+            del self.couch_server[name]
         except couch_ServerError, e :
             check_for_unauthorized(e)
 
     @reauth
     def __contains__(self, dbname) :
         try :
-            return True if dbname in self.server else False
+            return True if dbname in self.couch_server else False
         except couch_ServerError, e :
             check_for_unauthorized(e)
 
