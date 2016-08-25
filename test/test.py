@@ -229,8 +229,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body_dict = {}
 
             if "email_key" in parameters["oauth"][path] and parameters["oauth"][path]["email_key"] :
-                recursiveSetInDict(body_dict, parameters["oauth"][path]["email_key"].split(","), path + str(self.email_count) + "@holymother.com")
-                self.email_count += 1
+                recursiveSetInDict(body_dict, parameters["oauth"][path]["email_key"].split(","), path + str(MyHandler.email_count) + "@holymother.com")
+                MyHandler.email_count += 1
 
             if "verified_key" in parameters["oauth"][path] and parameters["oauth"][path]["verified_key"] :
                 body_dict[parameters["oauth"][path]["verified_key"]] = True
@@ -419,7 +419,7 @@ def run_tests(test_urls) :
                         run_tests(common_urls["relogin"])
                         continue
 
-                    tlog("  Bad status code: " + str(r.status_code))
+                    tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
                     assert(False)
                 else :
                     retry_attempts = 0
@@ -576,7 +576,7 @@ assert(r.status_code == 200)
 r = s.get("http://localhost")
 assert(r.status_code == 200)
 
-d = pq(r.text)
+d = pq(s.get("http://localhost").text)
 
 def add_oauth_tests_from_micadev10() :
     for who in parameters["oauth"].keys() :
@@ -671,6 +671,7 @@ tests_from_micadev10 = [
 
             common_urls["login"],
             common_urls["storylist"],
+            common_urls["storylist_rotate"],
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
             { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True, "test_success" : True },
@@ -893,8 +894,6 @@ tests_from_micadev10 = [
                ]
            },
 
-           common_urls["storylist_rotate"],
-
 #          { "stop" : True },
         ]
 
@@ -915,12 +914,14 @@ def add_chat_tests_from_micadev10() :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
             
     chatfd.close()
+    urls.append(common_urls["storylist_rotate"])
     #urls.append(common_urls["logout"])
     #urls.append({ "stop" : True })
 
     
 try :
-    add_oauth_tests_from_micadev10()
+    for x in range(0, 40) :
+        add_oauth_tests_from_micadev10()
     urls += tests_from_micadev10
     add_chat_tests_from_micadev10()
     sleep(5)
