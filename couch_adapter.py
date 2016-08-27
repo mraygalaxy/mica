@@ -35,6 +35,16 @@ class ResourceNotFound(Exception) :
     def __str__(self) :
         return self.msg
 
+# Couchdb bug returning NotFound instead of Unathorized during a timeout
+class PossibleResourceNotFound(Exception) :
+    def __init__(self, msg, e = False):
+        Exception.__init__(self)
+        self.msg = msg
+        self.e = e
+
+    def __str__(self) :
+        return self.msg
+
 class CommunicationError(Exception) :
     def __init__(self, msg, e = False):
         Exception.__init__(self)
@@ -94,6 +104,10 @@ def reauth(func):
         except Unauthorized, e :
             mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
             retry_auth = True
+        except PossibleResourceNotFound, e :
+            mwarn("First time with possible resource not found. Will re-auth and try one more time.")
+            retry_auth = True
+            kwargs["second_time"] = True
         except IncompleteRead, e :
             mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
@@ -118,7 +132,6 @@ def reauth(func):
                 raise regular_error 
             elif permanent_error :
                 raise CommunicationError("Unauthorized: " + str(permanent_error))
-
         return result
     return wrapper
 
@@ -170,14 +183,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         self.db.security = doc
 
     @reauth
-    def __setitem__(self, name, doc) :
+    def __setitem__(self, name, doc, second_time = False) :
         try :
             self.db[name] = doc
         except couch_ResourceNotFound, e :
-            if name.count("org.couchdb.user") :
-                raise Unauthorized
+            if name.count("org.couchdb.user") and not second_time:
+                raise PossibleResourceNotFound(name)
             mdebug("Set key not found error: " + name)
-            raise ResourceNotFound(str(e), e)
+            raise ResourceNotFound(str(e))
         except couch_ResourceConflict, e :
             mdebug("Set key conflict error: " + name)
             raise ResourceConflict(str(e), e)
@@ -185,21 +198,21 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
 
     @reauth
-    def __getitem__(self, name, false_if_not_found = False) :
+    def __getitem__(self, name, false_if_not_found = False, second_time = False) :
         try :
             return self.db[name]
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
-            if name.count("org.couchdb.user") :
-                raise Unauthorized
+            if name.count("org.couchdb.user") and not second_time :
+                raise PossibleResourceNotFound(name)
             if false_if_not_found :
                 return False
             else :
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
 
     @reauth
-    def __delitem__(self, name) :
+    def __delitem__(self, name, second_time = False) :
         revs = []
 
         try :
@@ -231,6 +244,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
         except Unauthorized, e :
             raise e
+        except couch_ResourceNotFound, e :
+            if name.count("org.couchdb.user") and not second_time  :
+                raise PossibleResourceNotFound(name)
+            raise ResourceNotFound(str(e))
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
@@ -320,13 +337,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         return self.__getitem__(name)["_attachments"][filename]
 
     @reauth
-    def doc_exist(self, name) :
+    def doc_exist(self, name, second_time = False) :
         try :
             self.db[name]
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
-            #mdebug(str(e.args))
+            if name.count("org.couchdb.user") and not second_time :
+                raise PossibleResourceNotFound(name)
             ((error, reason),) = e.args
             mverbose("Doc exist returns not found: " + reason)
             return False
@@ -383,8 +401,6 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 continue
             except couch_ServerError, e :
                 # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
-                for line in format_exc().splitlines() :
-                    mwarn(line)
                 ((status, error),) = e.args
                 mwarn("Server error: " + str(status) + " " + str(error))
                 if status == 403 :
@@ -399,6 +415,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         continue
                     else :
                         merr("No server_errors_left remaining.")
+                for line in format_exc().splitlines() :
+                    merr(line)
                 raise e
     def view(self, *args, **kwargs) :
         view_name = args[0]
