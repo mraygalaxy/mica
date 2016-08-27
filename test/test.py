@@ -153,7 +153,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     #tlog("  " + str(url_parameters) + " != " + str(pair["inp"]))
                     continue
 
-                tlog("  MOCKING: " + key + ": " + str(url_parameters))
+                #tlog("  MOCKING: " + key + ": " + str(url_parameters))
                 found = True
                 body = json_dumps(pair["outp"])
                 break
@@ -176,12 +176,12 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         result = 200
         result_msg = "OK"
 
-        tlog("  " + str(path) + ": " + str(url_parameters))
+        #tlog("  " + str(path) + ": " + str(url_parameters))
 
         body = sdict(success = True, test_success = True)
 
         if path in parameters["oauth"].keys() :
-            tlog("  TOKEN REQUEST from: " + path)
+            #tlog("  TOKEN REQUEST from: " + path)
             state = oauth["states"][path]
             code = oauth["states"][path]
             if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
@@ -218,7 +218,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         url = urlparse(self.path)
         url_parameters = self.my_parse(url.query)
         path = url.path.replace("/", "")
-        tlog("  " + str(path) + ": " + str(url_parameters))
+        #tlog("  " + str(path) + ": " + str(url_parameters))
 
         result = 200
         result_msg = "OK"
@@ -374,7 +374,7 @@ def run_tests(test_urls) :
                         url["data"][dest_key] = last_json[key]
 
             secs = int(time()) - start_time
-            tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
+            tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
 
             record.write(tlogmsg + "\n")
@@ -453,7 +453,7 @@ def run_tests(test_urls) :
                         continue
 
                 diff = stop - start
-                tlog("  Time: " + str(int(diff)) + " secs.")
+                #tlog("  Time: " + str(int(diff)) + " secs.")
 
                 if "success" in url and url["success"] is not None :
                     assert("success" in j)
@@ -762,14 +762,13 @@ tests_from_micadev10 = [
                { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoop2@whoops.com", username = "bad:username", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 
                { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+
+               { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=nosuchaccount", "method" : "get", "success" : True, "test_success" :  False },
+
+               { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=whoops2@whoops.com", "method" : "get", "success" : True, "test_success" :  True },
                ]
            # end of repeated section
            },
-
-
-           { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=nosuchaccount", "method" : "get", "success" : True, "test_success" :  False },
-
-           { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=whoops2@whoops.com", "method" : "get", "success" : True, "test_success" :  True },
 
            { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 

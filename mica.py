@@ -4201,6 +4201,7 @@ class MICA(object):
                 else :
                     mdebug("3")
                     if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                        mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot delete it.")
                     else :
                         mdebug("4")
@@ -4237,6 +4238,9 @@ class MICA(object):
                                 self.clean_session(req)
                                 req.messages = _("Your account has been permanently deleted.")
                                 return self.render_frontpage(req)
+                        mdebug("6.stop")
+                    mdebug("3.stop")
+                mdebug("2.stop")
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
             if language in supported_map :
