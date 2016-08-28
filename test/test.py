@@ -489,7 +489,7 @@ if test["start_jabber"] :
         image = test["jabber_container"],
         command = ['/home/mrhines/mica/restart.sh'],
         hostname = 'jabber',
-        name = 'jabber',
+        name = test["jabber_name"],
         tty = True,
         ports = [5280, 22, 5222, 5223, 5281],
         host_config = c.create_host_config(port_bindings = {
@@ -506,7 +506,7 @@ options.append(
     dict(
         image = test["couch_container"],
         command = ['couchdb'], 
-        name = 'couchdb',
+        name = test["couch_name"],
         tty = True,
         ports = [5985, 22, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
