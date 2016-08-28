@@ -511,10 +511,10 @@ options.append(
         ports = [5985, 22, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
         host_config = c.create_host_config(port_bindings = {
-                "22/tcp":   ("0.0.0.0", 2222),
                 "5984/tcp": ("0.0.0.0", 5985),
-                "6984/tcp": ("0.0.0.0", 6984),
-                "7984/tcp": ("0.0.0.0", 7984),
+                #"22/tcp":   ("0.0.0.0", 2222),
+                #"6984/tcp": ("0.0.0.0", 6984),
+                #"7984/tcp": ("0.0.0.0", 7984),
         }, binds = [
                 cwd + "../logs:/usr/local/var/log/couchdb",
             ]
