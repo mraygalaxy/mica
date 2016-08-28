@@ -548,7 +548,7 @@ try :
         tlog("Creation complete.")
         c.start(option["name"])
         port = option["ports"][0]
-        hostname = "localhost"
+        hostname = parameters["couch_server"] 
 
         wait_for_port_ready(option["name"], hostname, port)
 
