@@ -478,7 +478,7 @@ def run_tests(test_urls) :
 
     return stop_test
 
-c = Client(base_url = test["docker_base_url"])
+c = Client(base_url = test["docker_base_url"], version = test["docker_api_version"])
 s = requests.Session()
 
 options = []
