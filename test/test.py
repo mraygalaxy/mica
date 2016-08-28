@@ -478,12 +478,15 @@ def run_tests(test_urls) :
 
     return stop_test
 
-c = Client(base_url = 'unix://var/run/docker.sock')
+c = Client(base_url = test["docker_base_url"])
 s = requests.Session()
 
-options = [
+options = []
+
+if test["start_jabber"] :
+    options.append(
     dict(
-        image = 'jabber5',
+        image = test["jabber_container"],
         command = ['/home/mrhines/mica/restart.sh'],
         hostname = 'jabber',
         name = 'jabber',
@@ -496,10 +499,12 @@ options = [
                 "5280/tcp": ("0.0.0.0", 5280),
                 "5281/tcp": ("0.0.0.0", 5281),
         })
-    ),
+    )
+)
 
+options.append(
     dict(
-        image = 'couchdb6',
+        image = test["couch_container"],
         command = ['couchdb'], 
         name = 'couchdb',
         tty = True,
@@ -514,8 +519,8 @@ options = [
                 cwd + "../logs:/usr/local/var/log/couchdb",
             ]
         )
-    ),
-]
+    )
+)
 
 def wait_for_port_ready(name, hostname, port) : 
     tlog("Checking " + hostname + ": " + str(port))
