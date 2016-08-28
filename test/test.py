@@ -875,8 +875,6 @@ try :
                file_story("little_bird.txt", "zh-CHS,en", "txt", "text/plain"),
                init_and_translate("little_bird.txt"),
 
-    #           { "stop" : True },
-
                # Tests that cause purges and long map reduces.
                { "loc" : "/api?human=0&alien=home&forget=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
@@ -910,7 +908,7 @@ try :
                    ]
                },
 
-    #          { "stop" : True },
+              { "stop" : True },
             ]
 except Exception, e :
     tlog(str(e))
