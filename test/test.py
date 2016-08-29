@@ -579,7 +579,7 @@ try :
     mthread.daemon = True
     mthread.start() 
 
-    wait_for_port_ready("mica", test["target"], parameters["port"])
+    wait_for_port_ready("mica", test["target"], test["target_port"])
     r = s.get(target + "/disconnect", verify = False)
     assert(r.status_code == 200)
     r = s.get(target, verify = False)
