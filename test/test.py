@@ -587,8 +587,6 @@ wait_for_port_ready("mica", test["target_proto"], test["target"], test["target_p
 tlog("Waiting for startup...")
 sleep(10)
 r = s.get(target + "/disconnect", verify = target_verify)
-tlog(str(r.status_code))
-tlog(str(target_verify))
 assert(r.status_code == 200)
 r = s.get(target, verify = target_verify)
 assert(r.status_code == 200)
