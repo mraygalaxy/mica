@@ -44,6 +44,7 @@ logging.getLogger().setLevel(level)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(level)
 requests_log.propagate = True
+requests.packages.urllib3.disable_warnings()
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
@@ -58,6 +59,7 @@ from sys import argv
 import couch_adapter
 
 server_port = 9888
+target = test["target_mode"] + "://" + test["target"] + ":" + str(test["target_port"])
 
 test_timeout = 5
 
@@ -254,18 +256,18 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
 def change_timeout(timeout) :
     tlog("Changing timeout to " + str(timeout))
     s = requests.Session()
-    r = s.post("http://" + parameters["couch_server"] + ":5985/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]})
+    r = s.post(couch + "/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = False)
     if r.status_code not in [200, 201] :
         raise Exception("Failed to login for timeout change")
 
-    r = s.get("http://" + parameters["couch_server"] + ":5985/_config")
+    r = s.get(couch + "/_config", verify = False)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to lookup configuration")
 
     config = r.json()
 
-    r = s.put("http://" + parameters["couch_server"] + ":5985/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"")
+    r = s.put(couch + "/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = False)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
@@ -290,7 +292,7 @@ def check_port(hostname, port, protocol = "TCP") :
         return True
     
     except socket.error, msg :
-        tlog("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + ": " + str(msg))
+        tlog("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + " => " + str(msg))
         sock.close()
         sock = None
         return False
@@ -373,6 +375,7 @@ def run_tests(test_urls) :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
+            finaldest = target if ("couch" not in url or not url["couch"]) else couch 
             secs = int(time()) - start_time
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
@@ -389,20 +392,20 @@ def run_tests(test_urls) :
                     break
                     
                 if url["method"] == "get" :
-                    udest = "http://localhost" + move_data_to_url(url)
-                    r = s.get(udest)
+                    udest = finaldest + move_data_to_url(url)
+                    r = s.get(udest, verify = False)
                 elif url["method"] == "post" :
-                    udest = "http://localhost" + url["loc"]
-                    r = s.post(udest, data = url["data"])
+                    udest = finaldest + url["loc"]
+                    r = s.post(udest, data = url["data"], verify = False)
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
-                        udest = "http://localhost" + move_data_to_url(url)
-                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
+                        udest = finaldest + move_data_to_url(url)
+                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read(), verify = False)
                     else :
-                        udest = "http://localhost" + url["loc"]
-                        r = s.put(udest, data = json_dumps(url["data"]))
+                        udest = finaldest + url["loc"]
+                        r = s.put(udest, data = json_dumps(url["data"]), verify = False)
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
@@ -523,12 +526,12 @@ options.append(
 )
 
 def wait_for_port_ready(name, hostname, port) : 
-    tlog("Checking " + hostname + ": " + str(port))
+    tlog("Checking " + hostname + ":" + str(port))
 
     while True :
         if check_port(hostname, port) :
             try :
-                r = s.get("http://" + hostname + ":" + str(port))
+                r = s.get("http://" + hostname + ":" + str(port), verify = False)
                 tlog("Container " + name + " ready.")
                 break
             except requests.exceptions.ConnectionError, e :
@@ -576,13 +579,13 @@ try :
     mthread.daemon = True
     mthread.start() 
 
-    wait_for_port_ready("mica", "localhost", parameters["port"])
-    r = s.get("http://localhost/disconnect")
+    wait_for_port_ready("mica", test["target"], parameters["port"])
+    r = s.get(target + "/disconnect", verify = False)
     assert(r.status_code == 200)
-    r = s.get("http://localhost")
+    r = s.get(target, verify = False)
     assert(r.status_code == 200)
 
-    d = pq(s.get("http://localhost").text)
+    d = pq(s.get(target, verify = False).text)
 except Exception, e :
     tlog(str(e))
 
@@ -623,24 +626,26 @@ common_urls = {
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
 
                 "login" : 
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address="http://" + parameters["couch_server"] + ":5985", connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":5985", connect='1') },
 
                 "relogin" : [
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address="http://" + parameters["couch_server"] + ":5985", connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":5985", connect='1') },
                 ],
                 "account" :
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
             }
 
+couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
+
 def init_and_translate(storyname) :
     return [
         # Need to retrieve the UUID again for the story initialization.
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = storyname), "check_job_running" : False},
     ] + common_urls["storylist_triple"] + [
         # This get is only to retrieve the UUID again for the story initialization.
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = storyname), "check_job_running" : False},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False},
@@ -656,9 +661,9 @@ def file_story(filename, languagetype, filetype, mimetype) :
     return [
            { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = filetype, filename = filename, languagetype = languagetype, uploadfile = "1") },
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None},
+           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {} },
+           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {}, "couch" : True},
 
         ] + common_urls["storylist_triple"]
 
@@ -666,8 +671,8 @@ def txt_story(storyname, languagetype, source) :
     
     return [
         { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = storyname, languagetype = languagetype, uploadtext = "1") },
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None },
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"] },
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None , "couch" : True},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"], "couch" : True},
 
     ] + common_urls["storylist_triple"]
 
@@ -676,7 +681,7 @@ try :
     tests_from_micadev10 = [
                 common_urls["logout"],
 
-                { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address="http://" + parameters["couch_server"] + ":5985", connect='1') },
+                { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address=couch, connect='1') },
 
                 common_urls["login"],
                 common_urls["storylist"],
@@ -908,7 +913,7 @@ try :
                    ]
                },
 
-              { "stop" : True },
+           #   { "stop" : True },
             ]
 except Exception, e :
     tlog(str(e))
@@ -943,6 +948,7 @@ try :
     sleep(5)
 
     urls.append(common_urls["logout"])
+    urls.append({ "stop" : True })
 
     old_timeout = int(change_timeout(6)[1:-2])
 except Exception, e :
