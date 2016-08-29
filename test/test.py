@@ -60,6 +60,9 @@ import couch_adapter
 
 server_port = 9888
 target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
+couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
+target_verify = True if test["target_proto"] == "http" else False 
+couch_verify = True if parameters["couch_proto"] == "http" else False 
 
 test_timeout = 5
 
@@ -256,18 +259,18 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
 def change_timeout(timeout) :
     tlog("Changing timeout to " + str(timeout))
     s = requests.Session()
-    r = s.post(couch + "/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = False)
+    r = s.post(couch + "/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
     if r.status_code not in [200, 201] :
         raise Exception("Failed to login for timeout change")
 
-    r = s.get(couch + "/_config", verify = False)
+    r = s.get(couch + "/_config", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to lookup configuration")
 
     config = r.json()
 
-    r = s.put(couch + "/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = False)
+    r = s.put(couch + "/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
@@ -376,6 +379,7 @@ def run_tests(test_urls) :
                         url["data"][dest_key] = last_json[key]
 
             finaldest = target if ("couch" not in url or not url["couch"]) else couch 
+            verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
@@ -393,19 +397,19 @@ def run_tests(test_urls) :
                     
                 if url["method"] == "get" :
                     udest = finaldest + move_data_to_url(url)
-                    r = s.get(udest, verify = False)
+                    r = s.get(udest, verify = verify)
                 elif url["method"] == "post" :
                     udest = finaldest + url["loc"]
-                    r = s.post(udest, data = url["data"], verify = False)
+                    r = s.post(udest, data = url["data"], verify = verify)
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
                         udest = finaldest + move_data_to_url(url)
-                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read(), verify = False)
+                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read(), verify = verify)
                     else :
                         udest = finaldest + url["loc"]
-                        r = s.put(udest, data = json_dumps(url["data"]), verify = False)
+                        r = s.put(udest, data = json_dumps(url["data"]), verify = verify)
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
@@ -525,13 +529,14 @@ options.append(
     )
 )
 
-def wait_for_port_ready(name, hostname, port) : 
+def wait_for_port_ready(name, proto, hostname, port) : 
+    targ = proto + "://" + hostname
     tlog("Checking " + hostname + ":" + str(port))
 
     while True :
         if check_port(hostname, port) :
             try :
-                r = s.get("http://" + hostname + ":" + str(port), verify = False)
+                r = s.get(targ + ":" + str(port), verify = True if proto == "http" else False)
                 tlog("Container " + name + " ready.")
                 break
             except requests.exceptions.ConnectionError, e :
@@ -543,51 +548,52 @@ def wait_for_port_ready(name, hostname, port) :
 
     tlog("Check complete.")
 
-try :
-    for option in options :
-        cleanup(option["name"])
-        tlog("Creating container: " + option["name"])
-        details = c.create_container(**option)
-        tlog("Creation complete.")
-        c.start(option["name"])
-        port = option["ports"][0]
-        hostname = parameters["couch_server"] 
+for option in options :
+    cleanup(option["name"])
+    tlog("Creating container: " + option["name"])
+    details = c.create_container(**option)
+    tlog("Creation complete.")
+    c.start(option["name"])
+    port = option["ports"][0]
+    hostname = parameters["couch_server"] 
 
-        wait_for_port_ready(option["name"], hostname, port)
+    wait_for_port_ready(option["name"], "http", hostname, port)
 
-    if len(sys.argv) > 1 and sys.argv[1] == "stop" :
-        tlog("Containers are created. Stopping now.")
-        exit(0)
+if len(sys.argv) > 1 and sys.argv[1] == "stop" :
+    tlog("Containers are created. Stopping now.")
+    exit(0)
 
-    urls = []
-    if "test" not in parameters or not parameters["test"] :
-        parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
-        parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
+urls = []
+if "test" not in parameters or not parameters["test"] :
+    parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
+    parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
 
-    httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
-    oresp = Thread(target=oauth_responder, args = [httpd])
-    oresp.daemon = True
-    oresp.start() 
+httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
+oresp = Thread(target=oauth_responder, args = [httpd])
+oresp.daemon = True
+oresp.start() 
 
-    parameters["timeout"] = test_timeout * 2
+parameters["timeout"] = test_timeout * 2
 
-    #parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
-    #parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
-    #parameters["seconds_in_day"] = 60*60*24 
+#parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
+#parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
+#parameters["seconds_in_day"] = 60*60*24 
 
-    mthread = Thread(target=go, args = [parameters])
-    mthread.daemon = True
-    mthread.start() 
+mthread = Thread(target=go, args = [parameters])
+mthread.daemon = True
+mthread.start() 
 
-    wait_for_port_ready("mica", test["target"], test["target_port"])
-    r = s.get(target + "/disconnect", verify = False)
-    assert(r.status_code == 200)
-    r = s.get(target, verify = False)
-    assert(r.status_code == 200)
+wait_for_port_ready("mica", test["target_proto"], test["target"], test["target_port"])
+tlog("Waiting for startup...")
+sleep(10)
+r = s.get(target + "/disconnect", verify = target_verify)
+tlog(str(r.status_code))
+tlog(str(target_verify))
+assert(r.status_code == 200)
+r = s.get(target, verify = target_verify)
+assert(r.status_code == 200)
 
-    d = pq(s.get(target, verify = False).text)
-except Exception, e :
-    tlog(str(e))
+d = pq(s.get(target, verify = target_verify).text)
 
 def add_oauth_tests_from_micadev10() :
     for who in parameters["oauth"].keys() :
@@ -636,7 +642,6 @@ common_urls = {
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
             }
 
-couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
 
 def init_and_translate(storyname) :
     return [
