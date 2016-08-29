@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+/!/usr/bin/env python
 # coding: utf-8
 
 from __future__ import print_function
@@ -59,7 +59,7 @@ from sys import argv
 import couch_adapter
 
 server_port = 9888
-target = test["target_mode"] + "://" + test["target"] + ":" + str(test["target_port"])
+target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
 
 test_timeout = 5
 
