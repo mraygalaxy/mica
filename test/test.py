@@ -958,8 +958,11 @@ except Exception, e :
     tlog(str(e))
 
 stop = True
+good = True
 try :
     stop = run_tests(urls)
+except AssertionError, e :
+    good = False
 except Exception, e :
     for line in format_exc().splitlines() :
         tlog(line)
@@ -968,6 +971,7 @@ except Exception, e :
 change_timeout(old_timeout)
 
 record.close()
+httpd.socket.close()
 
 if not stop :
     try:
@@ -977,6 +981,5 @@ if not stop :
             sleep(10)
     except KeyboardInterrupt:
         tlog("CTRL-C interrupt")
-        exit(1)
 
-httpd.socket.close()
+exit(0 if good else 1)
