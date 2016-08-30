@@ -630,11 +630,11 @@ common_urls = {
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
 
                 "login" : 
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":5985", connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
 
                 "relogin" : [
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":5985", connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
                 ],
                 "account" :
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
