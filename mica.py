@@ -68,6 +68,7 @@ from twisted.web.server import Site
 from twisted.web import proxy, server
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
+from twisted.internet.error import AlreadyCalled
 
 from webob import Request, Response, exc
 
@@ -5442,7 +5443,10 @@ class MicaSession(Session) :
     def timeout(self, timeout) :
         mdebug("Setting new timeout to: " + str(timeout))
         self.sessionTimeout = timeout
-        self.touch()
+        try :
+            self.touch()
+        except AlreadyCalled, e :
+            mwarn("Touch didn't work. Ignore")
 
 class NONSSLRedirect(object) :
     def __init__(self):
