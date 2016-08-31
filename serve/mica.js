@@ -1353,6 +1353,31 @@ function who_to_readable(who) {
 	return decodeURIComponent(id[0]);
 }
 
+function open_or_close(html) {
+        // Despite what memorization state we have in the database, the user may
+        // have expanded these words in the document. We have to see if that happenened,
+        // and, if true, expand them here as well.
+        tmp = $(html);
+        tmp.find("div.reveal").each(function() {
+            var id = $(this).attr("revealid");
+            var rele = document.getElementsByClassName("reveal" + id);
+            if(rele != undefined && rele.length > 0 && rele[0].style.display == 'none') {
+                if ($(this).attr("style") == "display: block") {
+                    console.log(id + " => before definition => " + tmp.find("div.definition[definitionid='" + id + "']").attr("style"));
+                    console.log(id + " => before reveal => " + tmp.find("div.reveal[revealid='" + id + "']").attr("style"));
+                    tmp.find("div.definition[definitionid='" + id + "']").attr("style", "display: block");
+                    tmp.find("div.reveal[revealid='" + id + "']").attr("style", "display: none");
+                    console.log(id + " => after definition => " + tmp.find("div.definition[definitionid='" + id + "']").attr("style"));
+                    console.log(id + " => after reveal => " + tmp.find("div.reveal[revealid='" + id + "']").attr("style"));
+                }
+            }
+        });
+
+        html = tmp.wrap('<p/>').parent().html();
+
+        return html;
+}
+
 function appendBox(who, ts, msg, msgclass, reverse) {
         var html = '<tr><td>';
         var id = ("" + who).split("@");
@@ -1366,7 +1391,9 @@ function appendBox(who, ts, msg, msgclass, reverse) {
             html += (sendtime + "<td>&nbsp;</td><td>" + msg + "</td>");
         }
         html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
-        $('#iResp').prepend(html);
+
+
+        $('#iResp').prepend(open_or_close(html));
         //document.getElementById('iResp').lastChild.scrollIntoView();
 }
 
