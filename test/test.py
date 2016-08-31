@@ -44,6 +44,7 @@ logging.getLogger().setLevel(level)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(level)
 requests_log.propagate = True
+requests.packages.urllib3.disable_warnings()
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 sys.path = [cwd, cwd + "../"] + sys.path
@@ -58,6 +59,10 @@ from sys import argv
 import couch_adapter
 
 server_port = 9888
+target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
+couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
+target_verify = True if test["target_proto"] == "http" else False 
+couch_verify = True if parameters["couch_proto"] == "http" else False 
 
 test_timeout = 5
 
@@ -254,18 +259,18 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
 def change_timeout(timeout) :
     tlog("Changing timeout to " + str(timeout))
     s = requests.Session()
-    r = s.post("http://localhost:5985/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]})
+    r = s.post(couch + "/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
     if r.status_code not in [200, 201] :
         raise Exception("Failed to login for timeout change")
 
-    r = s.get("http://localhost:5985/_config")
+    r = s.get(couch + "/_config", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to lookup configuration")
 
     config = r.json()
 
-    r = s.put("http://localhost:5985/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"")
+    r = s.put(couch + "/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
@@ -290,7 +295,7 @@ def check_port(hostname, port, protocol = "TCP") :
         return True
     
     except socket.error, msg :
-        tlog("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + ": " + str(msg))
+        tlog("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + " => " + str(msg))
         sock.close()
         sock = None
         return False
@@ -373,6 +378,8 @@ def run_tests(test_urls) :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
+            finaldest = target if ("couch" not in url or not url["couch"]) else couch 
+            verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
@@ -389,20 +396,20 @@ def run_tests(test_urls) :
                     break
                     
                 if url["method"] == "get" :
-                    udest = "http://localhost" + move_data_to_url(url)
-                    r = s.get(udest)
+                    udest = finaldest + move_data_to_url(url)
+                    r = s.get(udest, verify = verify)
                 elif url["method"] == "post" :
-                    udest = "http://localhost" + url["loc"]
-                    r = s.post(udest, data = url["data"])
+                    udest = finaldest + url["loc"]
+                    r = s.post(udest, data = url["data"], verify = verify)
                 elif url["method"] == "put" :
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
-                        udest = "http://localhost" + move_data_to_url(url)
-                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read())
+                        udest = finaldest + move_data_to_url(url)
+                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read(), verify = verify)
                     else :
-                        udest = "http://localhost" + url["loc"]
-                        r = s.put(udest, data = json_dumps(url["data"]))
+                        udest = finaldest + url["loc"]
+                        r = s.put(udest, data = json_dumps(url["data"]), verify = verify)
                 stop = timest()
 
                 if r.status_code not in [200, 201] :
@@ -478,15 +485,18 @@ def run_tests(test_urls) :
 
     return stop_test
 
-c = Client(base_url = 'unix://var/run/docker.sock')
+c = Client(base_url = test["docker_base_url"], version = test["docker_api_version"])
 s = requests.Session()
 
-options = [
+options = []
+
+if test["start_jabber"] :
+    options.append(
     dict(
-        image = 'jabber5',
+        image = test["jabber_container"],
         command = ['/home/mrhines/mica/restart.sh'],
         hostname = 'jabber',
-        name = 'jabber',
+        name = test["jabber_name"],
         tty = True,
         ports = [5280, 22, 5222, 5223, 5281],
         host_config = c.create_host_config(port_bindings = {
@@ -496,34 +506,37 @@ options = [
                 "5280/tcp": ("0.0.0.0", 5280),
                 "5281/tcp": ("0.0.0.0", 5281),
         })
-    ),
+    )
+)
 
+options.append(
     dict(
-        image = 'couchdb6',
+        image = test["couch_container"],
         command = ['couchdb'], 
-        name = 'couchdb',
+        name = test["couch_name"],
         tty = True,
         ports = [5985, 22, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
         host_config = c.create_host_config(port_bindings = {
-                "22/tcp":   ("0.0.0.0", 2222),
                 "5984/tcp": ("0.0.0.0", 5985),
-                "6984/tcp": ("0.0.0.0", 6984),
-                "7984/tcp": ("0.0.0.0", 7984),
+                #"22/tcp":   ("0.0.0.0", 2222),
+                #"6984/tcp": ("0.0.0.0", 6984),
+                #"7984/tcp": ("0.0.0.0", 7984),
         }, binds = [
                 cwd + "../logs:/usr/local/var/log/couchdb",
             ]
         )
-    ),
-]
+    )
+)
 
-def wait_for_port_ready(name, hostname, port) : 
-    tlog("Checking " + hostname + ": " + str(port))
+def wait_for_port_ready(name, proto, hostname, port) : 
+    targ = proto + "://" + hostname
+    tlog("Checking " + hostname + ":" + str(port))
 
     while True :
         if check_port(hostname, port) :
             try :
-                r = s.get("http://" + hostname + ":" + str(port))
+                r = s.get(targ + ":" + str(port), verify = True if proto == "http" else False)
                 tlog("Container " + name + " ready.")
                 break
             except requests.exceptions.ConnectionError, e :
@@ -542,9 +555,9 @@ for option in options :
     tlog("Creation complete.")
     c.start(option["name"])
     port = option["ports"][0]
-    hostname = "localhost"
+    hostname = parameters["couch_server"] 
 
-    wait_for_port_ready(option["name"], hostname, port)
+    wait_for_port_ready(option["name"], "http", hostname, port)
 
 if len(sys.argv) > 1 and sys.argv[1] == "stop" :
     tlog("Containers are created. Stopping now.")
@@ -570,13 +583,15 @@ mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
 mthread.start() 
 
-wait_for_port_ready("mica", "localhost", parameters["port"])
-r = s.get("http://localhost/disconnect")
+wait_for_port_ready("mica", test["target_proto"], test["target"], test["target_port"])
+tlog("Waiting for startup...")
+sleep(10)
+r = s.get(target + "/disconnect", verify = target_verify)
 assert(r.status_code == 200)
-r = s.get("http://localhost")
+r = s.get(target, verify = target_verify)
 assert(r.status_code == 200)
 
-d = pq(s.get("http://localhost").text)
+d = pq(s.get(target, verify = target_verify).text)
 
 def add_oauth_tests_from_micadev10() :
     for who in parameters["oauth"].keys() :
@@ -615,24 +630,25 @@ common_urls = {
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
 
                 "login" : 
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
 
                 "relogin" : [
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
-                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address='http://localhost:5985', connect='1') },
+                    { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
                 ],
                 "account" :
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
             }
 
+
 def init_and_translate(storyname) :
     return [
         # Need to retrieve the UUID again for the story initialization.
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = storyname), "check_job_running" : False},
     ] + common_urls["storylist_triple"] + [
         # This get is only to retrieve the UUID again for the story initialization.
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = storyname), "check_job_running" : False},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False},
@@ -648,9 +664,9 @@ def file_story(filename, languagetype, filetype, mimetype) :
     return [
            { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = filetype, filename = filename, languagetype = languagetype, uploadfile = "1") },
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None},
+           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
 
-           { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {} },
+           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {}, "couch" : True},
 
         ] + common_urls["storylist_triple"]
 
@@ -658,251 +674,252 @@ def txt_story(storyname, languagetype, source) :
     
     return [
         { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = storyname, languagetype = languagetype, uploadtext = "1") },
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None },
-        { "loc" : "/couch/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"] },
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None , "couch" : True},
+        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"], "couch" : True},
 
     ] + common_urls["storylist_triple"]
 
 
-tests_from_micadev10 = [
-            common_urls["logout"],
+try :
+    tests_from_micadev10 = [
+                common_urls["logout"],
 
-            { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address='http://localhost:5985', connect='1') },
-
-            common_urls["login"],
-            common_urls["storylist"],
-            common_urls["storylist_rotate"],
-            { "repeat" : 40, "urls" : [
-                { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=1&nb_unit=8&page=0", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=0&nb_unit=3&page=0", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
-                { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0&image=0", "method" : "get", "success" :  True },
-                { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True },
-                { "loc" : "/api?human=0&alien=instant&source=%E7%82%8E%E7%83%AD&lang=en&source_language=zh-CHS&target_language=en", "method" : "get", "success" : True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home&view=1", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&reviewlist=1&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=12&trans_id=10&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=48&trans_id=42&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=home", "method" : "post", "success" :  True, "test_success" :  True, "data" : dict(retranslate = '1', page = '0', uuid = 'b220074e-f1a7-417b-9f83-e63cebea02cb') },
-            # Assert that the default has changed and move multiple_select to actual JSON, then retry the request
-                { "loc" : "/api?human=0&alien=edit&view=1", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=edit&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                { "loc" : "/api?human=0&alien=edit&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&editslist=1&page=0", "method" : "get", "success" :  True, "test_success" :  True },
-                ]
-            },
-
-            { "loc" : "/api?human=0&alien=edit", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oprequest = '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"小鸟","pinyin":"xiǎo+niǎo","nbunit":"8","uhash":"0b23c772194ef5a97aa23d5590105665","index":"-1","pagenum":"0","out":""},{"operation":"merge","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":2,"failed":false,"chars":"跳","pinyin":"tiào","nbunit0":"45","uhash0":"0cdbc17e9ed386e3f3df2b26ed5b5187","index0":"-1","page0":"0","chars0":"跳","pinyin0":"tiào","nbunit1":"46","uhash1":"0cdbc17e9ed386e3f3df2b26ed5b5187","index1":"-1","page1":"0","chars1":"跳","pinyin1":"tiào","out":""}]', uuid = "b220074e-f1a7-417b-9f83-e63cebea02cb") },
-           { "loc" : "/api?human=0&alien=edit", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oprequest = '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"山羊","pinyin":"shān+yáng","nbunit":"111","uhash":"fb7335cbba25395d3b9a867ddad630fd","index":"-1","pagenum":"0","out":""}]', uuid = "b220074e-f1a7-417b-9f83-e63cebea02cb") },
-
-           # Bulk review: not tested
-           #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=128", "method" : "get", "success" : True, "test_success" :  True },
-           #{ "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(transid0 = 67, index0 = 1, nbunit0 = 75, page0 = 151, transid1 = 74, index1 = 1, nbunit1 = 84, page1 = 151, transid2 = 81, index2 = 1, nbunit2 = 93, page2 = 151, transid3 = 88, index3 = 1, nbunit3 = 102, page3 = 151, transid4 = 105, index4 = 1, nbunit4 = 123, page4 = 151, count = 5, bulkreview = 1) },
-           #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-           { "repeat" : 40, "urls" : [
-               # Switch to split view on sample
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=home&switchmode=both", "method" : "get", "success" : True },
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151&image=0", "method" : "get", "success" : True, "test_success" :  True },
-
-                # Switch to image-only
-
-               { "loc" : "/api?human=0&alien=home&switchmode=images", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151&image=0", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-
-               # Switch back to text-only
-
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=home&switchmode=badviewmode", "method" : "get", "success" : False, "test_success" :  False },
-               { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" : True, "test_success" :  True },
-
-                # Go to page 35
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=34", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=34", "method" : "get", "success" : True, "test_success" :  True },
-
-               # Go to last page
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=239", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=239", "method" : "get", "success" : True, "test_success" :  True },
-
-                # Go one page past the end
-                # Javascript won't let us do this, but I might screw up
-                # Will cause a replication error, requiring us to re-login
-               { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=240", "method" : "get", "success" : False, "test_success" :  False },
+                { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address=couch, connect='1') },
 
                 common_urls["login"],
+                common_urls["storylist"],
+                common_urls["storylist_rotate"],
+                { "repeat" : 40, "urls" : [
+                    { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=1&nb_unit=8&page=0", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memorized=0&nb_unit=3&page=0", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
+                    { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0&image=0", "method" : "get", "success" :  True },
+                    { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True },
+                    { "loc" : "/api?human=0&alien=instant&source=%E7%82%8E%E7%83%AD&lang=en&source_language=zh-CHS&target_language=en", "method" : "get", "success" : True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home&view=1", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&reviewlist=1&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=12&trans_id=10&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&multiple_select=1&index=1&nb_unit=48&trans_id=42&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=home", "method" : "post", "success" :  True, "test_success" :  True, "data" : dict(retranslate = '1', page = '0', uuid = 'b220074e-f1a7-417b-9f83-e63cebea02cb') },
+                # Assert that the default has changed and move multiple_select to actual JSON, then retry the request
+                    { "loc" : "/api?human=0&alien=edit&view=1", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=edit&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    { "loc" : "/api?human=0&alien=edit&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&editslist=1&page=0", "method" : "get", "success" :  True, "test_success" :  True },
+                    ]
+                },
 
-                # Go one page before the beginning.
-               { "loc" : "/api?human=0&alien=read&meaningmode=true", "method" : "get", "success" : True, "test_success" :  True },
-               { "loc" : "/api?human=0&alien=read&meaningmode=false", "method" : "get", "success" : True, "test_success" :  True },
+                { "loc" : "/api?human=0&alien=edit", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oprequest = '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"小鸟","pinyin":"xiǎo+niǎo","nbunit":"8","uhash":"0b23c772194ef5a97aa23d5590105665","index":"-1","pagenum":"0","out":""},{"operation":"merge","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":2,"failed":false,"chars":"跳","pinyin":"tiào","nbunit0":"45","uhash0":"0cdbc17e9ed386e3f3df2b26ed5b5187","index0":"-1","page0":"0","chars0":"跳","pinyin0":"tiào","nbunit1":"46","uhash1":"0cdbc17e9ed386e3f3df2b26ed5b5187","index1":"-1","page1":"0","chars1":"跳","pinyin1":"tiào","out":""}]', uuid = "b220074e-f1a7-417b-9f83-e63cebea02cb") },
+               { "loc" : "/api?human=0&alien=edit", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oprequest = '[{"operation":"split","uuid":"b220074e-f1a7-417b-9f83-e63cebea02cb","units":1,"failed":false,"chars":"山羊","pinyin":"shān+yáng","nbunit":"111","uhash":"fb7335cbba25395d3b9a867ddad630fd","index":"-1","pagenum":"0","out":""}]', uuid = "b220074e-f1a7-417b-9f83-e63cebea02cb") },
 
-               # Muck with account
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='zh-CHS,en') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='zh-CHS,en') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='es,en') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='es,en') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,es') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,es') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,zh-CHS') },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,zh-CHS') },
+               # Bulk review: not tested
+               #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=128", "method" : "get", "success" : True, "test_success" :  True },
+               #{ "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(transid0 = 67, index0 = 1, nbunit0 = 75, page0 = 151, transid1 = 74, index1 = 1, nbunit1 = 84, page1 = 151, transid2 = 81, index2 = 1, nbunit2 = 93, page2 = 151, transid3 = 88, index3 = 1, nbunit3 = 102, page3 = 151, transid4 = 105, index4 = 1, nbunit4 = 123, page4 = 151, count = 5, bulkreview = 1) },
+               #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
+               { "repeat" : 40, "urls" : [
+                   # Switch to split view on sample
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=home&switchmode=both", "method" : "get", "success" : True },
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151&image=0", "method" : "get", "success" : True, "test_success" :  True },
 
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(remove=0, tofrom='nosuchdictionary') },
+                    # Switch to image-only
 
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "short", confirm = "short", newaccount = "password") },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoop2@whoops.com", username = "bad:username", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+                   { "loc" : "/api?human=0&alien=home&switchmode=images", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151&image=0", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
 
-               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+                   # Switch back to text-only
 
-               { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=nosuchaccount", "method" : "get", "success" : True, "test_success" :  False },
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=home&switchmode=badviewmode", "method" : "get", "success" : False, "test_success" :  False },
+                   { "loc" : "/api?human=0&alien=home&switchmode=text", "method" : "get", "success" : True, "test_success" :  True },
 
-               { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=whoops2@whoops.com", "method" : "get", "success" : True, "test_success" :  True },
-               ]
-           # end of repeated section
-           },
+                    # Go to page 35
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=34", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=34", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+                   # Go to last page
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=239", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=239", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
+                    # Go one page past the end
+                    # Javascript won't let us do this, but I might screw up
+                    # Will cause a replication error, requiring us to re-login
+                   { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=240", "method" : "get", "success" : False, "test_success" :  False },
 
-           { "loc" : "/api?human=0&alien=account&pack=1", "method" : "get", "success" : True, "test_success" :  True },
+                    common_urls["login"],
 
-           { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
+                    # Go one page before the beginning.
+                   { "loc" : "/api?human=0&alien=read&meaningmode=true", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=read&meaningmode=false", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "short", confirm = "short", changepassword = "1") },
+                   # Muck with account
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='zh-CHS,en') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='zh-CHS,en') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='es,en') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='es,en') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,es') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,es') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=1, tofrom='en,zh-CHS') },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(remove=0, tofrom='en,zh-CHS') },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "notthesame", confirm = "foobarbaz", changepassword = "1") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(remove=0, tofrom='nosuchdictionary') },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = "wrongoldpassword", password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "short", confirm = "short", newaccount = "password") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "notsame", newaccount = "password") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoop2@whoops.com", username = "bad:username", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = test["password"], password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
+                   { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops2@whoops.com", username = "whoops2@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = "foobarbaz", password = test["password"], confirm = test["password"], changepassword = "1") },
+                   { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=nosuchaccount", "method" : "get", "success" : True, "test_success" :  False },
 
-           { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True },
+                   { "loc" : "/api?human=0&alien=account&deleteaccount=1&username=whoops2@whoops.com", "method" : "get", "success" : True, "test_success" :  True },
+                   ]
+               # end of repeated section
+               },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(password = test["password"], confirm = test["password"], changepassword = "1"), "forward_keys" : ["oldpassword"] },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(language = 'badlanguage', changelanguage = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = "whoops3@whoops.com", username = "whoops3@whoops.com", password = "verylongpass", confirm = "verylongpass", newaccount = "password") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(language = 'en', changelanguage = '1') },
+               { "loc" : "/api?human=0&alien=account&pack=1", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(learnlanguage = 'badlanguage', changelearnlanguage = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'py', changelearnlanguage = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "short", confirm = "short", changepassword = "1") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'zh', changelearnlanguage = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = test["password"], password = "notthesame", confirm = "foobarbaz", changepassword = "1") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaytoolong@email.com', changeemail = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(oldpassword = "wrongoldpassword", password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'email withspace@email.com', changeemail = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = test["password"], password = "foobarbaz", confirm = "foobarbaz", changepassword = "1") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'emailwithoutatsymbol', changeemail = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(oldpassword = "foobarbaz", password = test["password"], confirm = test["password"], changepassword = "1") },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = 'normal@email.com', changeemail = '1') },
+               { "loc" : "/api?human=0&alien=account&resetpassword=1", "method" : "get", "success" : True, "test_success" :  True },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1001') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappchars = 'notanumber') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappchars = '70') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(password = test["password"], confirm = test["password"], changepassword = "1"), "forward_keys" : ["oldpassword"] },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1001') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebchars = 'notanumber') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebchars = '70') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(language = 'badlanguage', changelanguage = '1') },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '3.1') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '0.4') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebzoom = 'notanumber') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebzoom = '1.0') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(language = 'en', changelanguage = '1') },
 
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '3.1') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '0.4') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappzoom = 'notanumber') },
-           { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(learnlanguage = 'badlanguage', changelearnlanguage = '1') },
 
-           common_urls["account"],
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'py', changelearnlanguage = '1') },
 
-           { "repeat" : 10, "urls" : [
-               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
-               common_urls["login"],
-               ]
-           },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(learnlanguage = 'zh', changelearnlanguage = '1') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaytoolong@email.com', changeemail = '1') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'email withspace@email.com', changeemail = '1') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(email = 'emailwithoutatsymbol', changeemail = '1') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(email = 'normal@email.com', changeemail = '1') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1001') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappchars = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappchars = 'notanumber') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappchars = '70') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1001') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebchars = '1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebchars = 'notanumber') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebchars = '70') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '3.1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setwebzoom = '0.4') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setwebzoom = 'notanumber') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setwebzoom = '1.0') },
+
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '3.1') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  False, "data" : dict(setappzoom = '0.4') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappzoom = 'notanumber') },
+               { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
+
+               common_urls["account"],
+
+               { "repeat" : 10, "urls" : [
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   common_urls["login"],
+                   ]
+               },
 
 
-           txt_story("chinese_test", "zh-CHS,en", "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"),
-           init_and_translate("chinese_test"),
+               txt_story("chinese_test", "zh-CHS,en", "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"),
+               init_and_translate("chinese_test"),
 
-           txt_story("english_test", "en,zh-CHS", "this is a test"),
-           init_and_translate("english_test"),
+               txt_story("english_test", "en,zh-CHS", "this is a test"),
+               init_and_translate("english_test"),
 
-           file_story("asample1.pdf", "zh-CHS,en", "pdf", "application/pdf"),
-           init_and_translate("asample1.pdf"),
+               file_story("asample1.pdf", "zh-CHS,en", "pdf", "application/pdf"),
+               init_and_translate("asample1.pdf"),
 
-           file_story("family.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("family.txt"),
+               file_story("family.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("family.txt"),
 
-           file_story("asample2.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("asample2.txt"),
+               file_story("asample2.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("asample2.txt"),
 
-           file_story("bao.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("bao.txt"),
+               file_story("bao.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("bao.txt"),
 
-           file_story("book1234.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("book1234.txt"),
+               file_story("book1234.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("book1234.txt"),
 
-           file_story("little_bear.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("little_bear.txt"),
+               file_story("little_bear.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("little_bear.txt"),
 
-           file_story("little_bird.txt", "zh-CHS,en", "txt", "text/plain"),
-           init_and_translate("little_bird.txt"),
+               file_story("little_bird.txt", "zh-CHS,en", "txt", "text/plain"),
+               init_and_translate("little_bird.txt"),
 
-#           { "stop" : True },
+               # Tests that cause purges and long map reduces.
+               { "loc" : "/api?human=0&alien=home&forget=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           # Tests that cause purges and long map reduces.
-           { "loc" : "/api?human=0&alien=home&forget=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
+               common_urls["storylist_triple"],
 
-           common_urls["storylist_triple"],
+               { "loc" : "/api?human=0&alien=home&delete=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a&name=bao_gong_interrogates_a_rock.txt", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           { "loc" : "/api?human=0&alien=home&delete=1&uuid=5989087e-6896-4653-b91e-d6422d6b369a&name=bao_gong_interrogates_a_rock.txt", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
+               common_urls["storylist_triple"],
 
-           common_urls["storylist_triple"],
+               common_urls["relogin"],
 
-           common_urls["relogin"],
+               { "repeat" : 2, "urls" : [
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   common_urls["login"],
+                   ]
+               },
 
-           { "repeat" : 2, "urls" : [
-               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
-               common_urls["login"],
-               ]
-           },
+               # Long-running, but excellent test to delete a large story:
+               { "loc" : "/api?human=0&alien=home&forget=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           # Long-running, but excellent test to delete a large story:
-           { "loc" : "/api?human=0&alien=home&forget=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
+               common_urls["storylist_triple"],
 
-           common_urls["storylist_triple"],
+               { "loc" : "/api?human=0&alien=home&delete=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&name=301_book1.pdf", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
 
-           { "loc" : "/api?human=0&alien=home&delete=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&name=301_book1.pdf", "method" : "get", "success" : True, "test_success" :  True, "check_job_running" : False },
+               common_urls["storylist_triple"],
+               common_urls["relogin"],
 
-           common_urls["storylist_triple"],
-           common_urls["relogin"],
+               { "repeat" : 2, "urls" : [
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   common_urls["login"],
+                   ]
+               },
 
-           { "repeat" : 2, "urls" : [
-               { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
-               common_urls["login"],
-               ]
-           },
-
-#          { "stop" : True },
-        ]
+           #   { "stop" : True },
+            ]
+except Exception, e :
+    tlog(str(e))
 
 def add_chat_tests_from_micadev10() :
     chatfname = cwd + 'chats.txt'
@@ -934,14 +951,18 @@ try :
     sleep(5)
 
     urls.append(common_urls["logout"])
+    urls.append({ "stop" : True })
 
     old_timeout = int(change_timeout(6)[1:-2])
 except Exception, e :
     tlog(str(e))
 
 stop = True
+good = True
 try :
     stop = run_tests(urls)
+except AssertionError, e :
+    good = False
 except Exception, e :
     for line in format_exc().splitlines() :
         tlog(line)
@@ -950,6 +971,7 @@ except Exception, e :
 change_timeout(old_timeout)
 
 record.close()
+httpd.socket.close()
 
 if not stop :
     try:
@@ -959,6 +981,5 @@ if not stop :
             sleep(10)
     except KeyboardInterrupt:
         tlog("CTRL-C interrupt")
-        exit(1)
 
-httpd.socket.close()
+exit(0 if good else 1)
