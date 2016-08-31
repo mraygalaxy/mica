@@ -829,6 +829,9 @@ class MICA(object):
                 if "username" in value :
                     mica.clean_dbs(value["username"])
                 del mica.sessiondb[skey]
+                mdebug("Deleting session.")
+            else :
+                mdebug("Not deleting session.")
 
         except Exception, e :
             for line in format_exc().splitlines() :
@@ -2729,22 +2732,23 @@ class MICA(object):
             return msg
 
     def clean_dbs(self, username) :
+        if mobile :
+            self.db.stop_replication()
+            self.filedb.stop_replication()
+
         if username in self.dbs :
             del self.dbs[username]
 
         if username in self.view_runs :
             del self.view_runs[username]
 
-    def clean_session(self, req) :
+    def clean_session(self, req, skip_save = False) :
         mwarn("Loggin out user now.")
-        req.session.value['connected'] = False
-        req.session.save()
+        if not skip_save :
+            req.session.value['connected'] = False
+            req.session.save()
 
         if 'username' in req.session.value :
-            if mobile :
-                req.db.stop_replication()
-                self.filedb.stop_replication()
-
             self.clean_dbs(req.session.value['username'])
 
     def check_all_views(self, username) :
@@ -5363,8 +5367,13 @@ class CDict(object):
                     mwarn("3) We expired, but we're just a background job, so it's fine.")
                     self.sessionmutex.release()
                     return
-                mverbose("Old session not found.")
 
+                if "_rev" in self.value :
+                    # We didn't race. We're good.
+                    # expired() already cleaned everything up
+                    # Just kick the user out, even in the middle of a request
+                    self.sessionmutex.release()
+                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
             try :
                 self.mica.sessiondb[skey] = self.value
                 sessions[self.value["session_uid"]] = True 
@@ -5433,6 +5442,7 @@ class MicaSession(Session) :
     def timeout(self, timeout) :
         mdebug("Setting new timeout to: " + str(timeout))
         self.sessionTimeout = timeout
+        self.touch()
 
 class NONSSLRedirect(object) :
     def __init__(self):
