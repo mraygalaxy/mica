@@ -238,7 +238,7 @@
                 var beforeCheck = $("#msgArea").val() || "";
                 var key = '';
                 var backspace = 0;
-		self.last_key_was_backspace = false;
+                self.last_key_was_backspace = false;
                 console.log("inputText: " + self.inputText + " beforeCheck " + beforeCheck + " currentText " + self.currentText);
                 if (beforeCheck.length > self.inputText.length) {
                     var diff = (beforeCheck.length - self.inputText.length);
@@ -288,15 +288,15 @@
                     } else if (/[1-8]/.test(key)) { 
                       // pressed number between 1 and 8
                         self.clearOld(1);
-			$.receivePush(parseInt(key));
-			return false;
+                        $.receivePush(parseInt(key));
+                        return false;
                     } else if (key == ',') { // go to previous page
                         self.previousPage();
                     } else if (key == '.') { // go to next page
                         self.nextPage();
                     } else if (key == '') {
                         if (backspace) {
-			    self.last_key_was_backspace = true;
+                            self.last_key_was_backspace = true;
                             self.currentText = self.currentText.substring(0, self.currentText.length - backspace);
                             self.inputText = beforeCheck;
                         } else {
@@ -443,11 +443,6 @@
                 }
                     //$box.find('.typing').text(self.currentText);
 
-                /* For now, assume that the target language
-                 * is the same as the language the user's native
-                 * language. We can fix this later. 
-                 */
-
                  go(false, micaurl, unavailable(false),   
                         function(json, opaque){
                             console.log("Response: " + json); 
@@ -457,9 +452,9 @@
                                     $.wordDatabase.setChoices(json.result.word, json.result.chars, json.result.lens);
                                 }
 
-                                $box.find('ul').html(json.result.human);
+                                $box.find('ul').html(open_or_close(json.result.human));
                             } else {
-                                $box.find('ul').html(json.desc);
+                                $box.find('ul').html(open_or_close(json.desc));
                             }
 
                             $box.show();
