@@ -7,6 +7,7 @@ from uuid import uuid4
 from time import sleep
 from traceback import format_exc
 from httplib import IncompleteRead, CannotSendRequest
+import errno
 
 try :
     from couchdb import Server
@@ -114,6 +115,14 @@ def reauth(func):
         except CannotSendRequest, e :
             mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
+        except IOError, e:
+            if e.errno == errno.EPIPE:
+                mwarn("Broken pipe. Probably due to a timeout: " + str(e))
+                retry_auth = True
+            else :
+                for line in format_exc().splitlines() :
+                    mwarn(line)
+                permanent_error = e
         except CommunicationError, e :
             regular_error = e
         except ResourceNotFound, e :
