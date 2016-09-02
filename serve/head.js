@@ -27,6 +27,11 @@ function viewstat(info) {
     $("#viewstat2").html(info);
 }
 
+function diskstat(info) {
+    $("#diskstat").html(info + " MB");
+    //$("#viewstat2").html(info);
+}
+
 function local(msgid) {
     return $("#" + msgid).html();
 }
