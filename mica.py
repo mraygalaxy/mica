@@ -546,6 +546,7 @@ class MICA(object):
                          "date" : timest(),
                          "email" : email,
                          "source" : source,
+                         "quota" : -1 if admin else 300,
                           }
             mdebug("Putting doc: " + str(user_doc))
             try :
@@ -756,7 +757,7 @@ class MICA(object):
                         resp += "<br>" + line
                         merr(line)
 
-                    resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
+                    resp += "<br/><h2>" + _("(template) Please report the above exception to the author. Thank you") + ".</h2>"
                 except Exception, msg:
                     merr(_("Exception") + ":")
                     resp = "<h4>" + _("Exception") + ":</h4>"
@@ -765,12 +766,10 @@ class MICA(object):
                         resp += "<br>" + line
                         merr(line)
 
-                    resp += "<br/><h2>" + _("Please report the above exception to the author. Thank you") + ".</h2>"
+                    resp += "<br/><h2>" + _("(unknown) Please report the above exception to the author. Thank you") + ".</h2>"
                     if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod" and not resp.count("TemplateSyntaxError")))) and "connected" in req.session.value and req.session.value["connected"] :
                         mwarn("Boo other, logging out user now.")
-                        if not mobile :
-                            req.session.value["connected"] = False
-                            req.session.save()
+                        self.clean_session(req)
             else :
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
@@ -801,7 +800,7 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 resp += "<br>" + line
                 aout += line + "\n"
-            resp += "<h2>" + _("Please report the exception above to the author. Thank you.") + "</h2>"
+            resp += "<h2>" + _("(outer unknown) Please report the exception above to the author. Thank you.") + "</h2>"
             merr(aout)
             if "connected" in req.session.value and req.session.value["connected"] :
                 mwarn("Not a well-caught exception. Setting connected to false.")
@@ -3172,6 +3171,8 @@ class MICA(object):
 
         req.mica = self
         req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
+        req.disk_stat = req.db.info()["disk_size"] / 1024 / 1024
+        req.quota_stat = req.session.value["quota"]
         req.user = req.db.try_get(self.acct(req.session.value['username']))
         req.username = req.session.value['username']
         if mobile :
@@ -4072,6 +4073,8 @@ class MICA(object):
         req.accountpageresult = False
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
+        req.disk_stat = req.db.info()["disk_size"] / 1024 / 1024
+        req.quota_stat = req.session.value["quota"]
         out = ""
 
         if not user :
@@ -4789,9 +4792,22 @@ class MICA(object):
         mdebug("verifying...")
         self.verify_db(req, auth_user["mica_database"], password = password)
 
+        update_user = False
+
         if not mobile :
             if "temp_jabber_pw" not in params :
                 auth_user["temp_jabber_pw"] = req.session.value["temp_jabber_pw"]
+                update_user = True
+
+        if "quota" not in auth_user :
+            if req.session.value["isadmin"] :
+                auth_user["quota"] = -1
+            else :
+                auth_user["quota"] = 300
+            if not mobile :
+                update_user = True
+
+        if not mobile and update_user :
                 try :
                     self.userdb["org.couchdb.user:" + username] = auth_user
                 except couch_adapter.CommunicationError, e :
@@ -4805,6 +4821,8 @@ class MICA(object):
                         self.db = self.userdb
                     mwarn("Retrying userdb access...")
                     self.userdb["org.couchdb.user:" + username] = auth_user
+
+        req.session.value["quota"] = auth_user["quota"]
 
         if mobile :
             if req.db.doc_exist("MICA:appuser") :
@@ -5358,42 +5376,41 @@ class CDict(object):
 
         mdebug("Saving to session: " + skey)
         self.sessionmutex.acquire()
-        if "connected" in self.value and self.value["connected"] :
-            if self.mica.sessiondb.doc_exist(skey) :
-                old_doc = self.mica.sessiondb[skey]
-                self.value["_rev"] = old_doc["_rev"]
-                mdebug("Using revision: " + old_doc["_rev"])
-            else :
-                if in_a_job :
-                    mwarn("3) We expired, but we're just a background job, so it's fine.")
-                    self.sessionmutex.release()
-                    return
+        if self.mica.sessiondb.doc_exist(skey) :
+            old_doc = self.mica.sessiondb[skey]
+            self.value["_rev"] = old_doc["_rev"]
+            mdebug("Using revision: " + old_doc["_rev"])
+        else :
+            if in_a_job :
+                mwarn("3) We expired, but we're just a background job, so it's fine.")
+                self.sessionmutex.release()
+                return
 
-                if "_rev" in self.value :
-                    # We didn't race. We're good.
-                    # expired() already cleaned everything up
-                    # Just kick the user out, even in the middle of a request
-                    self.sessionmutex.release()
-                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
-            try :
-                self.mica.sessiondb[skey] = self.value
-                sessions[self.value["session_uid"]] = True 
-            except couch_adapter.ResourceConflict, e :
-                if in_a_job :
-                    mwarn("1) We expired, but we're just a background job, so it's fine.")
-                else :
-                    self.sessionmutex.release()
-                    for line in format_exc().splitlines() :
-                        merr(line)
-                    raise e
-            except couch_adapter.ResourceNotFound, e :
-                if in_a_job :
-                    mwarn("2) We expired, but we're just a background job, so it's fine.")
-                else :
-                    self.sessionmutex.release()
-                    for line in format_exc().splitlines() :
-                        merr(line)
-                    raise e
+            if "_rev" in self.value :
+                # We didn't race. We're good.
+                # expired() already cleaned everything up
+                # Just kick the user out, even in the middle of a request
+                self.sessionmutex.release()
+                raise exc.HTTPUnauthorized("you're not logged in anymore.")
+        try :
+            self.mica.sessiondb[skey] = self.value
+            sessions[self.value["session_uid"]] = True 
+        except couch_adapter.ResourceConflict, e :
+            if in_a_job :
+                mwarn("1) We expired, but we're just a background job, so it's fine.")
+            else :
+                self.sessionmutex.release()
+                for line in format_exc().splitlines() :
+                    merr(line)
+                raise e
+        except couch_adapter.ResourceNotFound, e :
+            if in_a_job :
+                mwarn("2) We expired, but we're just a background job, so it's fine.")
+            else :
+                self.sessionmutex.release()
+                for line in format_exc().splitlines() :
+                    merr(line)
+                raise e
 
         self.sessionmutex.release()
 

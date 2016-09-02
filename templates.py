@@ -678,6 +678,8 @@ class AccountElement(CommonElement):
     @renderer
     def accountslots(self, request, tag) :
         pull, push = self.pullpush()
+        diskstat = str(self.req.disk_stat) + " MB"
+        quotastat = (str(self.req.quota_stat) if self.req.quota_stat != -1 else "unlimited") + " MB"
         tag.fillSlots(
                         account = _("Account"),
                         username = self.req.session.value["username"],
@@ -714,6 +716,8 @@ class AccountElement(CommonElement):
                         delete = _("Delete"),
                         pull = pull,
                         push = push,
+                        diskstat = diskstat,
+                        quotastat = quotastat,
 
                      )
         return tag
@@ -767,6 +771,8 @@ class HeadElement(CommonElement):
         viewstat = self.req.view_percent
         if viewstat == "100.0" :
             viewstat = "100"
+        diskstat = str(self.req.disk_stat) + " MB"
+        quotastat = (str(self.req.quota_stat) if self.req.quota_stat != -1 else "unlimited") + " MB"
 
         tag.fillSlots(
                      mobile = 'true' if mobile else 'false',
@@ -817,10 +823,12 @@ class HeadElement(CommonElement):
                      pull = pull,
                      push = push,
                      viewstat = viewstat,
+                     diskstat = diskstat,
+                     quotastat = quotastat,
                      # Preferences is located inside the 'Account' drop-down on the top-most navigation panel. It presents all the various preferences that can be permanently stored on the user's account.
                      preferences = _("Preferences"),
                      # Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
-                     disconnect = _("Disconnect"),
+                     disconnect = _("Logout"),
                      # About is a traditional description of the software package itself that you might find in other help menus of other programs.
                      about = _("About"),
                      # Help is not the usual 'help' in a software program. Instead it takes you directly to a tutorial about exactly how the software works.
