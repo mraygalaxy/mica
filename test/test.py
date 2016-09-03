@@ -388,8 +388,9 @@ def run_tests(test_urls) :
             record.flush()
 
             retry_attempts = 0
+            until_attempts = 0
 
-            while retry_attempts < 3 :
+            while retry_attempts < 3 and until_attempts < 30 :
                 if "sleep" in url :
                     tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
                     sleep(url["sleep"])
@@ -430,6 +431,7 @@ def run_tests(test_urls) :
                     assert(False)
                 else :
                     retry_attempts = 0
+                    until_attempts = 0
 
                 # The difference between 'success' and 'test_success' is for errors
                 # that happen during tests which are tolerable in the user experience.
@@ -457,6 +459,7 @@ def run_tests(test_urls) :
                     if v != url["until"]["equals"] : 
                         tlog("  Until " + str(v) + " != " + url["until"]["equals"])
                         sleep(5)
+                        until_attempts += 1
                         continue
 
                 diff = stop - start
@@ -477,8 +480,12 @@ def run_tests(test_urls) :
 
             if retry_attempts >= 3 :
                 tlog(" Failed to retry last run after 3 attempts.")
+                assert(False)
+
+            if until_attempts >= 30 :
+                tlog(" Failed to retry last run after 3 attempts.")
                 stop_test = True
-                break
+                assert(False)
 
     except KeyboardInterrupt:
         tlog("CTRL-C interrupt")
