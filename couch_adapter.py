@@ -27,6 +27,9 @@ except ImportError, e :
     except ImportError, e :
         mverbose("pyjnius and pyobjus not available. Probably on a server.")
 
+def credentials(params) :
+    return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"] + (params["couch_path"] if ("couch_path" in params and params["couch_path"] != "") else ""))
+
 class ResourceNotFound(Exception) :
     def __init__(self, msg, e = False):
         Exception.__init__(self)
@@ -519,6 +522,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     def detach_thread(self) :
         pass
+
 
 # FIXME: need try's here so we return our "NotFound"
 #        instead of our not found

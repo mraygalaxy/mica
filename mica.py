@@ -230,7 +230,7 @@ class MICA(object):
             self.cs = self.db_adapter(params["couch"])
         else :
             if params["admin_user"] and params["admin_pass"] :
-                self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"], refresh = True)
+                self.cs = self.db_adapter(couch_adapter.credentials(params), params["admin_user"], params["admin_pass"], refresh = True)
                 self.userdb = self.cs["_users"]
 
         self.first_request = {}
@@ -426,7 +426,7 @@ class MICA(object):
                 mdebug("Setting mobile db to prexisting object.")
                 self.dbs[username] = self.db
             else :
-                address = req.session.value["address"] if (req and "address" in req.session.value) else self.credentials()
+                address = req.session.value["address"] if (req and "address" in req.session.value) else couch_adapter.credentials(params)
                 # In the past, we were interacting with user databases using their
                 # own credentials, but due to CouchDB timeouts, we need a reliable
                 # way to refresh the cookie without setting our own timeout and
@@ -502,9 +502,6 @@ class MICA(object):
 
     def memorized(self, req, key):
         return self.key_common(req.session.value['username']) + ":memorized:" + key
-
-    def credentials(self) :
-        return params["couch_proto"] + "://" + params["couch_server"] + ":" + str(params["couch_port"] + (params["couch_path"] if ("couch_path" in params and params["couch_path"] != "") else ""))
 
     def install_local_language(self, req, language = False) :
         if language :
@@ -3146,7 +3143,7 @@ class MICA(object):
                 else :
                     username = req.http.params.get("username")
                     password = req.http.params.get("password")
-                    auth_user, reason = self.authenticate(username, password, self.credentials())
+                    auth_user, reason = self.authenticate(username, password, couch_adapter.credentials(params))
                     if not auth_user :
                         mdebug("401 HTTPUnauthorized API request (bad credentials). Returning fail.")
                         raise exc.HTTPUnauthorized(_("API access denied"))
@@ -3183,7 +3180,7 @@ class MICA(object):
             req.credentials = 'http://127.0.0.1:' + str(req.session.value["port"])
         else :
             req.database = req.session.value["database"]
-            req.credentials = self.credentials()
+            req.credentials = couch_adapter.credentials(params)
         contents = run_template(req, HeadElement)
         fh = open(cwd + 'serve/head.js')
 
@@ -3210,7 +3207,7 @@ class MICA(object):
         if not mobile :
             req.oauth = params["oauth"]
         req.mica = self
-        req.credentials = self.credentials()
+        req.credentials = couch_adapter.credentials(params)
         return (u"<!DOCTYPE html>\n" if not mobile else u"") + run_template(req, FrontPageElement).replace(u"BOOTSCRIPTHEAD", self.bootscript())
 
     def render_switchlang(self, req) :
@@ -3238,7 +3235,7 @@ class MICA(object):
         auth_user = self.userdb.try_get("org.couchdb.user:" + username)
 
         if not auth_user or "temp_jabber_pw" not in auth_user or password != auth_user["temp_jabber_pw"] :
-            auth_user, reason = self.authenticate(username, password, self.credentials())
+            auth_user, reason = self.authenticate(username, password, couch_adapter.credentials(params))
 
             if not auth_user :
                 mwarn("reason: " + str(reason))
@@ -4764,7 +4761,7 @@ class MICA(object):
         elif "adddress" in req.session.value and req.session.value["address"] != None :
             address = req.session.value["address"]
         else :
-            address = self.credentials()
+            address = couch_adapter.credentials(params)
 
         req.session.value["username"] = username
         req.session.value["address"] = address
@@ -4819,7 +4816,7 @@ class MICA(object):
                     # If the userdb times out, we do have to reacquire it,
                     # even though its used in other places. Login-time will be the only
                     # place it gets updated.
-                    self.cs = self.db_adapter(self.credentials(), params["admin_user"], params["admin_pass"], refresh = True)
+                    self.cs = self.db_adapter(couch_adapter.credentials(params), params["admin_user"], params["admin_pass"], refresh = True)
                     self.userdb = self.cs["_users"]
                     if self.userdb :
                         self.db = self.userdb
