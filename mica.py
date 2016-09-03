@@ -3171,7 +3171,9 @@ class MICA(object):
 
         req.mica = self
         req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-        req.disk_stat = req.db.info()["disk_size"] / 1024 / 1024
+        disk_size = req.db.info()["disk_size"]
+        mdebug("Raw disk size: " + str(disk_size))
+        req.disk_stat = disk_size / 1024 / 1024
         req.quota_stat = req.session.value["quota"]
         req.user = req.db.try_get(self.acct(req.session.value['username']))
         req.username = req.session.value['username']
@@ -3209,7 +3211,7 @@ class MICA(object):
             req.oauth = params["oauth"]
         req.mica = self
         req.credentials = self.credentials()
-        return ("<!DOCTYPE html>\n" if not mobile else "") + run_template(req, FrontPageElement).replace(u"BOOTSCRIPTHEAD", self.bootscript())
+        return (u"<!DOCTYPE html>\n" if not mobile else u"") + run_template(req, FrontPageElement).replace(u"BOOTSCRIPTHEAD", self.bootscript())
 
     def render_switchlang(self, req) :
         if not req.http.params.get("lang") :
@@ -4073,7 +4075,9 @@ class MICA(object):
         req.accountpageresult = False
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
-        req.disk_stat = req.db.info()["disk_size"] / 1024 / 1024
+        disk_size = req.db.info()["disk_size"]
+        mdebug("Raw disk size: " + str(disk_size))
+        req.disk_stat = disk_size / 1024 / 1024
         req.quota_stat = req.session.value["quota"]
         out = ""
 
