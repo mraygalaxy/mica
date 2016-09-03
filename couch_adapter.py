@@ -177,11 +177,27 @@ def check_for_unauthorized(e) :
 
 
 class MicaDatabaseCouchDB(MicaDatabase) :
-    def __init__(self, db, server) :
+    def __init__(self, db, server, dbname) :
         self.db = db
         self.username = False
         self.password = False
         self.server = server
+        self.dbname = dbname
+
+    # example:
+    #server will have: {u'update_seq': 7967, u'disk_size': 689025146, u'purge_seq': 0, u'doc_count': 6653, u'compact_running': False, u'db_name': u'mica', u'doc_del_count': 1048, u'instance_start_time': u'1472644998115128', u'committed_update_seq': 7967, u'data_size': 481650247, u'disk_format_version': 6}
+    #mobile will have: db_name, db_uuid, doc_count, update_seq, disk_size, instance_start_time
+    @reauth
+    def info(self, second_time = False) :
+        try :
+            return self.db.info()
+        except couch_ResourceNotFound, e :
+            if self.dbname.count("_users") and not second_time:
+                raise PossibleResourceNotFound(self.dbname)
+            mdebug("Get info not found error: " + self.dbname)
+            raise ResourceNotFound(str(e))
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def get_security(self) :
@@ -581,7 +597,7 @@ class MicaServerCouchDB(AuthBase) :
                 db = self.couch_server.create(dbname)
         except couch_ServerError, e :
             check_for_unauthorized(e)
-        return MicaDatabaseCouchDB(db, self)
+        return MicaDatabaseCouchDB(db, self, dbname)
 
     @reauth
     def __delitem__(self, name) :
@@ -629,6 +645,14 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         # return was None (null)
         raise CommunicationError("Bad exception occured getting document: " + name)
+
+    def info(self) :
+        try :
+            return loads(self.db.info(String(self.dbname)))
+        except Exception, e :
+            raise CommunicationError("Error occured getting database info: " + self.dbname + " " + str(e), e)
+        if info is None :
+            raise ResourceNotFound("Could not get database info: " + self.dbname)
 
     def __delitem__(self, name) :
         try :
@@ -833,6 +857,14 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         self.db = db
         self.dbname = name
         mdebug("ios CouchBase Mobile python adapter initialized")
+
+    def info(self) :
+        try :
+            return loads(self.db.info_(String(self.dbname)).UTF8String())
+        except Exception, e :
+            raise CommunicationError("Error occured getting database info: " + self.dbname + " " + str(e), e)
+        if info is None :
+            raise ResourceNotFound("Could not get database info: " + self.dbname)
 
     def __setitem__(self, name, doc) :
         try :
