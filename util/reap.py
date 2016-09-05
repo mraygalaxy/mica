@@ -28,17 +28,21 @@ if len(argv) != 2 :
 
 filename = argv[1]
 
-if not filename.count(".couch") :
+if not filename.count(".couch") and not filename.count(".compact") :
     print "This is not a couch file: " + filename
     exit(1)
 
-if filename[-6:] != ".couch" :
+if filename[-6:] != ".couch" and filename[-8:] != ".compact" :
     print "This is still not a couch file: " + filename
     exit(1)
 
-if len(filename) <= 6 :
+if len(filename) <= 11 :
     print "This is really still not a couch file: " + filename
     exit(1)
+
+if len(filename) > 8 and filename[-8:] == ".compact" :
+    print "Compaction file. Renaming."
+    filename = filename[:-8]
 
 dbname = ".".join(filename.split(".")[:-1])
 userdb = s[dbname]
