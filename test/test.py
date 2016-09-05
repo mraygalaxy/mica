@@ -520,8 +520,8 @@ options.append(
     dict(
         image = test["couch_container"],
         command = ['couchdb'],
-        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"],
-#        name = test["couch_name"],
+#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"],
+        name = test["couch_name"],
         tty = True,
         ports = [5985, 22, 6222, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
