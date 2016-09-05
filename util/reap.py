@@ -44,6 +44,7 @@ if len(filename) > 8 and filename[-8:] == ".compact" :
     print "Compaction file. Renaming."
     filename = filename[:-8]
 
+print "Filename: " + filename
 dbname = ".".join(filename.split(".")[:-1])
 userdb = s[dbname]
 usersecurity = userdb.get_security()
