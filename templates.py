@@ -387,6 +387,7 @@ class FrontPageElement(CommonElement) :
 
                 states_urls["urls"][name], states_urls["states"][name] = service.authorization_url(creds["authorization_base_url"])
             self.req.session.value["states_urls"] = states_urls
+            self.req.session.value.save()
 
         for name, creds in self.req.oauth.iteritems() :
             if name == "redirect" :
