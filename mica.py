@@ -2557,6 +2557,8 @@ class MICA(object):
                 mdebug("Deleting original file attachment.")
                 story = req.db[self.story(req, name)]
                 req.db.delete_attachment(story, filename)
+                mdebug("Compacting database after deleted attachment")
+                self.serial.safe_execute(False, req.db.compact)
                 mdebug("Deleted.")
 
         except Exception, e :
@@ -3128,6 +3130,8 @@ class MICA(object):
         if "current_story" in req.session.value and req.session.value["current_story"] == uuid :
             self.clear_story(req)
             uuid = False
+        mdebug("Compacting DB after removed story")
+        self.serial.safe_execute(False, req.db.compact)
         mdebug("Delete complete.")
         #self.prime_db(req, [('stories/all', True)])
         return self.api(req, json = {"uuid" : uuid})
