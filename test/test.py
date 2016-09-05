@@ -520,13 +520,14 @@ options.append(
     dict(
         image = test["couch_container"],
         command = ['couchdb'], 
+#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"], 
         name = test["couch_name"],
         tty = True,
-        ports = [5985, 22, 6984, 7984],
+        ports = [5985, 22, 6222, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
         host_config = c.create_host_config(port_bindings = {
                 "5984/tcp": ("0.0.0.0", 5985),
-                #"22/tcp":   ("0.0.0.0", 2222),
+                "22/tcp":   ("0.0.0.0", 6222),
                 #"6984/tcp": ("0.0.0.0", 6984),
                 #"7984/tcp": ("0.0.0.0", 7984),
         }, binds = [
