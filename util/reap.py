@@ -41,7 +41,6 @@ if len(filename) <= 11 :
     exit(1)
 
 if len(filename) > 8 and filename[-8:] == ".compact" :
-    print "Compaction file. Renaming."
     filename = filename[:-8]
 
 print "Filename: " + filename
