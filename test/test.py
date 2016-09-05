@@ -12,7 +12,7 @@ from urlparse import urlparse, parse_qs
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from threading import Thread
 from binascii import hexlify as binascii_hexlify
-from logging.handlers import RotatingFileHandler 
+from logging.handlers import RotatingFileHandler
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
 from copy import deepcopy
 
@@ -61,8 +61,8 @@ import couch_adapter
 server_port = 9888
 target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
 couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
-target_verify = True if test["target_proto"] == "http" else False 
-couch_verify = True if parameters["couch_proto"] == "http" else False 
+target_verify = True if test["target_proto"] == "http" else False
+couch_verify = True if parameters["couch_proto"] == "http" else False
 
 test_timeout = 5
 
@@ -72,7 +72,7 @@ mock_rest = {
     "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
                                outp = {"token_type": "http://schemas.xmlsoap.org/ws/2009/11/swt-token-profile-1.0", "access_token": "http%3a%2f%2fschemas.xmlsoap.org%2fws%2f2005%2f05%2fidentity%2fclaims%2fnameidentifier=micalearning&http%3a%2f%2fschemas.microsoft.com%2faccesscontrolservice%2f2010%2f07%2fclaims%2fidentityprovider=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&Audience=http%3a%2f%2fapi.microsofttranslator.com&ExpiresOn=1448071220&Issuer=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&HMACSHA256=p2YmU56ljSJjtcQOpViQaKZ1JpEOZJiCGQJf5otxmpA%3d", "expires_in": "599", "scope": "http://api.microsofttranslator.com"}),
                          ],
-    "TranslatorRequest" : [ 
+    "TranslatorRequest" : [
                 {"outp": [{"TranslatedText": "Baise", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u767e\\u8272\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
                 {"outp": [{"TranslatedText": "Business", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u751f\\u610f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
                 {"outp": [{"TranslatedText": "Centimetre", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [10]}], "inp": {"texts": "[\"\\u5398\\u7c73\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
@@ -148,7 +148,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def check_mock_data(self, path, url_parameters) :
         body = ""
 
-        for key in mock_rest.keys() : 
+        for key in mock_rest.keys() :
             if not path.count(key) :
                 continue
 
@@ -169,7 +169,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             break
 
-        return body 
+        return body
 
     def do_POST(self) :
         body = ""
@@ -192,8 +192,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
                 result = 401
                 result_msg = "Bad Things"
-                body = {"error" : "bad things"} 
-                
+                body = {"error" : "bad things"}
+
             oauth["tokens"][path] = binascii_hexlify(os_urandom(4))
             body = sdict(access_token = oauth["tokens"][path], token_type = "Bearer", expires_in = 3597)
         else :
@@ -293,7 +293,7 @@ def check_port(hostname, port, protocol = "TCP") :
         sock.connect((hostname, port if port is None else port))
         sock.close()
         return True
-    
+
     except socket.error, msg :
         tlog("Unable to connect to " + protocol + " port " + str(port) + " on host " + hostname + " => " + str(msg))
         sock.close()
@@ -313,12 +313,12 @@ def cleanup(name) :
 
 def move_data_to_url(url) :
     temp_url = url["loc"]
-    first = True 
+    first = True
     if "data" in url :
         for key in url["data"].keys() :
             temp_url += ("&" if not first else "?" ) + key + "=" +  str(url["data"][key])
             if first :
-                first = False 
+                first = False
 
     return temp_url
 
@@ -344,7 +344,7 @@ def run_tests(test_urls) :
         else :
             flat_urls += flatten(head_url)
 
-            
+
     tlog("Tests: " + str(len(flat_urls)))
     stop_test = False
     last_json = {}
@@ -378,7 +378,7 @@ def run_tests(test_urls) :
                             tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
                         url["data"][dest_key] = last_json[key]
 
-            finaldest = target if ("couch" not in url or not url["couch"]) else couch 
+            finaldest = target if ("couch" not in url or not url["couch"]) else couch
             verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
@@ -395,7 +395,7 @@ def run_tests(test_urls) :
                     tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
                     sleep(url["sleep"])
                     break
-                    
+
                 if url["method"] == "get" :
                     udest = finaldest + move_data_to_url(url)
                     r = s.get(udest, verify = verify)
@@ -456,7 +456,7 @@ def run_tests(test_urls) :
 
                 if "until" in url :
                     v = getFromDict(j, url["until"]["path"])
-                    if v != url["until"]["equals"] : 
+                    if v != url["until"]["equals"] :
                         tlog("  Until " + str(v) + " != " + url["until"]["equals"])
                         sleep(5)
                         until_attempts += 1
@@ -469,12 +469,12 @@ def run_tests(test_urls) :
                     assert("success" in j)
                     if j["success"] != url["success"] :
                         tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
-                        assert(False) 
+                        assert(False)
                 if "test_success" in url and url["test_success"] is not None :
                     assert("test_success" in j)
                     if j["test_success"] != url["test_success"] :
                         tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
-                        assert(False) 
+                        assert(False)
 
                 break
 
@@ -519,8 +519,8 @@ if test["start_jabber"] :
 options.append(
     dict(
         image = test["couch_container"],
-        command = ['couchdb'], 
-#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"], 
+        command = ['couchdb'],
+#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
         ports = [5985, 22, 6222, 6984, 7984],
@@ -537,7 +537,7 @@ options.append(
     )
 )
 
-def wait_for_port_ready(name, proto, hostname, port) : 
+def wait_for_port_ready(name, proto, hostname, port) :
     targ = proto + "://" + hostname
     tlog("Checking " + hostname + ":" + str(port))
 
@@ -563,7 +563,7 @@ for option in options :
     tlog("Creation complete.")
     c.start(option["name"])
     port = option["ports"][0]
-    hostname = parameters["couch_server"] 
+    hostname = parameters["couch_server"]
 
     wait_for_port_ready(option["name"], "http", hostname, port)
 
@@ -579,17 +579,17 @@ if "test" not in parameters or not parameters["test"] :
 httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
 oresp.daemon = True
-oresp.start() 
+oresp.start()
 
 parameters["timeout"] = test_timeout * 2
 
 #parameters["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
 #parameters["counts"] = { "days" : 1, "weeks" : 7, "months" : 30, "years" : 365, "decades" : 3650 }
-#parameters["seconds_in_day"] = 60*60*24 
+#parameters["seconds_in_day"] = 60*60*24
 
 mthread = Thread(target=go, args = [parameters])
 mthread.daemon = True
-mthread.start() 
+mthread.start()
 
 wait_for_port_ready("mica", test["target_proto"], test["target"], test["target_port"])
 tlog("Waiting for startup...")
@@ -619,9 +619,9 @@ def add_oauth_tests_from_micadev10() :
                 parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
                 urls.append(common_urls["logout"])
                 break
-        
 
-common_urls = { 
+
+common_urls = {
                 "storylist" :
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
 
@@ -637,7 +637,7 @@ common_urls = {
                 "logout" :
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
 
-                "login" : 
+                "login" :
                     { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
 
                 "relogin" : [
@@ -679,7 +679,7 @@ def file_story(filename, languagetype, filetype, mimetype) :
         ] + common_urls["storylist_triple"]
 
 def txt_story(storyname, languagetype, source) :
-    
+
     return [
         { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = storyname, languagetype = languagetype, uploadtext = "1") },
         { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None , "couch" : True},
@@ -858,7 +858,7 @@ try :
                common_urls["account"],
 
                { "repeat" : 10, "urls" : [
-                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
                },
@@ -903,7 +903,7 @@ try :
                common_urls["relogin"],
 
                { "repeat" : 2, "urls" : [
-                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
                },
@@ -919,7 +919,7 @@ try :
                common_urls["relogin"],
 
                { "repeat" : 2, "urls" : [
-                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" }, 
+                   { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
                },
@@ -944,13 +944,13 @@ def add_chat_tests_from_micadev10() :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : None, "test_success" : True})
         else :
             urls.append({"loc" : "/api?" + line, "method" : "get", "success" : True, "test_success" : True})
-            
+
     chatfd.close()
     urls.append(common_urls["storylist_rotate"])
     #urls.append(common_urls["logout"])
     #urls.append({ "stop" : True })
 
-    
+
 try :
     for x in range(0, 100) :
         add_oauth_tests_from_micadev10()
