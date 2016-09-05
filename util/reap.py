@@ -29,15 +29,15 @@ if len(argv) != 2 :
 filename = argv[1]
 
 if not filename.count(".couch") :
-    print "This is not a couch file"
+    print "This is not a couch file: " + filename
     exit(1)
 
 if filename[-6:] != ".couch" :
-    print "This is still not a couch file"
+    print "This is still not a couch file: " + filename
     exit(1)
 
 if len(filename) <= 6 :
-    print "This is really still not a couch file"
+    print "This is really still not a couch file: " + filename
     exit(1)
 
 dbname = ".".join(filename.split(".")[:-1])
