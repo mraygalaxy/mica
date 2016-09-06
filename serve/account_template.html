@@ -133,6 +133,7 @@
                 <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
                 <td>&#160;&#160;Source:@!result["key"]["source"] if "source" in result["key"] else "mica"!@&#160;&#160;</td>
                 <td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
+                <td>&#160;&#160;</td><td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='changequota' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><input type='text' name='quota' value='@!result["key"]["quota"]!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='changequota'/></button></form></td>
             </tr>
         <!--(end)-->
         </table>
