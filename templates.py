@@ -690,6 +690,7 @@ class AccountElement(CommonElement):
                         charperline = _("Characters per line"),
                         perline = self.req.chars_per_line,
                         change = _("Change"),
+                        changequota = _("Change Quota"),
                         zoom = _("Default zoom level"),
                         defaultzoom = self.req.default_zoom,
                         zoomchange = _("Change"),

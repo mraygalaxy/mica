@@ -519,11 +519,11 @@ if test["start_jabber"] :
 options.append(
     dict(
         image = test["couch_container"],
-        command = ['couchdb'],
-#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"],
+#        command = ['couchdb'],
+        command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
-        ports = [5985, 22, 6222, 6984, 7984],
+        ports = [5984, 22, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
         host_config = c.create_host_config(port_bindings = {
                 "5984/tcp": ("0.0.0.0", 5985),
@@ -563,7 +563,8 @@ for option in options :
     tlog("Creation complete.")
     c.start(option["name"])
     port = option["ports"][0]
-    hostname = parameters["couch_server"]
+    hostname = c.inspect_container(option["name"])["NetworkSettings"]["IPAddress"]
+    #hostname = parameters["couch_server"]
 
     wait_for_port_ready(option["name"], "http", hostname, port)
 
