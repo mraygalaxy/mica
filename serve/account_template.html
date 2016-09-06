@@ -128,6 +128,7 @@
     <h4><b><t:slot name='accounts'/></b></h4>
         <table>
         <!--(for result in userdb.view('accounts/all'))-->
+	    <!--(if result["key"]["name"] not in ["files", "demo"])-->
             <tr>
                 <td>@!result["key"]["name"]!@</td>
                 <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
@@ -135,6 +136,7 @@
                 <td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
                 <td>&#160;&#160;</td><td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='changequota' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><input type='text' name='quota' value='@!result["key"]["quota"]!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='changequota'/></button></form></td>
             </tr>
+            <!--(end)-->
         <!--(end)-->
         </table>
     <!--(end)-->
