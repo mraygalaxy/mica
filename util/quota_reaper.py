@@ -49,13 +49,13 @@ while True :
         if quota != -1 and disk_size >= quota :
             if not main.doc_exist("_design/readonly") :
                 print "setting readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
-#                main["_design/readonly"] = readonly
+                main["_design/readonly"] = readonly
             else :
                 print "already readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
         else :
             if main.doc_exist("_design/readonly") :
                 print "removing readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
-#                del main["_design/readonly"]
+                del main["_design/readonly"]
             else :
                 print "stable: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
 
