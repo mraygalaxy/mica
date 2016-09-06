@@ -523,7 +523,7 @@ options.append(
         command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
-        ports = [22, 5984, 6984, 7984],
+        ports = [5984, 22, 6984, 7984],
         volumes = [ "/usr/local/var/log/couchdb" ],
         host_config = c.create_host_config(port_bindings = {
                 "5984/tcp": ("0.0.0.0", 5985),
@@ -563,7 +563,8 @@ for option in options :
     tlog("Creation complete.")
     c.start(option["name"])
     port = option["ports"][0]
-    hostname = parameters["couch_server"]
+    hostname = c.inspect_container(option["name"])["NetworkSettings"]["IPAddress"]
+    #hostname = parameters["couch_server"]
 
     wait_for_port_ready(option["name"], "http", hostname, port)
 
