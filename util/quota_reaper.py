@@ -3,7 +3,7 @@
 
 from re import compile as re_compile, IGNORECASE as re_IGNORECASE, sub as re_sub
 from os import path as os_path, getuid as os_getuid, urandom as os_urandom, remove as os_remove, makedirs as os_makedirs
-from time import sleep
+from time import sleep, time
 from json import dumps
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
@@ -49,6 +49,7 @@ while True :
         if quota != -1 and disk_size >= quota :
             if not main.doc_exist("_design/readonly") :
                 print "setting readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
+                readonly["updated_at"] = time()
                 main["_design/readonly"] = readonly
             else :
                 print "already readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
