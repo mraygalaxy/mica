@@ -519,8 +519,8 @@ if test["start_jabber"] :
 options.append(
     dict(
         image = test["couch_container"],
-        command = ['couchdb'],
-#        command = ["/bin/bash", "-c", "(/home/mrhines/restart.sh &); bash"],
+#        command = ['couchdb'],
+        command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
         ports = [5985, 22, 6222, 6984, 7984],
