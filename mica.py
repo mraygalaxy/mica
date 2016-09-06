@@ -4201,41 +4201,37 @@ class MICA(object):
                                         req.accountpageresult = _("Success! New user was created") + ": " + newusername
                                         json["test_success"] = True
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
-            mdebug("1")
             if mobile :
                 req.accountpageresult = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
             else :
-                mdebug("2")
                 username = req.http.params.get("username").lower()
 
                 if not self.userdb :
                     # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
                     req.accountpageresult = _("Server not configured correctly. Can't make accounts")
+                    json["success"] = False
                 else :
-                    mdebug("3")
                     if not self.userdb.doc_exist("org.couchdb.user:" + username) :
                         mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot delete it.")
+                        json["success"] = False
                     else :
-                        mdebug("4")
                         auth_user = self.userdb["org.couchdb.user:" + username]
 
                         bad_role_length = False
-                        mdebug("5")
                         if req.session.value["username"] != username :
                             if not req.session.value["isadmin"] :
                                 # Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
                                 req.accountpageresult = _("Go away and die.")
+                                bad_role_length = True 
                             else :
                                 role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
 
                                 if role_length == 0 :
                                     bad_role_length = True
                                     req.accountpageresult = _("Admin accounts can't be deleted by other people. The admin must delete their own account.")
-                        mdebug("6")
 
                         if not bad_role_length :
-                            mdebug("7")
                             dbname = auth_user["mica_database"]
                             mdebug("Confirming database before delete: " + dbname)
 
@@ -4251,9 +4247,62 @@ class MICA(object):
                                 self.clean_session(req)
                                 req.messages = _("Your account has been permanently deleted.")
                                 return self.render_frontpage(req)
-                        mdebug("6.stop")
-                    mdebug("3.stop")
-                mdebug("2.stop")
+                        else :
+                            json["success"] = False
+        elif req.http.params.get("changequota") and req.http.params.get("username") and req.http.params.get("quota") :
+            if mobile :
+                req.accountpageresult = _("Quota requests need to be done on the website.")
+                json["success"] = False
+            else :
+                username = req.http.params.get("username").lower()
+
+                if not self.userdb :
+                    # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                    req.accountpageresult = _("Server not configured correctly. Can't modify quotas")
+                    json["success"] = False
+                else :
+                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                        mdebug("No such account. Returning fail.")
+                        req.accountpageresult = _("No such account. Cannot quotas.")
+                        json["success"] = False
+                    else :
+                        auth_user = self.userdb["org.couchdb.user:" + username]
+
+                        bad_role_length = False
+                        if req.session.value["username"] != username :
+                            if not req.session.value["isadmin"] :
+                                # Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
+                                req.accountpageresult = _("Go away and die.")
+                                bad_role_length = True 
+                            else :
+                                role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
+
+                                if role_length == 0 :
+                                    bad_role_length = True
+                                    req.accountpageresult = _("Admin accounts can't be deleted by other people. The admin must delete their own account.")
+
+                        if not bad_role_length :
+                            try :
+                                newquota = int(req.http.params.get("quota"))
+                                mdebug("Changing quota for " + username + " to: " + str(newquota))
+                                if newquota == -1 and not req.session.value["isadmin"] :
+                                    req.accountpageresult = _("Go away and die.")
+                                    json["success"] = False
+                                elif newquota < -1 :
+                                    req.accountpageresult = _("Go away and die.")
+                                    json["success"] = False
+                                else :
+                                    auth_user["quota"] = newquota
+                                    self.userdb["org.couchdb.user:" + username] = auth_user
+                                    req.accountpageresult = _("Success! Quota was changed") + ": " + (str(newquota) if newquota != -1 else _("unlimited")) + " MB " + _("for user") + ": " + username
+                                    json["test_success"] = True
+                            except ValueError, e :
+                                json["success"] = False
+                                req.accountpageresult = _("Error: Quota could not be changed") + ": " + str(req.http.params.get("quota")) + " MB " + _("for user") + ": " + username + ": " + str(e)
+                                json["success"] = False
+                        else :
+                            json["success"] = False
+                                
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
             if language in supported_map :

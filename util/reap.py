@@ -105,9 +105,16 @@ def reap(filename) :
         print "Reap complete: " + filename
     except Exception, e :
         print "Failed to reap file: " + filename + ": " + str(e)
+        try :
+            print "Failed to get members from usersecurity: " + str(usersecurity)
+        except Exception, e :
+            print "Failed to show user security: " + str(e)
 
-    del holders[filename]
-    holdermutex.release()
+    try :
+        del holders[filename]
+        holdermutex.release()
+    except Exception, e :
+        print "Failed to cleanup: " + str(e)
 
 i = adapters.InotifyTree(monitorpath)
 
