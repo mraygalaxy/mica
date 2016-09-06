@@ -25,7 +25,8 @@ import threading
 spinner = "jqmica/images/ajax-loader.gif"
 
 def timest() :
-    return timestlocal() - timezone
+#    return timestlocal() - timezone
+    return timestlocal()
 
 texts = {}
 
