@@ -43,9 +43,6 @@ while True :
         main = s[user["mica_database"]]
         disk_size = main.info()["disk_size"] / 1024 / 1024
 
-        if username in ["demo", "files"] or admin :
-            continue
-
         if quota != -1 and disk_size >= quota :
             if not main.doc_exist("_design/readonly") :
                 print "setting readonly: " + user["name"] + ", quota: " + str(user["quota"]) + ", current: " + str(disk_size)
