@@ -39,7 +39,7 @@ def valid_filename(filename) :
         #print "This is still not a couch file: " + filename
         return False
 
-    if len(filename) <= 11 :
+    if len(filename) <= 11 and filename != "mica.couch" :
         #print "This is really still not a couch file: " + filename
         return False
 
