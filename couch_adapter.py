@@ -8,6 +8,7 @@ from time import sleep
 from traceback import format_exc
 from httplib import IncompleteRead, CannotSendRequest
 import errno
+from time import time
 
 try :
     from couchdb import Server
@@ -244,23 +245,29 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         revs = []
 
         try :
-            docs = self.db.get(name, open_revs = "all")
-            for doc in docs :
-                if "_deleted" in doc["ok"] :
-                    continue
-                mverbose("DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
-                olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
-                if olddoc is not None :
-                    mverbose("DELETE Deleted.")
-                    self.db.delete(olddoc)
+            all_deleted = False 
+            count = -1
+            while not all_deleted :
+                count += 1
+                all_deleted = True 
+                docs = self.db.get(name, open_revs = "all")
+                for doc in docs :
+                    if "_deleted" in doc["ok"] :
+                        continue
+                    all_deleted = False
+                    mverbose(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                    olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
+                    if olddoc is not None :
+                        mverbose(str(count) + ") DELETE Deleted.")
+                        self.db.delete(olddoc)
 
             '''
             doc = self.db[name]
             if "_conflicts" in doc :
-                mdebug("Adding conflict revisions.")
+                mdebug("FOUND conflict revisions.")
                 revs += doc["_conflicts"]
             if "_deleted_conflicts" in doc :
-                mdebug("Adding deleted conflict revisions.")
+                mdebug("FOUND deleted conflict revisions.")
                 revs += doc["_deleted_conflicts"]
 
             for rev in revs :
@@ -301,6 +308,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     trydelete = False
 
                 doc = { "foo" : "bar"}
+                # This 'translated_at' is because of bug: https://issues.apache.org/jira/browse/COUCHDB-1415
+                # Supposedly fixed in CouchDB 2.0
+                doc["translated_at"] = time()
 
                 if trydelete :
                     try :
@@ -312,7 +322,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         mdebug("No old revision found.")
                         pass
 
-                mdebug("Going to write: " + str(doc))
+                mdebug("Going to write: " + str(doc) + " to doc id " + name + " under filename " + filename)
                 self.db[name] = doc
                 doc = self.db[name]
             else :

@@ -5398,6 +5398,7 @@ class CDict(object):
                 self.sessionmutex.release()
                 raise exc.HTTPUnauthorized("you're not logged in anymore.")
         try :
+            self.value["updated_at"] = timest()
             self.mica.sessiondb[skey] = self.value
             sessions[self.value["session_uid"]] = True 
         except couch_adapter.ResourceConflict, e :
