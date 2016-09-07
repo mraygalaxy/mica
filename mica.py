@@ -5464,6 +5464,7 @@ class CDict(object):
                     merr(line)
                 raise e
 
+        mdebug("Session updated: " + skey)
         self.sessionmutex.release()
 
 sessions = {}
