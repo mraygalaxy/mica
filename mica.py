@@ -4028,7 +4028,6 @@ class MICA(object):
                     if chat :
                         output += "<table style='width: 100%'>\n"
                     req.session.value["last_view_mode"] = req.action
-                    req.session.save()
                     output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
                     self.set_page(req, story, page)
                     if chat :
@@ -4476,12 +4475,9 @@ class MICA(object):
     def render_chat(self, req, unused_story) :
         if "jabber_key" not in req.session.value :
             req.session.value["jabber_key"] = binascii_hexlify(os_urandom(4))
-            req.session.save()
 
         if "chats" not in req.session.value :
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
-            req.session.save()
-
 
         if req.http.params.get("history") :
             def by_date(story):
