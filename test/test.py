@@ -135,7 +135,7 @@ mock_rest = {
 }
 
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    email_count = 0
+    email_count = 1
 
     def my_parse(self, data) :
         url_parameters = {}
