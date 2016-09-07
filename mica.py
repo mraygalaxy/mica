@@ -817,7 +817,7 @@ class MICA(object):
             mdebug("Not expiring debug session.")
             return
 
-        session.sessionmutex.acquire()
+        sessions[uid].acquire()
         skey = mica.session(uid)
 
         try :
@@ -834,8 +834,9 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 merr(line)
 
+        lock = sessions[uid]
         del sessions[uid]
-        session.sessionmutex.release()
+        lock.release()
 
     def __call__(self, environ, start_response):
         try :
@@ -848,7 +849,7 @@ class MICA(object):
             req.session = IDict(req.s)
 
             if start_response.im_self.request.s.uid not in sessions :
-                sessions[start_response.im_self.request.s.uid] = True 
+                sessions[start_response.im_self.request.s.uid] = Lock()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, self, req.session))
             resp = self.run_render(req)
 
@@ -5395,7 +5396,6 @@ class CDict(object):
     implements(IDict)
     def __init__(self, session):
         self.mica = session.mica
-        self.sessionmutex = Lock()
         start = {}
         uid = session.uid
 
@@ -5420,13 +5420,14 @@ class CDict(object):
         except AttributeError, e :
             pass
 
+        uid = self.value["session_uid"]
         if params["keepsession"] :
             skey = self.mica.session("debug")
         else :
             skey = self.mica.session(self.value["session_uid"])
 
+        sessions[uid].acquire()
         mdebug("Saving to session: " + skey)
-        self.sessionmutex.acquire()
         if self.mica.sessiondb.doc_exist(skey) :
             old_doc = self.mica.sessiondb[skey]
             self.value["_rev"] = old_doc["_rev"]
@@ -5434,24 +5435,24 @@ class CDict(object):
         else :
             if in_a_job :
                 mwarn("3) We expired, but we're just a background job, so it's fine.")
-                self.sessionmutex.release()
+                sessions[uid].release()
                 return
 
             if "_rev" in self.value :
                 # We didn't race. We're good.
                 # expired() already cleaned everything up
                 # Just kick the user out, even in the middle of a request
-                self.sessionmutex.release()
+                sessions[uid].release()
                 raise exc.HTTPUnauthorized("you're not logged in anymore.")
         try :
             self.value["updated_at"] = timest()
             self.mica.sessiondb[skey] = self.value
-            sessions[self.value["session_uid"]] = True 
+            #sessions[self.value["session_uid"]] = Lock()
         except couch_adapter.ResourceConflict, e :
             if in_a_job :
                 mwarn("1) We expired, but we're just a background job, so it's fine.")
             else :
-                self.sessionmutex.release()
+                sessions[uid].release()
                 for line in format_exc().splitlines() :
                     merr(line)
                 raise e
@@ -5459,13 +5460,13 @@ class CDict(object):
             if in_a_job :
                 mwarn("2) We expired, but we're just a background job, so it's fine.")
             else :
-                self.sessionmutex.release()
+                sessions[uid].release()
                 for line in format_exc().splitlines() :
                     merr(line)
                 raise e
 
         mdebug("Session updated: " + skey)
-        self.sessionmutex.release()
+        sessions[uid].release()
 
 sessions = {}
 
