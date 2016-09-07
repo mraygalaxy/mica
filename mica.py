@@ -4215,6 +4215,7 @@ class MICA(object):
                         mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot delete it.")
                         json["success"] = False
+                        json["test_success"] = True 
                     else :
                         auth_user = self.userdb["org.couchdb.user:" + username]
 
