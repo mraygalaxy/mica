@@ -124,6 +124,7 @@ def reauth(func):
                 mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                 retry_auth = True
             else :
+                mwarn("Actuall error number: " + str(e.errno))
                 for line in format_exc().splitlines() :
                     mwarn(line)
                 permanent_error = e
