@@ -5426,7 +5426,7 @@ class CDict(object):
         else :
             skey = self.mica.session(self.value["session_uid"])
 
-        if uid not in session :
+        if uid not in sessions :
             mwarn("4) We expired, don't take lock.")
             raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
