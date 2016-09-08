@@ -5426,6 +5426,10 @@ class CDict(object):
         else :
             skey = self.mica.session(self.value["session_uid"])
 
+        if uid not in session :
+            mwarn("4) We expired, don't take lock.")
+            raise exc.HTTPUnauthorized("you're not logged in anymore.")
+
         sessions[uid].acquire()
         mdebug("Saving to session: " + skey)
         if self.mica.sessiondb.doc_exist(skey) :
