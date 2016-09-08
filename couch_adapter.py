@@ -120,11 +120,11 @@ def reauth(func):
             mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
             retry_auth = True
         except IOError, e:
-            if e.errno in [errno.EPIPE, errno.ECONNRESET]:
+            if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
                 mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                 retry_auth = True
             else :
-                mwarn("Actuall error number: " + str(e.errno))
+                mwarn("Actual error number: " + str(e.errno))
                 for line in format_exc().splitlines() :
                     mwarn(line)
                 permanent_error = e
