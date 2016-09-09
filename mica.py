@@ -4717,7 +4717,7 @@ class MICA(object):
                        signin = _("Signing you in, Please wait"))
 
         if "states_urls" not in req.session.value :
-            raise exc.HTTPBadRequest("Your session doesn't have a state. Who are you?")
+            raise exc.HTTPUnauthorized("Your session doesn't have a state. Try again.")
 
         states_urls = req.session.value["states_urls"]
 
