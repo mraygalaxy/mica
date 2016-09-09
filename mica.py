@@ -692,8 +692,10 @@ class MICA(object):
 
         if 'connected' not in req.session.value :
             mdebug("New session. Setting connected to false.")
-            req.session.value['connected'] = False
-            req.session.save()
+            req.session.value["connected"] = False
+            # Can't be sure we've authenticated yet
+            # Don't save
+            # req.session.save()
 
         if "language" not in req.session.value and "HTTP_ACCEPT_LANGUAGE" in req.environ:
             req.session.value["language"] = req.environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
@@ -710,7 +712,7 @@ class MICA(object):
             req.front_ads = True
 
         try:
-            if "connected" in req.session.value and req.session.value["connected"] :
+            if self.connected(req) :
                 username = req.session.value["username"]
                 if username not in self.dbs :
                     if mobile :
@@ -731,7 +733,7 @@ class MICA(object):
                     resp = self.render(req)
                 except couch_adapter.CommunicationError, e :
                     merr("Must re-login: " + str(e))
-                    self.clean_session(req)
+                    self.clean_session(req, force = True)
                     # The user has completed logging out / signing out already - then this message appears.
                     req.messages = _("Disconnected from MICA")
                     resp = self.render_frontpage(req)
@@ -764,9 +766,9 @@ class MICA(object):
                         merr(line)
 
                     resp += "<br/><h2>" + _("(unknown) Please report the above exception to the author. Thank you") + ".</h2>"
-                    if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod" and not resp.count("TemplateSyntaxError")))) and "connected" in req.session.value and req.session.value["connected"] :
+                    if ((not isinstance(msg, str) and not isinstance(msg, unicode)) or (not msg.count("SAXParseException") and not msg.count("MissingRenderMethod" and not resp.count("TemplateSyntaxError")))) and self.connected(req) :
                         mwarn("Boo other, logging out user now.")
-                        self.clean_session(req)
+                        self.clean_session(req, force = True)
             else :
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
@@ -799,10 +801,10 @@ class MICA(object):
                 aout += line + "\n"
             resp += "<h2>" + _("(outer unknown) Please report the exception above to the author. Thank you.") + "</h2>"
             merr(aout)
-            if "connected" in req.session.value and req.session.value["connected"] :
+            if self.connected(req) :
                 mwarn("Not a well-caught exception. Setting connected to false.")
                 req.session.value["connected"] = False
-                req.session.save()
+                req.session.save(force = True)
 
         return resp
 
@@ -846,7 +848,9 @@ class MICA(object):
             req = Params(environ)
             req.s = start_response.im_self.request.s
             req.s.mica = self
+            req.mica = self
             req.session = IDict(req.s)
+            self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
                 sessions[start_response.im_self.request.s.uid] = Lock()
@@ -2717,10 +2721,10 @@ class MICA(object):
             msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if not harmless :
-                if "connected" in req.session.value and req.session.value["connected"] :
+                if self.connected(req) :
                     mwarn("Setting to disconnected!")
                     req.session.value["connected"] = False
-                    req.session.save()
+                    req.session.save(force = True)
 
             # Indicates a bug in the software due to invalid synchronization between the user's mobile device and the website.
             msg = _("Synchronization error. Please report this to the author. Thank you.")
@@ -2742,11 +2746,10 @@ class MICA(object):
         if username in self.view_runs :
             del self.view_runs[username]
 
-    def clean_session(self, req, skip_save = False) :
+    def clean_session(self, req, force = False) :
         mwarn("Loggin out user now.")
-        if not skip_save :
-            req.session.value['connected'] = False
-            req.session.save()
+        req.session.value["connected"] = False
+        req.session.save(force = force)
 
         if 'username' in req.session.value :
             self.clean_dbs(req.session.value['username'])
@@ -3155,8 +3158,13 @@ class MICA(object):
             return func(self, req, *args, **kwargs)
         return wrapper
 
+    def connected(self, req) :
+        if "connected" in req.session.value and req.session.value["connected"] :
+            return True
+        return False
+
     def render_disconnect(self, req) :
-        self.clean_session(req)
+        self.clean_session(req, force = self.connected(req))
         return self.api(req)
 
     def render_privacy(self, req) :
@@ -3206,6 +3214,27 @@ class MICA(object):
         bootscript = fh.read()
         fh.close()
         return bootscript
+
+    def populate_oauth_state(self, req) :
+        if "states_urls" in req.session.value :
+            states_urls = req.session.value["states_urls"]
+        else :
+            states_urls = dict(states = {}, urls = {})
+
+            for name, creds in params["oauth"].iteritems() :
+                if name == "redirect" :
+                    continue
+                service = OAuth2Session(creds["client_id"], redirect_uri=params["oauth"]["redirect"] + name, scope = creds["scope"])
+
+                if name == "facebook" :
+                    service = facebook_compliance_fix(service)
+
+                if name == "weibo" :
+                    service = weibo_compliance_fix(service)
+
+                states_urls["urls"][name], states_urls["states"][name] = service.authorization_url(creds["authorization_base_url"])
+            req.session.value["states_urls"] = states_urls
+            req.session.save()
 
     def render_frontpage(self, req) :
         self.install_local_language(req)
@@ -4245,7 +4274,7 @@ class MICA(object):
                                 req.accountpageresult = _("Success! Account was deleted") + ": " + username
                                 json["test_success"] = True
                             else :
-                                self.clean_session(req)
+                                self.clean_session(req, force = True)
                                 req.messages = _("Your account has been permanently deleted.")
                                 return self.render_frontpage(req)
                         else :
@@ -5212,7 +5241,7 @@ class MICA(object):
 
         self.install_local_language(req)
 
-        if 'connected' not in req.session.value or req.session.value['connected'] != True :
+        if "connected" not in req.session.value or req.session.value["connected"] != True :
             if req.api :
                 mdebug("401 HTTPUnauthorized API request. Returning fail.")
                 raise exc.HTTPUnauthorized("you're not logged in anymore.")
@@ -5413,7 +5442,7 @@ class CDict(object):
         self.value = start
         self.value["session_uid"] = uid
 
-    def save(self, ignore_expired = False) :
+    def save(self, ignore_expired = False, force = False) :
         in_a_job = False
         try :
             in_a_job = getattr(current_thread(), "in_a_job")
@@ -5430,47 +5459,50 @@ class CDict(object):
             mwarn("4) We expired, don't take lock.")
             raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-        sessions[uid].acquire()
-        mdebug("Saving to session: " + skey)
-        if self.mica.sessiondb.doc_exist(skey) :
-            old_doc = self.mica.sessiondb[skey]
-            self.value["_rev"] = old_doc["_rev"]
-            mdebug("Using revision: " + old_doc["_rev"])
+        if force or ("connected" in self.value and self.value["connected"]) :
+            sessions[uid].acquire()
+            mdebug("Saving to session: " + skey)
+            if self.mica.sessiondb.doc_exist(skey) :
+                old_doc = self.mica.sessiondb[skey]
+                self.value["_rev"] = old_doc["_rev"]
+                mdebug("Using revision: " + old_doc["_rev"])
+            else :
+                if in_a_job :
+                    mwarn("3) We expired, but we're just a background job, so it's fine.")
+                    sessions[uid].release()
+                    return
+
+                if "_rev" in self.value :
+                    # We didn't race. We're good.
+                    # expired() already cleaned everything up
+                    # Just kick the user out, even in the middle of a request
+                    sessions[uid].release()
+                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
+            try :
+                self.value["updated_at"] = timest()
+                self.mica.sessiondb[skey] = self.value
+                #sessions[self.value["session_uid"]] = Lock()
+            except couch_adapter.ResourceConflict, e :
+                if in_a_job :
+                    mwarn("1) We expired, but we're just a background job, so it's fine.")
+                else :
+                    sessions[uid].release()
+                    for line in format_exc().splitlines() :
+                        merr(line)
+                    raise e
+            except couch_adapter.ResourceNotFound, e :
+                if in_a_job :
+                    mwarn("2) We expired, but we're just a background job, so it's fine.")
+                else :
+                    sessions[uid].release()
+                    for line in format_exc().splitlines() :
+                        merr(line)
+                    raise e
+
+            mdebug("Session updated: " + skey)
+            sessions[uid].release()
         else :
-            if in_a_job :
-                mwarn("3) We expired, but we're just a background job, so it's fine.")
-                sessions[uid].release()
-                return
-
-            if "_rev" in self.value :
-                # We didn't race. We're good.
-                # expired() already cleaned everything up
-                # Just kick the user out, even in the middle of a request
-                sessions[uid].release()
-                raise exc.HTTPUnauthorized("you're not logged in anymore.")
-        try :
-            self.value["updated_at"] = timest()
-            self.mica.sessiondb[skey] = self.value
-            #sessions[self.value["session_uid"]] = Lock()
-        except couch_adapter.ResourceConflict, e :
-            if in_a_job :
-                mwarn("1) We expired, but we're just a background job, so it's fine.")
-            else :
-                sessions[uid].release()
-                for line in format_exc().splitlines() :
-                    merr(line)
-                raise e
-        except couch_adapter.ResourceNotFound, e :
-            if in_a_job :
-                mwarn("2) We expired, but we're just a background job, so it's fine.")
-            else :
-                sessions[uid].release()
-                for line in format_exc().splitlines() :
-                    merr(line)
-                raise e
-
-        mdebug("Session updated: " + skey)
-        sessions[uid].release()
+            mdebug("Session not connected. Won't save yet: " + skey)
 
 sessions = {}
 
