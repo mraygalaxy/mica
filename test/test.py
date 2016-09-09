@@ -423,8 +423,12 @@ def run_tests(test_urls) :
 
                     if r.status_code == 401 :
                         tlog("  Our token may have expired. Login again and retry the test.")
+                        if "retry_action" in url :
+                            run_tests(common_urls[url["retry_action"]])
+                        else :
+                            run_tests(common_urls["relogin"])
                         retry_attempts += 1
-                        run_tests(common_urls["relogin"])
+
                         continue
 
                     tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
@@ -615,7 +619,7 @@ def add_oauth_tests_from_micadev10() :
                 oauth["states"][who] = state
                 oauth["codes"][who] = binascii_hexlify(os_urandom(4))
                 urls.append(common_urls["logout"])
-                urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True))
+                urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True, retry_action = "logout"))
                 parameters["oauth"][who]["token_url"] = "http://localhost:" + str(server_port) + "/" + who
                 parameters["oauth"][who]["lookup_url"] = "http://localhost:" + str(server_port) + "/" + who
                 urls.append(common_urls["logout"])
