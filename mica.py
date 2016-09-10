@@ -689,6 +689,7 @@ class MICA(object):
 
     @serial
     def run_render(self, req) :
+
         if 'connected' not in req.session.value :
             mdebug("New session. Setting connected to false.")
             req.session.value["connected"] = False
@@ -699,8 +700,7 @@ class MICA(object):
         if "language" not in req.session.value and "HTTP_ACCEPT_LANGUAGE" in req.environ:
             req.session.value["language"] = req.environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
             mdebug("Setting session language to browser language: " + req.session.value["language"])
-            if req.action != "auth" or mobile :
-                req.session.save()
+            req.session.save()
 
         req.source = req.environ["REMOTE_ADDR"]
         req.db = False
@@ -850,7 +850,8 @@ class MICA(object):
             req.s.mica = self
             req.mica = self
             req.session = IDict(req.s)
-            self.populate_oauth_state(req)
+            if req.action != "auth" or mobile :
+                self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
                 sessions[start_response.im_self.request.s.uid] = Lock()
