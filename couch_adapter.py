@@ -113,9 +113,9 @@ def reauth(func):
             mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
             retry_auth = True
         except PossibleResourceNotFound, e :
-            if not e.safe :
+            safe = e.safe
+            if not safe :
                 mwarn("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
-                safe = True
             retry_auth = True
             kwargs["second_time"] = True
         except IncompleteRead, e :
