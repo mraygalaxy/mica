@@ -5463,42 +5463,48 @@ class CDict(object):
         if force or ("connected" in self.value and self.value["connected"]) :
             sessions[uid].acquire()
             mdebug("Saving to session: " + skey)
-            if self.mica.sessiondb.doc_exist(skey) :
-                old_doc = self.mica.sessiondb[skey]
-                self.value["_rev"] = old_doc["_rev"]
-                mdebug("Using revision: " + old_doc["_rev"])
-            else :
-                if in_a_job :
-                    mwarn("3) We expired, but we're just a background job, so it's fine.")
-                    sessions[uid].release()
-                    return
-
-                if "_rev" in self.value :
-                    # We didn't race. We're good.
-                    # expired() already cleaned everything up
-                    # Just kick the user out, even in the middle of a request
-                    sessions[uid].release()
-                    raise exc.HTTPUnauthorized("you're not logged in anymore.")
             try :
-                self.value["updated_at"] = timest()
-                self.mica.sessiondb[skey] = self.value
-                #sessions[self.value["session_uid"]] = Lock()
-            except couch_adapter.ResourceConflict, e :
-                if in_a_job :
-                    mwarn("1) We expired, but we're just a background job, so it's fine.")
+                if self.mica.sessiondb.doc_exist(skey) :
+                    old_doc = self.mica.sessiondb[skey]
+                    self.value["_rev"] = old_doc["_rev"]
+                    mdebug("Using revision: " + old_doc["_rev"])
                 else :
-                    sessions[uid].release()
-                    for line in format_exc().splitlines() :
-                        merr(line)
-                    raise e
-            except couch_adapter.ResourceNotFound, e :
-                if in_a_job :
-                    mwarn("2) We expired, but we're just a background job, so it's fine.")
-                else :
-                    sessions[uid].release()
-                    for line in format_exc().splitlines() :
-                        merr(line)
-                    raise e
+                    if in_a_job :
+                        mwarn("3) We expired, but we're just a background job, so it's fine.")
+                        sessions[uid].release()
+                        return
+
+                    if "_rev" in self.value :
+                        # We didn't race. We're good.
+                        # expired() already cleaned everything up
+                        # Just kick the user out, even in the middle of a request
+                        sessions[uid].release()
+                        raise exc.HTTPUnauthorized("you're not logged in anymore.")
+                try :
+                    self.value["updated_at"] = timest()
+                    self.mica.sessiondb[skey] = self.value
+                    #sessions[self.value["session_uid"]] = Lock()
+                except couch_adapter.ResourceConflict, e :
+                    if in_a_job :
+                        mwarn("1) We expired, but we're just a background job, so it's fine.")
+                    else :
+                        sessions[uid].release()
+                        for line in format_exc().splitlines() :
+                            merr(line)
+                        raise e
+                except couch_adapter.ResourceNotFound, e :
+                    if in_a_job :
+                        mwarn("2) We expired, but we're just a background job, so it's fine.")
+                    else :
+                        sessions[uid].release()
+                        for line in format_exc().splitlines() :
+                            merr(line)
+                        raise e
+            except couch_adapter.CommunicationError, e :
+                for line in format_exc().splitlines() :
+                    merr(line)
+                sessions[uid].release()
+                raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
             mdebug("Session updated: " + skey)
             sessions[uid].release()
