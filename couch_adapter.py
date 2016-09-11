@@ -99,6 +99,7 @@ class repeatable(object):
 
         return wrapped_f
 
+# Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
     def wrapper(self, *args, **kwargs):
         retry_auth = False
