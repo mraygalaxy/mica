@@ -41,9 +41,9 @@ httplib.HTTPConnection.debuglevel = 2
 '''
 logging.basicConfig()
 logging.getLogger().setLevel(level)
-requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(level)
-requests_log.propagate = True
+#requests_log = logging.getLogger("requests.packages.urllib3")
+#requests_log.setLevel(level)
+#requests_log.propagate = True
 requests.packages.urllib3.disable_warnings()
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
