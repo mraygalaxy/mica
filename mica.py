@@ -533,7 +533,7 @@ class MICA(object):
             dbname = "mica_" + new_uuid
 
         if not self.userdb.doc_exist("org.couchdb.user:" + username) :
-            mdebug("Creating user in _user database...")
+            mverbose("Creating user in _user database...")
             user_doc = { "name" : username,
                          "password" : password,
                          "roles": [] if admin else [username + "_master", "nobody"],
