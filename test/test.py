@@ -44,6 +44,10 @@ logging.getLogger().setLevel(level)
 #requests_log = logging.getLogger("requests.packages.urllib3")
 #requests_log.setLevel(level)
 #requests_log.propagate = True
+requests_oauth_log = logging.getLogger("requests_oauthlib.oauth2_session")
+requests_oauth_log.setLevel(INFO)
+#requests_oauth_log.propagate = True
+requests_oauth_log = requests_oauthlib.oauth2_session
 requests.packages.urllib3.disable_warnings()
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
