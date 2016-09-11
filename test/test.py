@@ -987,7 +987,7 @@ except Exception, e :
         tlog(line)
     #pass
 
-change_timeout(old_timeout)
+change_timeout(604800)
 
 record.close()
 httpd.socket.close()
