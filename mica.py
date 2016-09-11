@@ -215,6 +215,7 @@ class MICA(object):
         self.general_processor = Processor(self, params)
         self.translation_client = Translator(params["trans_id"], params["trans_secret"], params["trans_scope"], params["trans_access_token_url"], test = params["test"])
         self.mutex = Lock()
+        self.sessionmutex = Lock()
         self.jobsmutex = Lock()
         self.transmutex = Lock()
         self.imemutex = Lock()
@@ -808,7 +809,7 @@ class MICA(object):
 
         return resp
 
-    def expired(self, uid, mica, session):
+    def expired(self, uid, session):
         mdebug("Session " + uid + " has expired.")
 
         if params["keepsession"] :
@@ -819,15 +820,18 @@ class MICA(object):
             mdebug("Not expiring debug session.")
             return
 
-        sessions[uid].acquire()
-        skey = mica.session(uid)
+        self.sessionmutex.acquire()
+        lock = sessions[uid]
+        self.sessionmutex.release()
+        lock.acquire()
+        skey = self.session(uid)
 
         try :
-            if mica.sessiondb.doc_exist(skey) :
-                value = mica.sessiondb[skey]
+            if self.sessiondb.doc_exist(skey) :
+                value = self.sessiondb[skey]
                 if "username" in value :
-                    mica.clean_dbs(value["username"])
-                del mica.sessiondb[skey]
+                    self.clean_dbs(value["username"])
+                del self.sessiondb[skey]
                 mdebug("Deleting session.")
             else :
                 mdebug("Not deleting session.")
@@ -836,8 +840,9 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 merr(line)
 
-        lock = sessions[uid]
+        self.sessionmutex.acquire()
         del sessions[uid]
+        self.sessionmutex.release()
         lock.release()
 
     def __call__(self, environ, start_response):
@@ -854,8 +859,10 @@ class MICA(object):
                 self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
+                self.sessionmutex.acquire()
                 sessions[start_response.im_self.request.s.uid] = Lock()
-                start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, self, req.session))
+                self.sessionmutex.release()
+                start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
             resp = self.run_render(req)
 
         except exc.HTTPUnauthorized, e :
@@ -5443,6 +5450,33 @@ class CDict(object):
         self.value = start
         self.value["session_uid"] = uid
 
+    def uidcheck(self) :
+        uid = self.value["session_uid"]
+
+        self.mica.sessionmutex.acquire()
+        if uid not in sessions :
+            self.mica.sessionmutex.release()
+            mwarn("4) We expired, don't take lock.")
+            raise exc.HTTPUnauthorized("you're not logged in anymore.")
+        self.mica.sessionmutex.release()
+        return uid
+
+    def lock(self, uid = False) :
+        if not uid :
+            uid = self.uidcheck()
+
+        self.mica.sessionmutex.acquire()
+        sess = sessions[uid]
+        self.mica.sessionmutex.release()
+        sess.acquire()
+
+    def unlock(self) :
+        uid = self.value["session_uid"]
+        self.mica.sessionmutex.acquire()
+        sess = sessions[uid]
+        self.mica.sessionmutex.release()
+        sess.release()
+
     def save(self, ignore_expired = False, force = False) :
         in_a_job = False
         try :
@@ -5450,18 +5484,15 @@ class CDict(object):
         except AttributeError, e :
             pass
 
-        uid = self.value["session_uid"]
+        uid = self.uidcheck()
+
         if params["keepsession"] :
             skey = self.mica.session("debug")
         else :
-            skey = self.mica.session(self.value["session_uid"])
-
-        if uid not in sessions :
-            mwarn("4) We expired, don't take lock.")
-            raise exc.HTTPUnauthorized("you're not logged in anymore.")
+            skey = self.mica.session(uid)
 
         if force or ("connected" in self.value and self.value["connected"]) :
-            sessions[uid].acquire()
+            self.lock(uid)
             mdebug("Saving to session: " + skey)
             try :
                 if self.mica.sessiondb.doc_exist(skey) :
@@ -5471,24 +5502,23 @@ class CDict(object):
                 else :
                     if in_a_job :
                         mwarn("3) We expired, but we're just a background job, so it's fine.")
-                        sessions[uid].release()
+                        self.unlock()
                         return
 
                     if "_rev" in self.value :
                         # We didn't race. We're good.
                         # expired() already cleaned everything up
                         # Just kick the user out, even in the middle of a request
-                        sessions[uid].release()
+                        self.unlock()
                         raise exc.HTTPUnauthorized("you're not logged in anymore.")
                 try :
                     self.value["updated_at"] = timest()
                     self.mica.sessiondb[skey] = self.value
-                    #sessions[self.value["session_uid"]] = Lock()
                 except couch_adapter.ResourceConflict, e :
                     if in_a_job :
                         mwarn("1) We expired, but we're just a background job, so it's fine.")
                     else :
-                        sessions[uid].release()
+                        self.unlock()
                         for line in format_exc().splitlines() :
                             merr(line)
                         raise e
@@ -5496,18 +5526,18 @@ class CDict(object):
                     if in_a_job :
                         mwarn("2) We expired, but we're just a background job, so it's fine.")
                     else :
-                        sessions[uid].release()
+                        self.unlock()
                         for line in format_exc().splitlines() :
                             merr(line)
                         raise e
             except couch_adapter.CommunicationError, e :
                 for line in format_exc().splitlines() :
                     merr(line)
-                sessions[uid].release()
+                self.unlock()
                 raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
             mdebug("Session updated: " + skey)
-            sessions[uid].release()
+            self.unlock()
         else :
             mdebug("Session not connected. Won't save yet: " + skey)
 

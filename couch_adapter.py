@@ -42,10 +42,11 @@ class ResourceNotFound(Exception) :
 
 # Couchdb bug returning NotFound instead of Unathorized during a timeout
 class PossibleResourceNotFound(Exception) :
-    def __init__(self, msg, e = False):
+    def __init__(self, msg, e = False, safe = False):
         Exception.__init__(self)
         self.msg = msg
         self.e = e
+        self.safe = safe
 
     def __str__(self) :
         return self.msg
@@ -105,13 +106,16 @@ def reauth(func):
         retry_auth = False
         permanent_error = False
         regular_error = False
+        safe = False
         try :
             result = func(self, *args, **kwargs)
         except Unauthorized, e :
             mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
             retry_auth = True
         except PossibleResourceNotFound, e :
-            mwarn("First time with possible resource not found. Will re-auth and try one more time.")
+            if not e.safe :
+                mwarn("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
+                safe = True
             retry_auth = True
             kwargs["second_time"] = True
         except IncompleteRead, e :
@@ -141,7 +145,7 @@ def reauth(func):
             permanent_error = e
         finally :
             if retry_auth :
-                self.reauthorize()
+                self.reauthorize(safe = safe)
                 result = func(self, *args, **kwargs)
             elif regular_error :
                 raise regular_error 
@@ -151,10 +155,11 @@ def reauth(func):
     return wrapper
 
 class AuthBase(object) :
-    def reauthorize(self) :
+    def reauthorize(self, safe = False) :
         try :
             try :
-                mdebug("Re-authenticating database.")
+                if not safe :
+                    mdebug("Re-authenticating database.")
                 getattr(self, "server")
                 self.server.cookie = False
                 self.server.auth()
@@ -164,7 +169,8 @@ class AuthBase(object) :
                 self.cookie = False
                 self.auth()
 
-            mdebug("Authenticated.")
+            if not safe :
+                mdebug("Authenticated.")
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
 
@@ -384,7 +390,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
             if name.count("org.couchdb.user") and not second_time :
-                raise PossibleResourceNotFound(name)
+                raise PossibleResourceNotFound(name, safe = True)
             ((error, reason),) = e.args
             mverbose("Doc exist returns not found: " + reason)
             return False
