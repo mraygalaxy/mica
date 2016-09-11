@@ -445,7 +445,7 @@ class MICA(object):
 
             self.views_ready[username] = 0
 
-            mdebug("Installing view counter.")
+            mverbose("Installing view counter.")
             if username not in self.views_ready :
                 self.views_ready[username] = 0
 
@@ -546,7 +546,7 @@ class MICA(object):
                          "source" : source,
                          "quota" : -1 if admin else 300,
                           }
-            mdebug("Putting doc: " + str(user_doc))
+            mverbose("Putting doc: " + str(user_doc))
             try :
                 self.userdb["org.couchdb.user:" + username] = user_doc
             except couch_adapter.CommunicationError, e :
@@ -556,12 +556,12 @@ class MICA(object):
         else :
             dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
 
-        mdebug("Retrieving new database: " + dbname)
+        mverbose("Retrieving new database: " + dbname)
         newdb = self.cs[dbname]
         new_security = newdb.get_security()
 
         if len(new_security) == 0 :
-            mdebug("Installing security on admin database.")
+            mverbose("Installing security on admin database.")
             new_security = {"admins" :
                             {
                               "names" : ["mica_admin"],
@@ -576,7 +576,7 @@ class MICA(object):
             newdb.set_security(new_security)
 
         if not newdb.doc_exist(self.acct(username)) :
-            mdebug("Making initial account parameters.")
+            mverbose("Making initial account parameters.")
             newdb[self.acct(username)] = {
                                            'app_chars_per_line' : 70,
                                            'web_chars_per_line' : 70,
@@ -2670,13 +2670,13 @@ class MICA(object):
        
        try :
            if recreate :
-               mdebug("Recreate design document requested for view: " + name)
+               mverbose("Recreate design document requested for view: " + name)
                del db["_design/" + name]
        except Exception, e :
            mwarn("Deleting design document: " + str(e))
 
        if not db.doc_exist("_design/" + name) :
-           mdebug("View " + name + " does not exist. Uploading.")
+           mverbose("View " + name + " does not exist. Uploading.")
            db["_design/" + name] = json_loads(vc)
 
     def clear_chat(self, req, story_name):
@@ -4734,7 +4734,7 @@ class MICA(object):
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
-            mdebug("Token fetched successfully: " + str(service.token))
+            mverbose("Token fetched successfully: " + str(service.token))
 
             if who == "baidu" :
                 del service.token["token_type"]
@@ -4744,7 +4744,7 @@ class MICA(object):
             if "force_token" in creds and creds["force_token"] :
                 lookup_url += "?access_token=" + service.token["access_token"]
 
-            mdebug("Looking up to: " + lookup_url)
+            mverbose("Looking up to: " + lookup_url)
 
             r = service.get(lookup_url)
         except MissingTokenError, e :
@@ -4761,7 +4761,7 @@ class MICA(object):
                 merr(line)
             return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
-        mdebug("MICA returned content is: " + str(r.content))
+        mverbose("MICA returned content is: " + str(r.content))
         values = json_loads(r.content)
 
         if creds["verified_key"] :
@@ -4796,7 +4796,7 @@ class MICA(object):
                 return False, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
             self.make_account(req, values["email"], password, values["email"], who, language = language)
-            mdebug("Language: " + language)
+            mverbose("Language: " + language)
 
             output = """
                 <br/><br/>%(welcome)s
@@ -4866,7 +4866,7 @@ class MICA(object):
             req.session.value["password"] = password
 
 
-        mdebug("authenticating...")
+        mverbose("authenticating...")
 
         auth_user, reason = self.authenticate(username, password, address)
 
@@ -4878,7 +4878,7 @@ class MICA(object):
         req.session.value["isadmin"] = True if len(auth_user["roles"]) == 0 else False
         req.session.value["database"] = auth_user["mica_database"]
 
-        mdebug("verifying...")
+        mverbose("verifying...")
         self.verify_db(req, auth_user["mica_database"], password = password)
 
         update_user = False
