@@ -351,8 +351,6 @@ def run_tests(test_urls) :
 
 
     tlog("Tests: " + str(len(flat_urls)))
-    if len(flat_urls) == 4 :
-        tlog(str(flat_urls) + ": " + str(test_urls))
     stop_test = False
     last_json = {}
     try:
@@ -388,8 +386,6 @@ def run_tests(test_urls) :
             finaldest = target if ("couch" not in url or not url["couch"]) else couch
             verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
-            tlog(str(url))
-            assert(isinstance(url, dict))
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
 
