@@ -263,7 +263,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             # before the DB failed, then it will appear to be a conflict. Let's try to first
             # verify if that was the case no not fail the application.
             if "_rev" not in doc and self.doc_exist(name) :
-                olddoc = self.__getitme__(name)
+                olddoc = self.__getitem__(name)
                 if olddoc == doc :
                     setfail = False
 
