@@ -4991,7 +4991,7 @@ class MICA(object):
         if "date" not in user :
             user["date"] = timest()
 
-        if "story_format" not in user :
+        if "format" not in user :
             mwarn("Story format is missing. Upgrading design document for story upgrades.")
             self.view_check(req.session.value["username"], "stories", recreate = True)
             user["story_format"] = story_format
