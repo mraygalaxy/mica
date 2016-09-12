@@ -385,7 +385,7 @@ def run_tests(test_urls) :
             finaldest = target if ("couch" not in url or not url["couch"]) else couch
             verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
-            tlog(str(url))
+            tlog(str(url) + ": " + str(flat_urls) + ": " + str(test_urls))
             assert(isinstance(url, dict))
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
