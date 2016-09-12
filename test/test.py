@@ -384,6 +384,8 @@ def run_tests(test_urls) :
             finaldest = target if ("couch" not in url or not url["couch"]) else couch
             verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
+            tlog(str(url))
+            assert(isinstance(url, dict))
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
             tlog(tlogmsg)
 
@@ -425,7 +427,7 @@ def run_tests(test_urls) :
                         continue
 
                     if r.status_code == 401 :
-                        tlog("  Our token may have expired. Login again and retry the test: " + str(r.text))
+                        tlog("  Our token may have expired. Login again and retry the test: ")
                         if "retry_action" in url :
                             run_tests(common_urls[url["retry_action"]])
                         else :
