@@ -863,7 +863,9 @@ class MICA(object):
             req.s = start_response.im_self.request.s
             req.s.mica = self
             req.mica = self
-            req.session = IDict(req.s)
+            try :
+                req.session = IDict(req.s)
+            except couch_adapter.CommunicationError, e :
             if req.action not in ["auth", "disconnect"] or mobile :
                 self.populate_oauth_state(req)
 
@@ -874,6 +876,8 @@ class MICA(object):
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
             resp = self.run_render(req)
 
+        except couch_adapter.CommunicationError, e :
+            resp = exc.HTTPUnauthorized("<h2>" + _("Lost connectivity to the database. Please come back later.") + "</h2>")
         except exc.HTTPUnauthorized, e :
             resp = e
         except exc.HTTPBadRequest, e :
