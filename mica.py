@@ -863,9 +863,7 @@ class MICA(object):
             req.s = start_response.im_self.request.s
             req.s.mica = self
             req.mica = self
-            try :
-                req.session = IDict(req.s)
-            except couch_adapter.CommunicationError, e :
+            req.session = IDict(req.s)
             if req.action not in ["auth", "disconnect"] or mobile :
                 self.populate_oauth_state(req)
 
