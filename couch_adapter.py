@@ -658,6 +658,10 @@ class MicaServerCouchDB(AuthBase) :
             assert(self.username)
             assert(self.password)
 
+        self.first_auth()
+
+    @reauth
+    def first_auth(self, username, password) :
         self.auth(username, password)
 
     def get_cookie(self, url, username, password) :
