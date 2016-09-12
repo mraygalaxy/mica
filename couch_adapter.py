@@ -255,7 +255,19 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             raise ResourceNotFound(str(e))
         except couch_ResourceConflict, e :
             mdebug("Set key conflict error: " + name)
-            raise ResourceConflict(str(e), e)
+            setfail = True
+
+            # This sometimes happens in the middle of a database failure.
+            # If the key is a new one (contains no previous revisions) and write succeeded
+            # before the DB failed, then it will appear to be a conflict. Let's try to first
+            # verify if that was the case no not fail the application.
+            if "_rev" not in doc and self.doc_exist(name) :
+                olddoc = self.__getitme__(name)
+                if olddoc == doc :
+                    setfail = False
+
+            if setfail :
+                raise ResourceConflict(str(e), e)
         except couch_ServerError, e :
             check_for_unauthorized(e)
 
