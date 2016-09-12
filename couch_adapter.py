@@ -265,6 +265,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             if "_rev" not in doc and self.doc_exist(name) :
                 olddoc = self.__getitem__(name)
                 if olddoc == doc :
+                    mwarn("Recovered after crash. Yay.")
                     setfail = False
 
             if setfail :
