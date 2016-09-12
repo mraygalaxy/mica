@@ -794,6 +794,15 @@ class MICA(object):
             for line in format_exc().splitlines() :
                 mwarn(line)
             resp = self.warn_not_replicated(req)
+        except couch_adapter.CommunicationError, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            if self.connected(req) :
+                mwarn("Not a well-caught exception. Setting connected to false.")
+                req.session.value["connected"] = False
+                req.session.save(force = True)
+            raise exc.HTTPUnauthorized("<h2>" + _("Lost connectivity to the database. Please come back later.") + "</h2>")
+
         except Exception, e :
             # This 'exception' appears when there is a bug in the software and the software is not functioning normally. A report of the details of the bug follow after the word "Exception"
             aout = ""
