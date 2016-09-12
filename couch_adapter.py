@@ -658,7 +658,7 @@ class MicaServerCouchDB(AuthBase) :
             assert(self.username)
             assert(self.password)
 
-        self.first_auth()
+        self.first_auth(username, password)
 
     @reauth
     def first_auth(self, username, password) :
