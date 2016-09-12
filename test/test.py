@@ -987,6 +987,7 @@ good = True
 try :
     stop = run_tests(urls)
 except AssertionError, e :
+    tlog(str(e))
     good = False
 except Exception, e :
     for line in format_exc().splitlines() :
