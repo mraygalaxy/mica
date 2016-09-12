@@ -856,7 +856,7 @@ class MICA(object):
             req.s.mica = self
             req.mica = self
             req.session = IDict(req.s)
-            if req.action != "auth" or mobile :
+            if req.action not in ["auth", "disconnect"] or mobile :
                 self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
