@@ -351,7 +351,7 @@ def run_tests(test_urls) :
 
     tlog("Tests: " + str(len(flat_urls)))
     if len(flat_urls) == 4 :
-        tlog(str(flat_urls))
+        tlog(str(flat_urls) + ": " + str(test_urls))
     stop_test = False
     last_json = {}
     try:
