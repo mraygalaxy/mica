@@ -164,7 +164,7 @@ def reauth(func):
                     try :
                         self.reauthorize(safe = safe)
                     except CommunicationError, e :
-                        mdebug("Re-authorization failed, but we still have attempts left, so we'll pass for now.")
+                        mdebug("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
 
                     if attempt > 0 :
                         sleep(1)
