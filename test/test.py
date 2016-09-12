@@ -428,7 +428,7 @@ def run_tests(test_urls) :
                         continue
 
                     if r.status_code == 401 :
-                        tlog("  Our token may have expired. Login again and retry the test: ")
+                        tlog("  Our token may have expired. Login again and retry the test: " + str(r.text))
                         if "retry_action" in url :
                             run_tests(common_urls[url["retry_action"]])
                         else :
