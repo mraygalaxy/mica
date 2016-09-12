@@ -162,7 +162,8 @@ def reauth(func):
                     if attempt >= 2 :
                         mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
                     self.reauthorize(safe = safe)
-                    sleep(1)
+                    if attempt > 0 :
+                        sleep(1)
                 elif regular_error :
                     raise regular_error 
                 elif permanent_error :
