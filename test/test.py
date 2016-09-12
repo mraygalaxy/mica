@@ -332,6 +332,7 @@ def flatten(head_url) :
             flat_urls.append(sub_url)
     else :
         flat_urls.append(head_url)
+
     return flat_urls
 
 def run_tests(test_urls) :
@@ -635,11 +636,13 @@ def add_oauth_tests_from_micadev10() :
 
 
 common_urls = {
-                "storylist" :
+                "storylist" : [
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
+                ],
 
-                "storylist_rotate" :
+                "storylist_rotate" : [
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000&force_rotate=1", "method" : "get", "success" :  True, "test_success" : True },
+                ],
 
                 "storylist_triple" : [
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
@@ -647,18 +650,22 @@ common_urls = {
                     { "loc" : "/api?human=0&alien=storylist&tzoffset=18000", "method" : "get", "success" :  True, "test_success" : True },
                 ],
 
-                "logout" :
+                "logout" : [
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
+                ],
 
-                "login" :
+                "login" : [
                     { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
+                ],
 
                 "relogin" : [
                     { "loc" : "/api?human=0&alien=disconnect", "method" : "get", "success" : True, "test_success" :  True },
                     { "loc" : "/connect", "method" : "post", "success" :  True, "test_success" : True, "data" : dict(human='0', username=test["username"], password=test["password"], remember='on', address=parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]), connect='1') },
                 ],
-                "account" :
+
+                "account" : [
                     { "loc" : "/api?human=0&alien=account", "method" : "get", "success" : True, "test_success" :  True },
+                ],
             }
 
 
