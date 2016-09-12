@@ -4740,7 +4740,7 @@ class MICA(object):
         states_urls = req.session.value["states_urls"]
 
         if states_urls["states"][who] != state :
-            raise exc.HTTPBadRequest("Invalid state. Who are you?")
+            raise exc.HTTPUnauthorized("Invalid state. Who are you?")
 
         try :
             service.fetch_token(creds["token_url"], client_secret=creds["client_secret"], code = code)
