@@ -272,7 +272,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     del olddoc["_rev"]
                     if "_id" not in testdoc :
                         testdoc["_id"] = name
-                    if "_rev" not in testdoc :
+                    if "_rev" in testdoc :
                         del testdoc["_rev"]
                         
                     if name.count("org.couchdb.user") :
