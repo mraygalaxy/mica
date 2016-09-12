@@ -161,11 +161,15 @@ def reauth(func):
                         break
                     if attempt >= 2 :
                         mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
-                    self.reauthorize(safe = safe)
+                    try :
+                        self.reauthorize(safe = safe)
+                    except CommunicationError, e :
+                        mdebug("Re-authorization failed, but we still have attempts left, so we'll pass for now."
+
                     if attempt > 0 :
                         sleep(1)
                 elif regular_error :
-                    raise regular_error 
+                    raise regular_error
                 elif permanent_error :
                     raise CommunicationError("Unauthorized: " + str(permanent_error))
                 else :
@@ -274,11 +278,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         revs = []
 
         try :
-            all_deleted = False 
+            all_deleted = False
             count = -1
             while not all_deleted :
                 count += 1
-                all_deleted = True 
+                all_deleted = True
                 docs = self.db.get(name, open_revs = "all")
                 for doc in docs :
                     if "_deleted" in doc["ok"] :
@@ -434,7 +438,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             if endkey_docid:
                 options['endkey_docid'] = endkey_docid
         done = False
-        server_errors_left = 3
+        server_errors_left = 10
         yielded_rows = {}
         while not done:
             #mdebug("errors left: " + str(server_errors_left))
@@ -463,25 +467,62 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         mdebug("Row already yielded")
             except Unauthorized, e :
                 mdebug("Direct unauthorized")
-                self.reauthorize()
-                done = False
-                continue
+                if server_errors_left > 0 :
+                    mwarn("Server errors left: " + str(server_errors_left))
+                    server_errors_left -= 1
+                    self.reauthorize()
+                    done = False
+                    continue
+                raise e
+            except IncompleteRead, e :
+                mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
+                if server_errors_left > 0 :
+                    mwarn("Server errors left: " + str(server_errors_left))
+                    server_errors_left -= 1
+                    self.reauthorize()
+                    done = False
+                    continue
+                raise e
+            except CannotSendRequest, e :
+                mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
+                if server_errors_left > 0 :
+                    mwarn("Server errors left: " + str(server_errors_left))
+                    server_errors_left -= 1
+                    self.reauthorize()
+                    done = False
+                    continue
+                raise e
+            except IOError, e:
+                if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
+                    mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                    if server_errors_left > 0 :
+                        mwarn("Server errors left: " + str(server_errors_left))
+                        server_errors_left -= 1
+                        self.reauthorize()
+                        done = False
+                        continue
+                else :
+                    mwarn("Actual error number: " + str(e.errno))
+                raise e
             except couch_ServerError, e :
                 # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
                 ((status, error),) = e.args
                 mwarn("Server error: " + str(status) + " " + str(error))
                 if status == 403 :
-                    self.reauthorize()
-                    done = False
-                    continue
+                    if server_errors_left > 0 :
+                        mwarn("Server errors left: " + str(server_errors_left))
+                        server_errors_left -= 1
+                        self.reauthorize()
+                        done = False
+                        continue
+                    raise e
                 elif status == 500 :
                     if server_errors_left > 0 :
                         mwarn("Server errors left: " + str(server_errors_left))
                         server_errors_left -= 1
                         done = False
                         continue
-                    else :
-                        merr("No server_errors_left remaining.")
+                    merr("No server_errors_left remaining.")
                 for line in format_exc().splitlines() :
                     merr(line)
                 raise e
