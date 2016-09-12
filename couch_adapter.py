@@ -103,55 +103,75 @@ class repeatable(object):
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
     def wrapper(self, *args, **kwargs):
-        retry_auth = False
-        permanent_error = False
-        regular_error = False
-        safe = False
-        try :
-            result = func(self, *args, **kwargs)
-        except Unauthorized, e :
-            mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
-            retry_auth = True
-        except PossibleResourceNotFound, e :
-            safe = e.safe
-            if not safe :
-                mwarn("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
-            retry_auth = True
-            kwargs["second_time"] = True
-        except IncompleteRead, e :
-            mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
-            retry_auth = True
-        except CannotSendRequest, e :
-            mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
-            retry_auth = True
-        except IOError, e:
-            if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
-                mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+        retry_once = False
+        limit = 10
+        giveup_error = False
+
+        for attempt in range(0, limit) :
+            retry_auth = False
+            permanent_error = False
+            regular_error = False
+            safe = False
+            giveup_error = False
+
+            try :
+                result = func(self, *args, **kwargs)
+            except Unauthorized, e :
+                mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
                 retry_auth = True
-            else :
-                mwarn("Actual error number: " + str(e.errno))
+                giveup_error = e
+            except PossibleResourceNotFound, e :
+                safe = e.safe
+                if not safe :
+                    mwarn("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
+                retry_auth = True
+                retry_once = True
+                kwargs["second_time"] = True
+            except IncompleteRead, e :
+                mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
+                retry_auth = True
+                giveup_error = e
+            except CannotSendRequest, e :
+                mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
+                retry_auth = True
+                giveup_error = e
+            except IOError, e:
+                if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
+                    mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                    retry_auth = True
+                    giveup_error = e
+                else :
+                    mwarn("Actual error number: " + str(e.errno))
+                    for line in format_exc().splitlines() :
+                        mwarn(line)
+                    permanent_error = e
+            except CommunicationError, e :
+                regular_error = e
+            except ResourceNotFound, e :
+                regular_error = e
+            except ResourceConflict, e :
+                regular_error = e
+            except Exception, e :
                 for line in format_exc().splitlines() :
                     mwarn(line)
                 permanent_error = e
-        except CommunicationError, e :
-            regular_error = e
-        except ResourceNotFound, e :
-            regular_error = e
-        except ResourceConflict, e :
-            regular_error = e
-        except Exception, e :
-            for line in format_exc().splitlines() :
-                mwarn(line)
-            permanent_error = e
-        finally :
-            if retry_auth :
-                self.reauthorize(safe = safe)
-                result = func(self, *args, **kwargs)
-            elif regular_error :
-                raise regular_error 
-            elif permanent_error :
-                raise CommunicationError("Unauthorized: " + str(permanent_error))
-        return result
+            finally :
+                if retry_auth :
+                    if (retry_once and attempt == 1) or (attempt == (limit - 1)) :
+                        break
+                    if attempt >= 2 :
+                        mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
+                    self.reauthorize(safe = safe)
+                    sleep(1)
+                elif regular_error :
+                    raise regular_error 
+                elif permanent_error :
+                    raise CommunicationError("Unauthorized: " + str(permanent_error))
+                else :
+                    return result
+
+        raise CommunicationError("Ran out of couch retries on attempt: " + str(attempt) + ": " + str(giveup_error))
+
     return wrapper
 
 class AuthBase(object) :
@@ -499,6 +519,13 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 except CannotSendRequest, e :
                     mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
                     self.reauthorize()
+                except IOError, e:
+                    if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
+                        mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                        self.reauthorize()
+                    else :
+                        mwarn("Actual error number: " + str(e.errno))
+                        raise e
                 except couch_ServerError, e :
                     try :
                        check_for_unauthorized(e)
