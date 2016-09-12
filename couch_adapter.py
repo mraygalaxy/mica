@@ -9,6 +9,7 @@ from traceback import format_exc
 from httplib import IncompleteRead, CannotSendRequest
 import errno
 from time import time
+from copy import deepcopy
 
 try :
     from couchdb import Server
@@ -266,13 +267,26 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 mwarn("Doc has not rev. Does it exist?")
                 if self.doc_exist(name) :
                     mwarn("It exists. Let's make sure it's equal.")
+                    testdoc = deepcopy(doc)
                     olddoc = self.__getitem__(name).copy()
                     del olddoc["_rev"]
-                    if olddoc == doc :
+                    if "_id" not in testdoc :
+                        testdoc["_id"] = name
+                    if "_rev" not in testdoc :
+                        del testdoc["_rev"]
+                        
+                    if name.count("org.couchdb.user") :
+                        for subkey in ["iterations", "password_scheme", "salt", "derived_key"] :
+                            if subkey in olddoc :
+                                del olddoc[subkey]
+                        if "password" in testdoc :
+                            del testdoc["password"]
+                                
+                    if olddoc == testdoc :
                         mwarn("Recovered after crash. Yay.")
                         setfail = False
                     else :
-                        mwarn("It's not equal. That sucks: " + str(olddoc) + " != " + str(doc))
+                        mwarn("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
 
 
             if setfail :
