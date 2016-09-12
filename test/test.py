@@ -424,6 +424,7 @@ def run_tests(test_urls) :
                         tlog("  Gateway timeout to: " + udest + ", Try the request again...")
                         retry_attempts += 1
                         run_tests(common_urls["relogin"])
+                        sleep(5)
                         continue
 
                     if r.status_code == 401 :
@@ -433,6 +434,7 @@ def run_tests(test_urls) :
                         else :
                             run_tests(common_urls["relogin"])
                         retry_attempts += 1
+                        sleep(5)
 
                         continue
 
