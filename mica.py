@@ -526,6 +526,17 @@ class MICA(object):
 
         self.db.detach_thread()
 
+    def account_exists(self, username) :
+        if self.userdb.doc_exist("org.couchdb.user:" + username) :
+            dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
+            if dbname in self.cs :
+                newdb = self.cs[dbname]
+                if newdb.doc_exist(self.acct(username)) :
+                    return True
+        return False
+
+    # This make_account is restartable now. In case of lost connectivity in the
+    # middle of any of it, the rest can be created later.
     def make_account(self, req, username, password, email, source, admin = False, dbname = False, language = "en", extra_roles = []) :
         username = username.lower()
 
@@ -549,12 +560,7 @@ class MICA(object):
                          "quota" : -1 if admin else 300,
                           }
             mverbose("Putting doc: " + str(user_doc))
-            try :
-                self.userdb["org.couchdb.user:" + username] = user_doc
-            except couch_adapter.CommunicationError, e :
-                user_doc["password"] = "XXXXX"
-                merr("No user for you: " + str(user_doc) + ": " + str(e))
-                raise Exception("Internal validation error upon account creation.")
+            self.userdb["org.couchdb.user:" + username] = user_doc
         else :
             dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
 
@@ -4237,7 +4243,7 @@ class MICA(object):
                             if not req.session.value["isadmin"] :
                                 req.accountpageresult = _("Non-admin users can't create admin accounts. What are you doing?!")
                             else :
-                                if self.userdb.doc_exist("org.couchdb.user:" + newusername) :
+                                if self.account_exists(newusername) :
                                     req.accountpageresult = _("Account already exists! Try again")
                                 else :
                                     if newusername.count(":") or newusername.count(";") :
@@ -4260,7 +4266,7 @@ class MICA(object):
                     req.accountpageresult = _("Server not configured correctly. Can't make accounts")
                     json["success"] = False
                 else :
-                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                    if not self.account_exists(username) :
                         mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot delete it.")
                         json["success"] = False
@@ -4311,7 +4317,7 @@ class MICA(object):
                     req.accountpageresult = _("Server not configured correctly. Can't modify quotas")
                     json["success"] = False
                 else :
-                    if not self.userdb.doc_exist("org.couchdb.user:" + username) :
+                    if not self.account_exists(username) :
                         mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot quotas.")
                         json["success"] = False
@@ -4803,7 +4809,7 @@ class MICA(object):
         values["username"] = values["email"]
         from_third_party = values
 
-        if not self.userdb.doc_exist("org.couchdb.user:" + values["username"]) :
+        if not self.account_exists(values["username"]) :
             if values["email"].count(":") or values["email"].count(";") :
                 return False, _("We're sorry, but you cannot have colon ':' characters in your account name or email address.") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
 
