@@ -208,7 +208,8 @@ def check_for_unauthorized(e) :
     mwarn("Server error: " + str(status) + " " + str(error))
     if int(status) == 413 :
         mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
-    if int(status) == 403 :
+    # Database failure. Retry again too.
+    if int(status) in [403, 502] :
         raise Unauthorized
     raise CommunicationError("MICA Unvalidated: " + str(e))
 
@@ -520,18 +521,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
                 ((status, error),) = e.args
                 mwarn("Server error: " + str(status) + " " + str(error))
-                if status == 403 :
+                if status in [403, 500, 502] :
                     if server_errors_left > 0 :
                         mwarn("Server errors left: " + str(server_errors_left))
                         server_errors_left -= 1
                         self.reauthorize()
-                        done = False
-                        continue
-                    raise e
-                elif status == 500 :
-                    if server_errors_left > 0 :
-                        mwarn("Server errors left: " + str(server_errors_left))
-                        server_errors_left -= 1
                         done = False
                         continue
                     merr("No server_errors_left remaining.")
