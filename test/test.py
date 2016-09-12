@@ -335,6 +335,7 @@ def flatten(head_url) :
     return flat_urls
 
 def run_tests(test_urls) :
+    test_urls = deepcopy(test_urls)
     # Flatten the nested test groups into a single list of tests
     flat_urls = []
     for head_url in test_urls :
