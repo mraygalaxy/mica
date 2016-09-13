@@ -388,7 +388,7 @@ class MICA(object):
         username_unquoted = myquote(str(username))
         userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
 
-        for attempt in range(0, 10) :
+        for attempt in range(0, 20) :
             try :
                 mdebug("Authentication attempt #" + str(attempt))
                 ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
@@ -412,7 +412,7 @@ class MICA(object):
                 error = "(Unknown error: " + str(e) + ")"
             sleep(1)
 
-        return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3G or Wifi), we were not able to reach the server.")
+        return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3/4G or Wifi), we were not able to reach the server.")
 
     def prime_db(self, req, specific_views = False) :
         username = req.session.value["username"].lower()
