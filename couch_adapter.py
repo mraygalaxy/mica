@@ -262,9 +262,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             # This sometimes happens in the middle of a database failure
             # before the DB failed, then it will appear to be a conflict. Let's try to first
             # verify if that was the case no not fail the application.
-            mwarn("Does doc exist?")
             if self.doc_exist(name) :
-                mwarn("It exists. Let's make sure it's equal.")
                 testdoc = doc.copy()
                 olddoc = self.__getitem__(name).copy()
                 if "_rev" in doc :
@@ -282,10 +280,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         del testdoc["password"]
                             
                 if olddoc == testdoc :
-                    mwarn("Recovered after crash. Yay.")
                     setfail = False
                 else :
-                    mwarn("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
+                    merr("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
 
 
             if setfail :
