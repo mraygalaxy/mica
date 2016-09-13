@@ -101,11 +101,14 @@ class repeatable(object):
 
         return wrapped_f
 
+limit = 20
+retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
+retriable_errnos = [errno.EPIPE, errno.ECONNRESET, None]
+
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
     def wrapper(self, *args, **kwargs):
         retry_once = False
-        limit = 20
         giveup_error = False
 
         for attempt in range(0, limit) :
@@ -117,10 +120,6 @@ def reauth(func):
 
             try :
                 result = func(self, *args, **kwargs)
-            except Unauthorized, e :
-                mwarn("Couch return unauthorized, likely due to a timeout: " + str(e))
-                retry_auth = True
-                giveup_error = e
             except PossibleResourceNotFound, e :
                 safe = e.safe
                 if not safe :
@@ -128,16 +127,12 @@ def reauth(func):
                 retry_auth = True
                 retry_once = True
                 kwargs["second_time"] = True
-            except IncompleteRead, e :
-                mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
-                retry_auth = True
-                giveup_error = e
-            except CannotSendRequest, e :
-                mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
+            except retriable_errors, e :
+                mwarn("Error likely due to a timeout: " + str(e))
                 retry_auth = True
                 giveup_error = e
             except IOError, e:
-                if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
+                if e.errno in retriable_errnos:
                     mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
                     giveup_error = e
@@ -146,11 +141,7 @@ def reauth(func):
                     for line in format_exc().splitlines() :
                         mwarn(line)
                     permanent_error = e
-            except CommunicationError, e :
-                regular_error = e
-            except ResourceNotFound, e :
-                regular_error = e
-            except ResourceConflict, e :
+            except (CommunicationError, ResourceNotFound, ResourceConflict), e :
                 regular_error = e
             except Exception, e :
                 for line in format_exc().splitlines() :
@@ -163,7 +154,7 @@ def reauth(func):
                     if attempt >= 2 :
                         mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
                     try :
-                        self.reauthorize(safe = safe)
+                        self.reauthorize(safe = safe, e = e)
                     except CommunicationError, e :
                         mdebug("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
 
@@ -181,24 +172,28 @@ def reauth(func):
     return wrapper
 
 class AuthBase(object) :
-    def reauthorize(self, safe = False) :
+    def reauthorize(self, safe = False, e = False) :
+        if e :
+            mwarn("Error Likely due to a timeout: " + str(e))
+        if not safe :
+            mdebug("Re-authenticating database.")
+
+        getattr(self, "server")
+        self.server.cookie = False
+
         try :
             try :
-                if not safe :
-                    mdebug("Re-authenticating database.")
-                getattr(self, "server")
-                self.server.cookie = False
                 self.server.auth()
                 self.db.resource.headers["Cookie"] = self.server.cookie
             except AttributeError, e :
                 mdebug("Re-authenticating server.")
                 self.cookie = False
                 self.auth()
-
-            if not safe :
-                mdebug("Authenticated.")
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
+
+        if not safe :
+            mdebug("Authenticated.")
 
 class MicaDatabase(AuthBase) :
     def try_get(self, name) :
@@ -210,7 +205,7 @@ def check_for_unauthorized(e) :
     if int(status) == 413 :
         mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
     # Database failure. Retry again too.
-    if int(status) in [403, 502] :
+    if int(status) in [403, 500, 502] :
         raise Unauthorized
     raise CommunicationError("MICA Unvalidated: " + str(e))
 
@@ -455,6 +450,29 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
         return True
 
+    def iocheck(self, e) :
+        if e.errno in retriable_errnos :
+            self.reauthorize(e = e)
+        else :
+            mwarn("Actual error number: " + str(e.errno))
+            raise e
+
+    def do_check_for_unauthorized(self, e) :
+        try :
+           check_for_unauthorized(e)
+           raise CommunicationError("Failed to perform view: " + str(e))
+        except Unauthorized, e :
+            self.reauthorize(e = e)
+
+    def errors_left(self, errors_left) :
+        if errors_left > 0 :
+            mwarn("Server errors left: " + str(errors_left))
+            errors_left -= 1
+            sleep(1)
+        else :
+            merr("No errors_left remaining.")
+            raise CommunicationError("Failed to perform view. Ran out of tries.")
+
     def couchdb_pager(self, view_name='_all_docs',
                       startkey=None, startkey_docid=None,
                       endkey=None, endkey_docid=None, bulk=5000, stale = False):
@@ -470,17 +488,16 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             options['endkey'] = endkey
             if endkey_docid:
                 options['endkey_docid'] = endkey_docid
-        done = False
-        server_errors_left = 20
+
         yielded_rows = {}
-        while not done:
-            #mdebug("errors left: " + str(server_errors_left))
+        errors_left = limit
+
+        while errors_left > 0 :
             try:
                 view = self.db.view(view_name, **options)
                 rows = []
                 # If we got a short result (< limit + 1), we know we are done.
                 if len(view) <= bulk:
-                    done = True
                     rows = view.rows
                 else:
                     # Otherwise, continue at the new start position.
@@ -489,74 +506,25 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     options['startkey'] = last.key
                     options['startkey_docid'] = last.id
 
-                for row in rows:
-                    #mdebug("Row is: " + str(row))
-                    if row["key"] is None or (("id" in row and row["id"] not in yielded_rows) or row["value"]["_id"] not in yielded_rows) :
-                        if row["key"] is not None :
-                            _id = row["id"] if "id" in row else row["value"]["_id"]
-                            yielded_rows[_id] = True
-                        yield row
-                    else :
-                        mdebug("Row already yielded")
-            except Unauthorized, e :
-                mdebug("Direct unauthorized")
-                if server_errors_left > 0 :
-                    mwarn("Server errors left: " + str(server_errors_left))
-                    server_errors_left -= 1
-                    sleep(1)
-                    self.reauthorize()
-                    done = False
-                    continue
-                raise e
-            except IncompleteRead, e :
-                mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
-                if server_errors_left > 0 :
-                    mwarn("Server errors left: " + str(server_errors_left))
-                    server_errors_left -= 1
-                    sleep(1)
-                    self.reauthorize()
-                    done = False
-                    continue
-                raise e
-            except CannotSendRequest, e :
-                mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
-                if server_errors_left > 0 :
-                    mwarn("Server errors left: " + str(server_errors_left))
-                    server_errors_left -= 1
-                    sleep(1)
-                    self.reauthorize()
-                    done = False
-                    continue
-                raise e
+                return self.do_rows(rows, yielded_rows)
+            except retriable_errors, e :
+                self.reauthorize(e = e)
             except IOError, e:
-                if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
-                    mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
-                    if server_errors_left > 0 :
-                        mwarn("Server errors left: " + str(server_errors_left))
-                        server_errors_left -= 1
-                        sleep(1)
-                        self.reauthorize()
-                        done = False
-                        continue
-                else :
-                    mwarn("Actual error number: " + str(e.errno))
-                raise e
+                self.iocheck(e)
             except couch_ServerError, e :
-                # Occasionally after a previous document deletion, instead of pausing, couch doesn't finish the view mapreduce and returns a ServerError, code 500. So, let's try again one more time...
-                ((status, error),) = e.args
-                mwarn("Server error: " + str(status) + " " + str(error))
-                if status in [403, 500, 502] :
-                    if server_errors_left > 0 :
-                        mwarn("Server errors left: " + str(server_errors_left))
-                        server_errors_left -= 1
-                        sleep(1)
-                        self.reauthorize()
-                        done = False
-                        continue
-                    merr("No server_errors_left remaining.")
-                for line in format_exc().splitlines() :
-                    merr(line)
-                raise e
+                self.do_check_for_unauthorized(e)
+
+            self.error_check(errors_left)
+
+    def do_rows(self, rows, yielded_rows) :
+        for row in rows :
+            if row["key"] is None or (("id" in row and row["id"] not in yielded_rows) or row["value"]["_id"] not in yielded_rows) :
+                if row["key"] is not None :
+                    _id = row["id"] if "id" in row else row["value"]["_id"]
+                    yielded_rows[_id] = True
+                yield row
+        
+
     def view(self, *args, **kwargs) :
         view_name = args[0]
         mverbose("Query view: " + view_name)
@@ -571,46 +539,23 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             del kwargs["username"]
 
         if "keys" in kwargs :
-            yielded_keys = {}
-            while True :
+            yielded_rows = {}
+            errors_left = limit 
+            while errors_left > 0 :
                 try :
-                    for result in self.db.view(*args, **kwargs) :
-                        #mdebug("result is: " + str(result))
-                        if result["key"] is None or (("id" in result and result["id"] not in yielded_keys) or result["value"]["_id"] not in yielded_keys) :
-                            if result["key"] is not None :
-                                _id = result["id"] if "id" in result else result["value"]["_id"]
-                                yielded_keys[_id] = True
-                            yield result
-                    break
-
-                except Unauthorized, e :
-                    mdebug("Direct unauthorized")
-                    self.reauthorize()
-                except IncompleteRead, e :
-                    mwarn("Read failed in the middle of Couch read, likely due to a timeout: " + str(e))
-                    self.reauthorize()
-                except CannotSendRequest, e :
-                    mwarn("CannotSendRequest in the middle of Couch read, likely due to a timeout: " + str(e))
-                    self.reauthorize()
+                    return self.do_rows(self.db.view(*args, **kwargs), yielded_rows)
+                except retriable_errors, e :
+                    self.reauthorize(e = e)
                 except IOError, e:
-                    if e.errno in [errno.EPIPE, errno.ECONNRESET, None]:
-                        mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
-                        self.reauthorize()
-                    else :
-                        mwarn("Actual error number: " + str(e.errno))
-                        raise e
+                    self.iocheck(e)
                 except couch_ServerError, e :
-                    try :
-                       check_for_unauthorized(e)
-                       raise CommunicationError("Failed to perform view: " + str(e))
-                    except Unauthorized :
-                        self.reauthorize()
+                    self.do_check_for_unauthorized(e)
+
+                self.error_check(errors_left)
         else :
             kwargs["view_name"] = view_name
             kwargs["bulk"] = 50
-
-            for result in self.couchdb_pager(**kwargs) :
-                yield result
+            return self.couchdb_pager(**kwargs)
 
     @reauth
     def compact(self, *args, **kwargs) :
