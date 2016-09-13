@@ -485,6 +485,8 @@ def run_tests(test_urls) :
                     #tlog("  Failed to parse JSON.")
                     if not url["loc"].count("alien=disconnect") :
                         assert(False)
+                    else :
+                        break
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
                     if not job_was_running :
