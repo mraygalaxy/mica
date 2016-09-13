@@ -276,6 +276,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     for subkey in ["iterations", "password_scheme", "salt", "derived_key"] :
                         if subkey in olddoc :
                             del olddoc[subkey]
+                        if subkey in testdoc :
+                            del testdoc[subkey]
                     if "password" in testdoc :
                         del testdoc["password"]
                             
