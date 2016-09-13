@@ -870,14 +870,15 @@ class MICA(object):
             req.s.mica = self
             req.mica = self
             req.session = IDict(req.s)
-            if req.action not in ["auth", "disconnect"] or mobile :
-                self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
                 self.sessionmutex.acquire()
                 sessions[start_response.im_self.request.s.uid] = Lock()
                 self.sessionmutex.release()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
+
+            if req.action not in ["auth", "disconnect"] or mobile :
+                self.populate_oauth_state(req)
             resp = self.run_render(req)
 
         except couch_adapter.CommunicationError, e :
@@ -5476,6 +5477,7 @@ class CDict(object):
         self.mica.sessionmutex.acquire()
         if uid not in sessions :
             self.mica.sessionmutex.release()
+            print_stack()
             mwarn("4) We expired, don't take lock.")
             raise exc.HTTPUnauthorized("you're not logged in anymore.")
         slock = sessions[uid]
