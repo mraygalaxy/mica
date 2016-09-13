@@ -481,8 +481,8 @@ def run_tests(test_urls) :
                     j = json_loads(r.text)
                     last_json = j
                 except ValueError, e :
-                    #tlog("  Failed to parse JSON from: " + r.text)
-                    tlog("  Failed to parse JSON.")
+                    tlog("  Failed to parse JSON from:\n" + r.text)
+                    #tlog("  Failed to parse JSON.")
                     assert(False)
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
