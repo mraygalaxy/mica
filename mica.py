@@ -5549,7 +5549,7 @@ class CDict(object):
             mdebug("Session updated: " + skey)
             slock.release()
         else :
-            mdebug("Session not connected. Won't save yet: " + skey)
+            mverbose("Session not connected. Won't save yet: " + skey)
 
 sessions = {}
 

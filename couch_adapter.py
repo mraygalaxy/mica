@@ -173,9 +173,9 @@ def reauth(func):
 
 class AuthBase(object) :
     def reauthorize(self, safe = False, e = False) :
-        if e :
-            mwarn("Error Likely due to a timeout: " + str(e))
         if not safe :
+            if e :
+                mwarn("Error Likely due to a timeout: " + str(e))
             mdebug("Re-authenticating database.")
 
         getattr(self, "server")
