@@ -263,30 +263,28 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             # If the key is a new one (contains no previous revisions) and write succeeded
             # before the DB failed, then it will appear to be a conflict. Let's try to first
             # verify if that was the case no not fail the application.
-            if "_rev" not in doc :
-                mwarn("Doc has not rev. Does it exist?")
-                if self.doc_exist(name) :
-                    mwarn("It exists. Let's make sure it's equal.")
-                    testdoc = deepcopy(doc)
-                    olddoc = self.__getitem__(name).copy()
+            mwarn("Does doc exist?")
+            if self.doc_exist(name) :
+                mwarn("It exists. Let's make sure it's equal.")
+                testdoc = deepcopy(doc)
+                olddoc = self.__getitem__(name).copy()
+                if "_rev" not in doc :
                     del olddoc["_rev"]
-                    if "_id" not in testdoc :
-                        testdoc["_id"] = name
-                    if "_rev" in testdoc :
-                        del testdoc["_rev"]
-                        
-                    if name.count("org.couchdb.user") :
-                        for subkey in ["iterations", "password_scheme", "salt", "derived_key"] :
-                            if subkey in olddoc :
-                                del olddoc[subkey]
-                        if "password" in testdoc :
-                            del testdoc["password"]
-                                
-                    if olddoc == testdoc :
-                        mwarn("Recovered after crash. Yay.")
-                        setfail = False
-                    else :
-                        mwarn("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
+                if "_id" not in testdoc :
+                    testdoc["_id"] = name
+                    
+                if name.count("org.couchdb.user") :
+                    for subkey in ["iterations", "password_scheme", "salt", "derived_key"] :
+                        if subkey in olddoc :
+                            del olddoc[subkey]
+                    if "password" in testdoc :
+                        del testdoc["password"]
+                            
+                if olddoc == testdoc :
+                    mwarn("Recovered after crash. Yay.")
+                    setfail = False
+                else :
+                    mwarn("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
 
 
             if setfail :
