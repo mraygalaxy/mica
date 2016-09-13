@@ -266,9 +266,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             mwarn("Does doc exist?")
             if self.doc_exist(name) :
                 mwarn("It exists. Let's make sure it's equal.")
-                testdoc = deepcopy(doc)
+                testdoc = doc.copy()
                 olddoc = self.__getitem__(name).copy()
-                if "_rev" not in doc :
+                if "_rev" in doc :
+                    del doc["_rev"]
+                if "_rev" in olddoc :
                     del olddoc["_rev"]
                 if "_id" not in testdoc :
                     testdoc["_id"] = name
