@@ -404,10 +404,11 @@ def run_tests(test_urls) :
             record.write(tlogmsg + "\n")
             record.flush()
 
+            max_retries = 5
             retry_attempts = 0
             until_attempts = 0
 
-            while retry_attempts < 3 and until_attempts < 30 :
+            while retry_attempts < max_retries and until_attempts < 30 :
                 if "sleep" in url :
                     tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
                     sleep(url["sleep"])
@@ -518,7 +519,7 @@ def run_tests(test_urls) :
 
                 break
 
-            if retry_attempts >= 3 :
+            if retry_attempts >= max_retries :
                 tlog(" Failed to retry last run after 3 attempts.")
                 assert(False)
 
