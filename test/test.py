@@ -70,7 +70,7 @@ couch_verify = True if parameters["couch_proto"] == "http" else False
 
 test_timeout = 5
 
-oauth = { "codes" : {}, "tokens" : {}}
+oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
 mock_rest = {
     "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
@@ -334,6 +334,19 @@ def flatten(head_url) :
 
     return flat_urls
 
+def repopulate_states() :
+    r = s.get(target + "/disconnect", verify = target_verify)
+    assert(r.status_code == 200)
+    td = pq(r.text)
+    for who in parameters["oauth"].keys() :
+        if who == "redirect" :
+            continue
+
+        for part in td("#oauth_" + who).attr("href").split("&") :
+            if part.count("state") :
+                oauth["states"][who] = part.split("=")[1]
+                break
+
 def run_tests(test_urls) :
     test_urls = deepcopy(test_urls)
     # Flatten the nested test groups into a single list of tests
@@ -400,6 +413,19 @@ def run_tests(test_urls) :
                     sleep(url["sleep"])
                     break
 
+                if url["loc"].count("state=") and url["loc"].count("finish=") :
+                    [left, right] = url["loc"].split("?")
+                    oparams = my_parse(right)
+                    if oparams["state"] != oauth["states"][oparams["alien"]] :
+                        tlog("  State is stale. correcting.")
+                        oparams["state"] = oauth["states"][oparams["alien"]]
+                        url["loc"] = left + "?" + urlencode(oparams)
+
+                if url["loc"].count("state=") and url["loc"].count("finish=") :
+                    tlog("Re-retrieving oauth state value...")
+                    [left, right] = url["loc"].split("?")
+                    oparams = my_parse(right)
+
                 if url["method"] == "get" :
                     udest = finaldest + move_data_to_url(url)
                     r = s.get(udest, verify = verify)
@@ -432,23 +458,8 @@ def run_tests(test_urls) :
                         # is no longer valid. We have to update it.
 
                         if url["loc"].count("state=") and url["loc"].count("finish=") :
-                            tlog("Re-retrieving oauth state value...")
-                            [left, right] = url["loc"].split("?")
-                            oparams = my_parse(right)
-                            r = s.get(target + "/disconnect", verify = target_verify)
-                            assert(r.status_code == 200)
-                            td = pq(r.text)
-                            for who in parameters["oauth"].keys() :
-                                if who == oparams["alien"] : 
-                                    for part in td("#oauth_" + who).attr("href").split("&") :
-                                        if part.count("state") :
-                                            state = part.split("=")[1]
-                                            oparams["state"] = state 
-                                            break
-                                    break
-                            url["loc"] = left + "?" + urlencode(oparams)
-                            tlog("Re-retrieve done.")
-
+                            tlog("Repopulating oauth state value...")
+                            repopulate_states()
                         
                         if "retry_action" in url :
                             run_tests(common_urls[url["retry_action"]])
@@ -642,6 +653,7 @@ def add_oauth_tests_from_micadev10() :
         for part in d("#oauth_" + who).attr("href").split("&") :
             if part.count("state") :
                 state = part.split("=")[1]
+                oauth["states"][who] = state
                 oauth["codes"][who] = binascii_hexlify(os_urandom(4))
                 urls.append(common_urls["logout"])
                 urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True, retry_action = "logout"))
