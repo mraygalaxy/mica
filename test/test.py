@@ -421,11 +421,6 @@ def run_tests(test_urls) :
                         oparams["state"] = oauth["states"][oparams["alien"]]
                         url["loc"] = left + "?" + urlencode(oparams)
 
-                if url["loc"].count("state=") and url["loc"].count("finish=") :
-                    tlog("Re-retrieving oauth state value...")
-                    [left, right] = url["loc"].split("?")
-                    oparams = my_parse(right)
-
                 if url["method"] == "get" :
                     udest = finaldest + move_data_to_url(url)
                     r = s.get(udest, verify = verify)
