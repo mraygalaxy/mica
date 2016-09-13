@@ -15,6 +15,7 @@ from binascii import hexlify as binascii_hexlify
 from logging.handlers import RotatingFileHandler
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
 from copy import deepcopy
+from urllib import urlencode
 
 import requests
 import docker
@@ -69,7 +70,7 @@ couch_verify = True if parameters["couch_proto"] == "http" else False
 
 test_timeout = 5
 
-oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
+oauth = { "codes" : {}, "tokens" : {}}
 
 mock_rest = {
     "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
@@ -137,16 +138,16 @@ mock_rest = {
     #"" : [dict(inp = , outp = ),],
 }
 
+def my_parse(data) :
+    url_parameters = {}
+    parsed_data = parse_qs(data, keep_blank_values=1)
+    for k, v in parsed_data.iteritems() :
+        v = v[0] if (isinstance(v, list) and len(v) == 1) else v
+        url_parameters[k] = v
+    return url_parameters
+
 class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     email_count = 1
-
-    def my_parse(self, data) :
-        url_parameters = {}
-        parsed_data = parse_qs(data, keep_blank_values=1)
-        for k, v in parsed_data.iteritems() :
-            v = v[0] if (isinstance(v, list) and len(v) == 1) else v
-            url_parameters[k] = v
-        return url_parameters
 
     def check_mock_data(self, path, url_parameters) :
         body = ""
@@ -177,10 +178,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self) :
         body = ""
         url = urlparse(self.path)
-        url_parameters = self.my_parse(url.query)
+        url_parameters = my_parse(url.query)
         path = url.path.replace("/", "")
         length = int(self.headers.getheader('content-length'))
-        url_parameters.update(self.my_parse(self.rfile.read(length)))
+        url_parameters.update(my_parse(self.rfile.read(length)))
         result = 200
         result_msg = "OK"
 
@@ -190,9 +191,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         if path in parameters["oauth"].keys() :
             #tlog("  TOKEN REQUEST from: " + path)
-            state = oauth["states"][path]
-            code = oauth["states"][path]
-            if url_parameters["code"] != code or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
+            if url_parameters["code"] != oauth["codes"][path] or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
                 result = 401
                 result_msg = "Bad Things"
                 body = {"error" : "bad things"}
@@ -224,7 +223,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
 
         url = urlparse(self.path)
-        url_parameters = self.my_parse(url.query)
+        url_parameters = my_parse(url.query)
         path = url.path.replace("/", "")
         #tlog("  " + str(path) + ": " + str(url_parameters))
 
@@ -429,6 +428,28 @@ def run_tests(test_urls) :
 
                     if r.status_code == 401 :
                         tlog("  Our token may have expired. Login again and retry the test: " + str(r.text))
+                        # For auth tests, 401 means the oauth state parameter
+                        # is no longer valid. We have to update it.
+
+                        if url["loc"].count("state=") and url["loc"].count("finish=") :
+                            tlog("Re-retrieving oauth state value...")
+                            [left, right] = url["loc"].split("?")
+                            oparams = my_parse(right)
+                            r = s.get(target + "/disconnect", verify = target_verify).text
+                            assert(r.status_code == 200)
+                            td = pq(r.text)
+                            for who in parameters["oauth"].keys() :
+                                if who == oparams["alien"] : 
+                                    for part in td("#oauth_" + who).attr("href").split("&") :
+                                        if part.count("state") :
+                                            state = part.split("=")[1]
+                                            oparams["state"] = state 
+                                            break
+                                    break
+                            url["loc"] = left + "?" + urlencode(oparams)
+                            tlog("Re-retrieve done.")
+
+                        
                         if "retry_action" in url :
                             run_tests(common_urls[url["retry_action"]])
                         else :
@@ -618,12 +639,9 @@ def add_oauth_tests_from_micadev10() :
         if who == "redirect" :
             continue
 
-        #tlog("Checking for: " + who + ": " + d("#oauth_" + who).html())
         for part in d("#oauth_" + who).attr("href").split("&") :
             if part.count("state") :
                 state = part.split("=")[1]
-                #tlog("Need to test " + who + ", state: " + state)
-                oauth["states"][who] = state
                 oauth["codes"][who] = binascii_hexlify(os_urandom(4))
                 urls.append(common_urls["logout"])
                 urls.append(dict(loc = "/api?human=0&alien=" + who + "&connect=1&finish=1&state=" + state + "&code=" + oauth["codes"][who], method = "get", data = {}, success = True, test_success = True, retry_action = "logout"))
