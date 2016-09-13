@@ -259,8 +259,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             mdebug("Set key conflict error: " + name)
             setfail = True
 
-            # This sometimes happens in the middle of a database failure.
-            # If the key is a new one (contains no previous revisions) and write succeeded
+            # This sometimes happens in the middle of a database failure
             # before the DB failed, then it will appear to be a conflict. Let's try to first
             # verify if that was the case no not fail the application.
             mwarn("Does doc exist?")
@@ -269,7 +268,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 testdoc = doc.copy()
                 olddoc = self.__getitem__(name).copy()
                 if "_rev" in doc :
-                    del doc["_rev"]
+                    del testdoc["_rev"]
                 if "_rev" in olddoc :
                     del olddoc["_rev"]
                 if "_id" not in testdoc :
