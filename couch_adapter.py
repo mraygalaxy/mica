@@ -105,7 +105,7 @@ class repeatable(object):
 def reauth(func):
     def wrapper(self, *args, **kwargs):
         retry_once = False
-        limit = 10
+        limit = 20
         giveup_error = False
 
         for attempt in range(0, limit) :
