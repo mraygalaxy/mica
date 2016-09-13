@@ -471,7 +471,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             if endkey_docid:
                 options['endkey_docid'] = endkey_docid
         done = False
-        server_errors_left = 10
+        server_errors_left = 20
         yielded_rows = {}
         while not done:
             #mdebug("errors left: " + str(server_errors_left))
@@ -503,6 +503,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 if server_errors_left > 0 :
                     mwarn("Server errors left: " + str(server_errors_left))
                     server_errors_left -= 1
+                    sleep(1)
                     self.reauthorize()
                     done = False
                     continue
@@ -512,6 +513,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 if server_errors_left > 0 :
                     mwarn("Server errors left: " + str(server_errors_left))
                     server_errors_left -= 1
+                    sleep(1)
                     self.reauthorize()
                     done = False
                     continue
@@ -521,6 +523,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 if server_errors_left > 0 :
                     mwarn("Server errors left: " + str(server_errors_left))
                     server_errors_left -= 1
+                    sleep(1)
                     self.reauthorize()
                     done = False
                     continue
@@ -531,6 +534,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     if server_errors_left > 0 :
                         mwarn("Server errors left: " + str(server_errors_left))
                         server_errors_left -= 1
+                        sleep(1)
                         self.reauthorize()
                         done = False
                         continue
@@ -545,6 +549,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     if server_errors_left > 0 :
                         mwarn("Server errors left: " + str(server_errors_left))
                         server_errors_left -= 1
+                        sleep(1)
                         self.reauthorize()
                         done = False
                         continue
