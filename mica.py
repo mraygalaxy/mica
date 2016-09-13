@@ -4063,7 +4063,7 @@ class MICA(object):
                     nb_image = req.http.params.get("image")
                     output = "<br/><br/>"
                     image_found = False
-                    if "filetype" in story and story["filetype"] != "txt" :
+                    if "filetype" in story and story["filetype"] not in [ "txt", "chat" ] :
                         attach_raw = req.db.get_attachment(self.story(req, name) + ":original:" + str(page), "attach")
                         original = eval(attach_raw)
 
