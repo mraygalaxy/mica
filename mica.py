@@ -4683,9 +4683,9 @@ class MICA(object):
             # Facebook returns a content-type of text/plain when sending their
             # x-www-form-urlencoded responses, along with a 200. If not, let's
             # assume we're getting JSON and bail on the fix.
-            mdebug("Going to dump response token text: " + r.text)
+            mverbose("Going to dump response token text: " + r.text)
             token = json_loads(r.text)
-            mdebug("Adding bearer to token type")
+            mverbose("Adding bearer to token type")
             token['token_type'] = 'Bearer'
             r._content = to_unicode(dumps(token)).encode('UTF-8')
             return r
@@ -5595,12 +5595,12 @@ class MicaSession(Session) :
     sessionTimeout = 600 # timeout for sessions that don't actually login
 
     def timeout(self, timeout) :
-        mdebug("Setting new timeout to: " + str(timeout))
+        mverbose("Setting new timeout to: " + str(timeout))
         self.sessionTimeout = timeout
         try :
             self.touch()
         except AlreadyCalled, e :
-            mwarn("Touch didn't work. Ignore")
+            mverbose("Touch didn't work. Ignore")
 
 class NONSSLRedirect(object) :
     def __init__(self):
