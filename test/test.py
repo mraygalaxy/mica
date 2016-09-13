@@ -435,7 +435,7 @@ def run_tests(test_urls) :
                             tlog("Re-retrieving oauth state value...")
                             [left, right] = url["loc"].split("?")
                             oparams = my_parse(right)
-                            r = s.get(target + "/disconnect", verify = target_verify).text
+                            r = s.get(target + "/disconnect", verify = target_verify)
                             assert(r.status_code == 200)
                             td = pq(r.text)
                             for who in parameters["oauth"].keys() :
