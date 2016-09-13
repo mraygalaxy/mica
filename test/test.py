@@ -483,7 +483,8 @@ def run_tests(test_urls) :
                 except ValueError, e :
                     tlog("  Failed to parse JSON from:\n" + r.text)
                     #tlog("  Failed to parse JSON.")
-                    assert(False)
+                    if not url["loc"].count("alien=disconnect") :
+                        assert(False)
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
                     if not job_was_running :
