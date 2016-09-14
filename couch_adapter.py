@@ -464,7 +464,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             self.reauthorize(e = e)
 
-    def errors_check(self, errors_left) :
+    def error_check(self, errors_left) :
         if errors_left > 0 :
             mwarn("Server errors left: " + str(errors_left))
             errors_left -= 1
