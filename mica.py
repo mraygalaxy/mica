@@ -423,9 +423,9 @@ class MICA(object):
             username = req.session.value["username"].lower()
 
         if username not in self.dbs or not self.dbs[username] :
-            mdebug("Database not set. Requesting object.")
+            mverbose("Database not set. Requesting object.")
             if mobile :
-                mdebug("Setting mobile db to prexisting object.")
+                mverbose("Setting mobile db to prexisting object.")
                 self.dbs[username] = self.db
             else :
                 address = req.session.value["address"] if (req and "address" in req.session.value) else couch_adapter.credentials(params)
