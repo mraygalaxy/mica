@@ -558,7 +558,6 @@ class MICA(object):
                          "date" : timest(),
                          "email" : email,
                          "source" : source,
-                         "story_format" : story_format,
                          "quota" : -1 if admin else 300,
                           }
             mverbose("Putting doc: " + str(user_doc))
@@ -595,8 +594,9 @@ class MICA(object):
                                            "language" : language,
                                            "learnlanguage" : "en",
                                            "source" : source,
-                                           'email' : email,
-                                           'filters' : {'files' : [], 'stories' : [] },
+                                           "email" : email,
+                                           "filters" : {'files' : [], 'stories' : [] },
+                                           "story_format" : story_format,
                                          }
         self.check_all_views(username)
 
@@ -4415,7 +4415,7 @@ class MICA(object):
                 req.accountpageresult = _("No such dictionary. Please try again") + ": " + tofrom
                 json["success"] = False
             else :
-                if "filters" not in user and u"filters" not in user :
+                if "filters" not in user :
                    user["filters"] = {'files' : [], 'stories' : [] }
 
                 if remove == 0 :
@@ -4999,33 +4999,33 @@ class MICA(object):
                 req.session.save()
                 raise e
 
-        if "language" not in user and u"language" not in user :
+        if "language" not in user :
             user["language"] = get_global_language()
 
-        if "learnlanguage" not in user and u"learnlanguage" not in user :
+        if "learnlanguage" not in user :
             user["learnlanguage"] = "en"
 
-        if "source" not in user and u"source" not in user :
+        if "source" not in user :
             user["source"] = "mica"
 
-        if "date" not in user and u"date" not in user :
+        if "date" not in user :
             user["date"] = timest()
 
-        if "story_format" not in user and u"story_format" not in user :
+        if "story_format" not in user :
             mwarn("Story format is missing. Upgrading design document for story upgrades.")
             self.view_check(req.session.value["username"], "stories", recreate = True)
             user["story_format"] = story_format
 
-        if "app_chars_per_line" not in user and u"app_chars_per_line" not in user :
+        if "app_chars_per_line" not in user :
             user["app_chars_per_line"] = 70
-        if "web_chars_per_line" not in user and u"web_chars_per_line" not in user :
+        if "web_chars_per_line" not in user :
             user["web_chars_per_line"] = 70
-        if "default_app_zoom" not in user and u"default_app_zoom" not in user :
+        if "default_app_zoom" not in user :
             user["default_app_zoom"] = 1.15
-        if "default_web_zoom" not in user and u"default_web_zoom" not in user :
+        if "default_web_zoom" not in user :
             user["default_web_zoom"] = 1.0
 
-        if "filters" not in user and u"filters" not in user :
+        if "filters" not in user :
            user["filters"] = {'files' : [], 'stories' : [] }
 
         req.session.value["app_chars_per_line"] = user["app_chars_per_line"]
@@ -5073,7 +5073,7 @@ class MICA(object):
 
         if "app_chars_per_line" not in req.session.value :
             user = req.db[self.acct(username)]
-            if "filters" not in user and u"filters" not in user :
+            if "filters" not in user :
                 user["filters"] = {'files' : [], 'stories' : [] }
                 req.db[self.acct(username)] = user
                 user = req.db[self.acct(username)]
