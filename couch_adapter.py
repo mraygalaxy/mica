@@ -177,11 +177,10 @@ class AuthBase(object) :
                 mwarn("Error Likely due to a timeout: " + str(e))
             mverbose("Re-authenticating database.")
 
-        getattr(self, "server")
-        self.server.cookie = False
-
         try :
             try :
+                getattr(self, "server")
+                self.server.cookie = False
                 self.server.auth()
                 self.db.resource.headers["Cookie"] = self.server.cookie
             except AttributeError, e :
