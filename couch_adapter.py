@@ -128,7 +128,6 @@ def reauth(func):
                 retry_once = True
                 kwargs["second_time"] = True
             except retriable_errors, e :
-                mwarn("Error likely due to a timeout: " + str(e))
                 retry_auth = True
                 giveup_error = e
             except IOError, e:
