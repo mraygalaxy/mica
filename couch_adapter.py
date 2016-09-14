@@ -175,7 +175,7 @@ class AuthBase(object) :
         if not safe :
             if e :
                 mwarn("Error Likely due to a timeout: " + str(e))
-            mdebug("Re-authenticating database.")
+            mverbose("Re-authenticating database.")
 
         getattr(self, "server")
         self.server.cookie = False
@@ -185,14 +185,14 @@ class AuthBase(object) :
                 self.server.auth()
                 self.db.resource.headers["Cookie"] = self.server.cookie
             except AttributeError, e :
-                mdebug("Re-authenticating server.")
+                merr("Re-authenticating server.")
                 self.cookie = False
                 self.auth()
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
 
         if not safe :
-            mdebug("Authenticated.")
+            mverbose("Authenticated.")
 
 class MicaDatabase(AuthBase) :
     def try_get(self, name) :
