@@ -375,7 +375,7 @@ class MICA(object):
         return story["source_language"] + "," + story["target_language"]
 
     def authenticate(self, username, password, auth_url) :
-        mdebug("Authenticating to: " + str(auth_url))
+        mverbose("Authenticating to: " + str(auth_url))
 
         username = username.lower()
         lookup_username = username
@@ -390,28 +390,30 @@ class MICA(object):
 
         for attempt in range(0, 20) :
             try :
-                mdebug("Authentication attempt #" + str(attempt))
+                if attempt > 0 :
+                    mdebug("Authentication attempt #" + str(attempt))
                 ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
                 ureq.add_header('Accept', 'application/json')
                 ureq.add_header("Content-type", "application/x-www-form-urlencoded")
                 ureq.add_header('Authorization', userData)
                 res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
                 rr = res.read()
-                mdebug("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
+                mverbose("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
                 return json_loads(rr), False
             except urllib2_HTTPError, e :
                 if e.code == 401 :
                     return False, _("Invalid credentials. Please try again") + "."
-                mdebug("HTTP error: " + username + " " + str(e))
+                mwarn("HTTP error: " + username + " " + str(e))
                 error = "(HTTP code: " + str(e.code) + ")"
             except urllib2_URLError, e :
-                mdebug("URL Error: " + username + " " + str(e))
+                mwarn("URL Error: " + username + " " + str(e))
                 error = "(URL error: " + str(e.reason) + ")"
             except Exception, e :
-                mdebug("Unknown error: " + username + " " + str(e))
+                mwarn("Unknown error: " + username + " " + str(e))
                 error = "(Unknown error: " + str(e) + ")"
             sleep(1)
 
+        merr("Authentication failure")
         return False, _("Your device either does not have adequate signal strength or your connection does not have adequate connectivity. While you do have a connection (3/4G or Wifi), we were not able to reach the server.")
 
     def prime_db(self, req, specific_views = False) :
@@ -5501,12 +5503,12 @@ class CDict(object):
 
         if force or ("connected" in self.value and self.value["connected"]) :
             slock.acquire()
-            mdebug("Saving to session: " + skey)
+            mverbose("Saving to session: " + skey)
             try :
                 if self.mica.sessiondb.doc_exist(skey) :
                     old_doc = self.mica.sessiondb[skey]
                     self.value["_rev"] = old_doc["_rev"]
-                    mdebug("Using revision: " + old_doc["_rev"])
+                    mverbose("Using revision: " + old_doc["_rev"])
                 else :
                     if in_a_job :
                         mwarn("3) We expired, but we're just a background job, so it's fine.")
@@ -5546,7 +5548,7 @@ class CDict(object):
                 slock.release()
                 raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-            mdebug("Session updated: " + skey)
+            mverbose("Session updated: " + skey)
             slock.release()
         else :
             mverbose("Session not connected. Won't save yet: " + skey)
