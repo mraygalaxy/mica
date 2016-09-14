@@ -103,7 +103,7 @@ class repeatable(object):
 
 limit = 20
 retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
-retriable_errnos = [errno.EPIPE, errno.ECONNRESET, None]
+bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
 
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
@@ -131,7 +131,7 @@ def reauth(func):
                 retry_auth = True
                 giveup_error = e
             except IOError, e:
-                if e.errno in retriable_errnos:
+                if e.errno in bad_errnos:
                     mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
                     giveup_error = e
@@ -450,7 +450,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         return True
 
     def iocheck(self, e) :
-        if e.errno in retriable_errnos :
+        if e.errno in bad_errnos :
             self.reauthorize(e = e)
         else :
             mwarn("Actual error number: " + str(e.errno))
