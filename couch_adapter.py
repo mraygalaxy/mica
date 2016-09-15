@@ -103,6 +103,7 @@ class repeatable(object):
 limit = 20
 retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
 bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
+server_errors = [403, 500, 502]
 
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
@@ -138,6 +139,15 @@ def reauth(func):
                     permanent_error = e
             except (CommunicationError, ResourceNotFound, ResourceConflict), e :
                 regular_error = e
+            except couch_ServerError, e :
+                ((status, error),) = e.args
+                permanent_error = e
+                mwarn("Server error: " + str(status) + " " + str(error))
+                if int(status) == 413 :
+                    mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
+                elif int(status) in server_errors :
+                    # Database failure. Retry again too.
+                    retry_auth = True
             except Exception, e :
                 for line in format_exc().splitlines() :
                     mwarn(line)
@@ -197,7 +207,7 @@ def check_for_unauthorized(e) :
     if int(status) == 413 :
         mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
     # Database failure. Retry again too.
-    if int(status) in [403, 500, 502] :
+    if int(status) in server_errors :
         raise Unauthorized
     raise CommunicationError("MICA Unvalidated: " + str(e))
 
@@ -223,22 +233,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 raise PossibleResourceNotFound(self.dbname)
             mdebug("Get info not found error: " + self.dbname)
             raise ResourceNotFound(str(e))
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
 
     @reauth
     def get_security(self) :
-        try :
-            return self.db.security
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        return self.db.security
 
     @reauth
     def set_security(self, doc) :
-        try :
-            self.db.security = doc
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        self.db.security = doc
 
     @reauth
     def __setitem__(self, name, doc, second_time = False) :
@@ -284,20 +286,15 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
             if setfail :
                 raise ResourceConflict(str(e), e)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
 
     @reauth
     def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False, open_revs = False) :
-        try :
-            if rev :
-                return self.db.get(name, rev = rev)
-            elif open_revs :
-                return self.db.get(name, open_revs = open_revs)
-            else :
-                return self.db[name]
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        if rev :
+            return self.db.get(name, rev = rev)
+        elif open_revs :
+            return self.db.get(name, open_revs = open_revs)
+        else :
+            return self.db[name]
         except couch_ResourceNotFound, e :
             # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time :
@@ -309,10 +306,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def delete_doc(self, doc) :
-        try :
-            self.db.delete(doc)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        self.db.delete(doc)
 
     @reauth
     def __delitem__(self, name, second_time = False) :
@@ -349,102 +343,81 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 self.db.delete(olddoc)
             #del self.db[name]
             '''
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
-        # This unauthorized is here because
-        # I'm intercepting Exception below.
-        # Normally, it wouldn't be necessary.
-        except Unauthorized, e :
-            raise e
         except couch_ResourceNotFound, e :
             # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time  :
                 raise PossibleResourceNotFound(name)
             raise ResourceNotFound(str(e))
-        except Exception, e :
-            for line in format_exc().splitlines() :
-                merr(line)
-            raise CommunicationError("Problem 1) during delete: " + str(e))
 
     @reauth
     def delete_attachment(self, doc, filename) :
-        try :
-            self.db.delete_attachment(doc, filename)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        self.db.delete_attachment(doc, filename)
+
+    @reauth
+    def purge(self, doc_list) :
+        self.db.purge(doc_list)
 
     @reauth
     def put_attachment(self, name, filename, contents, new_doc = False) :
-        try :
-            if not new_doc :
-                trydelete = True
-                if self.doc_exist(name) is True :
-                    mdebug("Deleting original @ " + name)
-                    doc = self.db[name]
-                    del self.db[name]
-                    self.db.purge([doc])
-                    trydelete = False
+        if not new_doc :
+            trydelete = True
+            if self.doc_exist(name) is True :
+                mdebug("Deleting original @ " + name)
+                doc = self.__getitem__(name)
+                self.__delitem__(name)
+                self.purge([doc])
+                trydelete = False
 
-                doc = { "foo" : "bar"}
-                # This 'translated_at' is because of bug: https://issues.apache.org/jira/browse/COUCHDB-1415
-                # Supposedly fixed in CouchDB 2.0
-                doc["translated_at"] = time()
+            doc = { "foo" : "bar"}
+            # This 'translated_at' is because of bug: https://issues.apache.org/jira/browse/COUCHDB-1415
+            # Supposedly fixed in CouchDB 2.0
+            doc["translated_at"] = time()
 
-                if trydelete :
-                    try :
-                        doc["_rev"] = self.db[name]["_rev"]
-                        mdebug("Old revision found.")
-                    except couch_ServerError, e :
-                        check_for_unauthorized(e)
-                    except couch_ResourceNotFound, e :
-                        mdebug("No old revision found.")
-                        pass
+            if trydelete :
+                try :
+                    doc["_rev"] = self.__getitem__(name)["_rev"]
+                    mdebug("Old revision found.")
+                except couch_ResourceNotFound, e :
+                    mdebug("No old revision found.")
+                    pass
 
-                mdebug("Going to write: " + str(doc) + " to doc id " + name + " under filename " + filename)
-                self.db[name] = doc
-                doc = self.db[name]
-            else :
-                doc = new_doc
+            mdebug("Going to write: " + str(doc) + " to doc id " + name + " under filename " + filename)
+            self.__setitem__(name, doc)
+            doc = self.__getitem__(name)
+        else :
+            doc = new_doc
 
-            if type(contents) != file :
-                mdebug("Putting attachment of length: " + str(len(contents)))
+        if type(contents) != file :
+            mdebug("Putting attachment of length: " + str(len(contents)))
 
-            return self.db.put_attachment(doc, contents, filename)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        return self.db.put_attachment(doc, contents, filename)
 
     @reauth
     def get_attachment(self, name, filename) :
-        try :
-            obj = self.db.get_attachment(name, filename)
-            if obj is not None :
-                return obj.read()
-            else :
-                raise CommunicationError("No such attachment: " + name + " => " + filename)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        obj = self.db.get_attachment(name, filename)
+        if obj is not None :
+            return obj.read()
+        else :
+            raise CommunicationError("No such attachment: " + name + " => " + filename)
 
     @reauth
     def get_attachment_to_path(self, name, filename, path) :
-        try :
-            sourcebytes = 0
-            obj = self.db.get_attachment(name, filename)
-            if obj is not None :
-                fh = open(path, 'wb')
-                while True :
-                    byte = obj.read(4096)
-                    if byte :
-                        sourcebytes += len(byte)
-                        fh.write(byte)
-                    else :
-                        break
+        sourcebytes = 0
+        obj = self.db.get_attachment(name, filename)
+        if obj is not None :
+            fh = open(path, 'wb')
+            while True :
+                byte = obj.read(4096)
+                if byte :
+                    sourcebytes += len(byte)
+                    fh.write(byte)
+                else :
+                    break
 
-                fh.close()
-            else :
-                raise CommunicationError("No such attachment: " + name + " => " + filename)
-            return sourcebytes
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+            fh.close()
+        else :
+            raise CommunicationError("No such attachment: " + name + " => " + filename)
+        return sourcebytes
 
     def listen(self, username, password, port) :
         return port
@@ -456,8 +429,6 @@ class MicaDatabaseCouchDB(MicaDatabase) :
     def doc_exist(self, name, second_time = False) :
         try :
             self.db[name]
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
             # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time :
@@ -595,17 +566,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def compact(self, *args, **kwargs) :
-        try :
-            self.db.compact(*args, **kwargs)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        self.db.compact(*args, **kwargs)
 
     @reauth
     def cleanup(self, *args, **kwargs) :
-        try :
-            self.db.cleanup(*args, **kwargs)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        self.db.cleanup(*args, **kwargs)
 
     def close(self) :
         pass
@@ -697,28 +662,19 @@ class MicaServerCouchDB(AuthBase) :
 
     @reauth
     def __getitem__(self, dbname) :
-        try :
-            if dbname in self.couch_server :
-                db = self.couch_server[dbname]
-            else :
-                db = self.couch_server.create(dbname)
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        if dbname in self.couch_server :
+            db = self.couch_server[dbname]
+        else :
+            db = self.couch_server.create(dbname)
         return MicaDatabaseCouchDB(db, self, dbname)
 
     @reauth
     def __delitem__(self, name) :
-        try :
-            del self.couch_server[name]
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        del self.couch_server[name]
 
     @reauth
     def __contains__(self, dbname) :
-        try :
-            return True if dbname in self.couch_server else False
-        except couch_ServerError, e :
-            check_for_unauthorized(e)
+        return True if dbname in self.couch_server else False
 
 class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def __init__(self, db, name) :
