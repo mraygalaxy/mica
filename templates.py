@@ -362,7 +362,7 @@ class FrontPageElement(CommonElement) :
                 first = False
 
             self.req.mica.install_local_language(self.req, l)
-            tag(tags.a(href='/switchlang?lang=' + l)(_(readable)))
+            tag(tags.a(**{"href" : "/switchlang?lang=" + l, "data-role" : "none"})(_(readable)))
 
         self.req.mica.install_local_language(self.req, original_language)
         return tag
