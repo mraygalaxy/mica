@@ -700,7 +700,6 @@ class MICA(object):
 
     @serial
     def run_render(self, req) :
-
         if 'connected' not in req.session.value :
             mdebug("New session. Setting connected to false.")
             req.session.value["connected"] = False
@@ -712,12 +711,6 @@ class MICA(object):
             req.session.value["language"] = req.environ['HTTP_ACCEPT_LANGUAGE'].split("-")[0].split(",")[0]
             mdebug("Setting session language to browser language: " + req.session.value["language"])
             req.session.save()
-
-        req.source = req.environ["REMOTE_ADDR"]
-        req.db = False
-        req.dest = ""#prefix(req.unparsed_uri)
-        req.front_ads = False
-        req.couch_cookie = False
 
         if not mobile and not params["couch_server"].count("localhost") and not params["couch_server"].count("dev") :
             req.front_ads = True
@@ -874,6 +867,14 @@ class MICA(object):
             req.s.mica = self
             req.mica = self
             req.session = IDict(req.s)
+            req.source = environ["REMOTE_ADDR"]
+            req.db = False
+            req.dest = ""
+            req.front_ads = False
+            req.couch_cookie = False
+
+            if req.action not in ["auth", "disconnect"] or mobile :
+                self.populate_oauth_state(req)
 
             if start_response.im_self.request.s.uid not in sessions :
                 self.sessionmutex.acquire()
@@ -881,16 +882,18 @@ class MICA(object):
                 self.sessionmutex.release()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
 
-            if req.action not in ["auth", "disconnect"] or mobile :
-                self.populate_oauth_state(req)
             resp = self.run_render(req)
 
         except couch_adapter.CommunicationError, e :
-            resp = exc.HTTPUnauthorized("<h2>" + _("Lost connectivity to the database. Please come back later.") + "</h2>")
+            err = exc.HTTPUnauthorized("<h2>" + _("Lost connectivity to the database. Please come back later.") + "</h2>")
+            req.messages = err.detail 
+            resp = Response(self.render_frontpage(req), status_code = err.code, status = err.code)
         except exc.HTTPUnauthorized, e :
-            resp = e
+            req.messages = e.detail 
+            resp = Response(self.render_frontpage(req), status_code = e.code, status = e.code)
         except exc.HTTPBadRequest, e :
-            resp = e
+            req.messages = e.detail 
+            resp = Response(self.render_frontpage(req), status_code = e.code, status = e.code)
         except Exception, e :
             merr("BAD MICA ********\nException:")
             for line in format_exc().splitlines() :
@@ -3196,6 +3199,7 @@ class MICA(object):
     def render_disconnect(self, req) :
         self.clean_session(req, force = self.connected(req))
         self.populate_oauth_state(req)
+        req.messages = _("You have been logged out.")
         return self.api(req, desc = self.render_frontpage(req))
 
     def render_privacy(self, req) :
