@@ -283,7 +283,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
     def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False, open_revs = False) :
         try :
             if rev :
-                return sefl.db.get(name, rev = rev)
+                return self.db.get(name, rev = rev)
             elif open_revs :
                 return sefl.db.get(name, open_revs = open_revs)
             else :
