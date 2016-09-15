@@ -285,7 +285,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             if rev :
                 return self.db.get(name, rev = rev)
             elif open_revs :
-                return sefl.db.get(name, open_revs = open_revs)
+                return self.db.get(name, open_revs = open_revs)
             else :
                 return self.db[name]
         except couch_ServerError, e :
