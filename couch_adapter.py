@@ -280,9 +280,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
 
     @reauth
-    def __getitem__(self, name, false_if_not_found = False, second_time = False) :
+    def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False) :
         try :
-            return self.db[name]
+            if rev :
+                return sefl.db.get(name, rev = rev)
+            else :
+                return self.db[name]
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
@@ -292,6 +295,19 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 return False
             else :
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
+
+    @reauth
+    def delete_doc(self, doc) :
+        try :
+            self.db.delete(doc)
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
+        except Unauthorized, e :
+            raise e
+        except Exception, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            raise CommunicationError("Problem 2) during delete: " + str(e))
 
     @reauth
     def __delitem__(self, name, second_time = False) :
@@ -309,10 +325,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                         continue
                     all_deleted = False
                     mverbose(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
-                    olddoc = self.db.get(name, rev = doc["ok"]["_rev"])
+                    olddoc = self.__getitem__(name, rev = doc["ok"]["_rev"])
                     if olddoc is not None :
                         mverbose(str(count) + ") DELETE Deleted.")
-                        self.db.delete(olddoc)
+                        self.delete_doc(olddoc)
 
             '''
             doc = self.db[name]
@@ -339,7 +355,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
-            raise CommunicationError("Problem during delete: " + str(e))
+            raise CommunicationError("Problem 1) during delete: " + str(e))
 
     @reauth
     def delete_attachment(self, doc, filename) :
