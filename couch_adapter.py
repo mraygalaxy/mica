@@ -129,7 +129,7 @@ def reauth(func):
                 giveup_error = e
             except IOError, e:
                 if e.errno in bad_errnos:
-                    mwarn("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                    mverbose("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
                     giveup_error = e
                 else :
@@ -142,12 +142,13 @@ def reauth(func):
             except couch_ServerError, e :
                 ((status, error),) = e.args
                 permanent_error = e
-                mwarn("Server error: " + str(status) + " " + str(error))
                 if int(status) == 413 :
                     mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
                 elif int(status) in server_errors :
                     # Database failure. Retry again too.
                     retry_auth = True
+                else :
+                    mwarn("Server error: " + str(status) + " " + str(error))
             except Exception, e :
                 for line in format_exc().splitlines() :
                     mwarn(line)
@@ -210,7 +211,6 @@ def check_for_unauthorized(e) :
     if int(status) in server_errors :
         raise Unauthorized
     raise CommunicationError("MICA Unvalidated: " + str(e))
-
 
 class MicaDatabaseCouchDB(MicaDatabase) :
     def __init__(self, db, server, dbname) :
@@ -280,6 +280,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                             
                 if olddoc == testdoc :
                     setfail = False
+                    mwarn("Recovery complete. Yay.")
                 else :
                     merr("It's not equal. That sucks: " + str(olddoc) + " != " + str(testdoc))
 
