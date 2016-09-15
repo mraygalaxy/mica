@@ -462,10 +462,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             self.reauthorize(e = e)
 
-    def error_check(self, errors_left) :
-        if errors_left > 0 :
-            mwarn("Server errors left: " + str(errors_left))
-            errors_left -= 1
+    def error_check(self, errors) :
+        if errors["errors_left"] > 0 :
+            mwarn("Server errors left: " + str(errors["errors_left"]))
+            errors["errors_left"] -= 1
             sleep(1)
         else :
             merr("No errors_left remaining.")
@@ -488,9 +488,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 options['endkey_docid'] = endkey_docid
 
         yielded_rows = {}
-        errors_left = limit
+        errors = {"errors_left" : limit}
 
-        while errors_left > 0 :
+        while errors["errors_left"]> 0 :
             try:
                 view = self.db.view(view_name, **options)
                 rows = []
@@ -504,7 +504,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     options['startkey'] = last.key
                     options['startkey_docid'] = last.id
 
-                return self.do_rows(rows, yielded_rows)
+                for row in  self.do_rows(rows, yielded_rows) :
+                    yield row
+                break
             except retriable_errors, e :
                 self.reauthorize(e = e)
             except IOError, e:
@@ -512,7 +514,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             except couch_ServerError, e :
                 self.do_check_for_unauthorized(e)
 
-            self.error_check(errors_left)
+            self.error_check(errors)
 
     def do_rows(self, rows, yielded_rows) :
         for row in rows :
@@ -538,10 +540,13 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
         if "keys" in kwargs :
             yielded_rows = {}
-            errors_left = limit 
-            while errors_left > 0 :
+            errors = {"errors_left" : limit}
+            while errors["errors_left"] > 0 :
                 try :
-                    return self.do_rows(self.db.view(*args, **kwargs), yielded_rows)
+                    for row in self.do_rows(self.db.view(*args, **kwargs), yielded_rows) :
+                        yield row
+                    break
+                    
                 except retriable_errors, e :
                     self.reauthorize(e = e)
                 except IOError, e:
@@ -549,11 +554,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 except couch_ServerError, e :
                     self.do_check_for_unauthorized(e)
 
-                self.error_check(errors_left)
+                self.error_check(errors)
         else :
             kwargs["view_name"] = view_name
             kwargs["bulk"] = 50
-            return self.couchdb_pager(**kwargs)
+            for row in self.couchdb_pager(**kwargs) :
+                yield row
 
     @reauth
     def compact(self, *args, **kwargs) :

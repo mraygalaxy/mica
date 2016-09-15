@@ -418,7 +418,7 @@ def run_tests(test_urls) :
                     [left, right] = url["loc"].split("?")
                     oparams = my_parse(right)
                     if oparams["state"] != oauth["states"][oparams["alien"]] :
-                        tlog("  State is stale. correcting.")
+                        #tlog("  State is stale. correcting.")
                         oparams["state"] = oauth["states"][oparams["alien"]]
                         url["loc"] = left + "?" + urlencode(oparams)
 
