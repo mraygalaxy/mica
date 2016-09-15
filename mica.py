@@ -4354,6 +4354,7 @@ class MICA(object):
                                     json["success"] = False
                                 else :
                                     auth_user["quota"] = newquota
+                                    req.session.value["quota"] = newquota
                                     self.userdb["org.couchdb.user:" + username] = auth_user
                                     req.accountpageresult = _("Success! Quota was changed") + ": " + (str(newquota) if newquota != -1 else _("unlimited")) + " MB " + _("for user") + ": " + username
                                     json["test_success"] = True
@@ -4920,19 +4921,7 @@ class MICA(object):
                 update_user = True
 
         if not mobile and update_user :
-                try :
-                    self.userdb["org.couchdb.user:" + username] = auth_user
-                except couch_adapter.CommunicationError, e :
-                    mwarn("User database access expired...")
-                    # If the userdb times out, we do have to reacquire it,
-                    # even though its used in other places. Login-time will be the only
-                    # place it gets updated.
-                    self.cs = self.db_adapter(couch_adapter.credentials(params), params["admin_user"], params["admin_pass"], refresh = True)
-                    self.userdb = self.cs["_users"]
-                    if self.userdb :
-                        self.db = self.userdb
-                    mwarn("Retrying userdb access...")
-                    self.userdb["org.couchdb.user:" + username] = auth_user
+            self.userdb["org.couchdb.user:" + username] = auth_user
 
         req.session.value["quota"] = auth_user["quota"]
 
