@@ -646,7 +646,7 @@ assert(r.status_code == 200)
 
 d = pq(s.get(target, verify = target_verify).text)
 
-def add_oauth_tests_from_micadev10() :
+def add_oauth_tests() :
     for who in parameters["oauth"].keys() :
         if who == "redirect" :
             continue
@@ -738,7 +738,7 @@ def txt_story(storyname, languagetype, source) :
 
 
 try :
-    tests_from_micadev10 = [
+    tests = [
                 common_urls["logout"],
 
                 { "loc" : "/connect", "method" : "post", "success" : False, "test_success" : False, "data" : dict(human='0', username=test["username"], password="wrongpassword", remember='on', address=couch, connect='1') },
@@ -746,7 +746,7 @@ try :
                 common_urls["login"],
                 common_urls["storylist"],
                 common_urls["storylist_rotate"],
-                { "repeat" : 40, "urls" : [
+                { "repeat" : 80, "urls" : [
                     { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
                     { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
                     { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True, "test_success" : True },
@@ -778,7 +778,7 @@ try :
                #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=128", "method" : "get", "success" : True, "test_success" :  True },
                #{ "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(transid0 = 67, index0 = 1, nbunit0 = 75, page0 = 151, transid1 = 74, index1 = 1, nbunit1 = 84, page1 = 151, transid2 = 81, index2 = 1, nbunit2 = 93, page2 = 151, transid3 = 88, index3 = 1, nbunit3 = 102, page3 = 151, transid4 = 105, index4 = 1, nbunit4 = 123, page4 = 151, count = 5, bulkreview = 1) },
                #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "repeat" : 40, "urls" : [
+               { "repeat" : 80, "urls" : [
                    # Switch to split view on sample
                    { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
                    { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
@@ -984,7 +984,7 @@ try :
 except Exception, e :
     tlog(str(e))
 
-def add_chat_tests_from_micadev10() :
+def add_chat_tests() :
     chatfname = cwd + 'chats.txt'
     chatfd = open(chatfname, 'r')
     tlog("Reading in chat tests...")
@@ -1007,10 +1007,10 @@ def add_chat_tests_from_micadev10() :
 
 
 try :
-    urls += tests_from_micadev10
+    urls += tests
     for x in range(0, 100) :
-        add_oauth_tests_from_micadev10()
-    add_chat_tests_from_micadev10()
+        add_oauth_tests()
+    add_chat_tests()
     sleep(5)
 
     urls.append(common_urls["logout"])
