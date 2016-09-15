@@ -1007,9 +1007,9 @@ def add_chat_tests_from_micadev10() :
 
 
 try :
+    urls += tests_from_micadev10
     for x in range(0, 100) :
         add_oauth_tests_from_micadev10()
-    urls += tests_from_micadev10
     add_chat_tests_from_micadev10()
     sleep(5)
 
