@@ -43,11 +43,10 @@ class ResourceNotFound(Exception) :
 
 # Couchdb bug returning NotFound instead of Unathorized during a timeout
 class PossibleResourceNotFound(Exception) :
-    def __init__(self, msg, e = False, safe = False):
+    def __init__(self, msg, e = False):
         Exception.__init__(self)
         self.msg = msg
         self.e = e
-        self.safe = safe
 
     def __str__(self) :
         return self.msg
@@ -115,15 +114,12 @@ def reauth(func):
             retry_auth = False
             permanent_error = False
             regular_error = False
-            safe = False
             giveup_error = False
 
             try :
                 result = func(self, *args, **kwargs)
             except PossibleResourceNotFound, e :
-                safe = e.safe
-                if not safe :
-                    mwarn("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
+                mverbose("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
                 retry_auth = True
                 retry_once = True
                 kwargs["second_time"] = True
@@ -153,7 +149,7 @@ def reauth(func):
                     if attempt >= 2 :
                         mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
                     try :
-                        self.reauthorize(safe = safe, e = e)
+                        self.reauthorize(e = e)
                     except CommunicationError, e :
                         mdebug("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
 
@@ -171,11 +167,10 @@ def reauth(func):
     return wrapper
 
 class AuthBase(object) :
-    def reauthorize(self, safe = False, e = False) :
-        if not safe :
-            if e :
-                mwarn("Error Likely due to a timeout: " + str(e))
-            mverbose("Re-authenticating database.")
+    def reauthorize(self, e = False) :
+        if e :
+            mwarn("Error Likely due to a timeout: " + str(e))
+        mverbose("Re-authenticating database.")
 
         try :
             try :
@@ -190,8 +185,7 @@ class AuthBase(object) :
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
 
-        if not safe :
-            mverbose("Authenticated.")
+        mverbose("Authenticated.")
 
 class MicaDatabase(AuthBase) :
     def try_get(self, name) :
@@ -441,7 +435,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
             if name.count("org.couchdb.user") and not second_time :
-                raise PossibleResourceNotFound(name, safe = True)
+                raise PossibleResourceNotFound(name)
             ((error, reason),) = e.args
             mverbose("Doc exist returns not found: " + reason)
             return False
@@ -450,7 +444,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     def iocheck(self, e) :
         if e.errno in bad_errnos :
-            self.reauthorize(e = e)
+            try :
+                self.reauthorize(e = e)
+            except CommunicationError, e :
+                mdebug("iocheck Re-authorization failed, but we'll keep trying.")
         else :
             mwarn("Actual error number: " + str(e.errno))
             raise e
@@ -460,7 +457,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
            check_for_unauthorized(e)
            raise CommunicationError("Failed to perform view: " + str(e))
         except Unauthorized, e :
-            self.reauthorize(e = e)
+            try :
+                self.reauthorize(e = e)
+            except CommunicationError, e :
+                mdebug("error check Re-authorization failed, but we'll keep trying.")
 
     def error_check(self, errors) :
         if errors["errors_left"] > 0 :
@@ -508,7 +508,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     yield row
                 break
             except retriable_errors, e :
-                self.reauthorize(e = e)
+                try :
+                    self.reauthorize(e = e)
+                except CommunicationError, e :
+                    mdebug("view 1) check Re-authorization failed, but we'll keep trying.")
             except IOError, e:
                 self.iocheck(e)
             except couch_ServerError, e :
@@ -548,7 +551,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     break
                     
                 except retriable_errors, e :
-                    self.reauthorize(e = e)
+                    try :
+                        self.reauthorize(e = e)
+                    except CommunicationError, e :
+                        mdebug("view 2) check Re-authorization failed, but we'll keep trying.")
                 except IOError, e:
                     self.iocheck(e)
                 except couch_ServerError, e :
