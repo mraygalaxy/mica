@@ -321,7 +321,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             while not all_deleted :
                 count += 1
                 all_deleted = True
-                docs = self.db.__getitem__(name, open_revs = "all")
+                docs = self.__getitem__(name, open_revs = "all")
                 for doc in docs :
                     if "_deleted" in doc["ok"] :
                         continue
