@@ -280,10 +280,12 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             check_for_unauthorized(e)
 
     @reauth
-    def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False) :
+    def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False, open_revs = False) :
         try :
             if rev :
                 return sefl.db.get(name, rev = rev)
+            elif open_revs :
+                return sefl.db.get(name, open_revs = open_revs)
             else :
                 return self.db[name]
         except couch_ServerError, e :
@@ -319,7 +321,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             while not all_deleted :
                 count += 1
                 all_deleted = True
-                docs = self.db.get(name, open_revs = "all")
+                docs = self.db.__getitem__(name, open_revs = "all")
                 for doc in docs :
                     if "_deleted" in doc["ok"] :
                         continue
