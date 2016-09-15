@@ -329,7 +329,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     olddoc = self.__getitem__(name, rev = doc["ok"]["_rev"])
                     if olddoc is not None :
                         mverbose(str(count) + ") DELETE Deleted.")
-                        self.delete_doc(olddoc)
+                        try :
+                            self.delete_doc(olddoc)
+                        except couch_ResourceNotFound, e :
+                            mwarn("Probably a fail during a timeout or db crash. Will make another pass to double check")
+                            all_deleted = False
 
             '''
             doc = self.db[name]
