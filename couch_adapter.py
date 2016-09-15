@@ -289,12 +289,13 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def __getitem__(self, name, false_if_not_found = False, second_time = False, rev = False, open_revs = False) :
-        if rev :
-            return self.db.get(name, rev = rev)
-        elif open_revs :
-            return self.db.get(name, open_revs = open_revs)
-        else :
-            return self.db[name]
+        try :
+            if rev :
+                return self.db.get(name, rev = rev)
+            elif open_revs :
+                return self.db.get(name, open_revs = open_revs)
+            else :
+                return self.db[name]
         except couch_ResourceNotFound, e :
             # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time :
