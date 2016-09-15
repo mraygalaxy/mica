@@ -4248,6 +4248,7 @@ class MICA(object):
                             else :
                                 if self.account_exists(newusername) :
                                     req.accountpageresult = _("Account already exists! Try again")
+                                    json["test_success"] = True
                                 else :
                                     if newusername.count(":") or newusername.count(";") :
                                         req.accountpageresult = _("We're sorry, but you cannot have colon ':' characters in your account name or email address.")
