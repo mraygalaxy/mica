@@ -509,11 +509,13 @@ def run_tests(test_urls) :
                 if "success" in url and url["success"] is not None :
                     assert("success" in j)
                     if j["success"] != url["success"] :
+                        tlog("resulting JSON: " + str(j))
                         tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
                         assert(False)
                 if "test_success" in url and url["test_success"] is not None :
                     assert("test_success" in j)
                     if j["test_success"] != url["test_success"] :
+                        tlog("resulting JSON: " + str(j))
                         tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
                         assert(False)
 
