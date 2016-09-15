@@ -873,14 +873,13 @@ class MICA(object):
             req.front_ads = False
             req.couch_cookie = False
 
-            if req.action not in ["auth", "disconnect"] or mobile :
-                self.populate_oauth_state(req)
-
             if start_response.im_self.request.s.uid not in sessions :
                 self.sessionmutex.acquire()
                 sessions[start_response.im_self.request.s.uid] = Lock()
                 self.sessionmutex.release()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
+            if req.action not in ["auth", "disconnect"] or mobile :
+                self.populate_oauth_state(req)
 
             resp = self.run_render(req)
 
