@@ -218,6 +218,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         try :
             return self.db.info()
         except couch_ResourceNotFound, e :
+            # This happens during DB timeouts only for the _users database
             if self.dbname.count("_users") and not second_time:
                 raise PossibleResourceNotFound(self.dbname)
             mdebug("Get info not found error: " + self.dbname)
@@ -244,6 +245,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         try :
             self.db[name] = doc
         except couch_ResourceNotFound, e :
+            # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time:
                 raise PossibleResourceNotFound(name)
             mdebug("Set key not found error: " + name)
@@ -297,6 +299,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
+            # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time :
                 raise PossibleResourceNotFound(name)
             if false_if_not_found :
@@ -310,10 +313,6 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             self.db.delete(doc)
         except couch_ServerError, e :
             check_for_unauthorized(e)
-        except Exception, e :
-            for line in format_exc().splitlines() :
-                merr(line)
-            raise CommunicationError("Problem 2) during delete: " + str(e))
 
     @reauth
     def __delitem__(self, name, second_time = False) :
@@ -358,6 +357,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except Unauthorized, e :
             raise e
         except couch_ResourceNotFound, e :
+            # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time  :
                 raise PossibleResourceNotFound(name)
             raise ResourceNotFound(str(e))
@@ -459,6 +459,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         except couch_ServerError, e :
             check_for_unauthorized(e)
         except couch_ResourceNotFound, e :
+            # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time :
                 raise PossibleResourceNotFound(name)
             ((error, reason),) = e.args
