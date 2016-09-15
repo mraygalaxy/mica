@@ -227,11 +227,17 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
     @reauth
     def get_security(self) :
-        return self.db.security
+        try :
+            return self.db.security
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def set_security(self, doc) :
-        self.db.security = doc
+        try :
+            self.db.security = doc
+        except couch_ServerError, e :
+            check_for_unauthorized(e)
 
     @reauth
     def __setitem__(self, name, doc, second_time = False) :
@@ -304,8 +310,6 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             self.db.delete(doc)
         except couch_ServerError, e :
             check_for_unauthorized(e)
-        except Unauthorized, e :
-            raise e
         except Exception, e :
             for line in format_exc().splitlines() :
                 merr(line)
@@ -348,6 +352,9 @@ class MicaDatabaseCouchDB(MicaDatabase) :
             '''
         except couch_ServerError, e :
             check_for_unauthorized(e)
+        # This unauthorized is here because
+        # I'm intercepting Exception below.
+        # Normally, it wouldn't be necessary.
         except Unauthorized, e :
             raise e
         except couch_ResourceNotFound, e :
