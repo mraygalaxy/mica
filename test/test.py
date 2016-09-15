@@ -484,9 +484,10 @@ def run_tests(test_urls) :
                 except ValueError, e :
                     tlog("  Failed to parse JSON from:\n" + r.text)
                     #tlog("  Failed to parse JSON.")
-                    retry_attempts += 1
-                    sleep(5)
-                    continue
+                    assert(False)
+                    #retry_attempts += 1
+                    #sleep(5)
+                    #continue
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
                     if not job_was_running :
