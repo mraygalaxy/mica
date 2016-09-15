@@ -743,6 +743,8 @@ class MICA(object):
                     self.verify_db(req, req.session.value["database"], prime = False)
                     resp = self.render(req)
                 except couch_adapter.CommunicationError, e :
+                    for line in format_exc().splitlines() :
+                        mwarn(line)
                     merr("Must re-login: " + str(e))
                     self.clean_session(req, force = True)
                     # The user has completed logging out / signing out already - then this message appears.
