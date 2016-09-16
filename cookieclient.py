@@ -66,6 +66,7 @@ class CookieServer(Server):
             if cookie != self.resource.headers["Cookie"] :
                 mdebug("New cookie: " + cookie + " != " + self.resource.headers["Cookie"])
                 self.resource.headers["Cookie"] = cookie 
+
     def __init__(self, url=DEFAULT_BASE_URL, full_commit=True, session=None):
         """Initialize the server object.
 
