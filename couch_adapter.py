@@ -122,7 +122,8 @@ def reauth(func):
             except PossibleResourceNotFound, e :
                 mverbose("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
                 retry_auth = True
-                retry_once = True
+                if attempt == 0 :
+                    retry_once = True
                 kwargs["second_time"] = True
             except retriable_errors, e :
                 retry_auth = True
