@@ -111,8 +111,8 @@ server_errors = [403, 500, 502]
 def reauth(func):
     def wrapper(self, *args, **kwargs):
         giveup_error = False
-
         final_result = False
+        failed_once = False
 
         for attempt in range(0, limit) :
             retry_auth = False
@@ -123,7 +123,8 @@ def reauth(func):
             try :
                 result = func(self, *args, **kwargs)
                 final_result = True
-                mdebug("Call 1 success")
+                if failed_once :
+                    mdebug("Call 1 success")
             except PossibleResourceNotFound, e :
                 mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
                 retry_auth = True
@@ -180,15 +181,18 @@ def reauth(func):
 
                     if attempt > 0 :
                         sleep(1)
+                    failed_once = True
                 elif regular_error :
                     raise regular_error
                 elif permanent_error :
                     raise CommunicationError("Unauthorized: " + str(permanent_error))
                 else :
                     if final_result :
-                        mdebug("Call 2 success")
+                        if failed_once :
+                            mdebug("Call 2 success")
                         return result
-                    mdebug("Might loop")
+                    if failed_once :
+                        mdebug("Might loop")
 
         raise CommunicationError("Ran out of couch retries on attempt: " + str(attempt) + ": " + str(giveup_error))
 
