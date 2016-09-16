@@ -219,6 +219,20 @@ class AuthBase(object) :
 
         mdebug("Authenticated.")
 
+    def gimme_cookie(self) :
+        try :
+            try :
+                getattr(self, "server")
+                if "Cookie" in self.db.resource.headers :
+                    return self.db.resource.headers["Cookie"]
+                return False
+            except AttributeError, e :
+                if "Cookie" in self.couch_server.resource.headers["Cookie"] :
+                    return self.couch_server.resource.headers["Cookie"]
+                return False
+        except Exception, e :
+            raise CommunicationError("Failed to get cookie: " + str(e))
+
 class MicaDatabase(AuthBase) :
     def try_get(self, name) :
         return self.__getitem__(name, false_if_not_found = True)

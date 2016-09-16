@@ -399,16 +399,16 @@ def run_tests(test_urls) :
             verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
             secs = int(time()) - start_time
             tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
-            tlog(tlogmsg)
-
-            record.write(tlogmsg + "\n")
-            record.flush()
 
             max_retries = 5
             retry_attempts = 0
             until_attempts = 0
 
             while retry_attempts < max_retries and until_attempts < 30 :
+                tlog(tlogmsg)
+                record.write(tlogmsg + "\n")
+                record.flush()
+
                 if "sleep" in url :
                     tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
                     sleep(url["sleep"])
@@ -469,6 +469,7 @@ def run_tests(test_urls) :
                     tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
                     assert(False)
                 else :
+                    tlog("  Resetting all attempts to zero.")
                     retry_attempts = 0
                     until_attempts = 0
 
