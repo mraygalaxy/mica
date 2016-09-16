@@ -126,11 +126,13 @@ def reauth(func):
                 kwargs["second_time"] = True
             except retriable_errors, e :
                 retry_auth = True
+                retry_once = False 
                 giveup_error = e
             except IOError, e:
                 if e.errno in bad_errnos:
                     mverbose("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
+                    retry_once = False 
                     giveup_error = e
                 else :
                     mwarn("Actual error number: " + str(e.errno))
