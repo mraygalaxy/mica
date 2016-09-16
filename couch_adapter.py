@@ -151,6 +151,7 @@ def reauth(func):
                 elif int(status) in server_errors :
                     # Database failure. Retry again too.
                     retry_auth = True
+                    retry_once = False 
                 else :
                     mwarn("Server error: " + str(status) + " " + str(error))
             except Exception, e :
