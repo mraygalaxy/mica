@@ -110,7 +110,6 @@ server_errors = [403, 500, 502]
 def reauth(func):
     def wrapper(self, *args, **kwargs):
         giveup_error = False
-        tmpargs = deepcopy(kwargs)
 
         for attempt in range(0, limit) :
             retry_auth = False
@@ -119,17 +118,16 @@ def reauth(func):
             giveup_error = False
 
             try :
-                result = func(self, *args, **tmpargs)
+                result = func(self, *args, **kwargs)
             except PossibleResourceNotFound, e :
                 mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
-                if attempt == 0 :
-                    retry_auth = True
-                    # This parameter should never get removed from the kwargs
-                    # We do see cases where this exception gets thrown twice
-                    # if the argument is removed under simultaneous I/O failures, 
-                    # in which case we're just playing cat and mouse, and we really 
-                    # just need to fail to the user.
-                    tmpargs["second_time"] = True
+                retry_auth = True
+                # This parameter should never get removed from the kwargs
+                # We do see cases where this exception gets thrown twice
+                # if the argument is removed under simultaneous I/O failures, 
+                # in which case we're just playing cat and mouse, and we really 
+                # just need to fail to the user.
+                kwargs["second_time"] = True
             except retriable_errors, e :
                 retry_auth = True
                 giveup_error = e
