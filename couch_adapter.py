@@ -111,6 +111,8 @@ def reauth(func):
     def wrapper(self, *args, **kwargs):
         giveup_error = False
 
+        final_result = False
+
         for attempt in range(0, limit) :
             retry_auth = False
             permanent_error = False
@@ -119,6 +121,7 @@ def reauth(func):
 
             try :
                 result = func(self, *args, **kwargs)
+                final_result = True
             except PossibleResourceNotFound, e :
                 mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
                 retry_auth = True
@@ -129,11 +132,12 @@ def reauth(func):
                 # just need to fail to the user.
                 kwargs["second_time"] = True
             except retriable_errors, e :
+                mdebug("Retriable regular error: " + str(e))
                 retry_auth = True
                 giveup_error = e
             except IOError, e:
                 if e.errno in bad_errnos:
-                    mverbose("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                    mdebug("Retriable IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
                     giveup_error = e
                 else :
@@ -142,6 +146,7 @@ def reauth(func):
                         mwarn(line)
                     permanent_error = e
             except (CommunicationError, ResourceNotFound, ResourceConflict), e :
+                mwarn("regular error: " + str(e))
                 regular_error = e
             except couch_ServerError, e :
                 ((status, error),) = e.args
@@ -151,8 +156,9 @@ def reauth(func):
                 elif int(status) in server_errors :
                     # Database failure. Retry again too.
                     retry_auth = True
+                    mwarn("Retriable Server error: " + str(status) + " " + str(error))
                 else :
-                    mwarn("Server error: " + str(status) + " " + str(error))
+                    mwarn("Unhandled Server error: " + str(status) + " " + str(error))
             except Exception, e :
                 for line in format_exc().splitlines() :
                     mwarn(line)
@@ -175,7 +181,8 @@ def reauth(func):
                 elif permanent_error :
                     raise CommunicationError("Unauthorized: " + str(permanent_error))
                 else :
-                    return result
+                    if final_result :
+                        return result
 
         raise CommunicationError("Ran out of couch retries on attempt: " + str(attempt) + ": " + str(giveup_error))
 
