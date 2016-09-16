@@ -261,18 +261,18 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
 def change_timeout(timeout) :
     tlog("Changing timeout to " + str(timeout))
     s = requests.Session()
-    r = s.post(couch + "/_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
+    r = s.post(couch + "_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
     if r.status_code not in [200, 201] :
         raise Exception("Failed to login for timeout change")
 
-    r = s.get(couch + "/_config", verify = couch_verify)
+    r = s.get(couch + "_config", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to lookup configuration")
 
     config = r.json()
 
-    r = s.put(couch + "/_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
+    r = s.put(couch + "_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
@@ -1016,10 +1016,10 @@ try :
     urls.append(common_urls["logout"])
     urls.append({ "stop" : True })
 
-    old_timeout = int(change_timeout(6)[1:-2])
 except Exception, e :
     tlog(str(e))
 
+old_timeout = int(change_timeout(6)[1:-2])
 stop = True
 good = True
 try :
