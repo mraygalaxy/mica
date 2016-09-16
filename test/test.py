@@ -491,8 +491,8 @@ def run_tests(test_urls) :
                     #continue
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
-                    if not job_was_running :
-                        tlog("  There is a job running. Come back later.")
+                    #if not job_was_running :
+                    tlog("  There is a job running. Come back later.")
                     job_was_running = True
                     sleep(5)
                     continue
@@ -506,7 +506,7 @@ def run_tests(test_urls) :
                         continue
 
                 diff = stop - start
-                #tlog("  Time: " + str(int(diff)) + " secs.")
+                tlog("  Time: " + str(int(diff)) + " secs.")
 
                 if "success" in url and url["success"] is not None :
                     assert("success" in j)
@@ -514,6 +514,7 @@ def run_tests(test_urls) :
                         tlog("resulting JSON: " + str(j))
                         tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
                         assert(False)
+                tlog("  Next.")
                 if "test_success" in url and url["test_success"] is not None :
                     assert("test_success" in j)
                     if j["test_success"] != url["test_success"] :
@@ -521,14 +522,16 @@ def run_tests(test_urls) :
                         tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
                         assert(False)
 
+                tlog("  Breaking.")
                 break
 
             if retry_attempts >= max_retries :
                 tlog(" Failed to retry last run after 3 attempts.")
+                stop_test = True
                 assert(False)
 
             if until_attempts >= 30 :
-                tlog(" Failed to retry last run after 3 attempts.")
+                tlog(" Failed to until last run after 30 attempts.")
                 stop_test = True
                 assert(False)
 
