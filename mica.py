@@ -926,7 +926,10 @@ class MICA(object):
         return contents
 
     def api(self, req, desc = "", json = False, error = False) :
+        cookie = req.db.gimme_cookie() 
+        req.session.value["cookie"] = cookie
         req.session.save()
+
         if not json :
             json = {}
 
@@ -943,8 +946,9 @@ class MICA(object):
                 mdebug("API request was true, but setting to false because of replication error.")
                 json["success"] = False
 
-            if not mobile and "cookie" in req.session.value :
-                json["cookie"] = req.session.value["cookie"]
+            if not mobile and cookie :
+                if cookie :
+                    json["cookie"] = cookie
 
             if "test_success" not in json :
                 json["test_success"] = True
