@@ -155,8 +155,6 @@ def reauth(func):
                     mwarn(line)
                 permanent_error = e
             finally :
-                if "second_time" in tmpargs and attempt == 1 :
-                    del tmpargs["second_time"]
                 if retry_auth :
                     if attempt == (limit - 1) :
                         break
