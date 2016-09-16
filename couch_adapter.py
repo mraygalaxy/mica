@@ -109,7 +109,6 @@ server_errors = [403, 500, 502]
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
     def wrapper(self, *args, **kwargs):
-        retry_once = False
         giveup_error = False
         tmpargs = deepcopy(kwargs)
 
@@ -123,19 +122,16 @@ def reauth(func):
                 result = func(self, *args, **tmpargs)
             except PossibleResourceNotFound, e :
                 mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
-                retry_auth = True
                 if attempt == 0 :
-                    retry_once = True
-                tmpargs["second_time"] = True
+                    retry_auth = True
+                    tmpargs["second_time"] = True
             except retriable_errors, e :
                 retry_auth = True
-                retry_once = False 
                 giveup_error = e
             except IOError, e:
                 if e.errno in bad_errnos:
                     mverbose("IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
-                    retry_once = False 
                     giveup_error = e
                 else :
                     mwarn("Actual error number: " + str(e.errno))
@@ -152,7 +148,6 @@ def reauth(func):
                 elif int(status) in server_errors :
                     # Database failure. Retry again too.
                     retry_auth = True
-                    retry_once = False 
                 else :
                     mwarn("Server error: " + str(status) + " " + str(error))
             except Exception, e :
@@ -160,10 +155,10 @@ def reauth(func):
                     mwarn(line)
                 permanent_error = e
             finally :
-                if not retry_once :
-                    tmpargs = deepcopy(kwargs)
+                if "second_time" in tmpargs and attempt == 1 :
+                    del tmpargs["second_time"]
                 if retry_auth :
-                    if (retry_once and attempt == 1) or (attempt == (limit - 1)) :
+                    if attempt == (limit - 1) :
                         break
                     if attempt >= 2 :
                         mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
