@@ -110,7 +110,7 @@ def reauth(func):
     def wrapper(self, *args, **kwargs):
         retry_once = False
         giveup_error = False
-        saveargs = deepcopy(kwargs)
+        tmpargs = deepcopy(kwargs)
 
         for attempt in range(0, limit) :
             retry_auth = False
@@ -119,13 +119,13 @@ def reauth(func):
             giveup_error = False
 
             try :
-                result = func(self, *args, **saveargs)
+                result = func(self, *args, **tmpargs)
             except PossibleResourceNotFound, e :
-                mdebug("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
+                mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
                 retry_auth = True
                 if attempt == 0 :
                     retry_once = True
-                saveargs["second_time"] = True
+                tmpargs["second_time"] = True
             except retriable_errors, e :
                 retry_auth = True
                 retry_once = False 
@@ -159,7 +159,8 @@ def reauth(func):
                     mwarn(line)
                 permanent_error = e
             finally :
-                saveargs = deepcopy(kwargs)
+                if not retry_once :
+                    tmpargs = deepcopy(kwargs)
                 if retry_auth :
                     if (retry_once and attempt == 1) or (attempt == (limit - 1)) :
                         break
