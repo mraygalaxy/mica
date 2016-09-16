@@ -52,6 +52,7 @@ class PossibleResourceNotFound(Exception) :
     def __str__(self) :
         return self.msg
 
+# Total failure to communicate with the database
 class CommunicationError(Exception) :
     def __init__(self, msg, e = False):
         Exception.__init__(self)
@@ -96,7 +97,7 @@ class repeatable(object):
                     tries = tries - 1
                     if tries == 0 :
                         merr("Ran out of tries =(")
-                        raise CommunicationError("Unauthorized: " + str(e))
+                        raise CommunicationError("Repeat fail: " + str(e))
                     mwarn("atomic Tries left: " + str(tries))
 
         return wrapped_f
@@ -122,6 +123,7 @@ def reauth(func):
             try :
                 result = func(self, *args, **kwargs)
                 final_result = True
+                mdebug("Call 1 success")
             except PossibleResourceNotFound, e :
                 mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
                 retry_auth = True
@@ -173,6 +175,8 @@ def reauth(func):
                         self.reauthorize(e = e)
                     except CommunicationError, e :
                         mdebug("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
+                    except Exception, e :
+                        mdebug("WTF: " + str(e))
 
                     if attempt > 0 :
                         sleep(1)
@@ -182,7 +186,9 @@ def reauth(func):
                     raise CommunicationError("Unauthorized: " + str(permanent_error))
                 else :
                     if final_result :
+                        mdebug("Call 2 success")
                         return result
+                    mdebug("Might loop")
 
         raise CommunicationError("Ran out of couch retries on attempt: " + str(attempt) + ": " + str(giveup_error))
 
@@ -192,7 +198,7 @@ class AuthBase(object) :
     def reauthorize(self, e = False) :
         if e :
             mwarn("Error Likely due to a timeout: " + str(e))
-        mverbose("Re-authenticating database.")
+        mdebug("Re-authenticating database.")
 
         try :
             try :
@@ -207,7 +213,7 @@ class AuthBase(object) :
         except Exception, e :
             raise CommunicationError("Failed to re-authenticate: " + str(e))
 
-        mverbose("Authenticated.")
+        mdebug("Authenticated.")
 
 class MicaDatabase(AuthBase) :
     def try_get(self, name) :
