@@ -64,7 +64,7 @@ import couch_adapter
 
 server_port = 9888
 target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
-couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "")
+couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "/")
 target_verify = True if test["target_proto"] == "http" else False
 couch_verify = True if parameters["couch_proto"] == "http" else False
 
