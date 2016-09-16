@@ -12,8 +12,8 @@ from time import time
 from copy import deepcopy
 
 try :
-    from couchdb import Server
     from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
+    from cookieclient import CookieServer, CookieDatabase
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.")
 
@@ -611,7 +611,7 @@ class MicaServerCouchDB(AuthBase) :
             self.username = username
             self.password = password
 
-        self.couch_server = Server(url)
+        self.couch_server = CookieServer(url)
 
         if refresh :
             assert(self.url)
@@ -630,13 +630,11 @@ class MicaServerCouchDB(AuthBase) :
 
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
-        tmp_server = Server(full_url)
+        tmp_server = CookieServer(full_url)
 
         mverbose("Requesting cookie.")
         try :
-            print "password start"
             code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
-            print "password stop"
         except UnicodeDecodeError :
             # CouchDB folks messed up badly. This is ridiculous that I have
             # to do this
