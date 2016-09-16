@@ -120,7 +120,7 @@ def reauth(func):
             try :
                 result = func(self, *args, **kwargs)
             except PossibleResourceNotFound, e :
-                mverbose("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
+                mdebug("First time with possible resource not found. Will re-auth and try one more time: " + str(e))
                 retry_auth = True
                 if attempt == 0 :
                     retry_once = True
