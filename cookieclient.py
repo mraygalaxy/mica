@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 # First steps towards actually refreshing the cookie
+# Doesn't seem to work, despite the cookie getting refreshed.
+# With persistent cookies or something related to 10% of the cookie's lifetime,
+# it MIGHT work. Maybe 5 seconds is just to short to verify what's going on:
+# https://github.com/apache/couchdb-couch/blob/master/src/couch_httpd_auth.erl#L244
 
 from common import *
 import itertools
