@@ -307,12 +307,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 raise ResourceNotFound("Cannot lookup key: " + name, e)
 
     @reauth
-    def delete_doc(self, doc, ok_if_not_found = False) :
-        try :
-            self.db.delete(doc)
-        except couch_ResourceNotFound, e :
-            if not ok_if_not_found :
-                raise ResourceNotFound("Cannot lookup key: " + doc["_id"], e)
+    def delete_doc(self, doc) :
+        self.db.delete(doc)
 
     @reauth
     def __delitem__(self, name, second_time = False) :
@@ -333,7 +329,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     olddoc = self.__getitem__(name, rev = doc["ok"]["_rev"])
                     if olddoc is not None :
                         mverbose(str(count) + ") DELETE Deleted.")
-                        self.delete_doc(olddoc, ok_if_not_found = True)
+                        try :
+                            self.delete_doc(olddoc)
+                        except CommunicationError, e :
+                            mwarn("OK if not found. Will try again")
 
             '''
             doc = self.db[name]
