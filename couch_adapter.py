@@ -325,14 +325,14 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     if "_deleted" in doc["ok"] :
                         continue
                     all_deleted = False
-                    mverbose(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                    mdebug(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
                     olddoc = self.__getitem__(name, rev = doc["ok"]["_rev"])
                     if olddoc is not None :
-                        mverbose(str(count) + ") DELETE Deleted.")
+                        mdebug(str(count) + ") DELETE Deleting...")
                         try :
                             self.delete_doc(olddoc)
-                        except CommunicationError, e :
-                            mwarn("OK if not found. Will try again")
+                        except (CommunicationError, couch_ResourceNotFound), e :
+                            mwarn("OK if not found. Will try again: " + str(e))
 
             '''
             doc = self.db[name]
