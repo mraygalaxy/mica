@@ -13,7 +13,8 @@ from copy import deepcopy
 
 try :
     from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
-    from cookieclient import CookieServer, CookieDatabase
+    #from cookieclient import CookieServer as Server
+    from couchdb import Server
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.")
 
@@ -612,7 +613,7 @@ class MicaServerCouchDB(AuthBase) :
             self.username = username
             self.password = password
 
-        self.couch_server = CookieServer(url)
+        self.couch_server = Server(url)
 
         if refresh :
             assert(self.url)
@@ -631,7 +632,7 @@ class MicaServerCouchDB(AuthBase) :
 
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@")
 
-        tmp_server = CookieServer(full_url)
+        tmp_server = Server(full_url)
 
         mverbose("Requesting cookie.")
         try :
