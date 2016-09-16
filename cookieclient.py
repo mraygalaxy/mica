@@ -36,6 +36,12 @@ __all__ = ['CookieServer', 'CookieDatabase']
 DEFAULT_BASE_URL = os.environ.get('COUCHDB_URL', 'http://localhost:5984/')
 class CookiePermanentView(PermanentView):
     """Representation of a permanent view on the server."""
+    def cc(self, headers) :
+        if "set-cookie" in headers :
+            cookie = headers["set-cookie"].split(';', 1)[0]
+            if cookie != self.resource.headers["Cookie"] :
+                mdebug("New cookie: " + cookie + " != " + self.resource.headers["Cookie"])
+                self.resource.headers["Cookie"] = cookie 
 
     def __init__(self, uri, name, wrapper=None, session=None):
         View.__init__(self, uri, wrapper=wrapper, session=session)
@@ -45,21 +51,46 @@ class CookiePermanentView(PermanentView):
         return '<%s %r>' % (type(self).__name__, self.name)
 
     def _exec(self, options):
-        _, _, data = _call_viewlike(self.resource, options)
+        _, headers, data = _call_viewlike(self.resource, options)
+        self.cc(headers)
         return data
 
 class CookieServer(Server):
+    def cc(self, headers) :
+        if "set-cookie" in headers :
+            cookie = headers["set-cookie"].split(';', 1)[0]
+            if cookie != self.resource.headers["Cookie"] :
+                mdebug("New cookie: " + cookie + " != " + self.resource.headers["Cookie"])
+                self.resource.headers["Cookie"] = cookie 
+    def __init__(self, url=DEFAULT_BASE_URL, full_commit=True, session=None):
+        """Initialize the server object.
+
+        :param url: the URI of the server (for example
+                    ``http://localhost:5984/``)
+        :param full_commit: turn on the X-Couch-Full-Commit header
+        :param session: an http.Session instance or None for a default session
+        """
+        if isinstance(url, util.strbase):
+            self.resource = http.Resource(url, session or http.Session())
+        else:
+            self.resource = url # treat as a Resource object
+        if not full_commit:
+            self.resource.headers['X-Couch-Full-Commit'] = 'false'
+
     def __contains__(self, name):
         try:
-            self.resource.head(name)
+            _, headers, _ = self.resource.head(name)
+            self.cc(headers)
             return True
         except http.ResourceNotFound:
             return False
     def __delitem__(self, name):
-        self.resource.delete_json(name)
+        _, headers, _ = self.resource.delete_json(name)
+        self.cc(headers)
 
     def create(self, name):
-        self.resource.put_json(name)
+        _, headers, _ = self.resource.put_json(name)
+        self.cc(headers)
         return self[name]
 
     def delete(self, name):
@@ -67,58 +98,84 @@ class CookieServer(Server):
 
     def __getitem__(self, name):
         db = CookieDatabase(self.resource(name), name)
-        db.resource.head() # actually make a request to the database
+        _, headers, _ = db.resource.head() # actually make a request to the database
+        self.cc(headers)
         return db
 
 class CookieDatabase(Database):
+    def cc(self, headers) :
+        if "set-cookie" in headers :
+            cookie = headers["set-cookie"].split(';', 1)[0]
+            if cookie != self.resource.headers["Cookie"] :
+                mdebug("New cookie: " + cookie + " != " + self.resource.headers["Cookie"])
+                self.resource.headers["Cookie"] = cookie 
+    def __init__(self, url, name=None, session=None):
+        if isinstance(url, util.strbase):
+            if not url.startswith('http'):
+                url = DEFAULT_BASE_URL + url
+            self.resource = http.Resource(url, session)
+        else:
+            self.resource = url
+        self._name = name
     def __getitem__(self, name):
         db = CookieDatabase(self.resource(name), name)
-        db.resource.head() # actually make a request to the database
+        _, headers, _ = db.resource.head() # actually make a request to the database
+        self.cc(headers)
         return db
     def __contains__(self, id):
         try:
-            _doc_resource(self.resource, id).head()
+            _, headers, _ = _doc_resource(self.resource, id).head()
+            self.cc(headers)
             return True
         except http.ResourceNotFound:
             return False
     def __delitem__(self, id):
         resource = _doc_resource(self.resource, id)
         status, headers, data = resource.head()
+        self.cc(headers)
         resource.delete_json(rev=headers['etag'].strip('"'))
     def __getitem__(self, id):
         _, headers, data = _doc_resource(self.resource, id).get_json()
-        #if "set-cookie" in headers :
-        #    mdebug("New cookie: " + headers["set-cookie"])
+        self.cc(headers)
         return Document(data)
     def __setitem__(self, id, content):
         resource = _doc_resource(self.resource, id)
         status, headers, data = resource.put_json(body=content)
+        self.cc(headers)
         content.update({'_id': data['id'], '_rev': data['rev']})
     @property
     def security(self):
-        return self.resource.get_json('_security')[2]
+        _, headers, data = self.resource.get_json('_security')
+        self.cc(headers)
+        return data 
+
     @security.setter
     def security(self, doc):
-        self.resource.put_json('_security', body=doc)
+        _, headers, _ = self.resource.put_json('_security', body=doc)
+        self.cc(headers)
     def cleanup(self):
-        headers = {'Content-Type': 'application/json'}
-        _, _, data = self.resource('_view_cleanup').post_json(headers=headers)
+        tmp_headers = {'Content-Type': 'application/json'}
+        _, headers, data = self.resource('_view_cleanup').post_json(headers=tmp_headers)
+        self.cc(headers)
         return data['ok']
     def compact(self, ddoc=None):
         if ddoc:
             resource = self.resource('_compact', ddoc)
         else:
             resource = self.resource('_compact')
-        _, _, data = resource.post_json(
+        _, headers, data = resource.post_json(
             headers={'Content-Type': 'application/json'})
+        self.cc(headers)
         return data['ok']
     def delete(self, doc):
         if doc['_id'] is None:
             raise ValueError('document ID cannot be None')
-        _doc_resource(self.resource, doc['_id']).delete_json(rev=doc['_rev'])
+        _, headers, _ = _doc_resource(self.resource, doc['_id']).delete_json(rev=doc['_rev'])
+        self.cc(headers)
     def get(self, id, default=None, **options):
         try:
-            _, _, data = _doc_resource(self.resource, id).get_json(**options)
+            _, headers, data = _doc_resource(self.resource, id).get_json(**options)
+            self.cc(headers)
         except http.ResourceNotFound:
             return default
         if hasattr(data, 'items'):
@@ -127,14 +184,16 @@ class CookieDatabase(Database):
             return data
     def info(self, ddoc=None):
         if ddoc is not None:
-            _, _, data = self.resource('_design', ddoc, '_info').get_json()
+            _, headers, data = self.resource('_design', ddoc, '_info').get_json()
         else:
-            _, _, data = self.resource.get_json()
+            _, headers, data = self.resource.get_json()
             self._name = data['db_name']
+        self.cc(headers)
         return data
     def delete_attachment(self, doc, filename):
         resource = _doc_resource(self.resource, doc['_id'])
-        _, _, data = resource.delete_json(filename, rev=doc['_rev'])
+        _, headers, data = resource.delete_json(filename, rev=doc['_rev'])
+        self.cc(headers)
         doc['_rev'] = data['rev']
     def get_attachment(self, id_or_doc, filename, default=None):
         if isinstance(id_or_doc, util.strbase):
@@ -142,7 +201,8 @@ class CookieDatabase(Database):
         else:
             id = id_or_doc['_id']
         try:
-            _, _, data = _doc_resource(self.resource, id).get(filename)
+            _, headers, data = _doc_resource(self.resource, id).get(filename)
+            self.cc(headers)
             return data
         except http.ResourceNotFound:
             return default
@@ -161,6 +221,7 @@ class CookieDatabase(Database):
         status, headers, data = resource.put_json(filename, body=content, headers={
             'Content-Type': content_type
         }, rev=doc['_rev'])
+        self.cc(headers)
         doc['_rev'] = data['rev']
     def purge(self, docs):
         content = {}
@@ -172,7 +233,8 @@ class CookieDatabase(Database):
                 content[doc['_id']] = [doc['_rev']]
             else:
                 raise TypeError('expected dict, got %s' % type(doc))
-        _, _, data = self.resource.post_json('_purge', body=content)
+        _, headers, data = self.resource.post_json('_purge', body=content)
+        self.cc(headers)
         return data
     def view(self, name, wrapper=None, **options):
         path = _path_from_name(name, '_view')
