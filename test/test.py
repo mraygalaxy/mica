@@ -68,6 +68,8 @@ couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + s
 target_verify = True if test["target_proto"] == "http" else False
 couch_verify = True if parameters["couch_proto"] == "http" else False
 
+current_cookie = False
+
 test_timeout = 5
 
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
@@ -348,6 +350,7 @@ def repopulate_states() :
                 break
 
 def run_tests(test_urls) :
+    global current_cookie
     test_urls = deepcopy(test_urls)
     # Flatten the nested test groups into a single list of tests
     flat_urls = []
@@ -405,6 +408,7 @@ def run_tests(test_urls) :
             until_attempts = 0
 
             while retry_attempts < max_retries and until_attempts < 30 :
+                cookie_found = False
                 tlog(tlogmsg)
                 record.write(tlogmsg + "\n")
                 record.flush()
@@ -424,20 +428,34 @@ def run_tests(test_urls) :
 
                 if url["method"] == "get" :
                     udest = finaldest + move_data_to_url(url)
-                    r = s.get(udest, verify = verify)
+                    r = s.get(udest, verify = verify, cookies = dict(AuthSession = current_cookie) if current_cookie else {})
                 elif url["method"] == "post" :
                     udest = finaldest + url["loc"]
-                    r = s.post(udest, data = url["data"], verify = verify)
+                    pdata = deepcopy(url["data"])
+                    if current_cookie :
+                        pdata["Cookie"] = "AuthSession=" + current_cookie
+                    r = s.post(udest, data = pdata, verify = verify)
                 elif url["method"] == "put" :
+                    headers = {}
+                    if current_cookie :
+                        headers["Cookie"] = "AuthSession=" + current_cookie
                     if "upload" in url :
                         fname = cwd + 'example_stories/' + url["upload"]
                         tlog("  Uploading file: " + fname)
                         udest = finaldest + move_data_to_url(url)
-                        r = s.put(udest, headers = {'content-type': url["upload_type"]}, data = open(fname, 'rb').read(), verify = verify)
+                        headers['content-type'] = url["upload_type"]
+                            
+                        r = s.put(udest, headers = headers, data = open(fname, 'rb').read(), verify = verify)
                     else :
                         udest = finaldest + url["loc"]
-                        r = s.put(udest, data = json_dumps(url["data"]), verify = verify)
+                        r = s.put(udest, headers = headers, data = json_dumps(url["data"]), verify = verify)
                 stop = timest()
+
+                tlog(str(r.cookies))
+                if 'AuthSession' in r.cookies :
+                    current_cookie = r.cookies['AuthSession']
+                    tlog("Setting cookie: " + current_cookie)
+                    cookie_found = True
 
                 if r.status_code not in [200, 201] :
 
@@ -482,6 +500,9 @@ def run_tests(test_urls) :
                 try :
                     j = json_loads(r.text)
                     last_json = j
+                    if "cookie" in j and not cookie_found :
+                        current_cookie = j["cookie"].split("=")[1]
+                        tlog(" using json cookie: " + current_cookie)
                 except ValueError, e :
                     tlog("  Failed to parse JSON from:\n" + r.text)
                     #tlog("  Failed to parse JSON.")
