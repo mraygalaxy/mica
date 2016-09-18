@@ -70,7 +70,7 @@ couch_verify = True if parameters["couch_proto"] == "http" else False
 
 current_cookie = False
 
-test_timeout = 5
+test_timeout = 60
 
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
@@ -1044,7 +1044,7 @@ try :
 except Exception, e :
     tlog(str(e))
 
-old_timeout = int(change_timeout(6)[1:-2])
+old_timeout = int(change_timeout(test_timeout)[1:-2])
 stop = True
 good = True
 try :
