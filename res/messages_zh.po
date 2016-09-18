@@ -24,7 +24,6 @@ msgstr "编辑"
 msgid "Read"
 msgstr "阅读"
 
-#. Account is the last button on the top-most navigation panel and results in a drop-down that provides configuration options for the user's account.
 msgid "Account"
 msgstr "帐户"
 
@@ -32,7 +31,6 @@ msgstr "帐户"
 msgid "Preferences"
 msgstr "设置"
 
-#. Upload a story to MICA, a button inside the 'Account' section of the top-most navigation panel
 msgid "Upload New Story"
 msgstr "上传新故事"
 
@@ -40,7 +38,6 @@ msgstr "上传新故事"
 msgid "New Account"
 msgstr "新账户"
 
-#. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
 msgid "Disconnect"
 msgstr "退出"
 
@@ -178,7 +175,6 @@ msgstr "这个字"
 msgid "is polyphonic: (has more than one pronunciation"
 msgstr "是多音字：（有多个发音）"
 
-#. Pinyin means the romanization of a character-based word, such as Chinese
 msgid "Pinyin"
 msgstr "拼音"
 
@@ -188,11 +184,9 @@ msgstr "拼音"
 msgid "Definition"
 msgstr "翻译"
 
-#. This appears in a list of items and indicates which is the default item
 msgid "Default"
 msgstr "默认"
 
-#. Appears on a button in review mode that allows the user to choose a definition among multiple choices.
 msgid "Select"
 msgstr "选择"
 
@@ -255,6 +249,7 @@ msgstr "同步没有完成。在进度条到达100之前请关注屏幕上方。
 msgid "Synchronization error. Please report this to the author. Thank you."
 msgstr "同步没有完成。请通知程序员，谢谢。"
 
+#. Internet access refers to the wifi mode or 3G mode of the mobile device. We cannot connect to the website without it...
 msgid ""
 "To login for the first time and begin synchronization with the website, you "
 "must activate internet access."
@@ -263,33 +258,31 @@ msgstr "链接互联网以与网站同步"
 msgid "Invalid credentials. Please try again"
 msgstr "输入信息错误。请再试一次"
 
+#. Beginning of a message
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
 msgstr "抱歉，这个设备上的MICA数据库属于用户"
 
-#. next part of the same message
 msgid "and is configured to stay in synchronization with the server"
 msgstr "。另一个账户已经在这个设备上使用MICA啦。"
 
-#. next part of the same message
 msgid ""
 "If you want to change users, you will need to clear this application's data "
 "or reinstall it and re-synchronize the app with"
 msgstr "因为MICA数据库在使用过程中会变大，所以MICA不支持同一设备上多用户使用。"
 
-#. end of the message
 msgid ""
 "a new account. This requirement is because MICA databases can become large "
 "over time, so we want you to be aware of that. Thanks."
 msgstr "如果需要使用新用户，请清空MICA数据库或者重新安装。"
 
+#. This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
 msgid ""
 "Although you have authenticated successfully, we could not start "
 "synchronization successfully. Please try again."
 msgstr "输入信息正确，但是同步不成功，请重试一次"
 
-#. The user has deleted a story from the system.
 msgid "Deleted"
 msgstr "已删除"
 
@@ -304,11 +297,9 @@ msgstr "阅读完成"
 msgid "Reviewed"
 msgstr "检查完成"
 
-#. 'Forgot' a story using the button in the side-panel.
 msgid "Forgotten"
 msgstr "忘记"
 
-#. The user can switch between multiple ways to view a story, by showing just the text, or the text + the original image of the page side-by-side, or by just showing the original image of the page. This mode is not the same as the top navigation bar modes. But just say mode - it's simpler.
 msgid "Mode changed"
 msgstr "模式转换改变"
 
@@ -321,7 +312,6 @@ msgstr "并列文字和图片"
 msgid "show image only"
 msgstr "只显示图片"
 
-#. This mode is also different: It indicates that statistics shown in each high-level mode (Review, Edit, or Read) will not be shown.
 msgid "List statistics mode changed"
 msgstr "统计列单模式改变"
 
@@ -329,11 +319,9 @@ msgstr "统计列单模式改变"
 msgid "Edit history Disabled."
 msgstr "隐藏修改清单"
 
-#. statistics in review mode are disabled
 msgid "Review History List Disabled"
 msgstr "隐藏检查历史清单"
 
-#. statistics in reading mode are disabled
 msgid "Memorization History List Disabled"
 msgstr "隐藏记忆历史清单"
 
@@ -349,7 +337,6 @@ msgstr "翻译失败"
 msgid "Memorized!"
 msgstr "记得啦！"
 
-#. This occurs in Edit mode when a merge/split request failed.
 msgid "Invalid Operation"
 msgstr "操作无效"
 
@@ -379,13 +366,11 @@ msgstr "图片"
 msgid "not available on this page"
 msgstr "本页不存在"
 
-#. Beginning of a message.
 msgid ""
 "No story loaded. Choose a story to read from the sidebar by clicking the 'M' "
 "at the top."
 msgstr "没有加载故事。请点击在侧边上方的'M'选择故事阅读"
 
-#. end of a message
 msgid "or create one by clicking on Account icon at the top"
 msgstr "或者点击上方账户按键加载新故事"
 
@@ -399,14 +384,13 @@ msgstr ""
 "同步。"
 
 #. words after 'a' indicate the type of the story's original format, such as PDF, or TXT or EPUB, or whatever...
+#. Tho original story format as it was imported, that is
 msgid "Story is a"
 msgstr "故事是"
 
-#. Tho original story format as it was imported, that is
 msgid "Viewing original not yet implemented"
 msgstr "原文阅读正在建设中"
 
-#. The user requested that the software's database be "cleaned" or compacted to make it more lean and mean. This message appears when the compaction operation has finished.
 msgid "Database compaction complete for your account"
 msgstr "数据库已清空"
 
@@ -626,7 +610,6 @@ msgstr "点击在上方的小’M’"
 msgid "This is experimental language-learning software"
 msgstr "这是个正在实验中的语言学习软件"
 
-#. Admin account, that is
 msgid "Admin"
 msgstr "管理"
 
@@ -759,7 +742,6 @@ msgstr "登陆"
 msgid "Remember Me"
 msgstr "记住我"
 
-#. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Address"
 msgstr "地址"
 
@@ -843,6 +825,7 @@ msgstr ""
 "用普通账户登陆使用这个应用然后开始让你的设备与在线网站账户同步，你必须联系作"
 "者申请一个在线账户。"
 
+#. This appears on the front page when you login. It is the HTTP address of the website.
 msgid "Signing you in, Please wait"
 msgstr "正在登陆，请稍后"
 
@@ -855,6 +838,9 @@ msgstr "英语到中文"
 msgid "Chinese to English"
 msgstr "中文到英语"
 
+#. Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English -- also the end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
+#. Pinyin means the romanization of a character-based word, such as Chinese
+#. Default appears in a list of items and indicates which is the default item
 msgid "This word"
 msgstr "这个词"
 
@@ -869,15 +855,18 @@ msgstr "如果这是你第一次到这里来"
 msgid "please read the tutorial"
 msgstr "请阅读使用教程"
 
+#. User denied our request to create their account using social networking. Apologize and move on.
 msgid ""
 "We're sorry you feel that way, but we need your authorization to use this "
 "service. You're welcome to try again later. Thanks."
 msgstr ""
 "非常抱歉你这样觉得，但是我需要你的许可来使用这个服务。欢迎你以后再试谢谢。"
 
+#. Social networking service denied our request to authenticate and create an account for some reason. Notify and move on.
 msgid "Our service could not create an account from you"
 msgstr "我们的服务不能为你创建一个账户"
 
+#. Social networking service experienced some unknown error when we tried to authenticate the user before creating an account.
 msgid ""
 "There was an unknown error trying to authenticate you before creating an "
 "account. Please try again later"
@@ -1015,7 +1004,6 @@ msgstr ""
 "com申请一个免费的在线网络账户。当你创建了在线账户，你可以用你的在线账户邮箱和"
 "密码使用任何你喜欢的设备。"
 
-#. The name of the software
 msgid "MICA Language Learning"
 msgstr "MICA语言学习"
 
@@ -1028,7 +1016,7 @@ msgstr ""
 msgid "No such account. Cannot delete it."
 msgstr "没有这个帐户。不能删除。"
 
-#. This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
+#. Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
 msgid "Go away and die."
 msgstr "快滚然后去死吧！"
 
@@ -1281,9 +1269,6 @@ msgid ""
 msgstr ""
 "如果你想阅读这个故事，请点击侧边的‘开始同步’按钮然后等你的设别完成同步。"
 
-#. This happens when a user uploads a new story, or performs other long-running actions that
-#. cannot be completed in a single click. The request goes into a background job and is
-#. processed in the background.
 msgid "Request submitted. Please refresh later. Thank You."
 msgstr "指令已收到，请稍候刷新，谢谢."
 
@@ -1292,23 +1277,15 @@ msgstr "指令已收到，请稍候刷新，谢谢."
 msgid "Please try your request again."
 msgstr "请再次下达指令."
 
-#. This appears when a story is being deleted from the database. The page
-#. number will appear at the end of 'Deleted Page' to indicate how many
-#. pages of the story have been deleted.
 msgid "Deleted Page"
 msgstr "删除页面"
 
-#. This appears when the user tries to upload a story document that is too large.
-#. At the end of the message will appear something like '30 MB', or whatever is
-#. the current maximum file size allowed by the system.
 msgid "File is too big. Maximum file size:"
 msgstr "文件太大.最大文件大小是:"
 
-#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New PDF Story"
 msgstr "处理新的PDF故事"
 
-#. A new story has been uploaded and is being processed in the background.
 msgid "Processing New TXT Story"
 msgstr "处理新的TXT故事"
 
@@ -1475,4 +1452,196 @@ msgid "An error occured"
 msgstr ""
 
 msgid "Seconds left to reconnect"
+msgstr ""
+
+msgid "decades"
+msgstr ""
+
+msgid ""
+"Your device either does not have adequate signal strength or your connection "
+"does not have adequate connectivity. While you do have a connection (3/4G or "
+"Wifi), we were not able to reach the server."
+msgstr ""
+
+msgid "(template) Please report the above exception to the author. Thank you"
+msgstr ""
+
+msgid "(unknown) Please report the above exception to the author. Thank you"
+msgstr ""
+
+msgid "Lost connectivity to the database. Please come back later."
+msgstr ""
+
+msgid ""
+"(outer unknown) Please report the exception above to the author. Thank you."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Rotating Old Merged Chats From Database"
+msgstr ""
+
+msgid "Initialization Complete! Story ready for translation"
+msgstr ""
+
+msgid ""
+"This account is not fully synchronized. Be sure to touch 'Synchronize' for "
+"the story before reading it. You can follow the progress at the top of the "
+"screen until the 'download' arrow reaches 100."
+msgstr ""
+
+msgid "You have been logged out."
+msgstr ""
+
+msgid "Internet access error. Offline instant translation only: "
+msgstr ""
+
+msgid "Internet access error. Offline translation only: "
+msgstr ""
+
+#. Beginning of a message.
+msgid "No story loaded. Go to the 'Stories' tab"
+msgstr ""
+
+#. end of a message
+msgid "or create one by going to Account => Upload New Story"
+msgstr ""
+
+msgid "Quota requests need to be done on the website."
+msgstr ""
+
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+msgid "Server not configured correctly. Can't modify quotas"
+msgstr ""
+
+msgid "No such account. Cannot quotas."
+msgstr ""
+
+msgid "Success! Quota was changed"
+msgstr ""
+
+msgid "unlimited"
+msgstr ""
+
+msgid "for user"
+msgstr ""
+
+msgid "Error: Quota could not be changed"
+msgstr ""
+
+msgid "Sorry. Why is your email so long?"
+msgstr ""
+
+msgid "Sorry. Email with spaces in it?"
+msgstr ""
+
+msgid "Sorry. Invalid email address."
+msgstr ""
+
+msgid "Failed to change primary synchronization. Please try again"
+msgstr ""
+
+msgid "Failed to change file synchronization. Please try again"
+msgstr ""
+
+msgid "Storylist failed"
+msgstr ""
+
+msgid "The oauth protocol had an error"
+msgstr ""
+
+msgid "Please try again. Thank you"
+msgstr ""
+
+msgid ""
+"We're sorry, but the oauth provider is missing information for your account"
+msgstr ""
+
+msgid "Happy Learning"
+msgstr ""
+
+#. User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
+msgid "Invalid credentials"
+msgstr ""
+
+msgid "Bulk review complete"
+msgstr ""
+
+msgid "Initializing Story in Database"
+msgstr ""
+
+#. statistics in reading mode are disabled
+msgid "Statistics Disabled"
+msgstr ""
+
+msgid ""
+"Failed to issue request. We're sorry. Please report what you tried to do to "
+"the author. Thank you."
+msgstr ""
+
+msgid "Mobile Device Instructions for Teachers"
+msgstr ""
+
+msgid "Get 'Xabber' for Android"
+msgstr ""
+
+msgid "Get 'ChatSecure' for Android"
+msgstr ""
+
+msgid "Get 'ChatSecure' for iOS"
+msgstr ""
+
+msgid "Instructions"
+msgstr ""
+
+msgid "Server"
+msgstr ""
+
+msgid "do not use 'www'"
+msgstr ""
+
+msgid "Encryption/Security"
+msgstr ""
+
+msgid "Yes / SSL / TLS / SASL Authentication"
+msgstr ""
+
+msgid "Port (if needed)"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "OR Use a local account"
+msgstr ""
+
+msgid "<b>MICA</b> is a <b>new way</b> to learn a language."
+msgstr ""
+
+msgid "Change Quota"
+msgstr ""
+
+msgid ""
+"Please change your email address on the website. Will support mobile in a "
+"future version"
+msgstr ""
+
+msgid "Story imported. Please initialized it on the website."
+msgstr ""
+
+#. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
+msgid "Logout"
+msgstr ""
+
+msgid "New Story"
+msgstr ""
+
+msgid "Learn"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "Initialize Story"
 msgstr ""
