@@ -124,9 +124,9 @@ def reauth(func):
                 result = func(self, *args, **kwargs)
                 final_result = True
                 if failed_once :
-                    mdebug("Call 1 success")
+                    mverbose("Call 1 success")
             except PossibleResourceNotFound, e :
-                mdebug("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
+                mverbose("First time with possible resource not found (attempt " + str(attempt) + ". Will re-auth and try one more time: " + str(e))
                 retry_auth = True
                 # This parameter should never get removed from the kwargs
                 # We do see cases where this exception gets thrown twice
@@ -135,49 +135,49 @@ def reauth(func):
                 # just need to fail to the user.
                 kwargs["second_time"] = True
             except retriable_errors, e :
-                mdebug("Retriable regular error: " + str(e))
+                mverbose("Retriable regular error: " + str(e))
                 retry_auth = True
                 giveup_error = e
             except IOError, e:
                 if e.errno in bad_errnos:
-                    mdebug("Retriable IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
+                    mverbose("Retriable IOError: " + str(e) + ". Probably due to a timeout: " + str(e))
                     retry_auth = True
                     giveup_error = e
                 else :
-                    mwarn("Actual error number: " + str(e.errno))
+                    merr("Actual error number: " + str(e.errno))
                     for line in format_exc().splitlines() :
-                        mwarn(line)
+                        merr(line)
                     permanent_error = e
             except (CommunicationError, ResourceNotFound, ResourceConflict), e :
-                mwarn("regular error: " + str(e))
+                merr("regular error: " + str(e))
                 regular_error = e
             except couch_ServerError, e :
                 ((status, error),) = e.args
                 permanent_error = e
                 if int(status) == 413 :
-                    mdebug("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
+                    merr("Code 413 means nginx request entity too large or couch's attachment size is too small: " + name)
                 elif int(status) in server_errors :
                     # Database failure. Retry again too.
                     retry_auth = True
-                    mwarn("Retriable Server error: " + str(status) + " " + str(error))
+                    mverbose("Retriable Server error: " + str(status) + " " + str(error))
                 else :
-                    mwarn("Unhandled Server error: " + str(status) + " " + str(error))
+                    merr("Unhandled Server error: " + str(status) + " " + str(error))
             except Exception, e :
                 for line in format_exc().splitlines() :
-                    mwarn(line)
+                    merr(line)
                 permanent_error = e
             finally :
                 if retry_auth :
                     if attempt == (limit - 1) :
                         break
                     if attempt >= 2 :
-                        mdebug("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
+                        mwarn("Starting to get worried after " + str(attempt) + " attempts about: " + str(giveup_error))
                     try :
                         self.reauthorize(e = e)
                     except CommunicationError, e :
-                        mdebug("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
+                        merr("Re-authorization failed at attempt " + str(attempt) + ", but we'll keep trying.")
                     except Exception, e :
-                        mdebug("WTF: " + str(e))
+                        merr("WTF: " + str(e))
 
                     if attempt > 0 :
                         sleep(1)
@@ -189,10 +189,10 @@ def reauth(func):
                 else :
                     if final_result :
                         if failed_once :
-                            mdebug("Call 2 success")
+                            mverbose("Call 2 success")
                         return result
                     if failed_once :
-                        mdebug("Might loop")
+                        mverbose("Might loop")
 
         raise CommunicationError("Ran out of couch retries on attempt: " + str(attempt) + ": " + str(giveup_error))
 
@@ -360,10 +360,10 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                     if "_deleted" in doc["ok"] :
                         continue
                     all_deleted = False
-                    mdebug(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
+                    mverbose(str(count) + ") DELETE Found undeleted revision: " + name + ": " + doc["ok"]["_rev"])
                     olddoc = self.__getitem__(name, rev = doc["ok"]["_rev"])
                     if olddoc is not None :
-                        mdebug(str(count) + ") DELETE Deleting...")
+                        mverbose(str(count) + ") DELETE Deleting...")
                         try :
                             self.delete_doc(olddoc)
                         except (CommunicationError, couch_ResourceNotFound), e :

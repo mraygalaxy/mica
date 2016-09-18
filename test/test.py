@@ -451,10 +451,9 @@ def run_tests(test_urls) :
                         r = s.put(udest, headers = headers, data = json_dumps(url["data"]), verify = verify)
                 stop = timest()
 
-                tlog(str(r.cookies))
                 if 'AuthSession' in r.cookies :
                     current_cookie = r.cookies['AuthSession']
-                    tlog("Setting cookie: " + current_cookie)
+                    #tlog("  Setting cookie: " + current_cookie)
                     cookie_found = True
 
                 if r.status_code not in [200, 201] :
@@ -472,7 +471,7 @@ def run_tests(test_urls) :
                         # is no longer valid. We have to update it.
 
                         if url["loc"].count("state=") and url["loc"].count("finish=") :
-                            tlog("Repopulating oauth state value...")
+                            #tlog("Repopulating oauth state value...")
                             repopulate_states()
                         
                         if "retry_action" in url :
@@ -487,7 +486,7 @@ def run_tests(test_urls) :
                     tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
                     assert(False)
                 else :
-                    tlog("  Resetting all attempts to zero.")
+                    #tlog("  Resetting all attempts to zero.")
                     retry_attempts = 0
                     until_attempts = 0
 
@@ -513,7 +512,7 @@ def run_tests(test_urls) :
 
                 if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
                     #if not job_was_running :
-                    tlog("  There is a job running. Come back later.")
+                    tlog("  There is a job running. Coming back later.")
                     job_was_running = True
                     sleep(5)
                     continue
@@ -527,7 +526,7 @@ def run_tests(test_urls) :
                         continue
 
                 diff = stop - start
-                tlog("  Time: " + str(int(diff)) + " secs.")
+                #tlog("  Time: " + str(int(diff)) + " secs.")
 
                 if "success" in url and url["success"] is not None :
                     assert("success" in j)
@@ -535,7 +534,6 @@ def run_tests(test_urls) :
                         tlog("resulting JSON: " + str(j))
                         tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
                         assert(False)
-                tlog("  Next.")
                 if "test_success" in url and url["test_success"] is not None :
                     assert("test_success" in j)
                     if j["test_success"] != url["test_success"] :
@@ -543,7 +541,6 @@ def run_tests(test_urls) :
                         tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
                         assert(False)
 
-                tlog("  Breaking.")
                 break
 
             if retry_attempts >= max_retries :
