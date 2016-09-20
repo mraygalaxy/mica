@@ -839,11 +839,12 @@ class MICA(object):
 
         skey = self.session(uid)
         try :
-            if self.sessiondb.doc_exist(skey) :
-                value = self.sessiondb[skey]
+            
+            if self.serial.safe_execute(False, self.sessiondb.doc_exist, skey) :
+                value = self.serial.safe_execute(False, self.sessiondb.__getitem__, skey)
                 if "username" in value :
                     self.clean_dbs(value["username"])
-                del self.sessiondb[skey]
+                self.serial.safe_execute(False, self.sessiondb.__delitem__, skey)
                 mdebug("Deleted session.")
             else :
                 mdebug("Not deleting session.")
@@ -5462,9 +5463,9 @@ class CDict(object):
         else :
             skey = self.mica.session(uid)
 
-        if self.mica.sessiondb.doc_exist(skey) :
+        if self.mica.serial.safe_execute(False, self.mica.sessiondb.doc_exist, skey) :
             mdebug("Loading existing session: " + skey)
-            start = self.mica.sessiondb[skey]
+            start = self.mica.serial.safe_execute(False, self.mica.sessiondb.__getitem__, skey)
         else :
             mdebug("No session existing: " + skey)
 
