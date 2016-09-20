@@ -15,6 +15,9 @@ try :
     from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
     #from cookieclient import CookieServer as Server
     from couchdb import Server
+    retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
+    bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
+    server_errors = [403, 500, 502]
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.")
 
@@ -103,9 +106,6 @@ class repeatable(object):
         return wrapped_f
 
 limit = 20
-retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
-bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
-server_errors = [403, 500, 502]
 
 # Should we make this repeat more than once? kind of like serialized() with a parameter?
 def reauth(func):
