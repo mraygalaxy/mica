@@ -879,7 +879,7 @@ class MICA(object):
                 sessions[start_response.im_self.request.s.uid] = Lock()
                 self.sessionmutex.release()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
-            if req.action not in ["auth", "disconnect"] or mobile :
+            if req.action not in ["auth", "disconnect"] and not mobile :
                 self.populate_oauth_state(req)
 
             resp = self.run_render(req)
@@ -3203,7 +3203,8 @@ class MICA(object):
 
     def render_disconnect(self, req) :
         self.clean_session(req, force = self.connected(req))
-        self.populate_oauth_state(req)
+        if not mobile :
+            self.populate_oauth_state(req)
         req.messages = _("You have been logged out.")
         return self.api(req, desc = self.render_frontpage(req))
 
