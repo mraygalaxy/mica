@@ -10,9 +10,10 @@ from sqlalchemy.interfaces import PoolListener
 
 def serial(func):
     def wrapper(self, *args, **kwargs):
-        #mverbose("Wrapping serializable function: " + func.__name__ + " " + self.__class__.__name__)
+        mverbose("Wrap on thread " + str(current_thread()))
+        mverbose("Wrapping serializable function: " + func.__name__ + " " + self.__class__.__name__)
         result = self.serial.safe_execute(self, func, *args, **kwargs)
-        #mverbose("Finished Wrapping serializable function: " + func.__name__ + " " + self.__class__.__name__)
+        mverbose("Finished Wrapping serializable function: " + func.__name__ + " " + self.__class__.__name__)
         return result
     return wrapper
 
@@ -22,6 +23,8 @@ class Serializable(object) :
         self.q = Queue_Queue()
         self.consumer = Thread(target = self.consume)
         self.consumer.daemon = True
+        self.in_job = False
+        self.checkmutex = Lock()
 
     def start(self) :
         mverbose("Starting internal serializable consumer thread.")
@@ -34,6 +37,7 @@ class Serializable(object) :
         (stuff, rq) = (yield)
         (real_self, func, args, kwargs) = stuff
 
+        mverbose("Executing " + func.__name__ + " on " + str(current_thread()))
         try :
             if real_self :
                 resp = func(real_self, *args, **kwargs)
@@ -50,11 +54,19 @@ class Serializable(object) :
         rq.task_done()
 
     def safe_execute(self, real_self, func, *args, **kwargs) :
-        if self.yes_or_no :
-            #if real_self :
-                #mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
-            #else :
-            #    mverbose("Serializing " + func.__name__)
+        skip = False
+        self.checkmutex.acquire()
+        if self.in_job :
+            skip = True
+        else :
+            self.in_job = False
+        self.checkmutex.release()
+
+        if self.yes_or_no and not skip :
+            if real_self :
+                mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
+            else :
+                mverbose("Serializing " + func.__name__)
 
             rq = Queue_Queue()
             co = self.safe_execute_serial()
@@ -62,7 +74,7 @@ class Serializable(object) :
             self.q.put((co, (real_self, func, args, kwargs), rq))
             (resp, error) = rq.get()
         else :
-            #mverbose("NOT Serializing " + func.__name__)
+            mverbose("NOT Serializing " + func.__name__)
             try :
                 if real_self :
                     resp = func(real_self, *args, **kwargs)
@@ -76,6 +88,17 @@ class Serializable(object) :
                     merr(line)
                 resp = False
                 error = e
+
+        if self.yes_or_no :
+            if real_self :
+                mverbose("Finished Serializing " + func.__name__ + " " + real_self.__class__.__name__)
+            else :
+                mverbose("Finished Serializing " + func.__name__)
+
+        self.checkmutex.acquire()
+        if not skip and self.in_job :
+            self.in_job = False
+        self.checkmutex.release()
 
         if error :
             raise error
