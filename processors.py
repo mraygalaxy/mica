@@ -149,7 +149,7 @@ class Processor(object) :
                 uni = unicode(group.strip() if (group != "\n" and group != u'\n') else group, "utf-8")
             except UnicodeDecodeError, e :
                 if error :
-                    self.mica.store_error(req, story['name'], "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
+                    self.mica.serial.safe_execute(False, self.mica.store_error, req, story['name'], "Should we toss this group? " + str(group) + ": " + str(e) + " index: " + str(idx))
                 raise e
 
             if not self.all_punct(uni) :
@@ -162,7 +162,7 @@ class Processor(object) :
 
             unigroups.append(uni)
 
-        tone_keys = self.mica.view_keys(req, "tonechanges", False, source_queries = unikeys) 
+        tone_keys = self.mica.serial.safe_execute(False, self.mica.view_keys, req, "tonechanges", False, source_queries = unikeys)
         mverbose("Tone keys search returned " + str(len(tone_keys)) + "/" + str(len(unikeys)) + " results.") 
 
         for idx in range(0, len(unigroups)) :
