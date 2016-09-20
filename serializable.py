@@ -23,8 +23,6 @@ class Serializable(object) :
         self.q = Queue_Queue()
         self.consumer = Thread(target = self.consume)
         self.consumer.daemon = True
-        self.in_job = False
-        self.checkmutex = Lock()
 
     def start(self) :
         mverbose("Starting internal serializable consumer thread.")
@@ -54,15 +52,7 @@ class Serializable(object) :
         rq.task_done()
 
     def safe_execute(self, real_self, func, *args, **kwargs) :
-        skip = False
-        self.checkmutex.acquire()
-        if self.in_job :
-            skip = True
-        else :
-            self.in_job = False
-        self.checkmutex.release()
-
-        if self.yes_or_no and not skip :
+        if self.yes_or_no :
             if real_self :
                 mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
             else :
@@ -74,7 +64,7 @@ class Serializable(object) :
             self.q.put((co, (real_self, func, args, kwargs), rq))
             (resp, error) = rq.get()
         else :
-            mverbose("NOT Serializing " + func.__name__)
+            mverbose("NOT Serializing " + func.__name__ + " " + str(args) + " " + str(kwargs))
             try :
                 if real_self :
                     resp = func(real_self, *args, **kwargs)
@@ -88,17 +78,6 @@ class Serializable(object) :
                     merr(line)
                 resp = False
                 error = e
-
-        if self.yes_or_no :
-            if real_self :
-                mverbose("Finished Serializing " + func.__name__ + " " + real_self.__class__.__name__)
-            else :
-                mverbose("Finished Serializing " + func.__name__)
-
-        self.checkmutex.acquire()
-        if not skip and self.in_job :
-            self.in_job = False
-        self.checkmutex.release()
 
         if error :
             raise error
