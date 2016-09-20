@@ -964,7 +964,6 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def info(self) :
         try :
             jstring = self.db.info_(String(self.dbname)).UTF8String()
-            mdebug("Got jstring: " + jstring)
             return loads(jstring)
         except Exception, e :
             raise CommunicationError("Error occured getting database info: " + self.dbname + " " + str(e), e)
