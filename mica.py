@@ -927,7 +927,7 @@ class MICA(object):
         return contents
 
     def api(self, req, desc = "", json = False, error = False) :
-        cookie = req.db.gimme_cookie() if req.db else False
+        cookie = req.db.gimme_cookie() if (not mobile and req.db) else False
         if cookie :
             req.session.value["cookie"] = cookie
         req.session.save()
