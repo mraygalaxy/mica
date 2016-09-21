@@ -2619,7 +2619,6 @@ class MICA(object):
 
         return _("Initialization Complete! Story ready for translation") + ": " + filename
 
-    @serial
     def add_story_from_source(self, req, filename, filetype, source_lang, target_lang) :
         if filetype == "chat" :
             assert(not req.db.doc_exist(self.story(req, filename)))
@@ -3522,7 +3521,7 @@ class MICA(object):
 
     def add_period_story(self, req, period_key, peer, current_day, story) :
         if not req.db.try_get(self.chat_period(req, period_key, peer, current_day)) :
-            mdebug("Adding new story for period " + period_key + " and peer" + peer)
+            mdebug("Adding new story for period " + period_key + " and peer " + peer)
             self.add_story_from_source(req, self.chat_period_name(period_key, peer, current_day), "chat", story["source_language"], story["target_language"])
         mverbose("Looking up story for period " + period_key + " and peer" + peer)
         story = req.db[self.chat_period(req, period_key, peer, current_day)]
