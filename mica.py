@@ -1200,7 +1200,7 @@ class MICA(object):
 
             try :
                 mverbose("Begin parsing.")
-                processor.parse_page(req, story, groups, str(iidx), progress = self.progress if not live else False)
+                processor.parse_page(req, story, groups, str(iidx), progress = True if not live else False)
                 mverbose("End parsing.")
                 online = 0
                 offline = 0
