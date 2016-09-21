@@ -1046,10 +1046,7 @@ class MICA(object):
                 fname = params["scratch"] + f
                 size = os_path.getsize(fname)
                 emsg = "Exists FILE: " + str(size) + " " + fname
-                if mobile :
-                    mdebug(emsg)
-                else :
-                    mverbose(emsg)
+                mverbose(emsg)
                 assert(size != 0)
 
         self.filedb.detach_thread()
