@@ -1042,6 +1042,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             mverbose("MICA cedict success!")
 
             if big_enough and not ictc_available and not jieba.initialized :
+                mverbose("Initializing jieba...")
                 self.jieba_open()
                 self.jieba_close()
 

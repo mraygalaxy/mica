@@ -1034,7 +1034,10 @@ class MICA(object):
 
         for name, lgp in self.processors.iteritems() :
             try :
-                lgp.test_dictionaries(retest = True)
+                if mobile and params["serialize_couch_on_mobile"]:
+                    self.serial.safe_execute(False, lgp.test_dictionaries, retest = True)
+                else :
+                    lgp.test_dictionaries(retest = True)
             except Exception, e :
                 err = ""
                 for line in format_exc().splitlines() :
