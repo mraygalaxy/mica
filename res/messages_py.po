@@ -1693,3 +1693,21 @@ msgstr ""
 
 msgid "Initialize Story"
 msgstr ""
+
+msgid ""
+"This account is not fully synchronized. Please wait a minute or two for "
+"initial replication and login again. You can follow the progress at the top "
+"of the screen until the 'download' arrow reaches 100."
+msgstr ""
+
+msgid "Application reset. Please login again."
+msgstr ""
+
+msgid "Yes, do it."
+msgstr ""
+
+msgid "Are you sure? This is IRREVERSIBLE."
+msgstr ""
+
+msgid "Reset application to defaults"
+msgstr ""
