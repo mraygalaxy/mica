@@ -4998,7 +4998,6 @@ class MICA(object):
         user = req.db.try_get(self.acct(username))
         if not user :
             mwarn("Problem before warn_not_replicated:")
-            print_stack()
             return self.bad_api(req, self.warn_not_replicated(req, initial_login = True))
 
         if not mobile :
