@@ -944,16 +944,20 @@ class AndroidMicaServerCouchbaseMobile(object) :
         self.db = db_already_local
 
     def __getitem__(self, dbname) :
+        try :
+            self.db.start(String(dbname))
+        except Exception, e :
+            raise CommunicationError("Database creation failed for: " + name)
         return AndroidMicaDatabaseCouchbaseMobile(self.db, dbname)
 
     def __delitem__(self, name) :
         try :
-            self.db.drop(name)
+            self.db.drop(String(name))
         except Exception, e :
             raise CommunicationError("Database deletion failed for: " + name)
 
     def __contains__(self, dbname) :
-        return True if self.db.exists(dbname) else False
+        return True if self.db.exists(String(dbname)) else False
 
 class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def __init__(self, db, name) :
@@ -1110,7 +1114,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
         if len(args) > 0 :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
             return
-        result = self.db.compact_(self.dbname).UTF8String()
+        result = self.db.compact_(String(self.dbname)).UTF8String()
         if result != "" :
             raise CommunicationError("Compaction failed: " + result)
 
@@ -1121,7 +1125,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
     def close(self) :
         try :
-            self.db.close(self.dbname)
+            self.db.close_(String(self.dbname))
         except Exception, e :
             raise CommunicationError("Database close failed for: " + name)
 
@@ -1182,11 +1186,15 @@ class iosMicaServerCouchbaseMobile(object) :
         self.db = db_already_local
 
     def __getitem__(self, dbname) :
+        try :
+            self.db.start_(String(dbname))
+        except Exception, e :
+            raise CommunicationError("Database creation failed for: " + name)
         return iosMicaDatabaseCouchbaseMobile(self.db, dbname)
 
-    def __delitem__(self, name) :
+    def __delitem__(self, dbname) :
         try :
-            self.db.drop(name)
+            self.db.drop_(String(dbname))
         except Exception, e :
             raise CommunicationError("Database deletion failed for: " + name)
 
