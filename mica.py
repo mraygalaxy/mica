@@ -2755,7 +2755,10 @@ class MICA(object):
         self.clear_story(req)
 
         if mobile :
-            msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
+            if frontpage :
+                msg = _("This account is not fully synchronized. Please wait a minute or two initial replication and login again. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
+            else :
+                msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
             if not harmless :
                 if self.connected(req) :
@@ -4272,7 +4275,17 @@ class MICA(object):
                                         json["test_success"] = True
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
             if mobile :
-                req.accountpageresult = _("Please delete your account on the website and then uninstall the application. Will support mobile in a future version.")
+                mdebug("Will attempt to drop primary database and logout.")
+                dbname = parameters["local_database"]
+                mdebug("We want to drop: " + dbname)
+                del self.cs[dbname]
+                mdebug("Drop complete. Reacquiring DB...")
+                self.db = self.cs[params["local_database"]]
+                req.db = self.db
+                mdebug("Acquired.")
+                self.clean_session(req, force = True)
+                req.messages = _("Application reset. Please login again.")
+                return self.render_frontpage(req)
             else :
                 username = req.http.params.get("username").lower()
 

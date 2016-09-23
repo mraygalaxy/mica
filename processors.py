@@ -303,6 +303,7 @@ class Processor(object) :
                 break
         return all
 
+    @serial
     def test_dictionaries(self, preload = False, retest = False) :
         if not self.handle :
             self.parse_page_start()
@@ -356,22 +357,22 @@ class RomanizedSource(Processor) :
             self.dictionary = load_dictionary(self.srcdb, full_files)
 
     def online_cross_reference_lang(self, req, story, all_source) :
-        mdebug("Going online...")
+        mverbose("Going online...")
         name = story['name']
 
         minfo("translating source to target....")
         result = self.mica.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
-        mdebug("target translation finished." + str(result))
+        mverbose("target translation finished." + str(result))
 
         if not len(result) or "TranslatedText" not in result[0] :
             return []
         
         mstarget = result[0]["TranslatedText"]
 
-        mdebug("target is: " + str(mstarget))
+        mverbose("target is: " + str(mstarget))
         mstarget = mstarget.split(" ")
 
-        mdebug("Translation finished.")
+        mverbose("Translation finished.")
 
         unit = self.add_unit([], [all_source], mstarget)
         unit["online"] = True
@@ -443,7 +444,7 @@ class RomanizedSource(Processor) :
                 for x in range(end_start, len(uni)) :
                     end_punct[0] += uni[x]
 
-        mdebug("Parse result original: " + uni + " begin: *" + begin_punct + "* word " + actual_word + " end: *" + end_punct[0] + "*")
+        mverbose("Parse result original: " + uni + " begin: *" + begin_punct + "* word " + actual_word + " end: *" + end_punct[0] + "*")
 
         if begin_punct != u"" :
              units.append(self.add_unit([begin_punct], begin_punct, [begin_punct], punctuation = True))
@@ -567,7 +568,7 @@ class RomanizedSource(Processor) :
                 else :
                     raise Exception("No 'm' index in translation: " + str(trans))
 
-            mdebug("Parsing definition complete.")
+            mverbose("Parsing definition complete.")
             return targ 
         else :
             if none_if_not_found :
@@ -672,7 +673,7 @@ class EnglishSource(RomanizedSource) :
 
         if result is None :
             orig_ipa = self.params["scratch"] + "general-american-dictionary.xml"
-            mdebug("Need to re-generate EnglishSource IPA database from " + orig_ipa)
+            mverbose("Need to re-generate EnglishSource IPA database from " + orig_ipa)
             tree = ET.ElementTree(file=orig_ipa)
             root = tree.getroot()
 
@@ -775,7 +776,7 @@ class ChineseSimplifiedToEnglish(Processor) :
             if mobile :
                 raise NotReady("jieba is not initialized yet.")
             trans = self.tonedb["conn"].begin()
-            mdebug("Building tone file")
+            mverbose("Building tone file")
             dpfh = open(self.params["scratch"] + "chinese.txt")
             for line in dpfh.readlines() :
                 k, v = line.split('\t')
@@ -834,7 +835,7 @@ class ChineseSimplifiedToEnglish(Processor) :
 
         if result is None :
             orig_ime = self.params["scratch"] + "pinyin.txt"
-            mdebug("Need to re-generate pinyin IME database from " + orig_ime)
+            mverbose("Need to re-generate pinyin IME database from " + orig_ime)
             fh = codecs.open(orig_ime, "r", "utf-8")
 
             trans = self.imedb["conn"].begin()
@@ -867,17 +868,17 @@ class ChineseSimplifiedToEnglish(Processor) :
         else :
             if preload :
                 preload_count = 1
-                mdebug("Preloading pinyin ime database into OS buffer cache.")
+                mverbose("Preloading pinyin ime database into OS buffer cache.")
                 while rs.fetchone() is not None :
                     preload_count += 1
-                mdebug("Preloaded " + str(preload_count) + " rows.")
+                mverbose("Preloaded " + str(preload_count) + " rows.")
             else :
                 mverbose("Skipping pinyin ime database preload.")
 
     @serial
     def get_chars(self, wordall, limit = 8, preload = False, retest = True) :
         if not hasattr(self, "imedb") :
-            mdebug("imedb still not allocated from get_chars")
+            mverbose("imedb still not allocated from get_chars")
             self.setup_imedb(preload = preload, retest = retest)
 
         # First see if the original version is in there without spaces:
@@ -907,7 +908,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         results = rs.fetchall()
 
         if len(results) > 0 :
-            mdebug("Win on all: " + wordall)
+            mverbose("Win on all: " + wordall)
             return map(list, results)
 
         # OK, last try separated:
@@ -928,7 +929,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         results = rs.fetchall()
 
         if len(results) > 0 :
-            mdebug("Win on : " + wordall)
+            mverbose("Win on : " + wordall)
             return map(list, results)
 
         return False 
@@ -941,7 +942,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                 s = self.tonedb["tones"].select().where(self.tonedb["tones"].c.word == key)
                 rs = s.execute()
                 kv = rs.fetchone()
-                mdebug("get_pinyin result: " + str(kv) + " for " + str(char))
+                mverbose("get_pinyin result: " + str(kv) + " for " + str(char))
                 if kv is None :
                     # This typically happens when we get english instead of characters
                     result.append(char)
@@ -1141,7 +1142,7 @@ class ChineseSimplifiedToEnglish(Processor) :
         if len(all_source) <= 1 : 
             return False
 
-        mdebug("Going online...")
+        mverbose("Going online...")
         (cjk, d, hold) = self.handle
         name = story['name']
         ms = []
@@ -1165,7 +1166,7 @@ class ChineseSimplifiedToEnglish(Processor) :
            msg += " " + py + "(" + char + "," + str(idx) + ")"
            idx += 1
 
-        mdebug(msg.replace("\n",""))
+        mverbose(msg.replace("\n",""))
 
         mverbose("translating source to target....")
         result = self.mica.translate_and_check_array(req, name, [all_source], story["target_language"], story["source_language"])
