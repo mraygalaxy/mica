@@ -2756,7 +2756,7 @@ class MICA(object):
 
         if mobile :
             if initial_login or frontpage :
-                msg = _("This account is not fully synchronized. Please wait a minute or two initial replication and login again. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
+                msg = _("This account is not fully synchronized. Please wait a minute or two for initial replication and login again. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
             else :
                 msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
         else :
@@ -5418,7 +5418,6 @@ class MICA(object):
                 if not tmp_story :
                     self.clear_story(req)
                     mwarn("Could not lookup: " + self.story(req, name))
-                    print_stack()
                     return self.warn_not_replicated(req)
 
             if "current_page" in tmp_story :
