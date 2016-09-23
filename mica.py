@@ -2601,7 +2601,7 @@ class MICA(object):
                 story = req.db[self.story(req, name)]
                 req.db.delete_attachment(story, filename)
                 mdebug("Compacting database after deleted attachment")
-                self.serial.safe_execute(False, req.db.compact)
+                req.db.compact()
                 mdebug("Deleted.")
 
         except Exception, e :
@@ -3175,7 +3175,7 @@ class MICA(object):
             self.clear_story(req)
             uuid = False
         mdebug("Compacting DB after removed story")
-        self.serial.safe_execute(False, req.db.compact)
+        req.db.compact()
         mdebug("Delete complete.")
         #self.prime_db(req, [('stories/all', True)])
         return self.api(req, json = {"uuid" : uuid})
@@ -4161,8 +4161,8 @@ class MICA(object):
 
         if req.http.params.get("pack") :
             mdebug("Compacting...")
-            self.serial.safe_execute(False, req.db.compact)
-            self.serial.safe_execute(False, req.db.cleanup)
+            req.db.compact()
+            req.db.cleanup()
             design_docs = ["memorized2", "stories", "mergegroups",
                            "tonechanges", "accounts", "splits", "chats" ]
 
