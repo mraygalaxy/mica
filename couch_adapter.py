@@ -1117,10 +1117,9 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
             return
         mdebug("Really invoking compact...")
         try :
-            result = self.db.compact().UTF8String()
+            result = self.db.compact_(String(self.dbname)).UTF8String()
         except Exception, e :
             raise CommunicationError("Could not compact: " + str(e))
-
         if result != "" :
             raise CommunicationError("Compaction failed: " + result)
 
