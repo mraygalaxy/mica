@@ -303,7 +303,6 @@ class Processor(object) :
                 break
         return all
 
-    @serial
     def test_dictionaries(self, preload = False, retest = False) :
         if not self.handle :
             self.parse_page_start()
@@ -648,7 +647,6 @@ class EnglishSource(RomanizedSource) :
                 })
 
     # Setup all english sources with phonetic IPA
-    @serial
     def test_dictionaries(self, preload = False, retest = False) :
         super(EnglishSource, self).test_dictionaries(preload = preload, retest = retest)
 
