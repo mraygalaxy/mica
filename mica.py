@@ -2058,7 +2058,7 @@ class MICA(object):
                     ureq = urllib2_Request("https://" + params["main_server"] + "/online", urlencode(newdict))
                     mverbose("Returning from online relay")
                     data = json_loads(urllib2_urlopen(ureq, timeout = 20).read())
-                    mdebug("Finished data read from online relay: " + str(data))
+                    mverbose("Finished data read from online relay: " + str(data))
                     if data["success"] :
                         result = data["desc"]["result"]
                     else :
