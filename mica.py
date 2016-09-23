@@ -4276,11 +4276,11 @@ class MICA(object):
         elif req.http.params.get("deleteaccount") and req.http.params.get("username") :
             if mobile :
                 mdebug("Will attempt to drop primary database and logout.")
-                dbname = parameters["local_database"]
+                dbname = params["local_database"]
                 mdebug("We want to drop: " + dbname)
                 del self.cs[dbname]
                 mdebug("Drop complete. Reacquiring DB...")
-                self.db = self.cs[params["local_database"]]
+                self.db = self.cs[dbname]
                 req.db = self.db
                 mdebug("Acquired.")
                 self.clean_session(req, force = True)

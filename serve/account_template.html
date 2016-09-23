@@ -116,15 +116,13 @@
     <br/>
     <p/>
     <h4><b><t:slot name='deleteaccount'/></b></h4>
+    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
     <!--(if not mobile)-->
-    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
     <t:slot name='deleteaccount'/>
-    </button>
     <!--(else)-->
-    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
     <t:slot name='mobiledelete'/>
-    </button>
     <!--(end)-->
+    </button>
     <p/>
     <!--(if userdb and not mobile and req.session.value["isadmin"])-->
     <h4><b><t:slot name='accounts'/></b></h4>
