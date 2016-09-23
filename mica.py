@@ -2750,12 +2750,12 @@ class MICA(object):
             req.db[self.story(req, story["name"])] = tmp_story
 
 
-    def warn_not_replicated(self, req, frontpage = False, harmless = False) :
+    def warn_not_replicated(self, req, frontpage = False, harmless = False, initial_login = False) :
         req.not_replicated = True
         self.clear_story(req)
 
         if mobile :
-            if frontpage :
+            if initial_login or frontpage :
                 msg = _("This account is not fully synchronized. Please wait a minute or two initial replication and login again. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
             else :
                 msg = _("This account is not fully synchronized. Be sure to touch 'Synchronize' for the story before reading it. You can follow the progress at the top of the screen until the 'download' arrow reaches 100.")
@@ -4999,7 +4999,7 @@ class MICA(object):
         if not user :
             mwarn("Problem before warn_not_replicated:")
             print_stack()
-            return self.bad_api(req, self.warn_not_replicated(req))
+            return self.bad_api(req, self.warn_not_replicated(req), initial_login = True)
 
         if not mobile :
             try :
