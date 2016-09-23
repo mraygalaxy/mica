@@ -1111,10 +1111,16 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
                 raise CommunicationError(err_msg)
 
     def compact(self, *args, **kwargs) :
+        mdebug("Invoking compact...")
         if len(args) > 0 :
             mwarn("Compacting a CBL view doesn't exist. Just pass.")
             return
-        result = self.db.compact_(String(self.dbname)).UTF8String()
+        mdebug("Really invoking compact...")
+        try :
+            result = self.db.compact().UTF8String()
+        except Exception, e :
+            raise CommunicationError("Could not compact: " + str(e))
+
         if result != "" :
             raise CommunicationError("Compaction failed: " + result)
 
