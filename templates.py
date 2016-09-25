@@ -120,7 +120,7 @@ class ReviewElement(CommonElement) :
                      statdisabled = _("Statistics Disabled"),
                      # 'Legend' is the same as you would see in any statistical graph or chart that displays data in a graphical format and identifies which series you are looking at in the graph
                      title = _("Legend"),
-                     # This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
+                     # This appears in the 'Review'-mode legend while reading a story: This means that MLL's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
                      legend1 = _("Correct for tone and meaning"),
                      # This appears in the 'Review'-mode legend while reading a story: Because the tone and meaning are correct, this word does not need to be reviewed.
                      legend1post = _("(No review necessary)"),
@@ -388,7 +388,7 @@ class FrontPageElement(CommonElement) :
     def advertise(self, request, tag) :
         pull, push = self.pullpush()
         tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
-                      offline = _("MICA also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
+                      offline = _("Read Alien also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works"),
                       donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
                       # Beginning of a sentence
@@ -399,7 +399,7 @@ class FrontPageElement(CommonElement) :
                       connect =_("You need to connect, first"),
                       experimental = _("This is experimental language-learning software"),
                       bitcoin = _("Please Donate To Bitcoin Address"),
-                      feel = _("To get a \"feel\" for how MICA works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
+                      feel = _("To get a \"feel\" for how Read Alien works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
                       access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."),
                       contact = _("For assistance, Contact:"),
                       username = _("OR Use a local account") if not mobile else _("Account"),
@@ -408,7 +408,7 @@ class FrontPageElement(CommonElement) :
                       signin = _("Login"),
                       # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
                       rememberme = _("Remember Me"),
-                      softwarename = _("MICA Language Learning"),
+                      softwarename = _("Read Alien Learning"),
                       changelang = _("Change Language"),
                       signinwith = _("Sign in with"),
                       headjs = self.req.mpath + "/head.js",
@@ -424,15 +424,15 @@ class FrontPageElement(CommonElement) :
     @renderer
     def pages(self, request, tag) :
         pages = [
-            _("<b>MICA</b> is a <b>new way</b> to learn a language."),
+            _("<b>Read Alien</b> is a <b>new way</b> to learn a language."),
             _("Instead of hiring folks to <b>slave over</b> databases of translations,"),
             _("Why can't we use the <b>existing content</b> that's already out there?"),
             _("Like <b>books</b>, blogs, new articles, and eventually <b>social media</b>."),
-            _("MICA works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
+            _("Read Alien works by <b>analytics</b>: You read <b>existing</b> books or stories and it <b>tracks your brain</b>."),
             _("When you read a new story, it <b>hides the words</b> you already know."),
             _("It knows how to track <b>polymphones and tones</b> in a Character-based language."),
-            _("MICA is not a translator. It makes you <b>learn by reading</b> in context."),
-            _("Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."),
+            _("Read Alien is not a translator. It makes you <b>learn by reading</b> in context."),
+            _("Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."),
         ]
 
         first = True

@@ -245,7 +245,7 @@ def check_for_unauthorized(e) :
     # Database failure. Retry again too.
     if int(status) in server_errors :
         raise Unauthorized
-    raise CommunicationError("MICA Unvalidated: " + str(e))
+    raise CommunicationError("MLL Unvalidated: " + str(e))
 
 class MicaDatabaseCouchDB(MicaDatabase) :
     def __init__(self, db, server, dbname) :
@@ -672,7 +672,7 @@ class MicaServerCouchDB(AuthBase) :
             code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
 
         if (code != 200) :
-            raise CommunicationError("MICA Unauthorized: " + username)
+            raise CommunicationError("MLL Unauthorized: " + username)
 
         cookie = message["Set-Cookie"].split(";", 1)[0].strip()
         mverbose("Received cookie: " + cookie)

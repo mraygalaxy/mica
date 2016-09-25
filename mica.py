@@ -743,7 +743,7 @@ class MICA(object):
                     merr("Must re-login: " + str(e))
                     self.clean_session(req, force = True)
                     # The user has completed logging out / signing out already - then this message appears.
-                    req.messages = _("Disconnected from MICA")
+                    req.messages = _("Disconnected from Read Alien")
                     resp = self.render_frontpage(req)
                 except couch_adapter.ResourceNotFound, e :
                     mwarn("Problem before warn_not_replicated:")
@@ -897,7 +897,7 @@ class MICA(object):
             req.messages = e.detail 
             resp = Response(self.render_frontpage(req), status_code = e.code, status = e.code)
         except Exception, e :
-            merr("BAD MICA ********\nException:")
+            merr("BAD Read Alien ********\nException:")
             for line in format_exc().splitlines() :
                 merr(line)
 
@@ -916,7 +916,7 @@ class MICA(object):
             else :
                 r = resp(environ, start_response)
         except Exception, e :
-            merr("RESPONSE MICA ********\nException:\n")
+            merr("RESPONSE Read Alien ********\nException:\n")
             for line in format_exc().splitlines() :
                 merr(line)
 
@@ -3859,7 +3859,7 @@ class MICA(object):
         return self.api(req, output, json = {"uuid" : story["uuid"]})
 
     def render_jobs(self, req, jobs) :
-        out = _("MICA is busy processing the following. Please wait") + ":<br/>\n"
+        out = _("Read Alien is busy processing the following. Please wait") + ":<br/>\n"
         out += "<table class='table'>"
 
         finished = []
@@ -4810,7 +4810,7 @@ class MICA(object):
                 merr(line)
             return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
-        mverbose("MICA returned content is: " + str(r.content))
+        mverbose("Read Alien returned content is: " + str(r.content))
         values = json_loads(r.content)
 
         if creds["verified_key"] :
@@ -4956,10 +4956,10 @@ class MICA(object):
                appuser = req.db["MICA:appuser"]
                if appuser["username"] != username :
                     # Beginning of a message
-                    return self.bad_api(req, _("We're sorry. The MICA Reader database on this device already belongs to the user") + " " + \
+                    return self.bad_api(req, _("We're sorry. The Read Alien database on this device already belongs to the user") + " " + \
                         appuser["username"] + " " + _("and is configured to stay in synchronization with the server") + ". " + \
                         _("If you want to change users, you will need to clear this application's data or reinstall it and re-synchronize the app with") + " " + \
-                        _("a new account. This requirement is because MICA databases can become large over time, so we want you to be aware of that. Thanks."))
+                        _("a new account. This requirement is because Read Alien databases can become large over time, so we want you to be aware of that. Thanks."))
             else :
                mdebug("First time user. Reserving this device: " + username)
                appuser = {"username" : username}
@@ -5654,7 +5654,7 @@ def get_options() :
     parser.add_option("-k", "--keepsession", dest = "keepsession", action = "store_true", default = False, help ="do not destroy the previous HTTP session")
     parser.add_option("-r", "--transreset", dest = "transreset", action = "store_true", default = False, help ="Throw away old, failed translation sessions")
     parser.add_option("-d", "--debug_host", dest = "debug_host", default = None, help ="Hostname for remote debugging")
-    parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MICA main log file.")
+    parser.add_option("-l", "--log", dest = "log", default = cwd + "logs/mica.log", help ="MLL main log file.")
     parser.add_option("-t", "--tlog", dest = "tlog", default = cwd + "logs/twisted.log", help ="Twisted log file.")
     parser.add_option("-C", "--cert", dest = "cert", default = False, help = "Path to certificate for Twisted to run OpenSSL")
     parser.add_option("-K", "--privkey", dest = "privkey", default = False, help = "Path to private key for Twisted to run OpenSSL")
