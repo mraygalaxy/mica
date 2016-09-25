@@ -113,16 +113,6 @@
     <t:slot name='emailchange'/>
     <!--(end)-->
     <br/>
-    <br/>
-    <p/>
-    <h4><b><t:slot name='deleteaccount'/></b></h4>
-    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
-    <!--(if not mobile)-->
-    <t:slot name='deleteaccount'/>
-    <!--(else)-->
-    <t:slot name='mobiledelete'/>
-    <!--(end)-->
-    </button>
     <p/>
     <!--(if userdb and not mobile and req.session.value["isadmin"])-->
     <h4><b><t:slot name='accounts'/></b></h4>
@@ -139,4 +129,14 @@
         </table>
     <!--(end)-->
 <!--(end)-->
+    <br/>
+    <p/>
+    <h4><b><t:slot name='deleteaccount'/></b></h4>
+    <button data-role='none' onclick="$('#deleteAccountModal').modal('show');" type="button" class="btn btn-default btn-primary">
+    <!--(if not mobile)-->
+    <t:slot name='deleteaccount'/>
+    <!--(else)-->
+    <t:slot name='mobiledelete'/>
+    <!--(end)-->
+    </button>
 </div>
