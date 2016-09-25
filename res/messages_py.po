@@ -1711,3 +1711,6 @@ msgstr ""
 
 msgid "Reset application to defaults"
 msgstr ""
+
+msgid "Story imported. Please initialize it on the website."
+msgstr ""
