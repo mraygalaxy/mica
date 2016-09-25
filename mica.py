@@ -61,7 +61,6 @@ from zope.interface import Interface, Attribute, implements
 from twisted.python.components import registerAdapter
 from twisted.web.server import Session
 from twisted.web.wsgi import WSGIResource
-from twisted.internet import reactor
 from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.web.server import Site
@@ -69,6 +68,9 @@ from twisted.web import proxy, server
 from twisted.python import log
 from twisted.python.logfile import DailyLogFile
 from twisted.internet.error import AlreadyCalled
+from twisted.internet import reactor
+import sys
+reactor = sys.modules['twisted.internet.reactor']
 
 from webob import Request, Response, exc
 
@@ -164,7 +166,7 @@ def itemhelp(pairs) :
     return pr
 
 mverbose("Setting up prefixes.")
-username = getpwuid(os_getuid())[0]
+#username = getpwuid(os_getuid())[0]
 relative_prefix_suffix = "serve"
 relative_prefix = "/" + relative_prefix_suffix
 
@@ -5858,6 +5860,7 @@ def go(p) :
         ct.daemon = True
         ct.start()
 
+        mdebug("Reactor has: " + str(dir(reactor)))
         reactor._initThreadPool()
         site = MicaSite(GUIDispatcher(mica))
         site.sessionFactory = MicaSession

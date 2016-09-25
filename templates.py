@@ -758,7 +758,7 @@ class HeadElement(CommonElement):
 
         tag.fillSlots(
                      mobile = 'true' if mobile else 'false',
-                     pleaseinitonline = _("Story imported. Please initialized it on the website."),
+                     pleaseinitonline = _("Story imported. Please initialize it on the website."),
                      notreviewed = _("Not Reviewed"),
                      chatting = _("Chat History"),
                      reading = _("Reading"),

@@ -149,10 +149,10 @@
         <!--(if not mobile)-->
 		    <!-- need to use the HTML5 download option here with the advice from stackoverflow -->
 			<li><a id='originaloption' onclick="getstory(exploded_uuid, 'original')"><i class='glyphicon glyphicon-download'></i> <t:slot name='original'/></a></li>
-			<li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
-			<li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
 			<li id='translateoption'><a onclick="trans(exploded_uuid)"><t:slot name='translate'/></a></li>
         <!--(end)-->
+		<li id='forgetoption'><a onclick="start_learning('home', 'forget', {uuid: exploded_uuid})"><i class='glyphicon glyphicon-remove'></i> <t:slot name='forget'/></a></li>
+		<li id='deleteoption'><a onclick="start_learning('home', 'delete', {uuid: exploded_uuid, name: exploded_name})"><i class='glyphicon glyphicon-trash'></i> <t:slot name='delete'/></a></li>
 
             <li id='storyinitoption'><a>
         <!--(if not mobile)-->
@@ -166,7 +166,11 @@
 		</ul>
         </div>
     </div>
+      <!--(if mobile)-->
+    <div data-role="footer" data-position='fixed' data-id='header' style='background: #f0f0f0'>
+      <!--(else)-->
     <div data-role="header" data-position='fixed' data-id='header' style='background: #f0f0f0'>
+      <!--(end)-->
       <div data-role='navbar' data-icon-pos='right'>
       <ul>
       <!--(if mobile)-->
