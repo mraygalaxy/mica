@@ -67,7 +67,7 @@ msgstr "Dào"
 msgid "Legend"
 msgstr "Túlì"
 
-#. This appears in the 'Review'-mode legend while reading a story: This means that MICA's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
+#. This appears in the 'Review'-mode legend while reading a story: This means that MLL's translation of a particular word containing this color as identified by the legend is correct: Both the meaning of the translated word is correct and the tone is correct. If the original language of the story is not from a character-based Language, like Chinese, then 'tone' is irrelevant and can be ommitted.
 msgid "Correct for tone and meaning"
 msgstr "Dúyīn hé yìsì zhèngquè"
 
@@ -137,7 +137,6 @@ msgstr "Shìshì tuījiàn"
 msgid "Re-translate page"
 msgstr "Chóngxīn fānyì běn yè"
 
-#. The user has completed logging out / signing out already - then this message appears.
 msgid "Disconnected from MICA"
 msgstr "tuīchū wánchéng"
 
@@ -262,7 +261,6 @@ msgstr "Liànjiē hùliánwǎng yǐ yǔ wǎngzhàn tóngbù"
 msgid "Invalid credentials. Please try again"
 msgstr "Shūrù xìnxī cuòwù. Qǐng zài shì yīcì"
 
-#. Beginning of a message
 msgid ""
 "We're sorry. The MICA Reader database on this device already belongs to the "
 "user"
@@ -1713,4 +1711,54 @@ msgid "Reset application to defaults"
 msgstr ""
 
 msgid "Story imported. Please initialize it on the website."
+msgstr ""
+
+#. The user has completed logging out / signing out already - then this message appears.
+msgid "Disconnected from Read Alien"
+msgstr ""
+
+msgid "Read Alien is busy processing the following. Please wait"
+msgstr ""
+
+#. Beginning of a message
+msgid ""
+"We're sorry. The Read Alien database on this device already belongs to the "
+"user"
+msgstr ""
+
+msgid ""
+"a new account. This requirement is because Read Alien databases can become "
+"large over time, so we want you to be aware of that. Thanks."
+msgstr ""
+
+msgid ""
+"Read Alien also works offline on mobile devices and automatically stays in "
+"sync with both iOS and Android"
+msgstr ""
+
+msgid ""
+"To get a \"feel\" for how Read Alien works, you can use the DEMO account "
+"with the username 'demo' and password 'micademo'. This account will load pre-"
+"existing stories from the online demo account, but all changes you make will "
+"not be synchronized."
+msgstr ""
+
+msgid "Read Alien Learning"
+msgstr ""
+
+msgid "<b>Read Alien</b> is a <b>new way</b> to learn a language."
+msgstr ""
+
+msgid ""
+"Read Alien works by <b>analytics</b>: You read <b>existing</b> books or "
+"stories and it <b>tracks your brain</b>."
+msgstr ""
+
+msgid ""
+"Read Alien is not a translator. It makes you <b>learn by reading</b> in "
+"context."
+msgstr ""
+
+msgid ""
+"Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."
 msgstr ""
