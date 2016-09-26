@@ -5860,7 +5860,6 @@ def go(p) :
         ct.daemon = True
         ct.start()
 
-        mdebug("Reactor has: " + str(dir(reactor)))
         reactor._initThreadPool()
         site = MicaSite(GUIDispatcher(mica))
         site.sessionFactory = MicaSession
