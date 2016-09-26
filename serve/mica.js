@@ -73,6 +73,7 @@ function disconnect_complete(json, opaque) {
 }
 
 function disconnect() {
+    loading();
     go(false, 'disconnect', unavailable(false), disconnect_complete, false);
 }
 
