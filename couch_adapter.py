@@ -383,11 +383,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 self.db.delete(olddoc)
             #del self.db[name]
             '''
-        except couch_ResourceNotFound, e :
+        except ResourceNotFound, e :
             # This happens during DB timeouts only for the _users database
             if name.count("org.couchdb.user") and not second_time  :
                 raise PossibleResourceNotFound(name)
-            raise ResourceNotFound(str(e))
+            raise e
 
     @reauth
     def delete_attachment(self, doc, filename) :
@@ -400,6 +400,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
     @reauth
     def put_attachment(self, name, filename, contents, new_doc = False) :
         if not new_doc :
+            mdebug("No existing doc. Will make a new one")
             trydelete = True
             if self.doc_exist(name) is True :
                 mdebug("Deleting original @ " + name)
@@ -408,6 +409,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 self.purge([doc])
                 trydelete = False
 
+            mdebug("Synthesize foo doc")
             doc = { "foo" : "bar"}
             # This 'translated_at' is because of bug: https://issues.apache.org/jira/browse/COUCHDB-1415
             # Supposedly fixed in CouchDB 2.0
@@ -417,7 +419,7 @@ class MicaDatabaseCouchDB(MicaDatabase) :
                 try :
                     doc["_rev"] = self.__getitem__(name)["_rev"]
                     mdebug("Old revision found.")
-                except couch_ResourceNotFound, e :
+                except ResourceNotFound, e :
                     mdebug("No old revision found.")
                     pass
 
