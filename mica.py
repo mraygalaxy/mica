@@ -4917,7 +4917,12 @@ class MICA(object):
 
         mverbose("authenticating...")
 
-        auth_user, reason = self.authenticate(username, password, address)
+        if not from_third_party :
+            auth_user, reason = self.authenticate(username, password, address)
+        else :
+            password = False
+            auth_user = self.userdb.try_get("org.couchdb.user:" + username)
+            reason = "From third party fail."
 
         if not auth_user :
             mwarn("Login failed; " + str(reason))
