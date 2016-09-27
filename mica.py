@@ -2460,6 +2460,7 @@ class MICA(object):
         sourcepath = False
         fp = False
         filename = name
+        actual_filename = filename
 
         story = req.db[self.story(req, name)]
         filetype = story['filetype']
@@ -2472,7 +2473,12 @@ class MICA(object):
         else :
             sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
             mdebug("Will stream upload to " + sourcepath)
-            sourcebytes = req.db.get_attachment_to_path(self.story(req, name), filename, sourcepath)
+            for possible_name in story["_attachments"].keys() :
+                if possible_name.lower() == filename :
+                    actual_filename = possible_name
+                    mdebug("Actual filename is: " + str(actual_filename))
+
+            sourcebytes = req.db.get_attachment_to_path(self.story(req, name), actual_filename, sourcepath)
             mdebug("File " + filename + " uploaded to disk. Bytes: " + str(sourcebytes))
 
         gp = self.processors[source_lang + "," + target_lang]
@@ -2599,9 +2605,9 @@ class MICA(object):
             req.db[self.story(req, name)] = story
             mdebug("Finihed resetting story to old.")
             if filetype != "txt" :
-                mdebug("Deleting original file attachment.")
+                mdebug("Deleting original file attachment: " + str(actual_filename))
                 story = req.db[self.story(req, name)]
-                req.db.delete_attachment(story, filename)
+                req.db.delete_attachment(story, actual_filename)
                 mdebug("Compacting database after deleted attachment")
                 req.db.compact()
                 mdebug("Deleted.")
