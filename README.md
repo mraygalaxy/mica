@@ -1,8 +1,9 @@
-MICA: Memory-Interposed Chinese Assistant
-=========================================
+MLL: Meta-Language Learning through reading and chat
+====================================================
 
-MICA is a language-learning memory-assisted software program
-for Chinese that tracks what words you know and don't know
+MLL (Meta-Language Learning) is a multi-language, data-driven,
+analytical language-learning memory-assisted software program
+that tracks what words you know and don't know
 as you read through stories. The motivation is that there are
 already oceans of pre-existing chinese authors and internet
 content out there, so why not use it for language learning
@@ -28,7 +29,7 @@ Credits:
 INSTALLATION:
 =============
 
-There are several steps to perform before MICA can run:
+There are several steps to perform before MLL can run:
 
 (Yes, please follow them all).
 
@@ -88,24 +89,19 @@ $ sudo pip install fpdf
 
 9) Next, install python-couchdb (pip install couchdb, if it's not in your distribution).
 
+10) Create a configuration file params.py and fill out the required parameters (TBD).
+
 
 RUNNING:
 ========
 
 1) If all the dependencies are in place, then you should be able to do the following:
 
-$ ./mica.py -C path_to_cacert -K path_to_private_key -c "http://couchdb_username:couchdb_password@localhost:5984"
-
-  - Where the parameters 'C' and 'K' are from the openssl command from above if you needed to needed to create a self-signed certificate and the parameters '-c' is the address used to reach your couchdb server
+$ ./test.py
 
 2) Open your browser and view the web page on port (on port 443 instead of 80 if you used SSL).
 
    - The default username is 'admin' and the default password is 'password'. 
-
-3) After logging in, click on the User icon in the top right corner and select 'Preferences':
-
-   - Change your password now or create a new user account.
-   - Set your Microsoft Translator API id and secret
 
 4) Try uploading a story or searchable PDF and happy reading!
 
@@ -114,7 +110,7 @@ FAQ:
 =======
 
 1) Do you have a mobile version?
-
-   - Yes, it's called "MICA Reader", both for Android and iOS. In fact, I use the mobile version much more frequently than the web-based version. The mobile version does not allow upload of new stories. You first must upload them to the web version and then the phone will automatically stay synchronized with the website at all times so that you can use the mobile application in an offline mode while you are learning.
-   - The iOS version is here: <a href='http://github.com/hinesmr/mica-ios'>MICA Reader for iOS</a>
-   - The android version is here: <a href='http://github.com/hinesmr/mica-android'>MICA Reader for Android</a>.
+   - Yes, it's called "Read Alien": https://readalien.com, both for Android and iOS. In fact, I use the mobile version much more frequently than the web-based version. The mobile version does not allow upload of new stories. You first must upload them to the web version and then the phone will automatically stay synchronized with the website at all times so that you can use the mobile application in an offline mode while you are learning.
+   - Both versions are free in their respective app stores.
+   - The iOS version is here: <a href='http://github.com/hinesmr/mll-ios'>MLL for iOS</a>
+   - The android version is here: <a href='http://github.com/hinesmr/mll-android'>MLL for Android</a>.
