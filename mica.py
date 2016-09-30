@@ -781,7 +781,7 @@ class MICA(object):
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "stories" ] + ([] if mobile else params["oauth"].keys() ):
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -881,7 +881,7 @@ class MICA(object):
                 sessions[start_response.im_self.request.s.uid] = Lock()
                 self.sessionmutex.release()
                 start_response.im_self.request.s.notifyOnExpire(lambda: self.expired(start_response.im_self.request.s.uid, req.session))
-            if req.action not in ["auth", "disconnect"] and not mobile :
+            if req.action not in ["push", "auth", "disconnect"] and not mobile :
                 self.populate_oauth_state(req)
 
             resp = self.run_render(req)
@@ -3304,6 +3304,34 @@ class MICA(object):
 
         return self.render_frontpage(req)
 
+    def render_push(self, req) :
+        # We only allow jabber to do this from the localhost. Nowhere else.
+        mdebug("Push request from source: " + req.source)
+
+        for val in ["access_token", "from", "to", "body"] :
+            if not req.http.params.get(val) :
+                mwarn("Bad push params from: " + req.source)
+                raise exc.HTTPBadRequest("push: you did a bad thing")
+
+        if req.http.params.get("access_token") != params["push_token"] :
+            mwarn("Bad push token from: " + req.source)
+            raise exc.HTTPBadRequest("push: you did a bad thing")
+
+        who = req.http.params.get("from")
+        to = req.http.params.get("to")
+
+        auth_user = self.userdb.try_get("org.couchdb.user:" + to)
+
+        if not auth_user or "temp_jabber_pw" not in auth_user :
+            mwarn("Bad push user from: " + req.source)
+            raise exc.HTTPBadRequest("push: you did a bad thing")
+
+        mdebug("Success push from: " + who + " to " + to)
+
+        # Send the push if the user has a token in the DB
+
+        return "success"
+
     def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
         mdebug("Auth request from source: " + req.source)
@@ -5247,8 +5275,8 @@ class MICA(object):
             func = getattr(self, "render_" + req.action)
             return func(req)
 
-        if req.action == "auth" and not mobile :
-            return self.render_auth(req)
+        if req.action in ["auth", "push"] :
+            return getattr(self, "render_" + req.action)(req)
 
         from_third_party = False
 
