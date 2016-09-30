@@ -3329,6 +3329,11 @@ class MICA(object):
         mdebug("Success push from: " + who + " to " + to)
 
         # Send the push if the user has a token in the DB
+        # DB should indicate:
+        # APNS dev => use params[apns_devkey and apns_devcert]
+        # APNS dist => use params[apns_distkey and apns_distkey]
+        # GCM
+        # .... and Token
 
         return "success"
 
