@@ -3333,7 +3333,9 @@ class MICA(object):
 
         mdebug("Success push from: " + who + " to " + to)
 
-        push_tokens = req.db.try_get(self.tokens())
+        dbname = auth_user["mica_database"]
+        pushdb = self.cs[dbname]
+        push_tokens = pushdb.try_get(self.tokens())
 
         if push_tokens :
             for group in ["gcm", "apns_dist", "apns_dev"] :
@@ -3342,6 +3344,7 @@ class MICA(object):
                     if group == "gcm" :
                          gcm = GCM(params["gcm"])
                          gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
+                         mdebug("Sent.")
         
         # Send the push if the user has a token in the DB
         # DB should indicate:
