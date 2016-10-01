@@ -38,6 +38,7 @@ uploads_enabled = True
 
 if not mobile :
     from gcm import *
+    from apns import APNs, Frame, Payload
     from crypticle import *
     from oauthlib.common import to_unicode
     from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
@@ -3340,18 +3341,21 @@ class MICA(object):
         if push_tokens :
             for group in ["gcm", "apns_dist", "apns_dev"] :
                 for token in push_tokens[group] :
-                    mdebug("Pushing to gcm token: " + token)
+                    mdebug("Pushing to token: " + token)
                     if group == "gcm" :
-                         gcm = GCM(params["gcm"])
-                         gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
-                         mdebug("Sent.")
-        
-        # Send the push if the user has a token in the DB
-        # DB should indicate:
-        # APNS dev => use params[apns_devkey and apns_devcert]
-        # APNS dist => use params[apns_distkey and apns_distkey]
-        # GCM
-        # .... and Token
+                        gcm = GCM(params["gcm"])
+                        gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
+                        mdebug("Sent gcm")
+                    elif group == "apns_dev" :
+                        apns = APNs(use_sandbox = True, cert_file = params["apns_devcert"], key_file = params["apns_devkey"])
+                        payload = Payload(alert = who + ": " + message, sound = "default", badge=1)
+                        apns.gateway_server.send_notification(token, payload)
+                        mdebug("Sent apns_dev")
+                    elif group == "apns_dist" :
+                        apns = APNs(cert_file = params["apns_distcert"], key_file = params["apns_distkey"])
+                        payload = Payload(alert = who + ": " + message, sound = "default", badge=1)
+                        apns.gateway_server.send_notification(token, payload)
+                        mdebug("Sent apns_dist")
 
         return "success"
 
