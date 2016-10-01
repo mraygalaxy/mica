@@ -37,6 +37,7 @@ from templates import *
 uploads_enabled = True
 
 if not mobile :
+    from gcm import *
     from crypticle import *
     from oauthlib.common import to_unicode
     from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
@@ -465,6 +466,9 @@ class MICA(object):
 
     def session(self, sid) :
         return "MICA:sessions:" + sid
+
+    def tokens(self) :
+        return "MICA:push_tokens"
 
     def acct(self, name) :
         return "MICA:accounts:" + name
@@ -3319,6 +3323,7 @@ class MICA(object):
 
         who = req.http.params.get("from")
         to = req.http.params.get("to")
+        message = req.http.params.get("body")
 
         auth_user = self.userdb.try_get("org.couchdb.user:" + to)
 
@@ -3328,6 +3333,16 @@ class MICA(object):
 
         mdebug("Success push from: " + who + " to " + to)
 
+        push_tokens = req.db.try_get(self.tokens())
+
+        if push_tokens :
+            for group in ["gcm", "apns_dist", "apns_dev"] :
+                for token in push_tokens[group] :
+                    mdebug("Pushing to gcm token: " + token)
+                    if group == "gcm" :
+                         gcm = GCM(params["gcm"])
+                         gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
+        
         # Send the push if the user has a token in the DB
         # DB should indicate:
         # APNS dev => use params[apns_devkey and apns_devcert]
