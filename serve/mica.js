@@ -1328,6 +1328,12 @@ function validatefile() {
 
 function handleIQ(oIQ) {
     var who = oIQ.getFromJID();
+    //ping: N (raw): <iq xmlns="jabber:client" from="readalien.com" to="mica_admin@readalien.com/mica2247499f" id="5458144941139737802" type="get"><ping xmlns="urn:xmpp:ping"/></iq>
+    if (oIQ.getChild("ping") != null) {
+        console.log("Ping!!");
+        return handleIqVersion(oIQ);
+    }
+    console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
     $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
