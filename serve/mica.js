@@ -1326,13 +1326,13 @@ function validatefile() {
     go([$("#fileform"), ''], '', unavailable(false), validatefile_complete, false);
 }
 
+function handleIqPing(oIQ) {
+    //ping: N (raw): <iq xmlns="jabber:client" from="readalien.com" to="mica_admin@readalien.com/mica2247499f" id="5458144941139737802" type="get"><ping xmlns="urn:xmpp:ping"/></iq>
+    console.log("Ping!!");
+    return handleIqVersion(oIQ);
+}
 function handleIQ(oIQ) {
     var who = oIQ.getFromJID();
-    //ping: N (raw): <iq xmlns="jabber:client" from="readalien.com" to="mica_admin@readalien.com/mica2247499f" id="5458144941139737802" type="get"><ping xmlns="urn:xmpp:ping"/></iq>
-    if (oIQ.getChild("ping") != null) {
-        console.log("Ping!!");
-        return handleIqVersion(oIQ);
-    }
     console.log("HANDLE IQ: "  + oIQ.xml().htmlEnc());
     $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
@@ -1701,6 +1701,7 @@ function doLogin(oForm) {
 function setupCon(oCon) {
     oCon.registerHandler('message', handleMessage);
     oCon.registerHandler('presence', handlePresence);
+    oCon.registerHandler('iq', 'ping', NS_PING, handleIqPing);
     oCon.registerHandler('iq', handleIQ);
     oCon.registerHandler('onconnect', handleConnected);
     oCon.registerHandler('onerror', handleError);
