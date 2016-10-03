@@ -1326,7 +1326,7 @@ function validatefile() {
     go([$("#fileform"), ''], '', unavailable(false), validatefile_complete, false);
 }
 
-function handleIqPing(iq) {
+function handleIqPing(oIQ) {
     //ping: N (raw): <iq xmlns="jabber:client" from="readalien.com" to="mica_admin@readalien.com/mica2247499f" id="5458144941139737802" type="get"><ping xmlns="urn:xmpp:ping"/></iq>
     console.log("Ping!!");
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
