@@ -1328,7 +1328,6 @@ function validatefile() {
 
 function handleIQ(oIQ) {
     var who = oIQ.getFromJID();
-    console.log("HANDLE IQ: "  + oIQ.getBody().htmlEnc());
     $('#iResp').prepend("<tr><td><div class='msg'>IN (raw): " + oIQ.xml().htmlEnc() + '</div></td></tr>');
     //document.getElementById('iResp').lastChild.scrollIntoView();
     con.send(oIQ.errorReply(ERR_FEATURE_NOT_IMPLEMENTED));
