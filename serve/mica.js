@@ -1659,7 +1659,7 @@ function doLogin(oForm) {
 
     var server = oForm.server.value, oArgs = new Object();
 
-    oDbg = new JSJaCConsoleLogger(2);
+    oDbg = new JSJaCConsoleLogger(1);
     document.getElementById('err').innerHTML = '';
     // reset
 
