@@ -1393,11 +1393,11 @@ function appendBox(who, ts, msg, msgclass, reverse) {
         sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
         sendtime += "<td style='vertical-align: top'>";
         sendtime += "&nbsp;" + make_date(ts) + "</td>";
-        if (reverse) {
-            html += ("<td>" + msg + "</td><td>&nbsp;</td>" +  sendtime);
-        } else {
-            html += (sendtime + "<td>&nbsp;</td><td>" + msg + "</td>");
-        }
+        //if (reverse) {
+            html += ("<td>" + msg + "</td></tr><tr><td>&nbsp;</td>" +  sendtime);
+        //} else {
+        //    html += (sendtime + "<td>&nbsp;</td></tr><tr><td>" + msg + "</td>");
+        //}
         html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
 
 
