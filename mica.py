@@ -3262,6 +3262,7 @@ class MICA(object):
         """
 
         contents = contents.replace(u"BOOTSCRIPTHEAD", bootscript)
+        contents = contents.replace(u"BOOTSCRIPTAJAX", self.ajaxworker())
 
         return contents
 
@@ -3270,6 +3271,15 @@ class MICA(object):
         bootscript = fh.read()
         fh.close()
         return bootscript
+
+    def ajaxworker(self) :
+        fh = open(cwd + 'serve/jquery.nodom.js')
+        ajaxworker = fh.read()
+        fh.close()
+        fh = open(cwd + 'serve/ajaxworker.js')
+        ajaxworker += fh.read()
+        fh.close()
+        return ajaxworker 
 
     def populate_oauth_state(self, req) :
         if "states_urls" in req.session.value :

@@ -202,31 +202,38 @@ function go(form_id, url, error, callback, opaque){
     }
 
     jQuery.support.cors = true;
+    var params = {};
+    params.prefix = "http://micatest"; // figure this out
 
     if (form) {
-        var formData = $(form).serialize();
-
-        $.ajax({
-                type: 'POST',
-                url: '/api?human=0&alien=' + $(form).attr('action'),
-                data: formData,
-                success: go_success,
-                error: go_fail
-        });
+        params.target = $(form).attr('action'); 
+        params.form = true;
+        params.formData = $(form).serialize();
+        params.human = 0;
     } else {
-        if(id != undefined && id != '')
-            var human = 1;
-        else
-            var human = 0;
-
-        $.ajax({
-                url: '/api?human=' + human + '&alien=' + url,
-                type: "GET",
-                dataType: "html",
-                success: go_success,
-                error: go_fail
-        });
+        params.target = url;
+        params.form = false;
+        if(id != undefined && id != '') {
+            params.human = 1;
+        } else {
+            params.human = 0;
+        }
     }
+
+    var blob = new Blob([
+      document.querySelector('#worker1').textContent
+    ], { type: "text/javascript" });
+
+    var worker = new Worker(window.URL.createObjectURL(blob));
+    worker.onmessage = function(e) {
+      if (e.data.success) {
+          go_success(e.data.response);
+      } else {
+          go_fail(e.data.XMLHttpRequest, e.data.ajaxOptions, e.data.thrownError);
+      }
+    }
+
+    worker.postMessage(params);
 }
 
 function CountBack(id, barid, left, opaque) {
