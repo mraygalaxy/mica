@@ -6,28 +6,30 @@ function go_success(response) {
 }
 
 function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
+    console.log("Failure: " + XMLHttpRequest.status + ": " + XMLHttpRequest.responseText + ": " + thrownError);
     var result = {};
     result.success = false;
-    result.response = response;
-    result.XMLHttpRequest = XMLHttpRequest;
-    result.ajaxOptions = ajaxOptions;
+    result.statusCode = XMLHttpRequest.status;
+    result.responseText = XMLHttpRequest.responseText;
+    //result.ajaxOptions = ajaxOptions;
     result.thrownError = thrownError;
     self.postMessage(result);
 }
 self.onmessage = function(e) {
     var params = e.data;
 
+    dest = params.prefix + '/api?human=' + params.human + '&alien=' + params.target;
     if (params.form) {
         $.ajax({
+                url: dest,
                 type: "POST",
-                url: params.prefix + '/api?human=' + params.human + '&alien=' + params.target,
                 data: params.formData,
                 success: go_success,
                 error: go_fail
         });
     } else {
         $.ajax({
-                url: params.prefix + '/api?human=' + params.human + '&alien=' + params.target,
+                url: dest, //2415
                 type: "GET", 
                 dataType: "html",
                 success: go_success,

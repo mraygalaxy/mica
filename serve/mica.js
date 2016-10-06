@@ -109,10 +109,10 @@ function go(form_id, url, error, callback, opaque){
         id = form_id[1];
     }
 
-    function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
-        console.log("AJAX Status code: " + XMLHttpRequest.status + " id: " + id);
+    function go_fail(statusCode, responseText, thrownError) {
+        console.log("AJAX Status code: " + statusCode + " id: " + id);
         // Need to handle 504's (busy) like our tests do and repeat the request
-        if (XMLHttpRequest.status == 401) {
+        if (statusCode == 401) {
               window.location.href = "/";
         } else {
 
@@ -123,9 +123,9 @@ function go(form_id, url, error, callback, opaque){
                 if(id != undefined && id != '') {
                     $(id).html(error);
 		        } else {
-                    error = unavailable(XMLHttpRequest.responseText);
+                    error = unavailable(responseText);
                     if (!callback) {
-                        $(document.body).prepend(unavailable(XMLHttpRequest.responseText));
+                        $(document.body).prepend(unavailable(responseText));
                     }
                 }
 
@@ -203,7 +203,8 @@ function go(form_id, url, error, callback, opaque){
 
     jQuery.support.cors = true;
     var params = {};
-    params.prefix = window.location.protocol + "://" + window.location.host;
+    params.prefix = window.location.protocol + "//" + window.location.host;
+    console.log("Setting prefix as: " + params.prefix);
 
     if (form) {
         params.target = $(form).attr('action'); 
@@ -229,7 +230,7 @@ function go(form_id, url, error, callback, opaque){
       if (e.data.success) {
           go_success(e.data.response);
       } else {
-          go_fail(e.data.XMLHttpRequest, e.data.ajaxOptions, e.data.thrownError);
+          go_fail(e.data.statusCode, e.data.responseText, e.data.thrownError);
       }
     }
 
