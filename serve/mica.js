@@ -203,7 +203,7 @@ function go(form_id, url, error, callback, opaque){
 
     jQuery.support.cors = true;
     var params = {};
-    params.prefix = "http://micatest"; // figure this out
+    params.prefix = window.location;
 
     if (form) {
         params.target = $(form).attr('action'); 
