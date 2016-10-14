@@ -35,7 +35,7 @@ class Serializable(object) :
         (stuff, rq) = (yield)
         (real_self, func, args, kwargs) = stuff
 
-        mverbose("Executing " + func.__name__ + " on " + str(current_thread()))
+        #mverbose("Executing " + func.__name__ + " on " + str(current_thread()))
         try :
             if real_self :
                 resp = func(real_self, *args, **kwargs)
@@ -53,10 +53,10 @@ class Serializable(object) :
 
     def safe_execute(self, real_self, func, *args, **kwargs) :
         if self.yes_or_no :
-            if real_self :
-                mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
-            else :
-                mverbose("Serializing " + func.__name__)
+            #if real_self :
+            #    mverbose("Serializing " + func.__name__ + " " + real_self.__class__.__name__)
+            #else :
+            #    mverbose("Serializing " + func.__name__)
 
             rq = Queue_Queue()
             co = self.safe_execute_serial()
@@ -87,7 +87,12 @@ class Serializable(object) :
         while True :
             while True :
                 try :
-                    (co, req, rq) = self.q.get(timeout=10000)
+                    elems = self.q.get(timeout=10000)
+                    if elems == "stop_now" :
+                        return 1
+                    if elems == "start_now" :
+                        return 2
+                    (co, req, rq) = elems
                     break
                 except Queue_Empty :
                     pass
@@ -98,3 +103,4 @@ class Serializable(object) :
                 continue
 
             self.q.task_done()
+        return 0

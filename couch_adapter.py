@@ -1135,7 +1135,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
             raise CommunicationError("Database close failed for: " + name)
 
     def runloop(self) :
-        self.db.runloop()
+        return self.db.runloop()
 
     def updateView(self, js) :
         self.db.updateView_(String(js))
