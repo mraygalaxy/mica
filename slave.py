@@ -24,14 +24,14 @@ def unwrap_kwargs(func, spec):
         wrapper.__doc__ +=  "\n\n" + func.__doc__
     return wrapper
 
-class MICASlave():
+class MLLSlave():
     def __init__(self, port, debug) :
         self.debug = debug
         self.port = port
 
     def register(self, address) :
        if address not in services :
-           service = MICASlaveService(self.debug, \
+           service = MLLSlaveService(self.debug, \
                                    self.port, \
                                    address)
            append_service(address, service)
@@ -64,13 +64,13 @@ class MICASlave():
     
     def get_functions(self):
        '''
-       List the names of all the available MICA Slave functions
+       List the names of all the available MLL Slave functions
        '''
        return self.success(self.signatures, "success")
     
     def get_signature(self, name):
         '''
-        Get the list of arguments of a specific MICA Slave function
+        Get the list of arguments of a specific MLL Slave function
         '''
         return self.success(self.signatures[name], "signature")
 
@@ -98,25 +98,25 @@ def remove_service(hostname):
         return service
     return False
 
-class MICASlaveService (Thread):
+class MLLSlaveService (Thread):
     def __init__(self, debug, port, hostname) :
-        super(MICASlaveService, self).__init__()
+        super(MLLSlaveService, self).__init__()
         
         self._stop = Event()
         self.abort = False
         self.aborted = False
         self.port = port 
         self.hostname = hostname 
-        self.slave = MICASlave(port, debug)
-        mdebug("Initializing MICA Slave Service on " + hostname + ":" + str(port))
+        self.slave = MLLSlave(port, debug)
+        mdebug("Initializing MLL Slave Service on " + hostname + ":" + str(port))
         if debug is None :
             self.server = AsyncDocXMLRPCServer((self.hostname, int(self.port)), allow_none = True)
         else :
             self.server = DocXMLRPCServer((self.hostname, int(self.port)), allow_none = True)
         self.server.abort = False
         self.server.aborted = False
-        self.server.set_server_title("MICA Slave Service (xmlrpc)")
-        self.server.set_server_name("MICA Slave Service (xmlrpc)")
+        self.server.set_server_title("MLL Slave Service (xmlrpc)")
+        self.server.set_server_name("MLL Slave Service (xmlrpc)")
         #self.server.register_introspection_functions()
         self.slave.signatures = {}
         for methodtuple in getmembers(self.slave, predicate=ismethod) :
@@ -139,15 +139,15 @@ class MICASlaveService (Thread):
             doc = doc[:-2]
             self.slave.signatures[name] = {"args" : spec[1:], "named" : named }
             self.server.register_function(unwrap_kwargs(func, doc), name)
-        mdebug("MICA Slave Service started")
+        mdebug("MLL Slave Service started")
 
     def run(self):
-        mdebug("MICA Slave Service waiting for requests...")
+        mdebug("MLL Slave Service waiting for requests...")
         self.server.serve_forever()
-        mdebug("MICA Slave Service shutting down...")
+        mdebug("MLL Slave Service shutting down...")
         
     def stop (self) :
-        mdebug("Calling MICA Slave Service shutdown....")
+        mdebug("Calling MLL Slave Service shutdown....")
         self._stop.set()
         self.server.shutdown()
 
@@ -160,7 +160,7 @@ parser.add_option("-D", "--daemon", dest = "daemon", action = "store_true", \
 parser.add_option("-d", "--debug_host", dest = "debug_host", \
                    default = False, help ="Hostname for remote debugging")
 parser.add_option("-l", "--log", dest = "logfile", default = cwd +
-"logs/slave.log", help ="MICA Slave Service log file.")
+"logs/slave.log", help ="MLL Slave Service log file.")
 
 parser.set_defaults()
 options, args = parser.parse_args()
@@ -175,7 +175,7 @@ def main() :
     try :
         for hostname in hostnames :
             wait_for_port_ready(hostname, options.port)
-            apiservice = MICASlaveService(debug, \
+            apiservice = MLLSlaveService(debug, \
                                     options.port, \
                                     hostname)
             apiservices.append(apiservice)
@@ -207,7 +207,7 @@ def main() :
     except KeyboardInterrupt:
         merr("CTRL-C Exiting...")
     except Exception, e :
-        merr("Failed to startup MICA Slave Service: " + str(e))
+        merr("Failed to startup MLL Slave Service: " + str(e))
     finally :
         if not abort :
             minfo("Tearing down services...")

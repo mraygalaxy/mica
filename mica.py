@@ -35,6 +35,7 @@ from translator import *
 from templates import *
 
 uploads_enabled = True
+dbtag = "MICA"
 
 if not mobile :
     from gcm import *
@@ -61,18 +62,18 @@ sys.path = [cwd, cwd + "mica/"] + sys.path
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
 from twisted.python.components import registerAdapter
-from twisted.web.server import Session
 from twisted.web.wsgi import WSGIResource
 from twisted.web.static import File
 from twisted.web.resource import Resource
-from twisted.web.server import Site
 from twisted.web import proxy, server
-from twisted.python import log
+from twisted.python import log, failure
 from twisted.python.logfile import DailyLogFile
-from twisted.internet.error import AlreadyCalled
-from twisted.internet import reactor
+from twisted.internet.error import AlreadyCalled, CannotListenError
+from twisted.internet import reactor, defer, main as tmain
+
 import sys
 reactor = sys.modules['twisted.internet.reactor']
+from twisted.web.server import Session, Site
 
 from webob import Request, Response, exc
 
@@ -295,13 +296,13 @@ class MICA(object):
             if not mobile :
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
-                        if not self.filedb.doc_exist("MICA:filelisting_" + f) :
-                            self.filedb["MICA:filelisting_" + f] = {"foo" : "bar"}
+                        if not self.filedb.doc_exist(dbtag + ":filelisting_" + f) :
+                            self.filedb[dbtag + ":filelisting_" + f] = {"foo" : "bar"}
 
                 mdebug("Checking if files exist............")
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
-                        listing = self.filedb["MICA:filelisting_" + f]
+                        listing = self.filedb[dbtag + ":filelisting_" + f]
                         fname = params["scratch"] + f
 
                         if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f) :
@@ -309,7 +310,7 @@ class MICA(object):
                                 minfo("Opening dict file: " + f)
                                 fh = open(fname, 'r')
                                 minfo("Uploading " + f + " to file listing...")
-                                self.filedb.put_attachment("MICA:filelisting_", f, fh, new_doc = listing)
+                                self.filedb.put_attachment(dbtag + ":filelisting_", f, fh, new_doc = listing)
                                 fh.close()
                                 minfo("Uploaded.")
                             else :
@@ -466,16 +467,16 @@ class MICA(object):
             user = self.dbs[username][self.acct(username)]
 
     def session(self, sid) :
-        return "MICA:sessions:" + sid
+        return dbtag + ":sessions:" + sid
 
     def tokens(self) :
-        return "MICA:push_tokens"
+        return dbtag + ":push_tokens"
 
     def acct(self, name) :
-        return "MICA:accounts:" + name
+        return dbtag + ":accounts:" + name
 
     def key_common(self, username) :
-        return "MICA:" + username
+        return dbtag + ":" + username
 
     def story(self, req, key) :
         return self.key_common(req.session.value['username']) + ":stories:" + key
@@ -530,7 +531,12 @@ class MICA(object):
         mdebug("Runloop running.")
         sleep(5)
         while True :
-            self.serial.safe_execute(False, self.db.runloop)
+            loop_result = self.serial.safe_execute(False, self.db.runloop)
+            if loop_result :
+                if loop_result == 1 :
+                    self.serial.q.put("stop_now")
+                elif loop_result == 2 :
+                    self.serial.q.put("start_now")
             sleep(1)
 
         self.db.detach_thread()
@@ -596,7 +602,7 @@ class MICA(object):
             newdb[self.acct(username)] = {
                                            'app_chars_per_line' : 70,
                                            'web_chars_per_line' : 70,
-                                           'default_app_zoom' : 1.15,
+                                           'default_app_zoom' : 1.0,
                                            'default_web_zoom' : 1.0,
                                            "language" : language,
                                            "learnlanguage" : "en",
@@ -987,7 +993,7 @@ class MICA(object):
 
         try :
             if not os_path.isfile(fname) :
-                self.filedb.get_attachment_to_path("MICA:filelisting_" + f, f, fname)
+                self.filedb.get_attachment_to_path(dbtag + ":filelisting_" + f, f, fname)
                 mdebug("Exported " + f + " to " + fname)
 
             exported = True
@@ -1002,7 +1008,7 @@ class MICA(object):
     def size_check(self, f) :
         fname = params["scratch"] + f
         size = os_path.getsize(fname)
-        meta = self.filedb.get_attachment_meta("MICA:filelisting_" + f, f)
+        meta = self.filedb.get_attachment_meta(dbtag + ":filelisting_" + f, f)
         if size == meta["length"] :
             return True
         else :
@@ -2565,9 +2571,9 @@ class MICA(object):
                     if (pagecount % 10) == 0 :
                         self.jobsmutex.acquire()
                         try :
-                            jobs = req.db["MICA:jobs"]
+                            jobs = req.db[dbtag + ":jobs"]
                             jobs["list"][req.job_uuid]["result"] = _("Page") + ": " + str(pagecount)
-                            req.db["MICA:jobs"] = jobs
+                            req.db[dbtag + ":jobs"] = jobs
                             self.jobsmutex.release()
                         except Exception, e :
                             self.jobsmutex.release()
@@ -3007,10 +3013,10 @@ class MICA(object):
             mdebug("Deleting job immediately. Not adding to list")
             try :
                 self.jobsmutex.acquire()
-                jobs = req.db["MICA:jobs"]
+                jobs = req.db[dbtag + ":jobs"]
                 if job["uuid"] in jobs["list"] :
                     del jobs["list"][job["uuid"]]
-                    req.db["MICA:jobs"] = jobs
+                    req.db[dbtag + ":jobs"] = jobs
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
@@ -3021,9 +3027,9 @@ class MICA(object):
             try :
                 self.jobsmutex.acquire()
                 job["finished"] = True
-                jobs = req.db["MICA:jobs"]
+                jobs = req.db[dbtag + ":jobs"]
                 jobs["list"][job["uuid"]] = job
-                req.db["MICA:jobs"] = jobs
+                req.db[dbtag + ":jobs"] = jobs
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
@@ -3068,14 +3074,14 @@ class MICA(object):
         self.jobsmutex.acquire()
 
         try :
-            jobs = req.db.try_get("MICA:jobs")
+            jobs = req.db.try_get(dbtag + ":jobs")
             if not jobs :
                 jobs = {"list" : {}}
 
             vt = Thread(target=self.run_job, args = [req, func, cleanup, job, self_delete, args, kwargs])
             vt.daemon = True
             jobs["list"][job["uuid"]] = job
-            req.db["MICA:jobs"] = jobs
+            req.db[dbtag + ":jobs"] = jobs
 
             mdebug("Starting job: " + str(job))
 
@@ -3160,13 +3166,13 @@ class MICA(object):
                         if (pagecount % 10) == 0 :
                             try :
                                 self.jobsmutex.acquire()
-                                jobs = req.db["MICA:jobs"]
+                                jobs = req.db[dbtag + ":jobs"]
                                 # This appears when a story is being deleted from the database. The page
                                 # number will appear at the end of 'Deleted Page' to indicate how many
                                 # pages of the story have been deleted.
                                 if req.job_uuid in jobs["list"] :
                                     jobs["list"][req.job_uuid]["result"] = _("Deleted Page") + ": " + str(pagecount)
-                                    req.db["MICA:jobs"] = jobs
+                                    req.db[dbtag + ":jobs"] = jobs
                                 self.jobsmutex.release()
                             except Exception, e :
                                 self.jobsmutex.release()
@@ -3953,11 +3959,11 @@ class MICA(object):
         if len(finished) > 0 :
             try :
                 self.jobsmutex.acquire()
-                curr_jobs = req.db["MICA:jobs"]
+                curr_jobs = req.db[dbtag + ":jobs"]
                 for job in finished :
                     if job["uuid"] in curr_jobs["list"] :
                         del curr_jobs["list"][job["uuid"]]
-                req.db["MICA:jobs"] = curr_jobs
+                req.db[dbtag + ":jobs"] = curr_jobs
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
@@ -5017,9 +5023,9 @@ class MICA(object):
         req.session.value["quota"] = auth_user["quota"]
 
         if mobile :
-            if req.db.doc_exist("MICA:appuser") :
+            if req.db.doc_exist(dbtag + ":appuser") :
                mdebug("There is an existing user. Verifying it is the same one.")
-               appuser = req.db["MICA:appuser"]
+               appuser = req.db[dbtag + ":appuser"]
                if appuser["username"] != username :
                     # Beginning of a message
                     return self.bad_api(req, _("We're sorry. The Read Alien database on this device already belongs to the user") + " " + \
@@ -5029,7 +5035,7 @@ class MICA(object):
             else :
                mdebug("First time user. Reserving this device: " + username)
                appuser = {"username" : username}
-               req.db["MICA:appuser"] = appuser
+               req.db[dbtag + ":appuser"] = appuser
 
             tmpuser = req.db.try_get(self.acct(username))
             if tmpuser and "filters" in tmpuser :
@@ -5071,9 +5077,9 @@ class MICA(object):
         if not mobile :
             try :
                 self.jobsmutex.acquire()
-                jobs = req.db.try_get("MICA:jobs")
+                jobs = req.db.try_get(dbtag + ":jobs")
                 if not jobs :
-                    req.db["MICA:jobs"] = {"list" : {}}
+                    req.db[dbtag + ":jobs"] = {"list" : {}}
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
@@ -5102,7 +5108,7 @@ class MICA(object):
         if "web_chars_per_line" not in user :
             user["web_chars_per_line"] = 70
         if "default_app_zoom" not in user :
-            user["default_app_zoom"] = 1.15
+            user["default_app_zoom"] = 1.0
         if "default_web_zoom" not in user :
             user["default_web_zoom"] = 1.0
 
@@ -5126,21 +5132,21 @@ class MICA(object):
 
         if not mobile :
             try :
-                if req.db.doc_exist("MICA:filelisting") :
-                    del req.db["MICA:filelisting"]
+                if req.db.doc_exist(dbtag + ":filelisting") :
+                    del req.db[dbtag + ":filelisting"]
 
                 for name, lgp in self.processors.iteritems() :
                     for f in lgp.get_dictionaries() :
-                        if req.db.doc_exist("MICA:filelisting_" + f) :
+                        if req.db.doc_exist(dbtag + ":filelisting_" + f) :
                             mdebug("Deleting old file: " + f)
-                            del req.db["MICA:filelisting_" + f]
+                            del req.db[dbtag + ":filelisting_" + f]
             except TypeError, e :
                 out = "Account documents don't exist yet. Probably they are being replicated: " + str(e)
                 for line in format_exc().splitlines() :
                     out += line + "\n"
                 mwarn(out)
             except couch_adapter.ResourceNotFound, e :
-                mwarn("Account document @ MICA:filelisting not found: " + str(e))
+                mwarn("Filelisting not found: " + str(e))
             except Exception, e :
                 out = "Database not available yet: " + str(e)
                 for line in format_exc().splitlines() :
@@ -5207,12 +5213,12 @@ class MICA(object):
 
             try :
                 self.jobsmutex.acquire()
-                tmpjobs = req.db.try_get("MICA:jobs")
+                tmpjobs = req.db.try_get(dbtag + ":jobs")
 
                 if tmpjobs and len(tmpjobs["list"]) > 0 :
                     mdebug("Resettings jobs for user.")
                     tmpjobs["list"] = {}
-                    req.db["MICA:jobs"] = tmpjobs
+                    req.db[dbtag + ":jobs"] = tmpjobs
                 self.jobsmutex.release()
             except Exception, e :
                 self.jobsmutex.release()
@@ -5456,7 +5462,7 @@ class MICA(object):
 
         # We want the job list to appear before using any story-related functions
         # User must wait.
-        jobs = req.db.try_get("MICA:jobs")
+        jobs = req.db.try_get(dbtag + ":jobs")
 
         if jobs and len(jobs["list"]) > 0 and req.action not in ["chat_ime"] :
             rjobs = self.render_jobs(req, jobs)
@@ -5888,6 +5894,13 @@ def go(p) :
     mverbose("Initializing logging.")
     mica_init_logging(params["log"], duplicate = params["duplicate_logger"])
 
+    from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
+    txnlogger = getLogger("txn")
+    streamhandler = StreamHandler(sys.stdout)
+    txnlogger.addHandler(streamhandler)
+    txnlogger.setLevel(level=DEBUG)
+    log.startLogging(sys.stdout)
+
     if params["tlog"] :
         if params["tlog"] != 1 :
             mverbose("Initializing twisted log.")
@@ -5902,7 +5915,7 @@ def go(p) :
             for slave_address in slave_addresses :
                 slave_uri = "http://" + slave_address + ":" + str(params["slave_port"])
                 minfo("Registering slave @ " + slave_uri)
-                slaves[slave_uri] = MICASlaveClient(slave_uri)
+                slaves[slave_uri] = MLLSlaveClient(slave_uri)
                 #slaves[slave_uri].foo("bar")
 
             assert(len(slaves) >= 1)
@@ -5932,6 +5945,7 @@ def go(p) :
         site.mica = mica
         nonsslsite = MicaSite(NONSSLDispatcher())
         nonsslsite.sessionFactory = MicaSession
+        listeners = []
 
         if sslport != -1 :
             from twisted.internet import ssl
@@ -5956,13 +5970,13 @@ def go(p) :
                     ctx.set_cipher_list('ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS')
                     self._context = ctx
 
-            reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"])
-            reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.TLSv1_METHOD), interface = params["host"])
+            listeners.append(reactor.listenTCP(int(params["port"]), nonsslsite, interface = params["host"]))
+            listeners.append(reactor.listenSSL(sslport, site, ChainedOpenSSLContextFactory(privateKeyFileName=params["privkey"], certificateChainFileName=params["cert"], sslmethod = SSL.TLSv1_METHOD), interface = params["host"]))
             minfo("Point your browser at port: " + str(sslport) + ". (Bound to interface: " + params["host"] + ")")
         else :
             mwarn("SSL not requested. Be careful =)")
+            listeners.append(reactor.listenTCP(int(params["port"]), site, interface = params["host"]))
             minfo("Point your browser at port: " + str(params["port"]) + ". (Bound to interface: " + params["host"] + ")")
-            reactor.listenTCP(int(params["port"]), site, interface = params["host"])
 
         if params["debug_host"] :
             try :
@@ -5984,9 +5998,33 @@ def go(p) :
         rt.daemon = True
         rt.start()
 
-        mica.serial.consume()
+        while True :
+            action = mica.serial.consume()
 
-        rt.join()
+            if not mobile or not params["serialize_couch_on_mobile"] :
+                break
+
+            def stopComplete(unused, reactor) :
+                try :
+                    mdebug("Listener stopped.") 
+                    #port.startListening()
+                    #mdebug("Started")
+                    reactor.wakeUp()
+                except Exception, e :
+                    mdebug("Exception restarting: " + str(e))
+
+            for listener in listeners :
+                if action == 1 :
+                    mdebug("Stopping listener...")
+                    d = defer.maybeDeferred(listener.stopListening)
+                    d.addCallback(stopComplete, reactor)
+                    reactor.wakeUp()
+                elif action == 2 :
+                    mdebug("Restarting listener")
+                    listener.startListening()
+                    reactor.wakeUp()
+
+        #rt.join()
 
     except Exception, e :
         merr("Startup exception: " + str(e))
