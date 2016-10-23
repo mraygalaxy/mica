@@ -1134,6 +1134,11 @@ function finishedloading(storylist, navto) {
         }
     });
 
+   /* 
+    * This auto-switching of storylist categories
+    * is increasingly problematic. Just stop doing it.
+    */
+   /*
    if (navto) {
        $.mobile.navigate(navto);
    } else if(firstload != false && !firstloaded) {
@@ -1141,6 +1146,7 @@ function finishedloading(storylist, navto) {
         firstload = false;
         firstloaded = true;
    }
+   */
 
     done();
 }
@@ -1513,12 +1519,14 @@ function handleConnectedLoaded(json, opaque) {
 
 function newContact(who) {
     var peer = ("" + who).split("@")[0];
+    $("#iResp").html("");
     $('#sendTo').val(who);
     $("#missing").attr("style", "display: none");
     $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
     start_trans_id = 1000000;
     go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
+    $("#roster_pane").attr("style", "display: none");
 }
 
 
@@ -1526,12 +1534,13 @@ function handleStatusChanged(status) {
     oDbg.log("status changed: " + status);
 }
 
+function htmlBuddy(who) {
+    return "<a style='cursor: pointer' onclick=\"newContact('" + addressableID(who)+ "');\">" + decodeURIComponent(("" + who).split("@")[0]) + "</a>";
+}
 function handlePresence(oJSJaCPacket) {
-    var html = '<tr><td><div class="msg">';
     var who = oJSJaCPacket.getFromJID();
-    var id = ("" + who).split("@");
-    html += "<b><a style='cursor: pointer' onclick=\"newContact('" + addressableID(who)+ "');\">" + decodeURIComponent(id[0]) + "</a> ";
-
+    var html = '<tr><td><div class="msg"><b>';
+    html += htmlBuddy(who) + " ";
     if (!oJSJaCPacket.getType() && !oJSJaCPacket.getShow()) {
         html += local("hasbecome") + ".</b>";
     } else {
@@ -1545,7 +1554,6 @@ function handlePresence(oJSJaCPacket) {
             html += ' (' + oJSJaCPacket.getStatus().htmlEnc() + ')';
     }
     html += '</div></td></tr>';
-
     $("#iResp").prepend(html);
     //document.getElementById('iResp').lastChild.scrollIntoView();
 }
@@ -1602,13 +1610,14 @@ function handleConnected() {
     con.sendIQ(roster, {result_handler: function(aIq, arg) {
         var node = aIq.getQuery();
         console.log("HANDLE ROSTER: "  + aIq.xml());
-	if (node.hasChildNodes()) {
+        if (node.hasChildNodes()) {
 	      for(x = 0; x < node.childNodes.length; x++) {
 	          console.log("Buddy: "  + node.childNodes.item(x).attributes.jid.value);
-              }
-	}
-
-    }});
+              $("#roster").append("<tr><td>" + htmlBuddy(node.childNodes.item(x).attributes.jid.value) + "</td></tr>");
+          }
+        }
+      }
+    });
 }
 
 function handleDisconnected() {
@@ -1638,6 +1647,9 @@ function reconnect(unused) {
         con.disconnect();
     $("#login_pane").attr("style", "display: block");
     $("#chatLoading").attr("style", "display: block");
+    $("#iResp").html("");
+    $("#roster").html("");
+    $("#roster_pane").attr("style", "display: none");
     doLogin(document.getElementById('loginForm'));
     finish = false;
     do_refresh = false;

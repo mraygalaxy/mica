@@ -320,7 +320,9 @@ class ChatElement(CommonElement) :
                       # Incoming chat messages
                       incoming = _("Your Chat Username is: ") + self.req.session.value["username"].replace("@", "%40") + "@" + self.req.main_server,
                       # Send a chat message
-                      sendmsg = _("Send Message"),
+                      sendmsg = _("Send"),
+                      # Buddy list
+                      buddies = _("Buddies"),
                       # Destination of chat receiver
                       to = _("To"),
                       server = self.req.main_server,

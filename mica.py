@@ -674,7 +674,7 @@ class MICA(object):
                 page = int(sresult["key"][2])
                 if page not in stories[tmp_storyname] :
                     stories[tmp_storyname].append(page)
-            
+
             if "nb_pages" in tmp_story :
                 if tmp_story["nb_pages"] != story_view_pages :
                     mdebug("Story " + tmp_storyname + " says it has " + str(tmp_story["nb_pages"]) + " pages.")
@@ -852,7 +852,7 @@ class MICA(object):
 
         skey = self.session(uid)
         try :
-            
+
             if self.serial.safe_execute(False, self.sessiondb.doc_exist, skey) :
                 value = self.serial.safe_execute(False, self.sessiondb.__getitem__, skey)
                 if "username" in value :
@@ -899,13 +899,13 @@ class MICA(object):
 
         except couch_adapter.CommunicationError, e :
             err = exc.HTTPUnauthorized("<h2>" + _("Lost connectivity to the database. Please come back later.") + "</h2>")
-            req.messages = err.detail 
+            req.messages = err.detail
             resp = Response(self.render_frontpage(req), status_code = err.code, status = err.code)
         except exc.HTTPUnauthorized, e :
-            req.messages = e.detail 
+            req.messages = e.detail
             resp = Response(self.render_frontpage(req), status_code = e.code, status = e.code)
         except exc.HTTPBadRequest, e :
-            req.messages = e.detail 
+            req.messages = e.detail
             resp = Response(self.render_frontpage(req), status_code = e.code, status = e.code)
         except Exception, e :
             merr("BAD Read Alien ********\nException:")
@@ -1957,7 +1957,6 @@ class MICA(object):
 
                 if "timestamp" in unit and unit["punctuation"] :
                     req.template_dict["chatlog"] = source + u": " + " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[story["name"].split(";")[1]]) + ")" + ": "
-
                 req.template_dict.update(dict(
                     default_web_zoom = req.session.value["default_web_zoom"],
                     tmpclass = " ".join(tmp_class),
@@ -2177,7 +2176,7 @@ class MICA(object):
         noreview = [self.storyTemplate("Reviewing")]
         untrans = [self.storyTemplate("Untranslated")]
         finish = [self.storyTemplate("Finished")]
-        peer_list = {} 
+        peer_list = {}
 
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
@@ -2715,7 +2714,7 @@ class MICA(object):
        else :
            dbname = self.userdb["org.couchdb.user:" + username]["mica_database"]
            db = self.cs[dbname]
-       
+
        try :
            if recreate :
                mverbose("Recreate design document requested for view: " + name)
@@ -4367,7 +4366,7 @@ class MICA(object):
                         mdebug("No such account. Returning fail.")
                         req.accountpageresult = _("No such account. Cannot delete it.")
                         json["success"] = False
-                        json["test_success"] = True 
+                        json["test_success"] = True
                     else :
                         auth_user = self.userdb["org.couchdb.user:" + username]
 
@@ -4376,7 +4375,7 @@ class MICA(object):
                             if not req.session.value["isadmin"] :
                                 # Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
                                 req.accountpageresult = _("Go away and die.")
-                                bad_role_length = True 
+                                bad_role_length = True
                             else :
                                 role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
 
@@ -4426,7 +4425,7 @@ class MICA(object):
                             if not req.session.value["isadmin"] :
                                 # Translator: This message is for hackers attempting to break into the website. It's meant to be mean on purpose.
                                 req.accountpageresult = _("Go away and die.")
-                                bad_role_length = True 
+                                bad_role_length = True
                             else :
                                 role_length = len(self.userdb["org.couchdb.user:" + username]["roles"])
 
@@ -4456,7 +4455,7 @@ class MICA(object):
                                 json["success"] = False
                         else :
                             json["success"] = False
-                                
+
         elif req.http.params.get("changelanguage") :
             language = req.http.params.get("language")
             if language in supported_map :
@@ -5781,7 +5780,7 @@ params = None
 class MicaSite(Site) :
     def __init__(self, *args, **kwargs) :
         Site.__init__(self, *args, **kwargs)
-    
+
     def getSession(self, uid):
         if uid in self.sessions :
             return self.sessions[uid]
@@ -5990,10 +5989,7 @@ def go(p) :
                 exit(1)
 
         mverbose("Setting up serialization queues and coroutine.")
-        if mobile :
-            rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
-        else :
-            rt = Thread(target = reactor.run)
+        rt = Thread(target = reactor.run, kwargs={"installSignalHandlers" : 0})
 
         rt.daemon = True
         rt.start()
@@ -6006,7 +6002,7 @@ def go(p) :
 
             def stopComplete(unused, reactor) :
                 try :
-                    mdebug("Listener stopped.") 
+                    mdebug("Listener stopped.")
                     #port.startListening()
                     #mdebug("Started")
                     reactor.wakeUp()
