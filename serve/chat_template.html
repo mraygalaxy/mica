@@ -13,6 +13,11 @@
 
     <div id="err"></div>
 
+    <div id="roster_pane" style='display: none' class='container-fluid nopadding'>
+    <h3><t:slot name="buddies"/>:</h3>
+    <table id="roster">
+    </table>
+    </div>
     <div id="sendmsg_pane" style='display: none' class='container-fluid nopadding'>
         <div class='row-fluid'>
         <div class='col-md-12 nopadding'>
@@ -35,6 +40,7 @@
                     <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
                     <button data-role='none' type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
                     <button data-role='none' type='button' class='btn btn-sm btn-default' onclick='first_reconnect = true; force_disconnect(); reconnect();'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
+                    <button data-role='none' class='btn btn-sm btn-default' onclick="$('#roster_pane').attr('style', 'display: block');" href='#'><t:slot name='buddies'/></button>
                     <input data-role='none' class='btn btn-sm btn-default' type='submit'><t:attr name='value'><t:slot name='sendmsg'/></t:attr></input>
                 </div>
                 <div class="spaced">

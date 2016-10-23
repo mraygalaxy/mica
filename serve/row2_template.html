@@ -13,7 +13,7 @@
             <!--(elif action == "home")-->
                 <t:attr name='onclick'>multiselect('@!uuid!@', -1, '@!nb_unit!@', '@!trans_id!@', false, '@!page!@');</t:attr>
             <!--(end)-->
-            
+
             <!--(if action == "home" and largest_hcode)-->
                 <span page='@!page!@' target='@!largest_target!@' nbunit='@!nb_unit!@' index='@!largest_index!@' transid='@!trans_id!@' class='review' source='@!source!@'>
             <!--(end)-->
@@ -22,7 +22,7 @@
                 <!--(if color not in ['grey', 'white'])-->
                     @!target!@
                 <!--(else)-->
-                    <div class='roman@!color!@'>@!source!@</div>
+                    <!--<div class='roman@!color!@'>@!source!@</div>-->
                 <!--(end)-->
             <!--(else)-->
                 <!--(if py == u' ')-->
@@ -39,13 +39,13 @@
                 </span>
             <!--(end)-->
         </a>
-    
-    <!--(elif "timestamp" not in unit or not unit["punctuation"])-->
+
+    <!--(elif ("timestamp" not in unit or not unit["punctuation"]) and (py != source))-->
         @!(("hold" if py == u' ' else py) if py else target).lower()!@
     <!--(end)-->
 
     <!--(if action == "home" and "ipa_word" in unit and unit["ipa_word"])-->
-        <br>@!unit["ipa_word"]!@
+        <br/>@!unit["ipa_word"]!@
     <!--(end)-->
 
     <!--(if action == "home" and py and len(unit["multiple_target"]))-->

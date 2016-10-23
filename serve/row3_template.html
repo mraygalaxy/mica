@@ -1,37 +1,40 @@
 <td xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="row" style="vertical-align: bottom; text-align: center">
+    <!--(if target != (source + u" ！"))-->
+
     <div style="display: @!'block' if (action == 'read' and not memorized) else 'none'!@; font-size: @!default_web_zoom * 100.0 if not mobile else 100!@%" >
         <t:attr name='class'><t:slot name='transclass'/> trans@!uhash!@</t:attr>
-    <!--(if py and not unit["punctuation"])-->
-        <!--(if not memorized)-->
+        <!--(if py and not unit["punctuation"])-->
+            <!--(if not memorized)-->
             <div revealid="@!uhash!@" class="reveal reveal@!uhash!@" style="display: @!'none' if meaning_mode == 'true' else 'block'!@">
                 &#160;&#160;<a class='reveal' onclick="reveal('@!uhash!@', false)"><i class='glyphicon glyphicon-expand'></i></a>
             </div>
             <div definitionid="@!uhash!@" class="definition definition@!uhash!@" style="display: @!'none' if meaning_mode == 'false' else 'block'!@">
-        <!--(end)-->
-        <!--(if action in ["read", "edit"])-->
+            <!--(end)-->
+            <!--(if action in ["read", "edit"])-->
             <a>
             <t:attr name='class'><t:slot name='transclass'/></t:attr>
 
-            <!--(if uuid)-->
+                <!--(if uuid)-->
                     <t:attr name='onclick'>memorize('@!uhash!@', '@!uuid!@', '@!nb_unit!@', '@!page!@', '@!source_language!@', '@!target_language!@');</t:attr>
-            <!--(else)-->
+                <!--(else)-->
                     <t:attr name='onclick'>memorize_nostory('@!uhash!@', '@!quoted_source!@', '@!unit['multiple_correct']!@', '@!source_language!@', '@!target_language!@');</t:attr>
+                <!--(end)-->
             <!--(end)-->
-        <!--(end)-->
 
             @!row3_target!@
-            
-        <!--(if action == "read" and "ipa_word" in unit and unit["ipa_word"])-->
-                <br/>@!unit["ipa_word"]!@
-        <!--(end)-->
-    
-        <!--(if action in [ "read", "edit" ])-->
-                </a>
-        <!--(end)-->
 
-        <!--(if not memorized)-->
+            <!--(if action == "read" and "ipa_word" in unit and unit["ipa_word"])-->
+                <br/>@!unit["ipa_word"]!@
+            <!--(end)-->
+
+            <!--(if action in [ "read", "edit" ])-->
+                </a>
+            <!--(end)-->
+
+            <!--(if not memorized)-->
             </div>
+            <!--(end)-->
         <!--(end)-->
-    <!--(end)-->
     </div>
+    <!--(end)-->
 </td>
