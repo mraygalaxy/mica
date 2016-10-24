@@ -5651,7 +5651,6 @@ class GUIDispatcher(Resource) :
         self.files = File(cwd)
         self.icon = File(cwd + relative_prefix + "/favicon.ico")
         self.git = File(cwd + "/.git")
-        self.chat = File(cwd + "/serve/converse")
         self.git.indexNames = ["test.rpy"]
         self.mica = mica
 
@@ -5676,8 +5675,6 @@ class GUIDispatcher(Resource) :
             return self.icon
         #elif name.count("git"):
         #    return self.git
-        elif name.count("chat"):
-            return self.chat
         else :
             return self.app
 
