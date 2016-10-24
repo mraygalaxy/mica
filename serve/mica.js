@@ -1734,12 +1734,15 @@ function sendMsg(oForm) {
 
     try {
         var oMsg = new JSJaCMessage();
-	var val = oForm.msg.value;
+	    var val = oForm.msg.value;
         oMsg.setTo(new JSJaCJID(oForm.sendTo.value));
         oMsg.setBody(oForm.msg.value);
+        oMsg.setType('chat');
+        console.log("HANDLE ROSTER: "  + oMsg.xml());
         con.send(oMsg);
 
         oForm.msg.value = '';
+        $("#roster_pane").attr("style", "display: none");
 
         return val;
     } catch (e) {

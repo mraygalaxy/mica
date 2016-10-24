@@ -254,7 +254,7 @@
                         console.log("No new text. Sending what's left.")
                         self.sendText();
                     }
-		    console.log("Returning early. Booooooooooooo.");
+                    console.log("Returning early. Booooooooooooo.");
                     return false;
                 }
                 if (/[a-zA-Z\?\=\)\-\^\%\$\#\@\!\~\`\-\_\(\+\=\*\&\'\"\;\:\]\[\}\{\/\<\>]/.test(key)){ 
