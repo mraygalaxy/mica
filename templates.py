@@ -726,6 +726,7 @@ class HTMLElement(CommonElement):
                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      caret = self.req.mpath + "/chinese-ime/caret.js",
+                     converse = self.req.mpath + "/converse/dist/converse.js",
                      couchjs = self.req.mpath + "/jquery.couch-1.5.js",
                      ajaxformjs = self.req.mpath + "/jquery.form.min.js",
                     )
