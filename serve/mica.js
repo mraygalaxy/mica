@@ -1935,15 +1935,25 @@ function ctest() {
         httpbase = 'https://' + server + ':5281/http-bind/';
     }
 
-    /*
     converse.listen.on('connected', function (event) { 
         console.log("WE ARE INITIALIZED: " + jid);
-        converse.user.login({
-            'jid': jid,
-            'password': oForm.password.value
-        });
     });
-    */
+
+    converse.listen.on('chatBoxOpened', function (event, chatbox) {
+        console.log("Box is opened: " + chatbox);
+        var ci = chatbox.$el.find("textarea.chat-textarea").chineseInput({
+            debug: true,
+            input: {
+                initial: 'simplified',//'traditional', // or 'simplified'
+                allowChange: true
+            },
+            allowHide: true,
+            active: true
+        });
+        console.log("IME initialized.");
+        /*
+        */
+    });
 
     converse.initialize({
         bosh_service_url: httpbase, 
@@ -1954,7 +1964,7 @@ function ctest() {
         roster_groups: true,
         show_controlbox_by_default: true,
         allow_otr: false,
-        debug: true,
+    //    debug: true,
         allow_muc: false,
         allow_registration: false,
     });

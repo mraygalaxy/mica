@@ -717,6 +717,7 @@ class HTMLElement(CommonElement):
                      micacss = self.req.mpath + "/mica.css",
                      favicon = self.req.mpath + "/icon-120x120.png",
                      imecss = self.req.mpath + "/chinese-ime/ime.css",
+                     conversecss = self.req.mpath + "/converse.min.css",
                      jquery = self.req.mpath + "/jquery-1.11.3.min.js",
                      jquery_full = self.req.mpath + "/jquery-1.11.3.js",
                      micajs = self.req.mpath + "/mica.js",
@@ -726,7 +727,7 @@ class HTMLElement(CommonElement):
                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      caret = self.req.mpath + "/chinese-ime/caret.js",
-                     converse = self.req.mpath + "/converse/dist/converse.js",
+                     chat = self.req.mpath + "/chat.min.js",
                      couchjs = self.req.mpath + "/jquery.couch-1.5.js",
                      ajaxformjs = self.req.mpath + "/jquery.form.min.js",
                     )

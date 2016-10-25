@@ -130,6 +130,7 @@
     $.chineseInput = function(el, options){
         // To avoid scope issues, use 'self' instead of 'this'
         // to reference this class from internal events and functions.
+        console.log("1. INITIALIZING IME.....");
         var self = this;
         
         // Access to jQuery and DOM versions of element
@@ -164,22 +165,22 @@
         }
 
         self.clearOld = function(amount) {
-            var txt = $("#msgArea").val(); 
+            var txt = self.el.val(); 
             if (amount == -1) {
                 amount = self.currentText.length;
             } else if(amount == -2) {
-                $("#msgArea").val('');
+                self.el.val('');
                 return;
             }
 
-            $("#msgArea").val(txt.substring(0, txt.length - amount));
+            self.el.val(txt.substring(0, txt.length - amount));
         }
 
 
         self.resetCurrent();
         self.inputText = '';
         self.clearOld(-2);
-        document.getElementById("msgArea").focus();
+        self.el.focus();
         //self.options = [];
         self.html = "<ul data-role='none' class='options' style='color: black'></ul>";
         self.paramNames = {'text': 'text',
@@ -198,10 +199,10 @@
         self.init = function(){
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-            $("#msgArea").on( "keypress", self.keyPress);
-	    $("#msgArea").on( "keyup", self.keyPress);
-	    $("#msgArea").unbind().bind('input propertychange', self.keyPress);
-	    $('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
+            self.el.on( "keypress", self.keyPress);
+	        self.el.on( "keyup", self.keyPress);
+	        self.el.unbind().bind('input propertychange', self.keyPress);
+	        //$('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
             self.$toolbar.insertAfter(self.$el);
@@ -235,7 +236,7 @@
 
         self.keyPress = function(event){
             if (self.options.active) {
-                var beforeCheck = $("#msgArea").val() || "";
+                var beforeCheck = self.el.val() || "";
                 var key = '';
                 var backspace = 0;
                 self.last_key_was_backspace = false;
@@ -284,7 +285,7 @@
                         //} else {
                             self.resetCurrent();
                         //}
-                        self.inputText = $("#msgArea").val();
+                        self.inputText = self.el.val();
                     } else if (/[1-8]/.test(key)) { 
                       // pressed number between 1 and 8
                         self.clearOld(1);
@@ -318,7 +319,7 @@
         };
 
         self.sendText = function() {
-            if ($("#msgArea").val() != "") {
+            if (self.el.val() != "") {
                 if ($("#sendTo").val() == "") {
                     $("#missing").attr("style", "display: block");
                 } else {
@@ -390,7 +391,7 @@
                 self.resetCurrent();
             }
 
-	    self.inputText = $("#msgArea").val();
+	    self.inputText = self.el.val();
         };
 
         self.reposition = function($el){
