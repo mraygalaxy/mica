@@ -1918,3 +1918,50 @@ function new_manual_account_complete(json) {
     $('#account_content').html(json.desc);
     done();
 }
+
+function ctest() {
+    var oForm = document.getElementById('loginForm');
+
+    var server = oForm.server.value;
+    var domain = oForm.domain.value;
+    chat_username = oForm.username.value;
+	jid = chat_username + "@" + domain;
+
+    if ($("#mobile").html() == 'false' && window.location.protocol !== "https:"){
+        console.log("Insecure chat.");
+        httpbase = 'http://' + server + ':5280/http-bind/';
+    } else {
+        console.log("Secure chat.");
+        httpbase = 'https://' + server + ':5281/http-bind/';
+    }
+
+    /*
+    converse.listen.on('connected', function (event) { 
+        console.log("WE ARE INITIALIZED: " + jid);
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+    });
+    */
+
+    converse.initialize({
+        bosh_service_url: httpbase, 
+        keepalive: true,
+        prebind: false,
+        message_carbons: true,
+        play_sounds: true,
+        roster_groups: true,
+        show_controlbox_by_default: true,
+        allow_otr: false,
+        debug: true,
+        allow_muc: false,
+        allow_registration: false,
+    });
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+
+
+}
