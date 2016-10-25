@@ -11,10 +11,17 @@
       <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
       <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
       <link rel="stylesheet"><t:attr name='href'><t:slot name='imecss'/></t:attr></link>
+      <link rel="stylesheet"><t:attr name='href'><t:slot name='conversecss'/></t:attr></link>
+<!-- converse.css was made by: -->
+<!-- cd serve/ -->
+<!-- cat converse-1.0.3.css converse-theme.css font-awesome.min.css > converse.css -->
+<!-- uglifycss converse.css > converse.min.css -->
+<!--
+      <link rel="stylesheet" href='/serve/converse-1.0.3.css'/>
+      <link rel="stylesheet" href='/serve/converse-theme.css'/>
+      <link rel="stylesheet" href='/serve/font-awesome.min.css'/>
+-->
       <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
-       <link rel="stylesheet" href='/serve/converse-1.0.3.css'/>
-       <link rel="stylesheet" href='/serve/converse-theme.css'/>
-       <link rel="stylesheet" href='/serve/font-awesome.min.css'/>
 
       <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
       <!--<script><t:attr name='src'><t:slot name='jquery_full'/></t:attr></script>-->
@@ -23,10 +30,14 @@
       <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
       <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
       <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
-      <!--<script><t:attr name='src'><t:slot name='xmpp'/></t:attr></script>-->
+      <script><t:attr name='src'><t:slot name='chat'/></t:attr></script>
       <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
       <script><t:attr name='src'><t:slot name='ime'/></t:attr></script>
       <script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
+      <meta name='viewport' content="width=device-width, initial-scale=@!zoom_level!@"/>
+</head>
+
+<!--
       <script src='/serve/jquery.browser.js'/>
       <script src='/serve/typeahead.js'/>
       <script src='/serve/strophe-1.2.8.js'/>
@@ -42,6 +53,9 @@
       <script src='/serve/converse-locales.js'/>
       <script src='/serve/moment-with-locales-2.15.2.js'/>
       <script src='/serve/converse-1.0.3.js'/>
+-->
+<!-- chat.js was made like this -->
+<!-- cd serve/ -->
+<!-- cat jquery.browser.js typeahead.js strophe-1.2.8.js strophe.disco.js strophe.vcard.js strophe.ping.js strophe.rsm.js underscore-1.8.3.js backbone-1.3.3.js backbone.overview.js backbone.browserStorage.js jed.js converse-locales.js moment-with-locales-2.15.2.js converse-1.0.3.js > chat.js -->
+<!-- uglifyjs chat.js > chat.min.js -->
 
-      <meta name='viewport' content="width=device-width, initial-scale=@!zoom_level!@"/>
-</head>
