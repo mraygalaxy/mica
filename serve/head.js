@@ -306,7 +306,7 @@ function showNotifications(msgfrom, msg, lang) {
     if ("Notification" in window) {
         if (Notification.permission == 'granted') {
             try {
-                var notification = new Notification("MICA Message from: " + msgfrom,
+                var notification = new Notification(local('notification') + ": " + msgfrom,
                     { dir: "auto",
                       body: msg,
                       lang: lang,

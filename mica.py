@@ -2000,7 +2000,7 @@ class MICA(object):
             line_out = []
             line_out.append("""
                 <table %(style)s>
-            """ % dict(style = "class='pagetable' style='background-color: #dfdfdf; border-radius: 15px; margin-bottom: 10px'" if (not chat and not history) else "class='chattable'"))
+            """ % dict(style = "class='pagetable' style='background-color: #dfdfdf; border-radius: 15px'" if (not chat and not history) else "class='chattable'"))
 
             for row_idx in [1, 2, 3] :
                 line_out.append("""
@@ -2008,9 +2008,13 @@ class MICA(object):
                     <td style='padding-right: 10px'/>
                 """)
                 for word in words :
+                    line_out.append("""
+                        <td style='padding-right: 5px'/>
+                    """)
                     line_out.append(word[row_idx])
 
                 line_out.append("""
+                    <td style='padding-right: 5px'/>
                     </tr>
                 """)
 

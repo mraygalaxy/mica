@@ -237,6 +237,8 @@ class TranslationsElement(CommonElement) :
                      favicon = self.req.mpath + "/icon-120x120.png",
                      me = _("me"),
                      largemessage = _("A very large message has been received. This might be due to an attack meant to degrade the chat performance. Output has been shortened."),
+                     alltitle = _("Read Alien: Meta Language Learning"),
+                     notification = _("ReadAlien Message from"),
                 )
         return tag
 
@@ -712,6 +714,7 @@ class HTMLElement(CommonElement):
     @renderer
     def html(self, request, tag) :
         tag.fillSlots(
+                     alltitle = _("Read Alien: Meta Language Learning"),
                      jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
                      jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
                      jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
@@ -803,7 +806,7 @@ class HeadElement(CommonElement):
                      original = _("Download Original"),
                      # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                      delete = _("Delete"),
-                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning. 
+                     # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
                      translate = _("Translate"),
                      # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                      reviewmode = _("Review"),
