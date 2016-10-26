@@ -150,11 +150,11 @@
         options.input.allowChange = options.input.allowChange == true; // set it to boolean value true if it evaluates to true
         options.allowHide = options.allowHide == true;
 
-	var foo = "bar";
+        var foo = "bar";
 
-	$.receivePush = function(select_idx) {
-	    self.makeSelection(select_idx - 1);
-	    self.updateDialog();
+        $.receivePush = function(select_idx) {
+            self.makeSelection(select_idx - 1);
+            self.updateDialog();
         }
 
         self.resetCurrent = function() {
@@ -165,22 +165,22 @@
         }
 
         self.clearOld = function(amount) {
-            var txt = self.el.val(); 
+            var txt = self.$el.val(); 
             if (amount == -1) {
                 amount = self.currentText.length;
             } else if(amount == -2) {
-                self.el.val('');
+                self.$el.val('');
                 return;
             }
 
-            self.el.val(txt.substring(0, txt.length - amount));
+            self.$el.val(txt.substring(0, txt.length - amount));
         }
 
 
         self.resetCurrent();
         self.inputText = '';
         self.clearOld(-2);
-        self.el.focus();
+        self.$el.focus();
         //self.options = [];
         self.html = "<ul data-role='none' class='options' style='color: black'></ul>";
         self.paramNames = {'text': 'text',
@@ -199,9 +199,9 @@
         self.init = function(){
             self.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-            self.el.on( "keypress", self.keyPress);
-	        self.el.on( "keyup", self.keyPress);
-	        self.el.unbind().bind('input propertychange', self.keyPress);
+            self.$el.on( "keypress", self.keyPress);
+	        self.$el.on( "keyup", self.keyPress);
+	        self.$el.unbind().bind('input propertychange', self.keyPress);
 	        //$('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
 
             self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
@@ -236,7 +236,7 @@
 
         self.keyPress = function(event){
             if (self.options.active) {
-                var beforeCheck = self.el.val() || "";
+                var beforeCheck = self.$el.val() || "";
                 var key = '';
                 var backspace = 0;
                 self.last_key_was_backspace = false;
@@ -285,7 +285,7 @@
                         //} else {
                             self.resetCurrent();
                         //}
-                        self.inputText = self.el.val();
+                        self.inputText = self.$el.val();
                     } else if (/[1-8]/.test(key)) { 
                       // pressed number between 1 and 8
                         self.clearOld(1);
@@ -319,7 +319,7 @@
         };
 
         self.sendText = function() {
-            if (self.el.val() != "") {
+            if (self.$el.val() != "") {
                 if ($("#sendTo").val() == "") {
                     $("#missing").attr("style", "display: block");
                 } else {
@@ -391,7 +391,7 @@
                 self.resetCurrent();
             }
 
-	    self.inputText = self.el.val();
+            self.inputText = self.$el.val();
         };
 
         self.reposition = function($el){
@@ -463,7 +463,7 @@
                             $box.css({
                                 position: 'absolute',
                                 left: self.$el.offset().left + caretPosition.left,
-                                top: self.$el.offset().top + caretPosition.top
+                                bottom: caretPosition.top + 15
                             });
                 }, false);
 

@@ -2,9 +2,12 @@
 .chinese-checkbox {
   color: #666;
   font-size: 14px;
-  padding: 5px; }
+  padding: 5px; 
+  z-index: 1032;
+}
 
 #chinese-ime {
+  z-index: 1032;
   font-family: Arial, Sans-serif;
   font-size: 14px;
   position: absolute;
