@@ -393,7 +393,7 @@ class FrontPageElement(CommonElement) :
     @renderer
     def advertise(self, request, tag) :
         pull, push = self.pullpush()
-        tag.fillSlots(learn =_("Learning a language should be just like reading a book"),
+        tag.fillSlots(learn =_("Democratize Languages: Learning a language should be just like reading a book"),
                       offline = _("Read Alien also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works"),
                       donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
