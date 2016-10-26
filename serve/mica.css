@@ -281,11 +281,11 @@ body {
 
 .chattable td {
     color: black;
-    padding-right: 5px;
 }
 
 .pagetable td {
     padding-right: 5px;
+    margin-bottom: 10px;
 }
 
 .pagetable tr {

@@ -1034,11 +1034,11 @@ class ChineseSimplifiedToEnglish(Processor) :
             cedicturl = 'sqlite:///' + self.params["scratch"] + "cedict.db"
             mverbose("Opening CJK from: " + cedicturl + " and " + cjkurl)
             cjk = CharacterLookup('C', dbConnectInst = getDBConnector({'sqlalchemy.url': cjkurl}))
-            mverbose("MICA cjklib success!")
+            mverbose("cjklib success!")
             # CEDICT must use a connector, just a url which includes both dictionaries.
             # CEDICT internally references pinyin syllables from the main dictionary or crash.
             d = CEDICT(dbConnectInst = getDBConnector({'sqlalchemy.url': cedicturl, 'attach': [cedicturl, cjkurl]}))
-            mverbose("MICA cedict success!")
+            mverbose("cedict success!")
 
             if big_enough and not ictc_available and not jieba.initialized :
                 mverbose("Initializing jieba...")
@@ -1046,7 +1046,7 @@ class ChineseSimplifiedToEnglish(Processor) :
                 self.jieba_close()
 
         except Exception, e :
-            merr("MICA offline open failed: " + str(e))
+            merr("Offline open failed: " + str(e))
 
         return (cjk, d, False)
 

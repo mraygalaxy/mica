@@ -320,15 +320,8 @@
 
         self.sendText = function() {
             if (self.$el.val() != "") {
-                if ($("#sendTo").val() == "") {
-                    $("#missing").attr("style", "display: block");
-                } else {
-                    var tval = sendMsg(document.getElementById('sendForm'));
-                    if (tval) 
-                        appendChat(chat_username, $("#sendTo").val(), tval);
-                    else
-                        appendChat(chat_username, $("#sendTo").val(), "error");
-                }
+                var e = $.Event('keydown', { keyCode: 13 });
+                self.$el.trigger(e);
                 self.clearOld(-2);
             }
             self.inputText = "";

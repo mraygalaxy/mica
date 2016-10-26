@@ -48,6 +48,7 @@ var curr_pages = 0;
 var oDbg, con;
 var start_trans_id = 0;
 var flashTimer="";
+var converse_first_time = true;
 
 var spinner = "<img src='data:image/gif;base64,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' width='20px'>";
 
@@ -1353,12 +1354,12 @@ function appendStatus(who, msg) {
 
 function messageNotify(val) {
   flashTimer=window.setInterval(function() {
-    document.title = document.title == "MICA" ? val : "MICA";
+    document.title = document.title == local('alltitle') ? val : local('alltitle');
   }, 1000);
 }
 
 window.onfocus=function() {
-    document.title = "MICA";
+    document.title = local('alltitle');
     clearInterval(flashTimer);
 }
 
@@ -1393,46 +1394,6 @@ function open_or_close(html) {
 }
 
 function appendBox(who, ts, msg, msgclass, reverse) {
-        var html = '<tr><td>';
-        var id = ("" + who).split("@");
-        html += "<div style='width: 100%'><span class='" + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black; border-radius: 10px'><table class='chattable'><tr><td>&nbsp</td>";
-        sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
-        sendtime += "<td style='vertical-align: top'>";
-        sendtime += "&nbsp;" + make_date(ts) + "</td>";
-        //if (reverse) {
-            html += ("<td>" + msg + "</td></tr><tr><td>&nbsp;</td>" +  sendtime);
-        //} else {
-        //    html += (sendtime + "<td>&nbsp;</td></tr><tr><td>" + msg + "</td>");
-        //}
-        html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
-
-
-        $('#iResp').prepend(open_or_close(html));
-        //document.getElementById('iResp').lastChild.scrollIntoView();
-}
-
-function make_date(ts) {
-	var date = new Date(parseInt(parseFloat(ts)));
-	var result = "";
-
-	var hours = date.getHours();
-	var ampm = (hours >= 12) ? "PM" : "AM";
-	
-	if (hours >= 13)
-		hours -= 12;
-	
-	result += ('0' + (hours == 0 ? 12 : hours)).slice(-2);
-	result += ":" + ('0' + date.getMinutes()).slice(-2);
-	result += " " + ampm;
-	
-	//result += " " + ("" + date.getFullYear()).substring(2, 4);
-	//result += "/" + ('0' + (date.getMonth()+1)).slice(-2);
-	//result += "/" + ('0' + date.getDate()).slice(-2);
-	
-	//tdebug("Timestamp: " + result + " from original: " + ts);
-	return result;
-}
-
 function appendChat(who, to, msg) {
     var ts = $.now();
     var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
@@ -1483,6 +1444,46 @@ function appendChat(who, to, msg) {
                     appendBox(who, ts, json.desc, msgclass, reverse);
             }
 	}, false);
+}
+
+        var html = '<tr><td>';
+        var id = ("" + who).split("@");
+        html += "<div style='width: 100%'><span class='" + msgclass + "' style='background-color: #f0f0f0; border: 1px solid grey; color: black; border-radius: 10px'><table class='chattable'><tr><td>&nbsp</td>";
+        sendtime = "<td style='vertical-align: top'><b>" + who_to_readable(who) + ": </b></td>";
+        sendtime += "<td style='vertical-align: top'>";
+        sendtime += "&nbsp;" + make_date(ts) + "</td>";
+        //if (reverse) {
+            html += ("<td>" + msg + "</td></tr><tr><td>&nbsp;</td>" +  sendtime);
+        //} else {
+        //    html += (sendtime + "<td>&nbsp;</td></tr><tr><td>" + msg + "</td>");
+        //}
+        html += '<td>&nbsp</td></tr></table></span></div></td></tr><tr><td>&nbsp;</td></tr>';
+
+
+        $('#iResp').prepend(open_or_close(html));
+        //document.getElementById('iResp').lastChild.scrollIntoView();
+}
+
+function make_date(ts) {
+	var date = new Date(parseInt(parseFloat(ts)));
+	var result = "";
+
+	var hours = date.getHours();
+	var ampm = (hours >= 12) ? "PM" : "AM";
+	
+	if (hours >= 13)
+		hours -= 12;
+	
+	result += ('0' + (hours == 0 ? 12 : hours)).slice(-2);
+	result += ":" + ('0' + date.getMinutes()).slice(-2);
+	result += " " + ampm;
+	
+	//result += " " + ("" + date.getFullYear()).substring(2, 4);
+	//result += "/" + ('0' + (date.getMonth()+1)).slice(-2);
+	//result += "/" + ('0' + date.getDate()).slice(-2);
+	
+	//tdebug("Timestamp: " + result + " from original: " + ts);
+	return result;
 }
 
 function addressableID(who) {
@@ -1919,6 +1920,68 @@ function new_manual_account_complete(json) {
     done();
 }
 
+function appendConverse(who, to, $message, obj, direction) {
+    var ts = $.now();
+    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
+
+    var languagepair = $('#chattextlanguage').val();
+    var pair = languagepair.split(",");
+    var chat_source_language = pair[0];
+    var chat_target_language = pair[1];
+    var chat_language = chat_target_language;
+    var msgfrom = who_to_readable(who);
+    var msgto = who_to_readable(to);
+
+    if (direction == "in") {
+        msg = $message.children('body').text();
+    } else {
+        msg = $message;
+    }
+    /*
+     * 'peer' means who we are talking to, regardless who the message comes from.
+     *
+     * If we have 'group' chats in the future, just set the 'peer' value to some kind
+     * of unique ID, like "group_UUID". Simple one-on-one chats will have document keys
+     * equal to the name of the peer, but with a group chat, we'll need to choose something
+     * unique for the peer value. Theoretically, the server-side shouldn't change too much.
+     */
+    console.log("Comparing " + who + " to " + chat_username);
+    if (who == chat_username) {
+        var peer = msgto;
+        var msgclass = "msgright";
+        var reverse = true;
+    } else {
+        var peer = msgfrom;
+        var msgclass = "msgleft";
+        var reverse = false;
+    }
+
+    var micaurl = "chat_ime&ime=1&mode=read&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language + "&ime1=" + msg + "&start_trans_id=" + start_trans_id + "&ts=" + (ts - tzoffset) + "&tzoffset=" + tzoffset + "&msgfrom=" + msgfrom + "&msgto=" + msgto + "&peer=" + peer;
+
+    start_trans_id += msg.length;
+
+    go(false, micaurl, unavailable(false), function(json, obj){
+            if (direction == "in") {
+                if(json.success)  {
+                    $message.children('body').text(json.result.human);
+                } else {
+                    $message.children('body').text(json.desc);
+                }
+                obj.__super__.onMessage.apply(obj, [$message.get()]);
+            } else {
+//              obj.__super__.onMessageSubmitted.apply(obj, [json.desc]);
+                console.log("Got response for uuid: " + direction);
+                var d = $("[data-msgid='" + direction + "']").find(".chat-msg-content");
+                if(json.success)  {
+                    d.html(json.result.human);
+                } else {
+                    d.html(json.desc);
+                }
+                obj.scrollDown();
+            }
+	}, obj);
+}
+
 function ctest() {
     var oForm = document.getElementById('loginForm');
 
@@ -1944,34 +2007,56 @@ function ctest() {
         overrides: {
             ChatBoxes: {
                 onMessage: function (text) {
-                    console.log("MESSAGE RECEIVED!!!!!!!!: " + text);
                     var $message = $(text);
                     if ($message != undefined) {
-                        var type = $message.attr('type'), body;
-
-                        if (type != 'error') {
-                            body = $message.children('body').text();
+                        if ($message.attr('type') != 'error') {
+                            var body = $message.children('body').text();
                             if (body != "") {
-                                console.log("Body: " + body);
-                                $message.children('body').text("<input type='text' value='" + body + "'/>");
-                                text = $message.get();
+                                from = $message.attr('from').split("@")[0];
+                                to = $message.attr('to').split("@")[0];
+                                appendConverse(from, to, $message, this, "in");
                             }
                         }
                     }
-                    setTimeout(function(obj, txt) {
-                        console.log("before");
-                        obj.__super__.onMessage.apply(obj, [txt]);
-                        console.log("after");
-                    }, 1000, this, text);
-//                    this.__super__.onMessage.apply(this, [text]);
                     return true;
                 }
             },
             ChatBoxView: {
                 onMessageSubmitted: function (text) {
-                    console.log("MESSAGE SENT!!!!!!!!!!!!");
-                    var newtext = text;
-                    this.__super__.onMessageSubmitted.apply(this, [newtext]);
+                    var conv = this.__super__.converse;
+                    if (!conv.connection.authenticated) {
+                        return this.showHelpMessages(
+                            ['Sorry, the connection has been lost, '+
+                                'and your message could not be sent'],
+                            'error'
+                        );
+                    }
+                    var match = text.replace(/^\s*/, "").match(/^\/(.*)\s*$/), msgs;
+                    if (match) {
+                        if (match[1] === "clear") {
+                            return this.clearMessages();
+                        }
+                        else if (match[1] === "help") {
+                            msgs = [
+                                '<strong>/help</strong>:'+__('Show this menu')+'',
+                                '<strong>/me</strong>:'+__('Write in the third person')+'',
+                                '<strong>/clear</strong>:'+__('Remove messages')+''
+                                ];
+                            this.showHelpMessages(msgs);
+                            return;
+                        }
+                    }
+                    var fullname = conv.xmppstatus.get('fullname');
+                    fullname = _.isEmpty(fullname)? conv.bare_jid: fullname;
+                    var message = this.model.messages.create({
+                        fullname: fullname,
+                        sender: 'me',
+                        time: moment().format(),
+                        message: text
+                    });
+                    this.sendMessage(message);
+                    to = this.model.get('jid').split("@")[0];
+                    appendConverse(chat_username, to, text, this, message.attributes.msgid);
                 },
                 renderMessage: function (attrs) {
                     var conv = this.__super__.converse;
@@ -1995,11 +2080,10 @@ function ctest() {
                     if (this.is_chatroom && attrs.sender === 'them' && (new RegExp("\\b"+this.model.get('nick')+"\\b")).test(text)) {
                         extra_classes += ' mentioned';
                     }
-                    if (text.length > 8000) {
+                    if (text.length > 10000) {
                         text = text.substring(0, 10) + '...';
                         this.showStatusNotification(local("largemessage"), true, true);
                     }
-                    console.log("Rendering: " + text);
                     return $(template(
                             _.extend(this.getExtraMessageTemplateAttributes(attrs), {
                                 'msgid': attrs.msgid,
@@ -2022,8 +2106,19 @@ function ctest() {
         console.log("WE ARE INITIALIZED: " + jid);
     });
 
+    converse.listen.on('disconnected', function (event) { 
+        if (converse_first_time) {
+            converse_first_time = false;
+            console.log("DISCONNECTED. Logging in again...");
+            converse.user.login({
+                'jid': jid,
+                'password': oForm.password.value
+            });
+            converse.chats.get('controlbox').close();
+        }
+    });
+
     converse.listen.on('chatBoxOpened', function (event, chatbox) {
-        console.log("Box is opened: " + chatbox);
         var ci = chatbox.$el.find("textarea.chat-textarea").chineseInput({
             debug: true,
             input: {
@@ -2033,29 +2128,40 @@ function ctest() {
             allowHide: true,
             active: true
         });
-        console.log("IME initialized.");
-        /*
-        */
     });
 
+    /* TODO: use xhr_user_search and xhr_user_search_url options */
     converse.initialize({
         bosh_service_url: httpbase, 
-        keepalive: true,
+        keepalive: false,
         prebind: false,
         message_carbons: true,
         play_sounds: true,
         roster_groups: true,
-        show_controlbox_by_default: true,
+        show_controlbox_by_default: false,
         allow_otr: false,
     //    debug: true,
         allow_muc: false,
         allow_registration: false,
+        auto_reconnect: true,
     });
+
+    if (converse.connection.connected && !converse.connection.authenticated) {
+        converse_first_time = false;
         converse.user.login({
             'jid': jid,
             'password': oForm.password.value
         });
-
-
+        converse.chats.get('controlbox').close();
+    } else if (!converse.connection.connected) {
+        converse.user.logout();
+    } else {
+        converse_first_time = false;
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+        converse.chats.get('controlbox').close();
+    }
 }
 
