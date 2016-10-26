@@ -1935,6 +1935,89 @@ function ctest() {
         httpbase = 'https://' + server + ':5281/http-bind/';
     }
 
+    converse.plugins.add('mll', {
+
+        initialize: function () {
+            //alert(this.converse.user_settings.initialize_message);
+        },
+
+        overrides: {
+            ChatBoxes: {
+                onMessage: function (text) {
+                    console.log("MESSAGE RECEIVED!!!!!!!!: " + text);
+                    var $message = $(text);
+                    if ($message != undefined) {
+                        var type = $message.attr('type'), body;
+
+                        if (type != 'error') {
+                            body = $message.children('body').text();
+                            if (body != "") {
+                                console.log("Body: " + body);
+                                $message.children('body').text("<input type='text' value='" + body + "'/>");
+                                text = $message.get();
+                            }
+                        }
+                    }
+                    setTimeout(function(obj, txt) {
+                        console.log("before");
+                        obj.__super__.onMessage.apply(obj, [txt]);
+                        console.log("after");
+                    }, 1000, this, text);
+//                    this.__super__.onMessage.apply(this, [text]);
+                    return true;
+                }
+            },
+            ChatBoxView: {
+                onMessageSubmitted: function (text) {
+                    console.log("MESSAGE SENT!!!!!!!!!!!!");
+                    var newtext = text;
+                    this.__super__.onMessageSubmitted.apply(this, [newtext]);
+                },
+                renderMessage: function (attrs) {
+                    var conv = this.__super__.converse;
+                    var msg_time = moment(attrs.time) || moment,
+                        text = attrs.message,
+                        match = text.match(/^\/(.*?)(?: (.*))?$/),
+                        fullname = this.model.get('fullname') || attrs.fullname,
+                        extra_classes = attrs.delayed && 'delayed' || '',
+                        template, username;
+
+                    if ((match) && (match[1] === 'me')) {
+                        text = text.replace(/^\/me/, '');
+                        template = conv.templates.action;
+                        username = fullname;
+                    } else  {
+                        template = conv.templates.message;
+                        username = attrs.sender === 'me' && local('me') || fullname;
+                    }
+                    this.$content.find('div.chat-event').remove();
+
+                    if (this.is_chatroom && attrs.sender === 'them' && (new RegExp("\\b"+this.model.get('nick')+"\\b")).test(text)) {
+                        extra_classes += ' mentioned';
+                    }
+                    if (text.length > 8000) {
+                        text = text.substring(0, 10) + '...';
+                        this.showStatusNotification(local("largemessage"), true, true);
+                    }
+                    console.log("Rendering: " + text);
+                    return $(template(
+                            _.extend(this.getExtraMessageTemplateAttributes(attrs), {
+                                'msgid': attrs.msgid,
+                                'sender': attrs.sender,
+                                'time': msg_time.format('hh:mm'),
+                                'isodate': msg_time.format(),
+                                'username': username,
+                                'message': '',
+                                'extra_classes': extra_classes
+                            })
+                        )).children('.chat-msg-content').first().html(text)
+                            .addHyperlinks()
+                            .addEmoticons(conv.visible_toolbar_buttons.emoticons).parent();
+                }
+            }
+        }
+    });
+
     converse.listen.on('connected', function (event) { 
         console.log("WE ARE INITIALIZED: " + jid);
     });
@@ -1975,3 +2058,4 @@ function ctest() {
 
 
 }
+

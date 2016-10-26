@@ -235,6 +235,8 @@ class TranslationsElement(CommonElement) :
                      stopsync = _("Stop Syncing"),
                      requestfailed = _("Failed to issue request. We're sorry. Please report what you tried to do to the author. Thank you."),
                      favicon = self.req.mpath + "/icon-120x120.png",
+                     me = _("me"),
+                     largemessage = _("A very large message has been received. This might be due to an attack meant to degrade the chat performance. Output has been shortened."),
                 )
         return tag
 
@@ -727,7 +729,9 @@ class HTMLElement(CommonElement):
                      ime = self.req.mpath + "/chinese-ime/jQuery.chineseIME.js",
                      bootpagejs = self.req.bootstrappath + "/js/jquery.bootpag.min.js",
                      caret = self.req.mpath + "/chinese-ime/caret.js",
-                     chat = self.req.mpath + "/chat.min.js",
+                     converse = self.req.mpath + "/chat.min.js",
+                     conversefull = self.req.mpath + "/chat.js",
+                     chat = _("Chat"),
                      couchjs = self.req.mpath + "/jquery.couch-1.5.js",
                      ajaxformjs = self.req.mpath + "/jquery.form.min.js",
                     )
