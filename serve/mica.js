@@ -2114,7 +2114,7 @@ function ctest() {
                 'jid': jid,
                 'password': oForm.password.value
             });
-            converse.chats.get('controlbox').close();
+//            converse.chats.get('controlbox').close();
         }
     });
 
@@ -2152,7 +2152,7 @@ function ctest() {
             'jid': jid,
             'password': oForm.password.value
         });
-        converse.chats.get('controlbox').close();
+//        converse.chats.get('controlbox').close();
     } else if (!converse.connection.connected) {
         converse.user.logout();
     } else {
@@ -2161,7 +2161,7 @@ function ctest() {
             'jid': jid,
             'password': oForm.password.value
         });
-        converse.chats.get('controlbox').close();
+//        converse.chats.get('controlbox').close();
     }
 }
 
