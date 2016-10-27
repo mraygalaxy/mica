@@ -1,3 +1,7 @@
+#conversejs .flyout {
+    margin-left: -10px;
+}
+
 .msgright {
     float:right;
     padding-bottom: 0px;
