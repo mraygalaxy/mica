@@ -26,8 +26,8 @@ jnius_detachable = False
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
-    from jnius import detach as jnius_detach
-    jnius_detachable = True
+    #from jnius import detach as jnius_detach
+    #jnius_detachable = True
 except ImportError, e :
     try :
         from pyobjus import autoclass, objc_f, objc_str as String, objc_l as Long, objc_i as Integer
