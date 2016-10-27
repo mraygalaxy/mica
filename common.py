@@ -44,10 +44,12 @@ if getdefaultencoding() != "utf-8" :
 try :
     from jnius import autoclass
     String = autoclass('java.lang.String')
+    if verbose :
+        print "pyjnius loaded."
 except ImportError, e :
     String = False
     if verbose :
-        print("pyjnius not available. Probably on a server.")
+        print "pyjnius not available. Probably on a server."
 
 gnutextkwargs = {}
 catalogs = threading.local()

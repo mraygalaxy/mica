@@ -1,13 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
 
-# Need to add this to frontpage and head element templates
-# return "<!DOCTYPE html>\n" + body 
-
-from twisted.web.template import Element, renderer, XMLFile, tags, XMLString
+from twisted.web.template import Element, renderer, tags, XMLString
 from twisted.web._flatten import _flattenTree
-from twisted.python.filepath import FilePath
-from twisted.internet import defer
 from cStringIO import StringIO
 from common import *
 from os import path as os_path
@@ -81,7 +75,6 @@ class CommonElement(Element) :
         pt = pyratemp.Template(f)
         #mverbose("Rendered: " + pt(**conditionals))
         self.loader = XMLString(unicheck(pt(**conditionals)))
-        #self.loader = XMLFile(FilePath(cwd + 'serve/' + template_name).path)
 
     def pullpush(self) :
         pull = self.req.db.pull_percent() if self.req.db else "0"
