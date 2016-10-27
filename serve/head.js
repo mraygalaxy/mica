@@ -1,4 +1,5 @@
 var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}}
+var chat_username = false;
 
 /*
  * Only functions defined in the main HTML page
@@ -321,6 +322,189 @@ function showNotifications(msgfrom, msg, lang) {
             // notification.onshow = …
             // notification.onerror = …
         }
+    }
+}
+
+function ctest() {
+    var oForm = document.getElementById('loginForm');
+
+    var server = oForm.server.value;
+    var domain = oForm.domain.value;
+    chat_username = oForm.username.value;
+	jid = chat_username + "@" + domain;
+
+    if ($("#mobile").html() == 'false' && window.location.protocol !== "https:"){
+        console.log("Insecure chat.");
+        httpbase = 'http://' + server + ':5280/http-bind/';
+    } else {
+        console.log("Secure chat.");
+        httpbase = 'https://' + server + ':5281/http-bind/';
+    }
+
+    converse.plugins.add('mll', {
+
+        initialize: function () {
+            //alert(this.converse.user_settings.initialize_message);
+        },
+
+        overrides: {
+            ChatBoxes: {
+                onMessage: function (text) {
+                    var $message = $(text);
+                    if ($message != undefined) {
+                        if ($message.attr('type') != 'error') {
+                            var body = $message.children('body').text();
+                            if (body != "") {
+                                from = $message.attr('from').split("@")[0];
+                                to = $message.attr('to').split("@")[0];
+                                appendConverse(from, to, $message, this, "in");
+                            }
+                        }
+                    }
+                    return true;
+                }
+            },
+            ChatBoxView: {
+                onMessageSubmitted: function (text) {
+                    var conv = this.__super__.converse;
+                    if (!conv.connection.authenticated) {
+                        return this.showHelpMessages(
+                            ['Sorry, the connection has been lost, '+
+                                'and your message could not be sent'],
+                            'error'
+                        );
+                    }
+                    var match = text.replace(/^\s*/, "").match(/^\/(.*)\s*$/), msgs;
+                    if (match) {
+                        if (match[1] === "clear") {
+                            return this.clearMessages();
+                        }
+                        else if (match[1] === "help") {
+                            msgs = [
+                                '<strong>/help</strong>:'+__('Show this menu')+'',
+                                '<strong>/me</strong>:'+__('Write in the third person')+'',
+                                '<strong>/clear</strong>:'+__('Remove messages')+''
+                                ];
+                            this.showHelpMessages(msgs);
+                            return;
+                        }
+                    }
+                    var fullname = conv.xmppstatus.get('fullname');
+                    fullname = _.isEmpty(fullname)? conv.bare_jid: fullname;
+                    var message = this.model.messages.create({
+                        fullname: fullname,
+                        sender: 'me',
+                        time: moment().format(),
+                        message: text
+                    });
+                    this.sendMessage(message);
+                    to = this.model.get('jid').split("@")[0];
+                    appendConverse(chat_username, to, text, this, message.attributes.msgid);
+                },
+                renderMessage: function (attrs) {
+                    var conv = this.__super__.converse;
+                    var msg_time = moment(attrs.time) || moment,
+                        text = attrs.message,
+                        match = text.match(/^\/(.*?)(?: (.*))?$/),
+                        fullname = this.model.get('fullname') || attrs.fullname,
+                        extra_classes = attrs.delayed && 'delayed' || '',
+                        template, username;
+
+                    if ((match) && (match[1] === 'me')) {
+                        text = text.replace(/^\/me/, '');
+                        template = conv.templates.action;
+                        username = fullname;
+                    } else  {
+                        template = conv.templates.message;
+                        username = attrs.sender === 'me' && local('me') || fullname;
+                    }
+                    this.$content.find('div.chat-event').remove();
+
+                    if (this.is_chatroom && attrs.sender === 'them' && (new RegExp("\\b"+this.model.get('nick')+"\\b")).test(text)) {
+                        extra_classes += ' mentioned';
+                    }
+                    if (text.length > 10000) {
+                        text = text.substring(0, 10) + '...';
+                        this.showStatusNotification(local("largemessage"), true, true);
+                    }
+                    return $(template(
+                            _.extend(this.getExtraMessageTemplateAttributes(attrs), {
+                                'msgid': attrs.msgid,
+                                'sender': attrs.sender,
+                                'time': msg_time.format('hh:mm'),
+                                'isodate': msg_time.format(),
+                                'username': username,
+                                'message': '',
+                                'extra_classes': extra_classes
+                            })
+                        )).children('.chat-msg-content').first().html(text)
+                            .addHyperlinks()
+                            .addEmoticons(conv.visible_toolbar_buttons.emoticons).parent();
+                }
+            }
+        }
+    });
+
+    converse.listen.on('connected', function (event) { 
+        console.log("WE ARE INITIALIZED: " + jid);
+    });
+
+    converse.listen.on('disconnected', function (event) { 
+        if (converse_first_time) {
+            converse_first_time = false;
+            console.log("DISCONNECTED. Logging in again...");
+            converse.user.login({
+                'jid': jid,
+                'password': oForm.password.value
+            });
+//            converse.chats.get('controlbox').close();
+        }
+    });
+
+    converse.listen.on('chatBoxOpened', function (event, chatbox) {
+        var ci = chatbox.$el.find("textarea.chat-textarea").chineseInput({
+            debug: true,
+            input: {
+                initial: 'simplified',//'traditional', // or 'simplified'
+                allowChange: true
+            },
+            allowHide: true,
+            active: true
+        });
+    });
+
+    /* TODO: use xhr_user_search and xhr_user_search_url options */
+    converse.initialize({
+        bosh_service_url: httpbase, 
+        keepalive: false,
+        prebind: false,
+        message_carbons: true,
+        play_sounds: true,
+        roster_groups: true,
+        show_controlbox_by_default: false,
+        allow_otr: false,
+    //    debug: true,
+        allow_muc: false,
+        allow_registration: false,
+        auto_reconnect: true,
+    });
+
+    if (converse.connection.connected && !converse.connection.authenticated) {
+        converse_first_time = false;
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+//        converse.chats.get('controlbox').close();
+    } else if (!converse.connection.connected) {
+        converse.user.logout();
+    } else {
+        converse_first_time = false;
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+//        converse.chats.get('controlbox').close();
     }
 }
 
