@@ -386,6 +386,35 @@ function appendConverse(who, to, $message, obj, direction) {
 	}, obj);
 }
 
+function handleConnectedLoaded(json, opaque) {
+    $("#pagechatsingle").html("");
+    $("#iResp").prepend(json.desc);
+    //$("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
+}
+
+function newContact(who) {
+    var peer = ("" + who).split("@")[0];
+    $("#iResp").html("");
+    $('#sendTo').val(who);
+    $("#missing").attr("style", "display: none");
+    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
+    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
+    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
+    $("#roster_pane").attr("style", "display: none");
+}
+
+
+function reload_history() {
+    $("#login_pane").attr("style", "display: block");
+    $("#chatLoading").attr("style", "display: block");
+    $("#iResp").html("");
+    document.getElementById('login_pane').style.display = 'none';
+    document.getElementById('sendmsg_pane').style.display = '';
+    document.getElementById('err').innerHTML = '';
+    if ($('#sendTo').val() != "") {
+        newContact($('#sendTo').val());
+    }
+}
 
 function ctest() {
     var oForm = document.getElementById('loginForm');
@@ -512,6 +541,7 @@ function ctest() {
     });
     converse.listen.on('connected', function (event) { 
         console.log("WE ARE CONNECTED");
+        reload_history();
     });
 
     converse.listen.on('reconnected', function (event) { 
@@ -526,8 +556,12 @@ function ctest() {
         */
     });
 
-    converse.listen.on('disconnected', function (event) { 
-        console.log("DISCONNECTED.");
+    /* This doesn't really work. Hard to get right. */
+    function relogin(attempt) {
+        retimeout = 100;
+        if (attempt > 0) {
+            retimeout = 1000;
+        }
         setTimeout(function() {
             if (converse_first_time) {
                 converse_first_time = false;
@@ -535,13 +569,22 @@ function ctest() {
                     converse.user.logout();
                 }
             }
+
+            if (converse.connection.connected && converse.connection.authenticated) {
+                console.log("NO NEED TO TRY AGAIN.");
+                return;
+            }
+
             console.log("lOGGING IN AGAIN...");
-            converse.user.login({
-                'jid': jid,
-                'password': oForm.password.value
-            });
+            converse.user.login();
 //            converse.chats.get('controlbox').close();
-        }, 500);
+            relogin(attempt + 1);
+        }, retimeout);
+    }
+
+    converse.listen.on('disconnected', function (event) { 
+        console.log("DISCONNECTED.");
+        //relogin(0);
     });
 
     converse.listen.on('chatBoxOpened', function (event, chatbox) {
@@ -549,7 +592,7 @@ function ctest() {
         if (cb.attr("ime") == undefined || cb.attr("ime") != "1") {
             cb.attr("ime", "1");
             var ci = cb.chineseInput({
-                debug: true,
+                debug: false,
                 input: {
                     initial: 'simplified',//'traditional', // or 'simplified'
                     allowChange: true
@@ -563,19 +606,25 @@ function ctest() {
     /* TODO: use xhr_user_search and xhr_user_search_url options */
     converse.initialize({
         bosh_service_url: httpbase, 
-        keepalive: false,
-        prebind: false,
+        keepalive: true,
+        prebind: true,
+        prebind_url: "/api?human=0&alien=prebind",
+        jid: jid,
         message_carbons: true,
         play_sounds: true,
         roster_groups: true,
         show_controlbox_by_default: false,
         allow_otr: false,
-    //    debug: true,
+//        debug: true,
         allow_muc: false,
         allow_registration: false,
-        auto_reconnect: false,
+//        auto_reconnect: true,
+        allow_logout: false,
+//        auto_login: true, //prebind only
     });
 
+//    converse.user.login();
+    /*
     if (converse.connection.connected && !converse.connection.authenticated) {
         converse_first_time = false;
         converse.user.login({
@@ -593,5 +642,6 @@ function ctest() {
         });
 //        converse.chats.get('controlbox').close();
     }
+    */
 }
 

@@ -13,8 +13,8 @@
 /* $font-path: "../fonticons/fonts/" !default; */
 @font-face {
   font-family: 'Converse-js';
-  src: url("https://cdn.conversejs.org/fonticons/fonts/icomoon.eot?-mnoxh0");
-  src: url("https://cdn.conversejs.org/fonticons/fonts/icomoon.eot?#iefix-mnoxh0") format("embedded-opentype"), url("https://cdn.conversejs.org/fonticons/fonts/icomoon.woff?-mnoxh0") format("woff"), url("https://cdn.conversejs.org/fonticons/fonts/icomoon.ttf?-mnoxh0") format("truetype"), url("https://cdn.conversejs.org/fonticons/fonts/icomoon.svg?-mnoxh0#icomoon") format("svg");
+  src: url("https://readalien.com/serve/fonticons/fonts/icomoon.eot?-mnoxh0");
+  src: url("https://readalien.com/serve/fonticons/fonts/icomoon.eot?#iefix-mnoxh0") format("embedded-opentype"), url("https://readalien.com/serve/fonticons/fonts/icomoon.woff?-mnoxh0") format("woff"), url("https://readalien.com/serve/fonticons/fonts/icomoon.ttf?-mnoxh0") format("truetype"), url("https://readalien.com/serve/fonticons/fonts/icomoon.svg?-mnoxh0#icomoon") format("svg");
   font-weight: normal;
   font-style: normal; }
 .icon-conversejs {

@@ -32,6 +32,7 @@ from common import *
 from serializable import *
 from translator import *
 from templates import *
+from prebind import BOSHClient 
 
 uploads_enabled = True
 dbtag = "MICA"
@@ -3367,6 +3368,39 @@ class MICA(object):
 
         return "success"
 
+    def render_prebind(self, req, unused_story) :
+        jid = myquote(req.session.value["username"]) + "@" + params["main_server"]
+        if mobile :
+            jpass = req.session.value["password"]
+        else :
+            jpass = req.session.value["temp_jabber_pw"]
+
+        rid = False
+        if "bosh_rid" in req.session.value :
+            rid = req.session.value["bosh_rid"]
+
+        if mobile or int(params["sslport"]) != -1:
+            bc = BOSHClient(jid, jpass, "https://" + params["main_server"] + ":5281/http-bind", rid)
+        else :
+            bc = BOSHClient(jid, jpass, "http://" + params["main_server"] + ":5280/http-bind", rid)
+
+        try :
+            bc.startSessionAndAuth()
+        except Exception, e :
+            print "Failed to prebind: " + str(e)
+            raise exc.HTTPBadRequest("prebind: Auth request failed. Debug me please.")
+
+        if not bc.logged_in :
+            raise exc.HTTPBadRequest("prebind: Auth request failed. Debug me please.")
+
+        req.session.value["bosh_rid"] = bc.rid
+        result = {}
+        result['jid'] = jid
+        result['sid'] = bc.sid
+        result['rid'] = bc.rid 
+
+        return self.api(req, json = result)
+
     def render_auth(self, req) :
         # We only allow jabber to do this from the localhost. Nowhere else.
         mdebug("Auth request from source: " + req.source)
@@ -5306,12 +5340,10 @@ class MICA(object):
     def render(self, req) :
         global times
         mverbose(str(req.http.params))
-        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant" ] :
-            func = getattr(self, "render_" + req.action)
-            return func(req)
 
-        if req.action in ["auth", "push"] :
+        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push" ] :
             return getattr(self, "render_" + req.action)(req)
+
 
         from_third_party = False
 
@@ -5529,7 +5561,7 @@ class MICA(object):
         if req.action in ["home", "read", "edit" ] :
             return self.render_story(req, uuid, start_page)
 
-        if req.action in ["stories", "storylist", "account", "chat"] :
+        if req.action in ["stories", "storylist", "account", "chat", "prebind" ] :
             func = getattr(self, "render_" + req.action)
             return func(req, story)
 
