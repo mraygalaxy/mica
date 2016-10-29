@@ -30,7 +30,7 @@
                     <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
                     <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
                     <button data-role='none' type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-                    <button data-role='none' type='button' class='btn btn-sm btn-default' onclick='reload_history();'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
+                    <button data-role='none' type='button' class='btn btn-sm btn-default' onclick='reload_history(true);'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
                 </div>
             </form>
             <div style='width: 100%; height: 50%; overflow-y: auto; border: 3px solid grey'>
