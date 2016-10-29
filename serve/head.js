@@ -416,6 +416,7 @@ function reload_history(logincheck) {
         } catch (e) {
             relogin(0);
         }
+
     }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
@@ -648,7 +649,7 @@ function ctest() {
         allow_registration: false,
 //        auto_reconnect: true,
         allow_logout: false,
-        auto_login: true, //prebind only
+//        auto_login: true, //prebind only
     };
     converse.initialize(cparams);
 
