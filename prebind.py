@@ -5,7 +5,6 @@ import httplib, urllib
 import random, binascii
 from urlparse import urlparse
 import logging
-import requests
 
 from punjab.httpb import HttpbParse
 
@@ -38,8 +37,7 @@ class BOSHClient:
         self.headers = {"Content-type": "text/xml",
                         "Accept": "text/xml"}
 
-    	self.bosh_service = bosh_service
-        self.conn = requests.Session()
+        self.bosh_service = urlparse(bosh_service)
         
     def buildBody(self, child=None, to = False):
         body = domish.Element(("http://jabber.org/protocol/httpbind", "body"))
@@ -62,15 +60,16 @@ class BOSHClient:
         parser = HttpbParse(True)
 
         #print "Body: " + str(body.toXml())
-        # start new session
-        response = self.conn.post(self.bosh_service, data = body.toXml(), headers = self.headers)
-
+        conn = httplib.HTTPConnection(self.bosh_service.netloc)
+        conn.request("POST", self.bosh_service.path, body.toXml(), self.headers)
+        response = conn.getresponse()
         data = ''
-        if response.status_code == 200:
-            data = response.text
+        if response.status == 200:
+            data = response.read()
             #print "Response: " + str(data)
         else :
-            print "Error: " + str(response.status_code)
+            print "Error: " + str(response.status)
+        conn.close()
 
         return parser.parse(data)
 
