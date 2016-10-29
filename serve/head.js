@@ -407,7 +407,7 @@ function newContact(peer) {
 
 function reload_history(logincheck) {
     if (logincheck) {
-        relogin(0); 
+        converse.user.logout();
     }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
