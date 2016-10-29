@@ -349,7 +349,6 @@ function appendConverse(who, to, $message, obj, direction) {
      * equal to the name of the peer, but with a group chat, we'll need to choose something
      * unique for the peer value. Theoretically, the server-side shouldn't change too much.
      */
-    console.log("Comparing " + who + " to " + chat_username);
     if (who == chat_username) {
         var peer = msgto;
         var msgclass = "msgright";
@@ -373,8 +372,6 @@ function appendConverse(who, to, $message, obj, direction) {
                 }
                 obj.__super__.onMessage.apply(obj, [$message.get()]);
             } else {
-//              obj.__super__.onMessageSubmitted.apply(obj, [json.desc]);
-                console.log("Got response for uuid: " + direction);
                 var d = $("[data-msgid='" + direction + "']").find(".chat-msg-content");
                 if(json.success)  {
                     d.html(json.result.human);
@@ -392,27 +389,33 @@ function handleConnectedLoaded(json, opaque) {
     //$("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
-function newContact(who) {
-    var peer = ("" + who).split("@")[0];
+function newContact(peer) {
+    if($("#sendTo").val() == peer) {
+        return;
+    }
     $("#iResp").html("");
-    $('#sendTo').val(who);
-    $("#missing").attr("style", "display: none");
-    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
-    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
-    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
-    $("#roster_pane").attr("style", "display: none");
+    $('#sendTo').val(peer);
+    /* 
+     * For some reason. Loading the history
+     * made the IME stop working.
+     * figure it out later.
+     */
+//    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
+//    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
+//    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
-
 function reload_history() {
-    $("#login_pane").attr("style", "display: block");
-    $("#chatLoading").attr("style", "display: block");
-    $("#iResp").html("");
-    document.getElementById('login_pane').style.display = 'none';
-    document.getElementById('sendmsg_pane').style.display = '';
-    document.getElementById('err').innerHTML = '';
     if ($('#sendTo').val() != "") {
-        newContact($('#sendTo').val());
+        $("#login_pane").attr("style", "display: block");
+        $("#chatLoading").attr("style", "display: block");
+        $("#iResp").html("");
+        document.getElementById('login_pane').style.display = 'none';
+        document.getElementById('sendmsg_pane').style.display = '';
+        document.getElementById('err').innerHTML = '';
+        to = $('#sendTo').val();
+        $('#sendTo').val("");
+        newContact(to);
     }
 }
 
@@ -489,7 +492,9 @@ function ctest() {
                         message: text
                     });
                     this.sendMessage(message);
-                    to = this.model.get('jid').split("@")[0];
+                    jid = this.model.get('jid');
+                    to = jid.split("@")[0];
+                    newContact(to);
                     appendConverse(chat_username, to, text, this, message.attributes.msgid);
                 },
                 renderMessage: function (attrs) {
@@ -518,6 +523,9 @@ function ctest() {
                         text = text.substring(0, 10) + '...';
                         this.showStatusNotification(local("largemessage"), true, true);
                     }
+
+                    start_trans_id += text.length;
+
                     return $(template(
                             _.extend(this.getExtraMessageTemplateAttributes(attrs), {
                                 'msgid': attrs.msgid,
