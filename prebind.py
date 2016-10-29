@@ -59,8 +59,11 @@ class BOSHClient:
     def sendBody(self, body):
         parser = HttpbParse(True)
 
-        #print "Body: " + str(body.toXml())
-        conn = httplib.HTTPConnection(self.bosh_service.netloc)
+#        print "Body: " + str(body.toXml() + " to " + self.bosh_service.netloc + " " + self.bosh_service.path + " " + str(self.bosh_service.scheme))
+        if self.bosh_service.scheme == "https" : 
+            conn = httplib.HTTPSConnection(self.bosh_service.netloc)
+        else :
+            conn = httplib.HTTPConnection(self.bosh_service.netloc)
         conn.request("POST", self.bosh_service.path, body.toXml(), self.headers)
         response = conn.getresponse()
         data = ''
