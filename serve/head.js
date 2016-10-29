@@ -405,7 +405,10 @@ function newContact(peer) {
 //    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
-function reload_history() {
+function reload_history(logincheck) {
+    if (logincheck) {
+        relogin(0); 
+    }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
         $("#chatLoading").attr("style", "display: block");
@@ -417,6 +420,43 @@ function reload_history() {
         $('#sendTo').val("");
         newContact(to);
     }
+}
+
+var cparams;
+
+/* This doesn't really work. Hard to get right. */
+function relogin(attempt) {
+    retimeout = 100;
+    if (attempt > 0) {
+        retimeout = 5000;
+    }
+    console.log("Setting timeout: " + retimeout + " secs.");
+    setTimeout(function() {
+        try {
+            console.log("Checking connectedness.");
+            if (converse.connection.connected()) {
+                console.log("Still connected. Nothing to do.");
+                return;
+            }
+
+            console.log("Disabling listeners.");
+            converse.listen.not('disconnected');
+            converse.listen.not('recconnected');
+            console.log("Logging out.");
+            converse.user.logout();
+            console.log("Logging in.");
+            converse.user.login();
+//            converse.chats.get('controlbox').close();
+        } catch (e) {
+            console.log("Couldn't reconnect: " + e);
+            try {
+                converse.initialize(cparams);
+            } catch (e) {
+                console.log("Couldn't reinitialize either.");
+            }
+        }
+        relogin(attempt + 1);
+    }, retimeout);
 }
 
 function ctest() {
@@ -549,50 +589,22 @@ function ctest() {
     });
     converse.listen.on('connected', function (event) { 
         console.log("WE ARE CONNECTED");
-        reload_history();
-    });
-
-    converse.listen.on('reconnected', function (event) { 
-        console.log("reconnected. Start all over");
-        /*
-        converse.chats.get('controlbox').close();
-        converse.user.logout();
-        converse.user.login({
-            'jid': jid,
-            'password': oForm.password.value
+        reload_history(false);
+        converse.listen.on('disconnected', function (event) { 
+            console.log("DISCONNECTED.");
+            relogin(0);
         });
-        */
-    });
-
-    /* This doesn't really work. Hard to get right. */
-    function relogin(attempt) {
-        retimeout = 100;
-        if (attempt > 0) {
-            retimeout = 1000;
-        }
-        setTimeout(function() {
-            if (converse_first_time) {
-                converse_first_time = false;
-                if (converse.connection.connected || converse.connection.authenticated) {
-                    converse.user.logout();
-                }
-            }
-
-            if (converse.connection.connected && converse.connection.authenticated) {
-                console.log("NO NEED TO TRY AGAIN.");
-                return;
-            }
-
-            console.log("lOGGING IN AGAIN...");
-            converse.user.login();
-//            converse.chats.get('controlbox').close();
-            relogin(attempt + 1);
-        }, retimeout);
-    }
-
-    converse.listen.on('disconnected', function (event) { 
-        console.log("DISCONNECTED.");
-        //relogin(0);
+        converse.listen.on('reconnected', function (event) { 
+            console.log("reconnected. Start all over");
+            /*
+            converse.chats.get('controlbox').close();
+            converse.user.logout();
+            converse.user.login({
+                'jid': jid,
+                'password': oForm.password.value
+            });
+            */
+        });
     });
 
     converse.listen.on('chatBoxOpened', function (event, chatbox) {
@@ -612,7 +624,7 @@ function ctest() {
     });
 
     /* TODO: use xhr_user_search and xhr_user_search_url options */
-    converse.initialize({
+    cparams = {
         bosh_service_url: httpbase, 
         keepalive: true,
         prebind: true,
@@ -629,7 +641,8 @@ function ctest() {
 //        auto_reconnect: true,
         allow_logout: false,
 //        auto_login: true, //prebind only
-    });
+    };
+    converse.initialize(cparams);
 
 //    converse.user.login();
     /*
