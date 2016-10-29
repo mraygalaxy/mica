@@ -507,32 +507,57 @@ function ctest() {
         }
     });
 
+    converse.listen.on('initialized', function (event) { 
+        console.log("WE ARE INITIALIZED");
+    });
     converse.listen.on('connected', function (event) { 
-        console.log("WE ARE INITIALIZED: " + jid);
+        console.log("WE ARE CONNECTED");
+    });
+
+    converse.listen.on('reconnected', function (event) { 
+        console.log("reconnected. Start all over");
+        /*
+        converse.chats.get('controlbox').close();
+        converse.user.logout();
+        converse.user.login({
+            'jid': jid,
+            'password': oForm.password.value
+        });
+        */
     });
 
     converse.listen.on('disconnected', function (event) { 
-        if (converse_first_time) {
-            converse_first_time = false;
-            console.log("DISCONNECTED. Logging in again...");
+        console.log("DISCONNECTED.");
+        setTimeout(function() {
+            if (converse_first_time) {
+                converse_first_time = false;
+                if (converse.connection.connected || converse.connection.authenticated) {
+                    converse.user.logout();
+                }
+            }
+            console.log("lOGGING IN AGAIN...");
             converse.user.login({
                 'jid': jid,
                 'password': oForm.password.value
             });
 //            converse.chats.get('controlbox').close();
-        }
+        }, 500);
     });
 
     converse.listen.on('chatBoxOpened', function (event, chatbox) {
-        var ci = chatbox.$el.find("textarea.chat-textarea").chineseInput({
-            debug: true,
-            input: {
-                initial: 'simplified',//'traditional', // or 'simplified'
-                allowChange: true
-            },
-            allowHide: true,
-            active: true
-        });
+        var cb = chatbox.$el.find("textarea.chat-textarea");
+        if (cb.attr("ime") == undefined || cb.attr("ime") != "1") {
+            cb.attr("ime", "1");
+            var ci = cb.chineseInput({
+                debug: true,
+                input: {
+                    initial: 'simplified',//'traditional', // or 'simplified'
+                    allowChange: true
+                },
+                allowHide: true,
+                active: true
+            });
+        }
     });
 
     /* TODO: use xhr_user_search and xhr_user_search_url options */
@@ -548,7 +573,7 @@ function ctest() {
     //    debug: true,
         allow_muc: false,
         allow_registration: false,
-        auto_reconnect: true,
+        auto_reconnect: false,
     });
 
     if (converse.connection.connected && !converse.connection.authenticated) {
