@@ -410,13 +410,11 @@ function reload_history(logincheck) {
         try {
             if (converse.connection.connected()) {
                 converse.user.logout();
-            } else {
-                relogin(0);
             }
         } catch (e) {
-            relogin(0);
+            console.log("Ignoring failed logout.");
+            relogin(1);
         }
-
     }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
