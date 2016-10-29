@@ -407,7 +407,15 @@ function newContact(peer) {
 
 function reload_history(logincheck) {
     if (logincheck) {
-        converse.user.logout();
+        try {
+            if (converse.connection.connected()) {
+                converse.user.logout();
+            } else {
+                relogin(0);
+            }
+        } catch (e) {
+            relogin(0);
+        }
     }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
