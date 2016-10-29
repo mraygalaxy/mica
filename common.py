@@ -39,7 +39,7 @@ verbose = False
 if getdefaultencoding() != "utf-8" :
     if verbose :
         print "Correcting the default encoding back to UTF-8 from " + getdefaultencoding()
-    reload(sys).setdefaultencoding("utf-8")
+#    reload(sys).setdefaultencoding("utf-8")
 
 try :
     from jnius import autoclass
