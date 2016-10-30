@@ -193,7 +193,7 @@ msgstr "选择"
 msgid "Delete"
 msgstr "删除"
 
-#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into MICA format for learning.
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Translate"
 msgstr "翻译"
 
@@ -1407,7 +1407,6 @@ msgstr ""
 msgid "Your Chat Username is: "
 msgstr ""
 
-#. Send a chat message
 msgid "Send Message"
 msgstr ""
 
@@ -1415,6 +1414,7 @@ msgstr ""
 msgid "To"
 msgstr ""
 
+#. Send a chat message
 msgid "Send"
 msgstr ""
 
@@ -1713,4 +1713,26 @@ msgstr ""
 
 msgid ""
 "Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."
+msgstr ""
+
+msgid "me"
+msgstr ""
+
+msgid ""
+"A very large message has been received. This might be due to an attack meant "
+"to degrade the chat performance. Output has been shortened."
+msgstr ""
+
+msgid "Read Alien: Meta Language Learning"
+msgstr ""
+
+msgid "ReadAlien Message from"
+msgstr ""
+
+#. Buddy list
+msgid "Buddies"
+msgstr ""
+
+msgid ""
+"Democratize Languages: Learning a language should be just like reading a book"
 msgstr ""
