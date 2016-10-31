@@ -3349,6 +3349,7 @@ class MICA(object):
 
         if push_tokens :
             for group in ["gcm", "apns_dist", "apns_dev"] :
+                token_delete = [] 
                 for token in push_tokens[group] :
                     mdebug("Pushing to token: " + token)
                     if group == "gcm" :
@@ -3357,7 +3358,8 @@ class MICA(object):
                             gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
                             mdebug("Sent gcm")
                         except GCMNotRegisteredException, e :
-                            merr("Token has expired. Fix the app: " + token)
+                            merr("Token has expired. Will delete: " + token)
+                            token_delete.append(token)
                     elif group == "apns_dev" :
                         apns = APNs(use_sandbox = True, cert_file = params["apns_devcert"], key_file = params["apns_devkey"])
                         payload = Payload(alert = who + ": " + message, sound = "default", badge=1)
@@ -3368,6 +3370,21 @@ class MICA(object):
                         payload = Payload(alert = who + ": " + message, sound = "default", badge=1)
                         apns.gateway_server.send_notification(token, payload)
                         mdebug("Sent apns_dist")
+
+                if len(token_delete) > 0 :
+                    for token in token_delete :
+                        for tidx in range(0, len(push_tokens[group])) :
+                            if push_tokens[group][tidx] == token :
+                                mdebug("Deleting: " + token)
+                                del push_tokens[group][tidx]
+                                break
+                    try :
+                        mdebug("Saving update tokens...")
+                        pushdb[self.tokens()] = push_tokens
+                        mdebug("Saved.")
+                    except Exception, e :
+                        mwarn("Failed to save updated token list. Will try again next time.")
+
 
         return "success"
 
