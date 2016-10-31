@@ -605,11 +605,6 @@ function ctest() {
             console.log("reconnected. Start all over");
             /*
             converse.chats.get('controlbox').close();
-            converse.user.logout();
-            converse.user.login({
-                'jid': jid,
-                'password': oForm.password.value
-            });
             */
         });
     });
@@ -652,25 +647,5 @@ function ctest() {
     };
     converse.initialize(cparams);
 
-//    converse.user.login();
-    /*
-    if (converse.connection.connected && !converse.connection.authenticated) {
-        converse_first_time = false;
-        converse.user.login({
-            'jid': jid,
-            'password': oForm.password.value
-        });
-//        converse.chats.get('controlbox').close();
-    } else if (!converse.connection.connected) {
-        converse.user.logout();
-    } else {
-        converse_first_time = false;
-        converse.user.login({
-            'jid': jid,
-            'password': oForm.password.value
-        });
-//        converse.chats.get('controlbox').close();
-    }
-    */
 }
 
