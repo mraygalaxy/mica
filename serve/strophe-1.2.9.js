@@ -2880,7 +2880,6 @@ Strophe.Connection.prototype = {
                 acceptable = true;
             }
 
-            /*
             if (!acceptable) {
                 throw {
                     name: "StropheError",
@@ -2888,7 +2887,6 @@ Strophe.Connection.prototype = {
                              "\nExpected jid: " + expectedFrom
                 };
             }
-            */
 
             var iqtype = stanza.getAttribute('type');
             if (iqtype == 'result') {
