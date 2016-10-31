@@ -1,7 +1,17 @@
 #!/usr/bin/env python 
 # coding: utf-8
+
+try:
+    import http.client as http_client
+except ImportError:
+    # Python 2
+    import httplib as http_client
+
+#http_client.HTTPConnection.debuglevel = 1
+#http_client.HTTPSConnection.debuglevel = 1
+
 import sys, os
-import httplib, urllib
+import urllib
 import random, binascii
 from urlparse import urlparse
 import logging
@@ -16,11 +26,7 @@ SASL_XMLNS = 'urn:ietf:params:xml:ns:xmpp-sasl'
 BIND_XMLNS = 'urn:ietf:params:xml:ns:xmpp-bind'
 SESSION_XMLNS = 'urn:ietf:params:xml:ns:xmpp-session'
 
-try:
-    import http.client as http_client
-except ImportError:
-    # Python 2
-    import httplib as http_client
+from common import *
 
 class BOSHClient:
     def __init__(self, jabberid, password, bosh_service, rid = False):
@@ -59,19 +65,19 @@ class BOSHClient:
     def sendBody(self, body):
         parser = HttpbParse(True)
 
-#        print "Body: " + str(body.toXml() + " to " + self.bosh_service.netloc + " " + self.bosh_service.path + " " + str(self.bosh_service.scheme))
+        mdebug("Body: " + str(body.toXml() + " to " + self.bosh_service.netloc + " " + self.bosh_service.path + " " + str(self.bosh_service.scheme)))
         if self.bosh_service.scheme == "https" : 
-            conn = httplib.HTTPSConnection(self.bosh_service.netloc)
+            conn = http_client.HTTPSConnection(self.bosh_service.netloc)
         else :
-            conn = httplib.HTTPConnection(self.bosh_service.netloc)
+            conn = http_client.HTTPConnection(self.bosh_service.netloc)
         conn.request("POST", self.bosh_service.path, body.toXml(), self.headers)
         response = conn.getresponse()
         data = ''
         if response.status == 200:
             data = response.read()
-            #print "Response: " + str(data)
+            mdebug("Response: " + str(data))
         else :
-            print "Error: " + str(response.status)
+            mdebug("Error: " + str(response.status))
         conn.close()
 
         return parser.parse(data)
