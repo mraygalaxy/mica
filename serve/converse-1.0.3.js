@@ -3615,7 +3615,7 @@ define("polyfill", function(){});
                 this.set(_.extend({
                     'id': bare_jid,
                     'jid': bare_jid,
-                    'fullname': bare_jid,
+                    'fullname': unescape(bare_jid),
                     'chat_status': 'offline',
                     'user_id': Strophe.getNodeFromJid(jid),
                     'resources': resource ? [resource] : [],
@@ -3643,7 +3643,7 @@ define("polyfill", function(){});
                 if (message && message !== "") {
                     pres.c("status").t(message).up();
                 }
-                var nick = converse.xmppstatus.get('fullname');
+                var nick = unescape(converse.xmppstatus.get('fullname'));
                 if (nick && nick !== "") {
                     pres.c('nick', {'xmlns': Strophe.NS.NICK}).t(nick).up();
                 }
@@ -3781,7 +3781,7 @@ define("polyfill", function(){});
                 $(msg).find('item').each(function (i, items) {
                     if (this.getAttribute('action') === 'add') {
                         converse.roster.addAndSubscribe(
-                                this.getAttribute('jid'), null, converse.xmppstatus.get('fullname'));
+                                this.getAttribute('jid'), null, unescape(converse.xmppstatus.get('fullname')));
                     }
                 });
                 return true;
@@ -3841,12 +3841,12 @@ define("polyfill", function(){});
                  */
                 var deferred = new $.Deferred();
                 groups = groups || [];
-                name = _.isEmpty(name)? jid: name;
+                name = unescape(_.isEmpty(name)? jid: name);
                 this.sendContactAddIQ(jid, name, groups,
                     function (iq) {
                         var contact = this.create(_.extend({
                             ask: undefined,
-                            fullname: name,
+                            fullname: unescape(name),
                             groups: groups,
                             jid: jid,
                             requesting: false,
@@ -3979,7 +3979,7 @@ define("polyfill", function(){});
                     }
                     this.create({
                         ask: ask,
-                        fullname: item.getAttribute("name") || jid,
+                        fullname: unescape(item.getAttribute("name") || jid),
                         groups: groups,
                         jid: jid,
                         subscription: subscription
@@ -4013,7 +4013,7 @@ define("polyfill", function(){});
                     subscription: 'none',
                     ask: null,
                     requesting: true,
-                    fullname: nick || bare_jid,
+                    fullname: unescape(nick || bare_jid),
                 };
                 this.create(user_data);
                 converse.emit('contactRequest', user_data);
@@ -4179,7 +4179,7 @@ define("polyfill", function(){});
                     body = $message.children('body').text();
                 }
                 var delayed = $delay.length > 0,
-                    fullname = this.get('fullname'),
+                    fullname = unescape(this.get('fullname')),
                     is_groupchat = type === 'groupchat',
                     chat_state = $message.find(converse.COMPOSING).length && converse.COMPOSING ||
                         $message.find(converse.PAUSED).length && converse.PAUSED ||
@@ -6556,7 +6556,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     var fullname = converse.xmppstatus.get('fullname');
                     fullname = _.isEmpty(fullname)? converse.bare_jid: fullname;
                     var message = this.model.messages.create({
-                        fullname: fullname,
+                        fullname: unescape(fullname),
                         sender: 'me',
                         time: moment().format(),
                         message: text
@@ -7521,7 +7521,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     if (ev && ev.preventDefault) { ev.preventDefault(); }
                     converse.roster.sendContactAddIQ(
                         this.model.get('jid'),
-                        this.model.get('fullname'),
+                        unescape(this.model.get('fullname')),
                         [],
                         function () { this.model.authorize().subscribe(); }.bind(this)
                     );
@@ -8858,7 +8858,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     .c("x", {xmlns: "jabber:x:event"}).c("composing");
                     converse.connection.send(msg);
                     this.model.messages.create({
-                        fullname: this.model.get('nick'),
+                        fullname: unescape(this.model.get('nick')),
                         sender: 'me',
                         time: moment().format(),
                         message: text,
@@ -10532,7 +10532,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     subscription: 'none',
                     ask: null,
                     requesting: true,
-                    fullname: fullname || nick || bare_jid,
+                    fullname: unescape(fullname || nick || bare_jid),
                     image: img,
                     image_type: img_type,
                     url: url,
@@ -10552,14 +10552,14 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
 
             converse.onVCardData = function (jid, iq, callback) {
                 var $vcard = $(iq).find('vCard'),
-                    fullname = $vcard.find('FN').text(),
+                    fullname = unescape($vcard.find('FN').text()),
                     img = $vcard.find('BINVAL').text(),
                     img_type = $vcard.find('TYPE').text(),
                     url = $vcard.find('URL').text();
                 if (jid) {
                     var contact = converse.roster.get(jid);
                     if (contact) {
-                        fullname = _.isEmpty(fullname)? contact.get('fullname') || jid: fullname;
+                        fullname = unescape(_.isEmpty(fullname)? contact.get('fullname') || jid: fullname);
                         contact.save({
                             'fullname': fullname,
                             'image_type': img_type,
@@ -10604,7 +10604,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                         jid,
                         function (iq, jid, fullname, image, image_type, url) {
                             chatbox.model.save({
-                                'fullname' : fullname || jid,
+                                'fullname' : unescape(fullname || jid),
                                 'url': url,
                                 'image_type': image_type,
                                 'image': image
@@ -10637,7 +10637,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     converse.getVCard(
                         null, // No 'to' attr when getting one's own vCard
                         function (iq, jid, fullname) {
-                            converse.xmppstatus.save({'fullname': fullname});
+                            converse.xmppstatus.save({'fullname': unescape(fullname)});
                         }
                     );
                 }
@@ -11411,7 +11411,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                         }
                         contact_jid = Strophe.getBareJidFromJid($message.attr('from'));
                         roster_item = converse.roster.get(contact_jid);
-                        title = __(___("%1$s says"), roster_item.get('fullname'));
+                        title = __(___("%1$s says"), unescape(roster_item.get('fullname')));
                     }
                 }
                 n = new Notification(title, {
@@ -11444,7 +11444,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                 if (message === null) {
                     return;
                 }
-                var n = new Notification(contact.fullname, {
+                var n = new Notification(unescape(contact.fullname), {
                         body: message,
                         lang: converse.i18n.locale_data.converse[""].lang,
                         icon: 'logo/conversejs.png'
@@ -11453,7 +11453,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
             };
 
             converse.showContactRequestNotification = function (contact) {
-                var n = new Notification(contact.fullname, {
+                var n = new Notification(unescape(contact.fullname), {
                         body: __('wants to be your contact'),
                         lang: converse.i18n.locale_data.converse[""].lang,
                         icon: 'logo/conversejs.png'
@@ -11850,7 +11850,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                         data.title = this.model.get('name');
                         this.$el.addClass('chat-head-chatroom');
                     } else {
-                        data.title = this.model.get('fullname');
+                        data.title = unescape(this.model.get('fullname'));
                         this.$el.addClass('chat-head-chatbox');
                     }
                     return this.$el.html(converse.templates.trimmed_chat(data));
@@ -12367,7 +12367,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
             converse.chatboxes.create({
                 'id': from_jid,
                 'jid': from_jid,
-                'fullname':  from_jid,
+                'fullname':  unescape(from_jid),
                 'type': 'headline'
             }).createMessage($message, undefined, message);
             converse.emit('message', message);
@@ -12434,7 +12434,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                                 _.extend(this.model.toJSON(), {
                                         show_toolbar: converse.show_toolbar,
                                         show_textarea: false,
-                                        title: this.model.get('fullname'),
+                                        title: unescape(this.model.get('fullname')),
                                         unread_msgs: __('You have unread messages'),
                                         info_close: __('Close this box'),
                                         info_minimize: __('Minimize this box'),
