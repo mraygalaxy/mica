@@ -3353,8 +3353,11 @@ class MICA(object):
                     mdebug("Pushing to token: " + token)
                     if group == "gcm" :
                         gcm = GCM(params["gcm"])
-                        gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
-                        mdebug("Sent gcm")
+                        try :
+                            gcm.plaintext_request(registration_id=token, data={'message': who + ": " + message})
+                            mdebug("Sent gcm")
+                        except GCMNotRegisteredException, e :
+                            merr("Token has expired. Fix the app: " + token)
                     elif group == "apns_dev" :
                         apns = APNs(use_sandbox = True, cert_file = params["apns_devcert"], key_file = params["apns_devkey"])
                         payload = Payload(alert = who + ": " + message, sound = "default", badge=1)
