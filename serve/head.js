@@ -638,6 +638,7 @@ function ctest() {
         show_controlbox_by_default: false,
         allow_otr: false,
 //        debug: true,
+        allow_chat_pending_contacts: true,
         allow_muc: false,
         allow_registration: false,
 //        auto_reconnect: true,
