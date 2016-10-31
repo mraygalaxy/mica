@@ -39,6 +39,7 @@ dbtag = "MICA"
 
 if not mobile :
     from gcm import *
+    from gcm.gcm import GCMNotRegisteredException
     from apns import APNs, Frame, Payload
     from crypticle import *
     from oauthlib.common import to_unicode
