@@ -10,11 +10,13 @@ from httplib import IncompleteRead, CannotSendRequest
 import errno
 from time import time
 from copy import deepcopy
+from base64 import b64encode as base64_b64encode
 
 try :
     from couchdb.http import Unauthorized, ResourceNotFound as couch_ResourceNotFound, ResourceConflict as couch_ResourceConflict, ServerError as couch_ServerError
     #from cookieclient import CookieServer as Server
     from couchdb import Server
+    import couchdb.http
     retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
     bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
     server_errors = [403, 500, 502]
@@ -669,9 +671,27 @@ class MicaServerCouchDB(AuthBase) :
         except UnicodeDecodeError :
             # CouchDB folks messed up badly. This is ridiculous that I have
             # to do this
+            mwarn("Retrying another way....")
             username_unquoted = username_unquoted.encode("latin1").decode("latin1")
             password_unquoted = password_unquoted.encode("latin1").decode("latin1")
             code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+        except UnicodeEncodeError :
+            mwarn("Retrying a third way....")
+            save = couchdb.http.basic_auth
+            def basic_auth_override(credentials) :
+                if credentials:
+                    token = base64_b64encode('%s:%s' % credentials)
+                    return ('Basic %s' % token.strip()).encode('ascii')
+
+            couchdb.http.basic_auth = basic_auth_override
+            try :
+                code, message, obj = tmp_server.resource.post('_session',headers={'Content-Type' : 'application/x-www-form-urlencoded'}, body="name=" + username_unquoted + "&password=" + password_unquoted)
+            except Exception, e :
+                merr(str(e))
+                couchdb.http.basic_auth = save
+                raise e
+            couchdb.http.basic_auth = save
+
 
         if (code != 200) :
             raise CommunicationError("MLL Unauthorized: " + username)
