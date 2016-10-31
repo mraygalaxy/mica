@@ -3390,22 +3390,25 @@ class MICA(object):
         return "success"
 
     def render_prebind(self, req, unused_story) :
-        jid = myquote(req.session.value["username"]) + "@" + params["main_server"]
+        jid = req.session.value["username"] + "@" + params["main_server"]
         if mobile :
             jpass = req.session.value["password"]
         else :
             jpass = req.session.value["temp_jabber_pw"]
 
-        rid = False
-        if "bosh_rid" in req.session.value :
-            rid = req.session.value["bosh_rid"]
-
-        if mobile or int(params["sslport"]) != -1:
-            bc = BOSHClient(jid, jpass, "https://" + params["main_server"] + ":5281/http-bind", rid)
-        else :
-            bc = BOSHClient(jid, jpass, "http://" + params["main_server"] + ":5280/http-bind", rid)
-
         try :
+            j1, j2 = jid.rsplit("@", 1)
+            jid = j1.replace("@", "%40") + "@" + j2
+
+            rid = False
+            if "bosh_rid" in req.session.value :
+                rid = req.session.value["bosh_rid"]
+
+            if mobile or int(params["sslport"]) != -1:
+                bc = BOSHClient(jid, jpass, "https://" + params["main_server"] + ":5281/http-bind", rid)
+            else :
+                bc = BOSHClient(jid, jpass, "http://" + params["main_server"] + ":5280/http-bind", rid)
+
             bc.startSessionAndAuth()
         except Exception, e :
             print "Failed to prebind: " + str(e)
