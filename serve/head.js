@@ -632,7 +632,7 @@ function ctest() {
         roster_groups: true,
         show_controlbox_by_default: false,
         allow_otr: false,
-//        debug: true,
+        debug: true,
         allow_chat_pending_contacts: true,
         allow_muc: false,
         allow_registration: false,
