@@ -45,7 +45,8 @@ var current_uuid = "uuid";
 var curr_img_num = 0;
 var curr_pages = 0;
 var oDbg, con;
-var start_trans_id = 0;
+var d = new Date();
+var start_trans_id = Math.round(d.getTime() / 1000);
 var flashTimer="";
 var converse_first_time = true;
 

@@ -648,6 +648,7 @@ function ctest() {
 //        auto_reconnect: true,
         allow_logout: false,
 //        auto_login: true, //prebind only
+        sounds_path: "/serve/sounds/",
     };
     converse.initialize(cparams);
 
