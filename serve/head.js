@@ -395,14 +395,9 @@ function newContact(peer) {
     }
     $("#iResp").html("");
     $('#sendTo').val(peer);
-    /* 
-     * For some reason. Loading the history
-     * made the IME stop working.
-     * figure it out later.
-     */
-//    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
-//    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
-//    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
+    $("#pagechatsingle").html(spinner + "&nbsp;" + local("loadingtext"));
+    var tzoffset = ((new Date()).getTimezoneOffset()) * 60;
+    go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
 function reload_history(logincheck) {
@@ -420,7 +415,6 @@ function reload_history(logincheck) {
         $("#login_pane").attr("style", "display: block");
         $("#chatLoading").attr("style", "display: block");
         $("#iResp").html("");
-        document.getElementById('login_pane').style.display = 'none';
         document.getElementById('sendmsg_pane').style.display = '';
         document.getElementById('err').innerHTML = '';
         to = $('#sendTo').val();
