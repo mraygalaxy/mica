@@ -41,7 +41,7 @@
         </a>
 
     <!--(elif ("timestamp" not in unit or not unit["punctuation"]) and (py != source))-->
-        @!(("hold" if py == u' ' else py) if py else target).lower()!@
+        @!(("" if py == u' ' else py) if py else target).lower()!@
     <!--(end)-->
 
     <!--(if action == "home" and "ipa_word" in unit and unit["ipa_word"])-->
