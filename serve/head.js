@@ -386,6 +386,7 @@ function appendConverse(who, to, $message, obj, direction) {
 function handleConnectedLoaded(json, opaque) {
     $("#pagechatsingle").html("");
     $("#iResp").prepend(json.desc);
+    $("#chatLoading").attr("style", "display: none");
     //$("#iResp").prop({ scrollTop: $("#iResp").prop("scrollHeight") });
 }
 
