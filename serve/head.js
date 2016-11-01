@@ -408,14 +408,7 @@ function newContact(peer) {
 
 function reload_history(logincheck) {
     if (logincheck) {
-        try {
-            if (converse.connection.connected()) {
-                converse.user.logout();
-            }
-        } catch (e) {
-            console.log("Ignoring failed logout.");
-            relogin(1);
-        }
+        relogin(1);
     }
     if ($('#sendTo').val() != "") {
         $("#login_pane").attr("style", "display: block");
@@ -433,37 +426,89 @@ var cparams;
 
 /* This doesn't really work. Hard to get right. */
 function relogin(attempt) {
-    retimeout = 100;
-    if (attempt > 0) {
-        retimeout = 5000;
-    }
-    console.log("Setting timeout: " + retimeout + " secs.");
-    setTimeout(function() {
-        try {
-            console.log("Checking connectedness.");
-            if (converse.connection.connected()) {
-                console.log("Still connected. Nothing to do.");
-                return;
-            }
-
-            console.log("Disabling listeners.");
-            converse.listen.not('disconnected');
-            converse.listen.not('recconnected');
-            console.log("Logging out.");
-            converse.user.logout();
-            console.log("Logging in.");
-            converse.user.login();
-//            converse.chats.get('controlbox').close();
-        } catch (e) {
-            console.log("Couldn't reconnect: " + e);
-            try {
-                converse.initialize(cparams);
-            } catch (e) {
-                console.log("Couldn't reinitialize either.");
-            }
+    console.log("Relogin called.");
+    try {
+        retimeout = 100;
+        if (attempt > 0) {
+            retimeout = 5000;
         }
-        relogin(attempt + 1);
-    }, retimeout);
+        console.log("Setting timeout: " + retimeout + " secs.");
+        setTimeout(function() {
+            try {
+                console.log("Checking connectedness.");
+                if (converse.connection.connected()) {
+                    console.log("Still connected. Nothing to do.");
+                    return;
+                }
+            } catch (e) {
+                console.log("Couldn't check status: " + e);
+            }
+            ckill();
+            relogin(attempt + 1);
+        }, retimeout);
+    } catch(e) {
+        console.log("Relogin failed: " + e);
+    }
+}
+
+function wait_for_return() {
+    setTimeout(function() {
+        if (converse == undefined) { 
+            console.log("Still undefined")
+            wait_for_return();
+        } else { 
+            console.log("Defined now.");
+            ctest();
+        }
+    }, 50);
+}
+
+function ckill() {
+    try {
+        console.log("Stopping listener.");
+        converse.listen.not("disconnected");
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Logging out.");
+        converse.user.logout();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Removing converse from DOM.");
+        $("#conversejs").remove();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Looking up script source.");
+        var orig = $("#conversescript").attr('src');
+        var newtag = "<script id='conversescript' src='" + orig + "'/>";
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Removing converse javascript from DOM.");
+        $("#conversescript").remove();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Deleting converse object");
+        delete converse;
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Going to append: " + newtag);
+        $("body").append($(newtag));
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+
+    wait_for_return();
 }
 
 function ctest() {
