@@ -4699,6 +4699,7 @@ define("polyfill", function(){});
                     converse.disconnection_cause = Strophe.Status.AUTHFAIL;
                     converse.onDisconnected();
                     converse.giveFeedback(''); // Wipe the feedback
+                    return;
                 }
                 var resource = Strophe.getResourceFromJid(this.jid);
                 if (!resource) {
@@ -6144,7 +6145,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
 
                 events: {
                     'click .close-chatbox-button': 'close',
-                    'keypress textarea.chat-textarea': 'keyPressed',
+                    'keypress .chat-textarea': 'keyPressed',
                     'click .toggle-smiley': 'toggleEmoticonMenu',
                     'click .toggle-smiley ul li': 'insertEmoticon',
                     'click .toggle-clear': 'clearMessages',
@@ -8680,7 +8681,7 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
                     'click .toggle-occupants a': 'toggleOccupants',
                     'click .new-msgs-indicator': 'viewUnreadMessages',
                     'click .occupant': 'onOccupantClicked',
-                    'keypress textarea.chat-textarea': 'keyPressed'
+                    'keypress .chat-textarea': 'keyPressed'
                 },
 
                 initialize: function () {
