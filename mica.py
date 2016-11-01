@@ -1657,7 +1657,7 @@ class MICA(object):
         output = run_template(req, ViewElement)
         return self.api(req, desc = output, json = json)
 
-    def nb_pages(self, req, story, cached = True, force = False):
+    def nb_pages(self, req, story, cached = True, force = False, empty_is_ok = False):
         nb_pages = 0
 
         if cached and "nb_pages" in story and not force:
@@ -1669,7 +1669,11 @@ class MICA(object):
                 nb_pages = result['value']
                 break
 
-            assert(nb_pages != 0)
+            if nb_pages == 0 :
+                if empty_is_ok :
+                    mwarn("We didn't find any pages, but it's ok. Continuing.")
+                else :
+                    assert(False)
 
             if cached :
                 tmp_story = req.db[self.story(req, story["name"])]
@@ -4720,7 +4724,7 @@ class MICA(object):
                         nb_pages = self.nb_pages(req, tmp_story)
 
                         if not nb_pages :
-                            nb_pages = self.nb_pages(req, tmp_story, force = True)
+                            nb_pages = self.nb_pages(req, tmp_story, force = True, empty_is_ok = True)
                             if not nb_pages :
                                 mdebug("Empty. =(")
                                 continue
