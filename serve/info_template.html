@@ -1,4 +1,5 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="help">
+<div style='background-color: white; color: black; padding-left: 20px'>
 <h3>Welcome to Documentation for <b>MLL</b>:</h3>
 <h4>(Meta Language Learning)</h4>
 <ol>
@@ -55,6 +56,8 @@ of our approach to learning by reading.
 
 
 These are the 'characters' that represent Chinese Characters.
+
+
 
 <h3 id='problem'>The phonetic problem:</h3>
 
@@ -165,7 +168,7 @@ section:
 
 
 
-<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/uploaded.png"/>
+<img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/uploaded.png"/>
 
 
 
@@ -217,7 +220,7 @@ to indicate the next steps you have to take in the story:
 First, you should click on the 'Magnifying Glass' icon to open
 the story in 'Review' mode.
 
-<h3 id='social'>Chat Mode:</h3>
+
 
 <h3 id='review'>Reviewing before Learning (Review Mode):</h3>
 
@@ -409,170 +412,8 @@ is a native speaker to help you out on your first few stories
 until you get fluent enough at context-matching to know when a 
 choice is wrong or not by yourself.
 
-<h3 id='editing'>Edit Mode:</h3>
+<h3 id='social'>Chat Mode:</h3>
 
-This mode is equally as import as 'Review' mode: Sometimes, MLL 
-improperly groups the wrong words together, for example in a 
-different story:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badgroup.png"/>
-
-
-
-This mode is not supported when learning a language like English,
-because because words are single units of meaning. But in a Character-based
-language, a single "word" can be composed of multiple picture-based
-characters. This mode will be disabled if your story is originally
-written in English.
-
-In the above example, the characters (穿着) are incorrectly
-grouped together by MLL, and since they are grouped together
-they have a single, fixed meaning: 'Chuān zhuó', which translates
-as "attire" a [beautiful flower dress]. This is not correct, and instead 
-the characters should be separated, as in: (穿 着), which instead 
-means: "Chuān zhe", which translates as "wear a" [beautiful flower dress].
-
-Without a native speaker reviewing the story, the language learner
-might clue in to the fact that 'attire' doesn't make much sense
-in the story. They could confirm this fact by first clicking on
-the characters themselves:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badselected.png"/>
-
-
-
-After clicking the characters, then you would click 'Instant' at 
-the top of the page and wait for the online translation to complete:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instantclick.png"/>
-
-
-
-MLL will then do an instant translation online by translating
-the individual characters in pieces and return an instant result:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instant.png"/>
-
-
-
-As you can see, the individual characters for (穿着) actually
-translate roughly to: "wear a" [beautiful flower dress] as 
-opposed to "attire" [beautiful flower dress].
-
-Solution: To solve this problem, you would click on the "Split"
-button at the top of the page selecting only the individual characters
-for "attire" as their are currently listed.
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitselect.png"/>
-
-
-
-A dialog will appear confirming that you indeed want to split this
-word apart into its constituent characters:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitconfirm.png"/>
-
-
-
-Which then results in reloading the story with the correct elements:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitfinish.png"/>
-
-
-
-A similar problem happens in MLL when an already-separated group of
-characters were not correctly merged into a single word, as in the
-following example:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergebad.png"/>
-
-
-
-In the above examples, the two characters at the end of the sentence
-"shí hòu" (时候) should in fact be merged into a single word
-which instantly translates as "when" (an extension of the word 'time'):
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergeinstant.png"/>
-
-
-
-This can easily be fixed in edit mode by, again selecting on the
-individual words and then selecting the "Merge" icon buttom: 
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergetry.png"/>
-
-
-
-After confirming that you really want to merge them together:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergeconfirm.png"/>
-
-
-
-The characters in the story will then read as:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergecomplete.png"/>
-
-
-
-(NOTE: A merge will not occur if MLL cannot find a definition
-for a merged group of words - the result is that the characters will
-continue to remain separated).
-
-Finally, MLL is also smart enough to know the history of various
-merged and split words. By clicking the 'forget' button on the left
-hand side of the story and re-translating the story (or by translating
-another story that shares some common characters with the above example),
-we can see how MLL is learning our editing behavior as we use
-the software:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/regroupsummary.png"/>
-
-
-
-As you can see in the story and the legend, we now have the story
-presented as it was originally translated without the proper edits,
-but instead, MLL is showing us that the two previous words and
-characters are "suggested" to be merged and split.
-
-All of these tools together are designed to make the reading experience
-as accurate as possible and as the language learner gets better and
-better, they will need to rely less and less on others to correct
-the story for them and more on themselves.
-
-Notice there is a "Try Recommendations" in both Review Mode and Edit modes.
-This option will "Bulk" edit or "Bulk" review any words recommended by MLL
-that were found to need review or editing based on your previous usage history.
-
-This is very useful in large books, like PDFs, where lots of content has
-a similar, highly-repetitive review/edit history. MLLs analytics can automatically
-recognized when these kinds of changes need to be repeated.
 
 <h3 id='reading'>Reading Mode:</h3>
 
@@ -588,7 +429,7 @@ it will appear in the "Reading" section:
 
 
 
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reviewed.png"/>
+<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reviewed.png"/>
 
 
 
@@ -694,7 +535,7 @@ useful tracking information:
 
 
 
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engprogress.png"/>
+<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engprogress.png"/>
 
 
 
@@ -724,6 +565,171 @@ are reading while you read more and more complicated texts.
 The more you read, the more you are forced to speak in your mind, 
 and the better you become!
 
+<h3 id='editing'>Edit Mode:</h3>
+
+This mode is equally as import as 'Review' mode: Sometimes, MLL 
+improperly groups the wrong words together, for example in a 
+different story:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badgroup.png"/>
+
+
+
+This mode is not supported when learning a language like English,
+because because words are single units of meaning. But in a Character-based
+language, a single "word" can be composed of multiple picture-based
+characters. This mode will be disabled if your story is originally
+written in English.
+
+In the above example, the characters (穿着) are incorrectly
+grouped together by MLL, and since they are grouped together
+they have a single, fixed meaning: 'Chuān zhuó', which translates
+as "attire" a [beautiful flower dress]. This is not correct, and instead 
+the characters should be separated, as in: (穿 着), which instead 
+means: "Chuān zhe", which translates as "wear a" [beautiful flower dress].
+
+Without a native speaker reviewing the story, the language learner
+might clue in to the fact that 'attire' doesn't make much sense
+in the story. They could confirm this fact by first clicking on
+the characters themselves:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/badselected.png"/>
+
+
+
+After clicking the characters, then you would click 'Instant' at 
+the top of the page and wait for the online translation to complete:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instantclick.png"/>
+
+
+
+MLL will then do an instant translation online by translating
+the individual characters in pieces and return an instant result:
+
+
+
+<img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/instant.png"/>
+
+
+
+As you can see, the individual characters for (穿着) actually
+translate roughly to: "wear a" [beautiful flower dress] as 
+opposed to "attire" [beautiful flower dress].
+
+Solution: To solve this problem, you would click on the "Split"
+button at the top of the page selecting only the individual characters
+for "attire" as their are currently listed.
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitselect.png"/>
+
+
+
+A dialog will appear confirming that you indeed want to split this
+word apart into its constituent characters:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitconfirm.png"/>
+
+
+
+Which then results in reloading the story with the correct elements:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/splitfinish.png"/>
+
+
+
+A similar problem happens in MLL when an already-separated group of
+characters were not correctly merged into a single word, as in the
+following example:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergebad.png"/>
+
+
+
+In the above examples, the two characters at the end of the sentence
+"shí hòu" (时候) should in fact be merged into a single word
+which instantly translates as "when" (an extension of the word 'time'):
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergeinstant.png"/>
+
+
+
+This can easily be fixed in edit mode by, again selecting on the
+individual words and then selecting the "Merge" icon buttom: 
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergetry.png"/>
+
+
+
+After confirming that you really want to merge them together:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergeconfirm.png"/>
+
+
+
+The characters in the story will then read as:
+
+
+
+<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/mergecomplete.png"/>
+
+
+
+(NOTE: A merge will not occur if MLL cannot find a definition
+for a merged group of words - the result is that the characters will
+continue to remain separated).
+
+Finally, MLL is also smart enough to know the history of various
+merged and split words. By clicking the 'forget' button on the left
+hand side of the story and re-translating the story (or by translating
+another story that shares some common characters with the above example),
+we can see how MLL is learning our editing behavior as we use
+the software:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/regroupsummary.png"/>
+
+
+
+As you can see in the story and the legend, we now have the story
+presented as it was originally translated without the proper edits,
+but instead, MLL is showing us that the two previous words and
+characters are "suggested" to be merged and split.
+
+All of these tools together are designed to make the reading experience
+as accurate as possible and as the language learner gets better and
+better, they will need to rely less and less on others to correct
+the story for them and more on themselves.
+
+Notice there is a "Try Recommendations" in both Review Mode and Edit modes.
+This option will "Bulk" edit or "Bulk" review any words recommended by MLL
+that were found to need review or editing based on your previous usage history.
+
+This is very useful in large books, like PDFs, where lots of content has
+a similar, highly-repetitive review/edit history. MLLs analytics can automatically
+recognized when these kinds of changes need to be repeated.
+
 <h3 id='social'>Social Learning:</h3>
 
 The future of this software is for users on the main website to be able to
@@ -751,7 +757,7 @@ can only grow...
 
 
 
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/trophy.jpg"/>
+<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/trophy.jpg"/>
 
-
+</div>
 </div>
