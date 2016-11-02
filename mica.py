@@ -4251,7 +4251,7 @@ class MICA(object):
                 output += "<br/><br/>"
                 output += "<h4>"
                 # Beginning of a message
-                output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' href='#help'>"
+                output += _("If this is your first time here") + ", <a data-role='none' class='btn btn-default' style='color: black' href='#help'>"
                 # end of a message
                 output += _("please read the tutorial") + "</a>"
                 output += "</h4>"
@@ -4982,9 +4982,9 @@ class MICA(object):
                 <br/><br/>%(welcome)s
                 <br/><br/>Save this Password: %(password)s
                 <br/><br/>%(firsttime)s,&#160;
-                <a rel='external' data-role='none' class='btn btn-default' href='/help'>%(tutorial)s</a>
+                <a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/help'>%(tutorial)s</a>
                 <br/><br/>%(happy)s!</h4>
-                <br/><a rel='external' data-role='none' class='btn btn-default' href='/'>%(start)s</a>
+                <br/><a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/'>%(start)s</a>
                 <script>
                     $('#maindisplay').attr('style', 'display: none');
                     $('#leftpane').attr('style', 'display: none');
@@ -5343,7 +5343,7 @@ class MICA(object):
         else :
             # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-            out += _("If this is your first time here") + ", <a data-role='none' class='btn btn-primary' href='#help'>"
+            out += _("If this is your first time here") + ", <a data-role='none' style='color: black' class='btn btn-primary' href='#help'>"
             out += _("please read the tutorial") + "</a>"
             if "last_view_mode" in req.session.value :
                 pageid = "#learn"
