@@ -3393,6 +3393,13 @@ class MICA(object):
 
         return "success"
 
+    def render_connected(self, req, unused_story) :
+        if mobile and params["mobileinternet"] :
+            if params["mobileinternet"].connected() == "none" :
+                return self.api(req, json = {"online" : False})
+
+        return self.api(req, json = {"online" : True})
+        
     def render_prebind(self, req, unused_story) :
         jid = req.session.value["username"] + "@" + params["main_server"]
         if mobile :
@@ -5589,7 +5596,7 @@ class MICA(object):
         if req.action in ["home", "read", "edit" ] :
             return self.render_story(req, uuid, start_page)
 
-        if req.action in ["stories", "storylist", "account", "chat", "prebind" ] :
+        if req.action in ["stories", "storylist", "account", "chat", "prebind", "connected" ] :
             func = getattr(self, "render_" + req.action)
             return func(req, story)
 

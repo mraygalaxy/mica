@@ -328,6 +328,7 @@ class ChatElement(CommonElement) :
                       processinstanttitle = _("instant translation of one or more words"),
                       processinstant = processinstantclick(self.req, request, tag),
                       performingtranslation= _("Doing instant translation..."),
+                      chatoffline = _("Internet access is unavailable. Chat offline."),
                       # In Chat mode, from what source language to what target language should translations occur.
                       chatlangtype = _("Learn (translate) from"),
                       # Notification from the online chat system that another user is logged in and has become available.

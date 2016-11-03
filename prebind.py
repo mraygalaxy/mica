@@ -67,9 +67,9 @@ class BOSHClient:
 
         mdebug("Body: " + str(body.toXml() + " to " + self.bosh_service.netloc + " " + self.bosh_service.path + " " + str(self.bosh_service.scheme)))
         if self.bosh_service.scheme == "https" : 
-            conn = http_client.HTTPSConnection(self.bosh_service.netloc)
+            conn = http_client.HTTPSConnection(self.bosh_service.netloc, timeout = 10)
         else :
-            conn = http_client.HTTPConnection(self.bosh_service.netloc)
+            conn = http_client.HTTPConnection(self.bosh_service.netloc, timeout = 10)
         conn.request("POST", self.bosh_service.path, body.toXml(), self.headers)
         response = conn.getresponse()
         data = ''

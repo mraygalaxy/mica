@@ -25,6 +25,7 @@
             <div style='height: 20px; border: 3px solid grey' id="iStatus"></div>
             <form data-ajax='false' id='sendForm' name="sendForm" action='path_to_nowhere'>
                  <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
+                 <div id='chatoffline' style='display: none'><b><t:slot name='chatoffline'/></b></div>
                 <div class="spaced">
                     <b><t:slot name='to'/>:</b>
                     <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
@@ -52,8 +53,8 @@
         <div id='chatLoading'><h4><t:slot name="spinner"/>&#160;<t:slot name='loading'/>...</h4></div>
     </div>
     <script>
-    //reconnect();
-    ctest();
+    creset();
+    reconnect();
     </script>
 </div> <!-- col-md-12 -->
 </div> <!-- row -->

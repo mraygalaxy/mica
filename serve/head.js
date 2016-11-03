@@ -193,6 +193,13 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
         var from = $.mobile.pageContainer.pagecontainer("getActivePage").attr('id');
         if (from != where) {
            loading();
+           if (from == "chat") {
+            try {
+                $("#conversejs").attr("style", "display: none");
+            } catch(e) {
+                console.log("Failed to hide converse. No biggie.");
+            }
+           }
         } else {
             console.log("We're already on this page. What's the dealio?");
             if (from == "stories") {
@@ -209,6 +216,12 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
             }
             if (!chat_loaded) {
                go(false, 'chat', unavailable(false), chat_success, false);
+            } else {
+                try {
+                   $("#conversejs").attr("style", "display: block");
+                } catch(e) {
+                    console.log("Failed to showe converse. No biggie.");
+                }
             }
         } else if (where == 'learn') {
             if (!learn_loaded) {
@@ -406,31 +419,16 @@ function newContact(peer) {
     go(false, "chat&history=" + peer + "&tzoffset=" + tzoffset, unavailable(false), handleConnectedLoaded, false);
 }
 
-function reload_history(logincheck) {
-    if (logincheck) {
-        relogin(1);
-    }
-    if ($('#sendTo').val() != "") {
-        $("#login_pane").attr("style", "display: block");
-        $("#chatLoading").attr("style", "display: block");
-        $("#iResp").html("");
-        document.getElementById('sendmsg_pane').style.display = '';
-        document.getElementById('err').innerHTML = '';
-        to = $('#sendTo').val();
-        $('#sendTo').val("");
-        newContact(unescape(to));
-    }
-}
-
 var cparams;
 
-/* This doesn't really work. Hard to get right. */
+var login_in_progress = false;
+
 function relogin(attempt) {
     console.log("Relogin called.");
     try {
-        retimeout = 100;
+        retimeout = 50;
         if (attempt > 0) {
-            retimeout = 5000;
+            retimeout = 10000;
         }
         console.log("Setting timeout: " + retimeout + " secs.");
         setTimeout(function() {
@@ -438,77 +436,25 @@ function relogin(attempt) {
                 console.log("Checking connectedness.");
                 if (converse.connection.connected()) {
                     console.log("Still connected. Nothing to do.");
+                    login_in_progress = false;
                     return;
                 }
             } catch (e) {
                 console.log("Couldn't check status: " + e);
             }
-            ckill();
+            if (!login_in_progress) {
+                login_in_progress = true;
+                console.log("Trying again.");
+                reconnect();
+            } else {
+                console.log("Already in progress.");
+            }
             relogin(attempt + 1);
         }, retimeout);
     } catch(e) {
         console.log("Relogin failed: " + e);
     }
-}
-
-function wait_for_return() {
-    setTimeout(function() {
-        if (converse == undefined) { 
-            console.log("Still undefined")
-            wait_for_return();
-        } else { 
-            console.log("Defined now.");
-            ctest();
-        }
-    }, 50);
-}
-
-function ckill() {
-    try {
-        console.log("Stopping listener.");
-        converse.listen.not("disconnected");
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Logging out.");
-        converse.user.logout();
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Removing converse from DOM.");
-        $("#conversejs").remove();
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Looking up script source.");
-        var orig = $("#conversescript").attr('src');
-        var newtag = "<script id='conversescript' src='" + orig + "'/>";
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Removing converse javascript from DOM.");
-        $("#conversescript").remove();
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Deleting converse object");
-        delete converse;
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-    try {
-        console.log("Going to append: " + newtag);
-        $("body").append($(newtag));
-    } catch(e) {
-        console.log("Failed to kill converse: " + e);
-    }
-
-    wait_for_return();
+    login_in_progress = false;
 }
 
 function ctest() {
@@ -644,6 +590,7 @@ function ctest() {
         reload_history(false);
         converse.listen.on('disconnected', function (event) { 
             console.log("DISCONNECTED.");
+            creset();
             relogin(0);
         });
         converse.listen.on('reconnected', function (event) { 
@@ -682,7 +629,7 @@ function ctest() {
         roster_groups: true,
         show_controlbox_by_default: false,
         allow_otr: false,
-        debug: true,
+//        debug: true,
         allow_chat_pending_contacts: true,
         allow_muc: false,
         allow_registration: false,
@@ -691,10 +638,113 @@ function ctest() {
 //        auto_login: true, //prebind only
         sounds_path: "/serve/sounds/",
     };
-    converse.initialize(cparams);
+}
+
+function wait_for_return() {
+    setTimeout(function() {
+        if (converse == undefined) { 
+            console.log("Still undefined")
+            wait_for_return();
+        } else { 
+            console.log("Defined now.");
+            ctest();
+            converse.initialize(cparams);
+        }
+    }, 50);
+}
+
+function creset() {
+    try {
+        console.log("Stopping listener.");
+        converse.listen.not("disconnected");
+        converse.listen.not("reconnected");
+        converse.listen.not("connected");
+        converse.listen.not("initialized");
+        converse.listen.not("chatBoxOpened");
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Logging out.");
+        converse.user.logout();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Removing converse from DOM.");
+        $("#conversejs").remove();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Looking up script source.");
+        var orig = $("#conversescript").attr('src');
+        var newtag = "<script id='conversescript' src='" + orig + "'/>";
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Removing converse javascript from DOM.");
+        $("#conversescript").remove();
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Deleting converse object");
+        delete converse;
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
+    try {
+        console.log("Going to append: " + newtag);
+        $("body").append($(newtag));
+    } catch(e) {
+        console.log("Failed to kill converse: " + e);
+    }
 
 }
 
+function reconnect_complete(json, opaque) {
+    if (json.success) {
+        if (!json.online) {
+            $("#chatoffline").attr("style", "display: block");
+            setTimeout(reconnect, 5000);
+            return;
+        }
+    } else {
+        $("#chaterror").html(json.desc);
+        $("#chaterror").attr("style", "display: block");
+        console.log(json.desc);
+        setTimeout(reconnect, 5000);
+        return;
+    }
+
+    console.log("we're online");
+    $("#chatoffline").attr("style", "display: none");
+    $("#chaterror").attr("style", "display: none");
+    wait_for_return();
+}
+
+function reconnect() {
+    go(false, 'connected', unavailable(false), reconnect_complete, false);
+}
+
+function reload_history(logincheck) {
+    if (logincheck) {
+        creset();
+        relogin(0);
+    }
+    if ($('#sendTo').val() != "") {
+        $("#login_pane").attr("style", "display: block");
+        $("#chatLoading").attr("style", "display: block");
+        $("#iResp").html("");
+        document.getElementById('sendmsg_pane').style.display = '';
+        document.getElementById('err').innerHTML = '';
+        to = $('#sendTo').val();
+        $('#sendTo').val("");
+        newContact(unescape(to));
+    }
+}
 
 function help_anchors() {
   $('a.anch').click(function() {
