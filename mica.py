@@ -3379,7 +3379,7 @@ class MICA(object):
                         romanization = ""
 
                         for unit in story["pages"]["0"]["units"] :
-                            ret = self.get_parts(unit, gp)
+                            ret = self.get_parts(unit, self.tofrom(story))
 
                             if ret != False :
                                 py, target = ret
