@@ -3353,20 +3353,16 @@ class MICA(object):
         push_tokens = pushdb.try_get(self.tokens())
 
         if push_tokens :
-            mdebug("Looking up account for: " + to)
             acct_info = pushdb[self.acct(to)]
-            mdebug("Found.")
             story = { 
                     "target_language" : supported_map[acct_info["language"]], 
                     "source_language" : supported_map[acct_info["learnlanguage"]],
                     "name" : "push",
                     "filetype" : "chat"
                 }
-            mdebug("Do we translate?")
             if self.tofrom(story) in self.processors :
                 gp = self.processors[self.tofrom(story)]
                 if not gp.already_romanized :
-                    mdebug("Not romanized. Will try to translate.")
                     try :
                         story["source"] = message.replace("\n", " ").replace(u"\n", " ")
                         story["name"] = "push"
@@ -3374,24 +3370,19 @@ class MICA(object):
                         req.session.value["username"] = to
                         req.db = pushdb
 
-                        mdebug("Translating...")
                         self.parse(req, story, live = True, recount = False)
-                        mdebug("Translated. Formatting...")
                         romanization = ""
 
                         for unit in story["pages"]["0"]["units"] :
                             ret = self.get_parts(unit, self.tofrom(story))
-                            mverbose("Got: " + str(ret))
-
                             if ret != False :
                                 py, target = ret
                                 if py :
                                     romanization += py
 
-                        mdebug("Formatted: " + romanization)
                         if romanization != "" :
-                            mdebug("Appending: " + romanization + " to " + message)
-                            message += "(" + romanization + ")"
+                            mverbose("Appending: " + romanization + " to " + message)
+                            message += " (" + romanization.strip() + ")"
 
                     except Exception, e :
                         for line in format_exc().splitlines() :
