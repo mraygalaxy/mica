@@ -3365,7 +3365,7 @@ class MICA(object):
                     "name" : "push"
                 }
             mdebug("Do we translate?")
-            if self.tofrom(story) in self.processors 
+            if self.tofrom(story) in self.processors :
                 gp = self.processors[self.tofrom(story)]
                 if not gp.already_romanized :
                     mdebug("Not romanized. Will try to translate.")
