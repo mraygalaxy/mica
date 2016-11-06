@@ -1116,9 +1116,6 @@ class MICA(object):
         page_inputs = 0
         if live or ("filetype" not in story or story["filetype"] == "txt") :
             page_inputs = 1
-        elif name in ["ime", "push"] :
-            mdebug("Clamping ime and push notification inputs to 1 page.")
-            page_input = 1
         else :
             mverbose("Counting now...")
             for result in req.db.view('stories/original', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
@@ -3362,7 +3359,8 @@ class MICA(object):
             story = { 
                     "target_language" : supported_map[acct_info["language"]], 
                     "source_language" : supported_map[acct_info["learnlanguage"]],
-                    "name" : "push"
+                    "name" : "push",
+                    "filetype" : "chat"
                 }
             mdebug("Do we translate?")
             if self.tofrom(story) in self.processors :
