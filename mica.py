@@ -3391,8 +3391,8 @@ class MICA(object):
                             message += "(" + romanization + ")"
 
                     except Exception, e :
-                        merr("Cannot parse push message: " + str(e))
-                        cerror = e
+                        for line in format_exc().splitlines() :
+                            mwarn(line)
 
             for group in ["gcm", "apns_dist", "apns_dev"] :
                 token_delete = [] 
