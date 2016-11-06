@@ -424,7 +424,7 @@ var cparams;
 var login_in_progress = false;
 
 function relogin(attempt) {
-    console.log("Relogin called.");
+    console.log("Relogin called: " + attempt);
     try {
         retimeout = 50;
         if (attempt > 0) {
@@ -640,6 +640,8 @@ function ctest() {
     };
 }
 
+var converse_initialized = false;
+
 function wait_for_return() {
     setTimeout(function() {
         if (converse == undefined) { 
@@ -647,8 +649,13 @@ function wait_for_return() {
             wait_for_return();
         } else { 
             console.log("Defined now.");
-            ctest();
-            converse.initialize(cparams);
+            if(converse_initialized) {
+                console.log("Already initialized.");
+            } else {
+                converse_initialized = true;
+                ctest();
+                converse.initialize(cparams);
+            }
         }
     }, 50);
 }
@@ -701,7 +708,7 @@ function creset() {
     } catch(e) {
         console.log("Failed to kill converse: " + e);
     }
-
+    converse_initialized = false;
 }
 
 function reconnect_complete(json, opaque) {
