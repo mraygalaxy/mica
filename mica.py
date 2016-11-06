@@ -3372,6 +3372,7 @@ class MICA(object):
                         story["name"] = "push"
                         # Don't save it to the session. Just there to complete the translation.
                         req.session.value["username"] = to
+                        req.db = pushdb
 
                         mdebug("Tranlsating...")
                         self.parse(req, story, live = True, recount = False)
