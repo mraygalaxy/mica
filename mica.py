@@ -3365,9 +3365,9 @@ class MICA(object):
                     "name" : "push"
                 }
             mdebug("Do we translate?")
-            if self.tofrom(gplookup) in self.processors and not gp.already_romanized :
+            if self.tofrom(story) in self.processors and not gp.already_romanized :
                 mdebug("Not romanized. Will try to translate.")
-                gp = self.processors[self.tofrom(gplookup)]
+                gp = self.processors[self.tofrom(story)]
                 try :
                     story["source"] = message.replace("\n", " ").replace(u"\n", " ")
                     story["name"] = "push"
