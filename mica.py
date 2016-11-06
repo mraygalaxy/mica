@@ -3374,20 +3374,21 @@ class MICA(object):
                         req.session.value["username"] = to
                         req.db = pushdb
 
-                        mdebug("Tranlsating...")
+                        mdebug("Translating...")
                         self.parse(req, story, live = True, recount = False)
                         mdebug("Translated. Formatting...")
                         romanization = ""
 
                         for unit in story["pages"]["0"]["units"] :
                             ret = self.get_parts(unit, self.tofrom(story))
+                            mverbose("Got: " + str(ret))
 
                             if ret != False :
                                 py, target = ret
                                 if py :
                                     romanization += py
 
-                        mdebug("Formatted.")
+                        mdebug("Formatted: " + romanization)
                         romanization = ""
                         if romanization != "" :
                             mdebug("Appending: " + romanization + " to " + message)
