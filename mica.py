@@ -3365,35 +3365,36 @@ class MICA(object):
                     "name" : "push"
                 }
             mdebug("Do we translate?")
-            if self.tofrom(story) in self.processors and not gp.already_romanized :
-                mdebug("Not romanized. Will try to translate.")
+            if self.tofrom(story) in self.processors 
                 gp = self.processors[self.tofrom(story)]
-                try :
-                    story["source"] = message.replace("\n", " ").replace(u"\n", " ")
-                    story["name"] = "push"
+                if not gp.already_romanized :
+                    mdebug("Not romanized. Will try to translate.")
+                    try :
+                        story["source"] = message.replace("\n", " ").replace(u"\n", " ")
+                        story["name"] = "push"
 
-                    mdebug("Tranlsating...")
-                    self.parse(req, story, live = True, recount = False)
-                    mdebug("Translated. Formatting...")
-                    romanization = ""
+                        mdebug("Tranlsating...")
+                        self.parse(req, story, live = True, recount = False)
+                        mdebug("Translated. Formatting...")
+                        romanization = ""
 
-                    for unit in story["pages"]["0"]["units"] :
-                        ret = self.get_parts(unit, gp)
+                        for unit in story["pages"]["0"]["units"] :
+                            ret = self.get_parts(unit, gp)
 
-                        if ret != False :
-                            py, target = ret
-                            if py :
-                                romanization += py
+                            if ret != False :
+                                py, target = ret
+                                if py :
+                                    romanization += py
 
-                    mdebug("Formatted.")
-                    romanization = ""
-                    if romanization != "" :
-                        mdebug("Appending: " + romanization + " to " + message)
-                        message += "(" + romanization + ")"
+                        mdebug("Formatted.")
+                        romanization = ""
+                        if romanization != "" :
+                            mdebug("Appending: " + romanization + " to " + message)
+                            message += "(" + romanization + ")"
 
-                except Exception, e :
-                    merr("Cannot parse push message: " + str(e))
-                    cerror = e
+                    except Exception, e :
+                        merr("Cannot parse push message: " + str(e))
+                        cerror = e
 
             for group in ["gcm", "apns_dist", "apns_dev"] :
                 token_delete = [] 
