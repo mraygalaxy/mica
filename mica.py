@@ -3370,6 +3370,8 @@ class MICA(object):
                     try :
                         story["source"] = message.replace("\n", " ").replace(u"\n", " ")
                         story["name"] = "push"
+                        # Don't save it to the session. Just there to complete the translation.
+                        req.session.value["username"] = to
 
                         mdebug("Tranlsating...")
                         self.parse(req, story, live = True, recount = False)
