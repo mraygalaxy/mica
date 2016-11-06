@@ -1116,10 +1116,13 @@ class MICA(object):
         page_inputs = 0
         if live or ("filetype" not in story or story["filetype"] == "txt") :
             page_inputs = 1
+        elif name in ["ime", "push"] :
+            mdebug("Clamping ime and push notification inputs to 1 page.")
+            page_input = 1
         else :
-            mdebug("Counting now...")
+            mverbose("Counting now...")
             for result in req.db.view('stories/original', startkey=[req.session.value['username'], name], endkey=[req.session.value['username'], name, {}]) :
-                mdebug("Got count.")
+                mverbose("Got count.")
                 page_inputs = result['value']
 
         mverbose("Page inputs: " + str(page_inputs))
@@ -3353,6 +3356,45 @@ class MICA(object):
         push_tokens = pushdb.try_get(self.tokens())
 
         if push_tokens :
+            mdebug("Looking up account for: " + to)
+            acct_info = pushdb[self.acct(to)]
+            mdebug("Found.")
+            story = { 
+                    "target_language" : supported_map[acct_info["language"]], 
+                    "source_language" : supported_map[acct_info["learnlanguage"]],
+                    "name" : "push"
+                }
+            mdebug("Do we translate?")
+            if self.tofrom(gplookup) in self.processors and not gp.already_romanized :
+                mdebug("Not romanized. Will try to translate.")
+                gp = self.processors[self.tofrom(gplookup)]
+                try :
+                    story["source"] = message.replace("\n", " ").replace(u"\n", " ")
+                    story["name"] = "push"
+
+                    mdebug("Tranlsating...")
+                    self.parse(req, story, live = True, recount = False)
+                    mdebug("Translated. Formatting...")
+                    romanization = ""
+
+                    for unit in story["pages"]["0"]["units"] :
+                        ret = self.get_parts(unit, gp)
+
+                        if ret != False :
+                            py, target = ret
+                            if py :
+                                romanization += py
+
+                    mdebug("Formatted.")
+                    romanization = ""
+                    if romanization != "" :
+                        mdebug("Appending: " + romanization + " to " + message)
+                        message += "(" + romanization + ")"
+
+                except Exception, e :
+                    merr("Cannot parse push message: " + str(e))
+                    cerror = e
+
             for group in ["gcm", "apns_dist", "apns_dev"] :
                 token_delete = [] 
                 for token in push_tokens[group] :
@@ -3389,7 +3431,6 @@ class MICA(object):
                         mdebug("Saved.")
                     except Exception, e :
                         mwarn("Failed to save updated token list. Will try again next time.")
-
 
         return "success"
 
