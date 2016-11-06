@@ -3389,7 +3389,6 @@ class MICA(object):
                                     romanization += py
 
                         mdebug("Formatted: " + romanization)
-                        romanization = ""
                         if romanization != "" :
                             mdebug("Appending: " + romanization + " to " + message)
                             message += "(" + romanization + ")"
