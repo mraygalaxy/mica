@@ -531,13 +531,15 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         yielded_rows = {}
         errors = {"errors_left" : limit}
 
-        while errors["errors_left"]> 0 :
+        while errors["errors_left"] > 0 :
             try:
                 view = self.db.view(view_name, **options)
                 rows = []
+                done = False
                 # If we got a short result (< limit + 1), we know we are done.
                 if len(view) <= bulk:
                     rows = view.rows
+                    done = True
                 else:
                     # Otherwise, continue at the new start position.
                     rows = view.rows[:-1]
@@ -547,6 +549,8 @@ class MicaDatabaseCouchDB(MicaDatabase) :
 
                 for row in  self.do_rows(rows, yielded_rows) :
                     yield row
+                if not done :
+                    continue
                 break
             except retriable_errors, e :
                 try :

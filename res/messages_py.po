@@ -1784,3 +1784,6 @@ msgstr ""
 msgid ""
 "Democratize Languages: Learning a language should be just like reading a book"
 msgstr ""
+
+msgid "Internet access is unavailable. Chat offline."
+msgstr ""

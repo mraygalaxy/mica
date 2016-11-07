@@ -3,26 +3,29 @@
 <h3>Welcome to Documentation for <b>MLL</b>:</h3>
 <h4>(Meta Language Learning)</h4>
 <ol>
-<li><a class='anch' rel='external' href='#motivation'>Motivation (All languages)</a></li>
-<li><a class='anch' rel='external' href='#motivationchinese'>Motivation (Chinese)</a></li>
-<li><a class='anch' rel='external' href='#usage'>How to use this software</a></li>
-<li><a class='anch' rel='external' href='#review'>Review Mode (Chinese)</a></li>
-<li><a class='anch' rel='external' href='#reviewspanish'>Review Mode (Spanish)</a></li>
-<li><a class='anch' rel='external' href='#chatmode'>Chat Mode (Chinese)</a></li>
-<li><a class='anch' rel='external' href='#chatmodespanish'>Chat Mode (Spanish)</a></li>
-<li><a class='anch' rel='external' href='#readingmode'>Reading Mode (Chinese)</a></li>
-<li><a class='anch' rel='external' href='#readingmodespanish'>Reading Mode (Spanish)</a></li>
-<li><a class='anch' rel='external' href='#editing'>Editing Mode (Chinese-only)</a></li>
-<li><a class='anch' rel='external' href='#social'>Social Learning</a></li>
+<li class='anch'><a class='anch' rel='external' href='#motivation'>Motivation (All languages)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#motivationchinese'>Motivation (Character-based language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#usage'>How to use this software</a></li>
+<li class='anch'><a class='anch' rel='external' href='#review'>Review Mode (Character-based Language)</a>
+	<ul>
+	<li class='anch'><a class='anch' rel='external' href='#reviewcharacter'>Character-based Languages</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#reviewromanized'>Romanized Languages</a></li>
+	</ul>
+</li>
+<li class='anch'><a class='anch' rel='external' href='#chatmode'>Chat Mode (Character-based Language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#chatmoderomanized'>Chat Mode (Romanized Language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#readingmode'>Reading Mode (Character-based Language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#readingmoderomanized'>Reading Mode (Romanized Language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#editing'>Editing Mode (Character-based only)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#social'>Social Learning</a></li>
 </ol>
 
 Meta Language learning (MLL) is a data-driven, reading and
-chat experience which uses a memory-assisted approach
-that tracks what words you know and don't know
-as you read through stories provided by you. You create the
-content and we provide sophisticated, interactive analytics
-to help you navigate through those stories as you learn a new
-language.
+instant messaging experience which uses memory-assistance and
+analytics to that track what words you know and don't know
+as you read through stories that you provide. You create the
+content and we provide sophisticated, interactive assistance 
+to help you navigate through your stories as you learn a new language.
 
 Currently it supports, English/Spanish, English/Chinese,
 Chinese/English, Spanish/English, but the basic infrastructure 
@@ -30,6 +33,7 @@ is already in place for more languages in the future.
 
 
 <h3 id='motivation'>Motivation: (All languages)</h3>
+
 
 Think back to when you were in grade school learning your native language. The teacher
 would assign you stories or novels to read to teach you the grammar and structure
@@ -47,7 +51,8 @@ allowing YOU to import the content at your reading level that you care about and
 depend on someone else to choose that content for you.
 
 
-<h3 id='motivationchinese'>Motivation: (Chinese)</h3>
+<h3 id='motivationchinese'>Motivation: (Character-based)</h3>
+
 The basic observation behind creating this learning
 system is very simple: The most well-spoken foreigners
 in the we know all have a particular trait in common
@@ -59,9 +64,10 @@ They are all voracious readers - sometimes they even have
 better test scores than native speakers. It's spooky how well 
 avid reading correlates to fluent speaking.
 
-While we focus on Chinese in this introduction, and then later
-show how the software also applies equally to English as well
-as any other language using the benefits
+We first start with Character-based languages (like Chinese)
+in this introduction, and then later
+show how the software also applies equally to Romanized languages
+like English as well. All languages benefit from 
 of our approach to learning by reading.
 
 <h3>Meet the Enemy:</h3>
@@ -69,7 +75,7 @@ of our approach to learning by reading.
 
 
 
-<div style='font-size: 1200%'>汉字</div>
+<div style='font-size: 800%'>汉字</div>
 
 
 
@@ -135,6 +141,7 @@ the vocalizations. Something that would immediately
 give us the same mental stimulus for Character-based languages
 that a well-spoken foreign English speaker would experience.
 
+
 <h4>Enter: MLL.</h4>
 
 
@@ -144,6 +151,7 @@ that a well-spoken foreign English speaker would experience.
 
 
 <h3 id='usage'>Software Instructions:</h3>
+
 
 Getting Started:
 
@@ -164,14 +172,13 @@ or even an e-book) in UTF-8 encoded format.
 
 As you can see in the above example, I have copy and pasted
 the following characters, and selected "Chinese to English". If you
-are learning English instead, you could similarly choose "English to Chinese".
-We intend to add multiple languages soon:
+are learning English instead, you could similarly choose "English to Spanish":
+
 
 <h2>花园里有三只蝴蝶，一只是红色的，一只是黄色的，一只是白色的。</h2>
 
-Here is a similar example if you are learning English and, for example,
-are a native Chinese speaker:
 
+Here is a similar example if you are learning English:
 
 
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engupload.png"/>
@@ -186,7 +193,6 @@ Click on the <b>Top Left</b> corner of the page to expand the navigation
 section:
 
 
-
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/uploaded.png"/>
 
 
@@ -194,16 +200,17 @@ section:
 There are 4 sections in the left-hand pane:
 
 <ol>
-<li><b>"Untranslated"</b>: These are stories that you just uploaded but
-which have not yet been translated into Pinyin and English yet.</li>
-<li><b>"Not reviewed"</b>: These are translated stories which have not
-been reviewed first by a native Chinese speaker to correct for invalid
-polyphomes, which we will explain later.</li>
-<li><b>"Reading"</b>: These are post-reviewed stories which have passed up
+<li class='anch'><b>"Untranslated"</b>: These are stories that you just uploaded but
+which have not yet been prepared yet.</li>
+<li class='anch'><b>"Not reviewed"</b>: These are prepared stories which have not
+been reviewed first by a native speaker to correct for invalid conjugations or polyphomes,
+in the case of character-based languages, which we will explain later.</li>
+<li class='anch'><b>"Reading"</b>: These are post-reviewed stories which have passed up
 through the lower two sections and ready for regular language learning
 and review.</li>
-<li><b>"Finished"</b>: Stories go here when you're finish learning from them.</li>
+<li class='anch'><b>"Finished"</b>: Stories go here when you're finished with them.</li>
 </ol>
+
 
 You can begin by first clicking 'Translate' and waiting for your first translation.
 
@@ -236,12 +243,12 @@ to indicate the next steps you have to take in the story:
 
 
 
-First, you should click on the 'Magnifying Glass' icon to open
-the story in 'Review' mode.
+First, you should go to 'Account' and then click on 'Review' to switch the current story to Review mode.
 
 
 
-<h3 id='review'>Reviewing before Learning (Review Mode):</h3>
+<h3 id='review'>Reviewing before Learning (Review Mode)</h3>
+
 
 Now, we get to the good stuff first: Review mode is the first of the
 three modes and designed to give the language learner and opportunity 
@@ -254,7 +261,11 @@ possible as if the learner were reading a book of literature with the
 same experience as an English novel. To do that, we first need to review
 the text first for any errors in meaning or tone.
 
-The problem in general is that not all words have a single meaning, and in
+
+<h4 id='reviewcharacter'>Character-based Reviewing:</h4>
+
+
+With Character-based languages, not all words have a single meaning, and in
 particular with Chinese, not all characters have the same tone,
 and even words that have the same tone don't have the same meaning!
 
@@ -262,21 +273,11 @@ In "Review" mode, a new learner will want to get a "buddy" who is a native
 speaker to "review" their newly uploaded story in this mode:
 
 
-
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/viewmode.png"/>
 
 
-
-Here is a similar example in Review mode of an English story from before:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engreview.png"/>
-
-
-
 The way review mode works is that non-blue words may or may not have more
-than one definition, sound, or tone. In Chinese, these kinds of words are
+than one definition, sound, or tone. In a Character-based language, these kinds of words are
 also are called <b>"Polyphomes"</b>. These are words that have been identified 
 as not having a single meaning and/or sound per word and are fuzzy or 
 have the same sound but multiple definitions (for Chinese only).
@@ -292,7 +293,7 @@ and their translations already accurate. (If they are not correct, then
 the database used by MLL can sometimes be wrong as well - it is not impossible).
 
 <div style='font-weight: bold; color: green; display: inline'>Green words</div> only have a single sound but have different
-meanings. For languages like Chinese, technically, they are not polyphomes, but they 
+meanings. For Character-based languages, technically, they are not polyphomes, but they 
 are treated as fuzzy, because they have different meanings. The language learner will
 not inadvertently learn the wrong sound (safe), but may inadvertently learn
 the wrong meaning. However, even if the wrong meaning is memorized without
@@ -335,17 +336,7 @@ will appear. Let's first start with a "green" word:
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple1.png"/>
 
 
-
-If this were an english story, we could click on the word "Red",
-revealing both a noun and an adjective:
-
-
-
-<img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition2.png"/>
-
-
-
-In the above Chinese example, we have clicked on the sound 'lǐ' (里), which
+In the above example, we have clicked on the sound 'lǐ' (里), which
 usually means 'inside' of something. As you can see in the pop-up,
 the 'Default' selected polyphome is incorrect - it translates to
 500 meters (or half a kilometer. Half of a unit of measure is very
@@ -367,16 +358,6 @@ the correct word is 'inside':
 
 
 
-Similarly, for English, the word "Red" is not a noun in this case,
-but instead is an adjective. So by choosing the right meaning, we
-have the result:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engcorrect.png"/>
-
-
-
 Also pay attention to the "Percentages" on the left-hand side
 of the correct choice: This indicates that MLL
 has recorded how 'popular' this selection is and will re-use this
@@ -389,15 +370,6 @@ Upon refreshing the page, this character is now listed as
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple2.png"/>
-
-
-
-Similary, for English, we would have:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple4.png"/>
-
 
 
 It also includes a "(1)" next to it as well as being listed on
@@ -413,9 +385,7 @@ words.
 Finally, let's take a look at "red" words, as in the word 'zhī' (只):
 
 
-
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple3.png"/>
-
 
 
 This time, notice that MLL is telling us that there are multiple
@@ -431,12 +401,58 @@ is a native speaker to help you out on your first few stories
 until you get fluent enough at context-matching to know when a 
 choice is wrong or not by yourself.
 
-<h3 id='chatmode'>Chat Mode: (Chinese)</h3>
 
-<h3 id='chatmodespanish'>Chat Mode:</h3>
+<h4 id='reviewromanized'>Romanized Reviewing:</h4>
+
+When learning a romanized language, like English, the most difficult thing for MLL
+to get right the first time around is verb conjugation and pronouns. While we do our
+best to make initial guesses, we rely on you and your initial review of the content
+before using the story for reading-based learning. In the future, we'll use statistics
+and additional analytics to bear the load, but until then, here 
+is a similar example in Review mode of an English story from before:
 
 
-<h3 id='readingmode'>Reading Mode:</h3>
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engreview.png"/>
+
+
+The way review mode works for Romanized languages is that 
+In this example, you would click on the word "Red", revealing both a noun and an adjective:
+
+
+
+<img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/definition2.png"/>
+
+
+
+Similarly, for English, the word "Red" is not a noun in this case,
+but instead is an adjective. So by choosing the right meaning, we
+have the result:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engcorrect.png"/>
+
+
+
+
+Similary, for English, we would have:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple4.png"/>
+
+
+
+
+
+<h3 id='chatmode'>Chat Mode: (Character-based)</h3>
+
+<h3 id='chatmoderomanized'>Chat Mode (Romanized):</h3>
+
+
+<h3 id='readingmode'>Reading Mode: (Character-based)</h3>
+
+
 
 Here's where the real fun begins and the full benefit of
 MLL comes in to play:
@@ -450,7 +466,7 @@ it will appear in the "Reading" section:
 
 
 
-<img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reviewed.png"/>
+<img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reviewed.png"/>
 
 
 
@@ -586,7 +602,15 @@ are reading while you read more and more complicated texts.
 The more you read, the more you are forced to speak in your mind, 
 and the better you become!
 
-<h3 id='editing'>Edit Mode:</h3>
+
+
+<h3 id='readingmoderomanized'>Reading Mode: (Romanized)</h3>
+
+
+
+
+<h3 id='editing'>Edit Mode: (Character-based only)</h3>
+
 
 This mode is equally as import as 'Review' mode: Sometimes, MLL 
 improperly groups the wrong words together, for example in a 
