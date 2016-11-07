@@ -308,3 +308,7 @@ td {
 li {
     background-color: #dfdfdf;
 }
+
+li.anch {
+   background-color: white;
+}
