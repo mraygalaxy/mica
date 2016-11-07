@@ -1,27 +1,27 @@
 <div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="help">
 <div style='background-color: white; color: black; padding-left: 20px'>
 <h3>Welcome to Documentation for <b>MLL</b>:</h3>
-<h4>(Meta Language Learning)</h4>
+<h4>Meta Language Learning</h4>
 <ol>
 <li class='anch'><a class='anch' rel='external' href='#motivation'>Motivation (All languages)</a></li>
 <li class='anch'><a class='anch' rel='external' href='#motivationchinese'>Motivation (Character-based language)</a></li>
 <li class='anch'><a class='anch' rel='external' href='#usage'>How to use this software</a></li>
-<li class='anch'><a class='anch' rel='external' href='#review'>Review Mode (Character-based Language)</a>
+<li class='anch'><a class='anch' rel='external' href='#review'>Review Mode</a>
 	<ul>
 	<li class='anch'><a class='anch' rel='external' href='#reviewcharacter'>Character-based Reviews</a></li>
 	<li class='anch'><a class='anch' rel='external' href='#reviewromanized'>Romanized Reviews</a></li>
+	</ul>
+</li>
+<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Reading Mode</a>
+	<ul>
+	<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Character-based Reading</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#readingmoderomanized'>Romanized Reading</a></li>
 	</ul>
 </li>
 <li class='anch'><a class='anch' rel='external' href='#chatmode'>Chat Mode</a>
 	<ul>
 	<li class='anch'><a class='anch' rel='external' href='#chatmodecharacter'>Character-based Chat</a></li>
 	<li class='anch'><a class='anch' rel='external' href='#chatmoderomanized'>Romanized Chat</a></li>
-	</ul>
-</li>
-<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Reading Mode (Character-based Language)</a>
-	<ul>
-	<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Character-based Reading</a></li>
-	<li class='anch'><a class='anch' rel='external' href='#readingmoderomanized'>Romanized Reading</a></li>
 	</ul>
 </li>
 <li class='anch'><a class='anch' rel='external' href='#editing'>Editing Mode (Character-based only)</a></li>
@@ -518,74 +518,31 @@ The result is that we would have:
 This choice for Red will automatically be chosen (based on percentages) in future imported content.
 
 
-<h3 id='chatmode'>Chat Mode</h3>
-
-
-
-<h4 id='chatmodecharacter'>Character-based Chat:</h4>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat1.png"/>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat2.png"/>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat3.png"/>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat5.png"/>
-
-
-
-<h4 id='chatmoderomanized'>Romanized Chat:</h4>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat1.png"/>
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat3.png"/>
-
-
 <h3 id='readingmode'>Reading Mode</h3>
-
-
-
-<h4 id='readingmodecharacter'>Character-based Reading:</h4>
-
 
 
 Here's where the real fun begins and the full benefit of MLL comes in to play:
 
 
 Once you (or your friend) have completed an initial review of
-the story, you can go back to the side-panel and click the 'Up Arrow'
-to "promote" the story to reading mode.
+the story, you can go back "promote" the story to the Reading section.
 
 
-Once a story is promoted to reading mode, it will appear in the "Reading" section:
+<h4 id='readingmodecharacter'>Character-based Reading:</h4>
 
+
+Let's see an example in a character based language, such as Chinese:
 
 
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reviewed.png"/>
 
 
 
-Click on the 'book' icon to begin reading the story.
-You will now see a complete view of the reviewed story.
+By clicking "Read" on that story, you will now see a complete view of the reviewed story:
 
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading1.png"/>
-
-
-
-In English, the example might look like:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading3.png"/>
-
 
 
 In this mode, you will see a slightly different structure:
@@ -593,8 +550,12 @@ All the original words and corrected meanings are black,
 but their translations are not automatically expanded by default.
 This is to challenge the learner to try to remember words in
 context before indicating to MLL which ones you have memorized.
+MLL explicitly does not translate entire sentences. That would defeat
+the purpose of getting you to learn in context, even if the individual
+word translations are not completely accurate.
 
-By click the 'reveal' button icon at the top: 
+
+By clicking the 'reveal' button icon at the top: 
 
 
 
@@ -609,14 +570,6 @@ using the software over time.)
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading.png"/>
-
-
-
-And again, for English:
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading2.png"/>
 
 
 
@@ -635,18 +588,10 @@ We have clicked on the translations of the words "yī" (一), and 'zhī' (只):
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing.png"/>
 
 
-
-In English, we can reveal and click on the word "Violet":
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing2.png"/>
-
-
-
 MLL will process the request and then hide the translations
 from you, indicating that you have memorized those words. In both cases,
 MLL will memorize and record memorizations for all occurrences of those words. 
+
 
 The resulting page will look like this with the memorized words hidden:
 
@@ -655,19 +600,11 @@ The resulting page will look like this with the memorized words hidden:
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized.png"/>
 
 
-
-And again In English: 
-
-
-
-<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized2.png"/>
-
-
-
 These words will stay hidden by default the next time you come
 back to read this story in the future.
 
-Furthermore, if you reload the whole webpage after reading for a while, 
+
+Furthermore, if you click the 'refresh' icon after reading for a while, 
 you will notice that the right-hand side of the page has more
 useful tracking information:
 
@@ -692,13 +629,13 @@ telling MLL to track anything additionally.
 Furthermore: Just as in the 'Review' and 'Edit' modes, newly translated
 stories will automatically track which words you have memorized and
 which ones you have not memorized without you having to re-select
-them in the future. As the database grows with more stories, the
-software helps you out.
+them in the future. As the database grows with more stories, there's
+no need for you to make additional selections unless your memory changes.
 
 This where the real power comes from: 
 You can now spend much finer granularities of time using the 
-'Reading' mode of the software as well as having conversations 
-with native speakers to help you navigate the stories you 
+'Reading' mode of the software as well as having conversations
+(via Chat mode) with native speakers to help you navigate the stories you 
 are reading while you read more and more complicated texts. 
 The more you read, the more you are forced to speak in your mind, 
 and the better you become!
@@ -708,19 +645,70 @@ and the better you become!
 <h4 id='readingmoderomanized'>Romanized Reading:</h4>
 
 
+Let's look at an example in English as a native Spanish speaker would see it,
+using the same example "Roses are Red" above that we visited in Review mode:
+
+
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story12.png"/>
+
+
+So far, we haven't memorized anything yet. Let's start by expanding the word 'is':
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story13.png"/>
 
 
+Clicking the translation 'es' in Spanish makes it disappear, indicating that we've memorized it.
+
+
+Let's expand and memorize a few more words a the end:
+
+
+
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story14.png"/>
+
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story15.png"/>
 
 
+Which results in the following statistics in the side panel:
+
+
+
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story16.png"/>
+
+
+
+Let's again look at a similar example in English, but instead for a Chinese-native speaker:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading3.png"/>
+
+
+
+Let's expand all of the words at the same time:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reading2.png"/>
+
+
+
+Let's click on the word "Violet":
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorizing2.png"/>
+
+
+Now, it is memorized:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/memorized2.png"/>
+
 
 
 
@@ -890,34 +878,125 @@ This is very useful in large books, like PDFs, where lots of content has
 a similar, highly-repetitive review/edit history. MLLs analytics can automatically
 recognized when these kinds of changes need to be repeated.
 
+
+<h3 id='chatmode'>Chat Mode</h3>
+
+
+Chat mode is one of the most exciting features to come out of the MLL system:
+
+
+Chat in our environment is especially powerful, because now that we are maintaining
+essentially a model of your brain's vocabulary, we can take that same model and
+interactively present it back to you in real time simultaneously while you are
+chatting with peers. This is nothing less than a secret weapon aimed directly at
+the mundane nature of traditional ways of learning a language. Not only are you
+able to import content, but that content then forms the basis of assisting your
+chat experience. 
+
+
+Further more, a all traditional chat histories become stories within themselves,
+which allow you to revisit them like prose or literature and continue learning
+without any end.
+
+
+<h4 id='chatmodecharacter'>Character-based Chat:</h4>
+
+
+Let's look at an example of how this works for a native English speaker trying
+to learn Chinese:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat1.png"/>
+
+
+We've developed a custom IME that looks up your message on-the-fly which not only show you
+the assisted input selections but also your own language learning meta-data too. It's
+perhaps one of the most amazing realizations that we had when developing the system:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat2.png"/>
+
+
+After making the selection and sending the message, we can continue to interact with it just like
+we were using reading mode of a story:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat3.png"/>
+
+
+Similarly, we've just received a message from a buddy showing as a word that we've never learned before:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat5.png"/>
+
+
+And we can expand and learn from that word interactively without ever leaving the comfort of the chat window. 
+
+
+
+<h4 id='chatmoderomanized'>Romanized Chat:</h4>
+
+
+Let's look at a chat message session for an Spanish-native learning english:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat1.png"/>
+
+
+The IME (input management engine) is not just for character based languages, but assists us
+in realtime with meta-data from our own database without ever having to leave the comfort of
+the chat window. 
+
+
+In this message, we don't actually know the Spanish translation of the word 'me', so MLL shows it to us
+on the fly:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat3.png"/>
+
+
+After sending the message, we can interact with individual words in the chat window just as we would
+with any story in the database.
+
+
 <h3 id='social'>Social Learning:</h3>
 
-The future of this software is for users on the main website to be able to
+
+The future of the MLL system is really limitless.
+This software could allow for users on the main website to be able to
 share content with one another, share edit/review history and
 publish stories they have learned back to the public.
+
 
 We would eventually like to have a "marketplace", possibly with
 agreements with publishers where new learners need not necessarily
 perform any edits or reviews whatsoever and can benefit from a social
 community that grows an ever-increasing pool of learning material
-provided by the users themselves.
+provided by the users themselves, all driven by statistics and analytics
+where the days or rote-memory education are all but dead.
+
 
 One user might spend hours, weeks, or months getting very good at a language.
 We could then convert the analytics data tracked by MLL and apply it
 to a new learner.
 
+
 Simiarly, a book publishing company might be able to provide MLL-compatible
 versions of an E-Book for an educational institution, giving both them
 or the public another tool to achieve self-paced language study.
 
+
 The power of this interactive reading format as a way to learn a language
 can only grow...
+
 
 <h3>Happy reading!</h3>
 
 
 
 <img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/trophy.jpg"/>
+
+
 
 <script>help_anchors()</script>
 </div>
