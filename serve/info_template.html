@@ -8,14 +8,22 @@
 <li class='anch'><a class='anch' rel='external' href='#usage'>How to use this software</a></li>
 <li class='anch'><a class='anch' rel='external' href='#review'>Review Mode (Character-based Language)</a>
 	<ul>
-	<li class='anch'><a class='anch' rel='external' href='#reviewcharacter'>Character-based Languages</a></li>
-	<li class='anch'><a class='anch' rel='external' href='#reviewromanized'>Romanized Languages</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#reviewcharacter'>Character-based Reviews</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#reviewromanized'>Romanized Reviews</a></li>
 	</ul>
 </li>
-<li class='anch'><a class='anch' rel='external' href='#chatmode'>Chat Mode (Character-based Language)</a></li>
-<li class='anch'><a class='anch' rel='external' href='#chatmoderomanized'>Chat Mode (Romanized Language)</a></li>
-<li class='anch'><a class='anch' rel='external' href='#readingmode'>Reading Mode (Character-based Language)</a></li>
-<li class='anch'><a class='anch' rel='external' href='#readingmoderomanized'>Reading Mode (Romanized Language)</a></li>
+<li class='anch'><a class='anch' rel='external' href='#chatmode'>Chat Mode</a>
+	<ul>
+	<li class='anch'><a class='anch' rel='external' href='#chatmodecharacter'>Character-based Chat</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#chatmoderomanized'>Romanized Chat</a></li>
+	</ul>
+</li>
+<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Reading Mode (Character-based Language)</a>
+	<ul>
+	<li class='anch'><a class='anch' rel='external' href='#readingmodecharacter'>Character-based Reading</a></li>
+	<li class='anch'><a class='anch' rel='external' href='#readingmoderomanized'>Romanized Reading</a></li>
+	</ul>
+</li>
 <li class='anch'><a class='anch' rel='external' href='#editing'>Editing Mode (Character-based only)</a></li>
 <li class='anch'><a class='anch' rel='external' href='#social'>Social Learning</a></li>
 </ol>
@@ -412,11 +420,78 @@ and additional analytics to bear the load, but until then, here
 is a similar example in Review mode of an English story from before:
 
 
+
+Let's first upload a new story to learn English as a native Spanish Speaker:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story1.png"/>
+
+
+We then initialize:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story3.png"/>
+
+
+And prepare:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story6.png"/>
+
+
+
+And then click 'Review':
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story7.png"/>
+
+
+
+And we arrive at this result:
+
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story8.png"/>
+
+
+
+If you look off to the right again, you'll see how MLL classifies individual words:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story9.png"/>
+
+
+<div style='font-weight: bold; color: grey; display: inline'>Grey words</div> only have a single conjugation, depending on the correctness of the database MLL has at hand. 
+<div style='font-weight: bold; color: green; display: inline'>Green words</div> have different definitions or conjugations. 
+
+
+Let's focus on the word 'you'. It's clear that MLL has guessed wrong, 
+as our Spanish database is essentially empty:
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story10.png"/>
+
+
+Above, we have the option to select the "correct" conjugation. The results in an indicated '(1)'
+next to the word after we've chosen the correct one. Also noticed the '100%' next to our choice.
+MLL will automatically analyze new stories that you import and use the selection as the default
+selection in the future.
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story17.png"/>
+
+
+
+Here's another example, while learning English instead as a native Chinese speaker:
+
+
+
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engreview.png"/>
 
 
-The way review mode works for Romanized languages is that 
-In this example, you would click on the word "Red", revealing both a noun and an adjective:
+The way review mode works in this case is that 
+you would click on the word "Red", revealing both a noun and an adjective:
 
 
 
@@ -433,36 +508,62 @@ have the result:
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/engcorrect.png"/>
 
 
-
-
-Similary, for English, we would have:
+The result is that we would have:
 
 
 
 <img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/polysimple4.png"/>
 
 
+This choice for Red will automatically be chosen (based on percentages) in future imported content.
+
+
+<h3 id='chatmode'>Chat Mode</h3>
 
 
 
-<h3 id='chatmode'>Chat Mode: (Character-based)</h3>
-
-<h3 id='chatmoderomanized'>Chat Mode (Romanized):</h3>
+<h4 id='chatmodecharacter'>Character-based Chat:</h4>
 
 
-<h3 id='readingmode'>Reading Mode: (Character-based)</h3>
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat1.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat2.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat3.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/charchat5.png"/>
 
 
 
-Here's where the real fun begins and the full benefit of
-MLL comes in to play:
+<h4 id='chatmoderomanized'>Romanized Chat:</h4>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat1.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/chat3.png"/>
+
+
+<h3 id='readingmode'>Reading Mode</h3>
+
+
+
+<h4 id='readingmodecharacter'>Character-based Reading:</h4>
+
+
+
+Here's where the real fun begins and the full benefit of MLL comes in to play:
+
 
 Once you (or your friend) have completed an initial review of
 the story, you can go back to the side-panel and click the 'Up Arrow'
 to "promote" the story to reading mode.
 
-Once a story is promoted to reading mode,
-it will appear in the "Reading" section:
+
+Once a story is promoted to reading mode, it will appear in the "Reading" section:
 
 
 
@@ -604,8 +705,22 @@ and the better you become!
 
 
 
-<h3 id='readingmoderomanized'>Reading Mode: (Romanized)</h3>
+<h4 id='readingmoderomanized'>Romanized Reading:</h4>
 
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story12.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story13.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story14.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story15.png"/>
+
+
+<img width='30%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/story16.png"/>
 
 
 
