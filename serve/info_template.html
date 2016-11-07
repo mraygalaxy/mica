@@ -35,6 +35,7 @@ as you read through stories that you provide. You create the
 content and we provide sophisticated, interactive assistance 
 to help you navigate through your stories as you learn a new language.
 
+
 Currently it supports, English/Spanish, English/Chinese,
 Chinese/English, Spanish/English, but the basic infrastructure 
 is already in place for more languages in the future.
@@ -51,6 +52,7 @@ by looking at the words to the left and to the right. If that didn't work, you t
 to a human (probably your parents, sibling or teacher). Only then if that didn't work
 would you go find a dictionary.
 
+
 That's precisely how MLL is designed to work: You learn by reading, but instead the software
 tracks your vocabulary FOR you. Occasionally you use that same corpus of vocabulary to
 go and chat with real people in our same user interface, but the real magic of the system
@@ -61,22 +63,27 @@ depend on someone else to choose that content for you.
 
 <h3 id='motivationchinese'>Motivation: (Character-based)</h3>
 
+
 The basic observation behind creating this learning
 system is very simple: The most well-spoken foreigners
 in the we know all have a particular trait in common
 that really stands out: 
 
+
 <img width='10%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/reader.jpg"/>
+
 
 They are all voracious readers - sometimes they even have 
 better test scores than native speakers. It's spooky how well 
 avid reading correlates to fluent speaking.
+
 
 We first start with Character-based languages (like Chinese)
 in this introduction, and then later
 show how the software also applies equally to Romanized languages
 like English as well. All languages benefit from 
 of our approach to learning by reading.
+
 
 <h3>Meet the Enemy:</h3>
 
@@ -94,7 +101,9 @@ These are the 'characters' that represent Chinese Characters.
 
 <h3 id='problem'>The phonetic problem:</h3>
 
+
 <h4>汉字 (Hàn zì) != Phonetic Sounds</h4>
+
 
 Now, to be fair, billions of people use character systems.
 In fact, if you ask a native speaker what their frustration
@@ -111,11 +120,14 @@ But they are taking for granted that the romanization bootstraps
 their language learning by giving them (nearly) immediate
 access to the ability to pronounce what they see. =)
 
+
 Ok, so, why is this a problem at all? Speakers of character-based
 languages don't seem to think it's a problem, right? 
 Well, it's a problem of frequency:
 
+
 What would a foreigner in China, for example, do on a daily basis?
+
 
 1. Reading philosophy texts?                          No.
 2. Studying for your law degree?                      Ummmm. No.
@@ -131,6 +143,7 @@ What would a foreigner in China, for example, do on a daily basis?
 So, in my daily language learning classes, I told
 the teacher, "I don't want to battle with the phonetic problem",
 and immediately her reaction was, "What? You want to be illiterate?"
+
 
 Well, of course not. Actually, I want to be VERY literate,
 because as I foreshadowed above, the best foreign speakers
@@ -163,10 +176,13 @@ that a well-spoken foreign English speaker would experience.
 
 Getting Started:
 
+
 First, begin by copy and pasting a story using the 'Upload New Story'
 button in the "Account" menu at the top:
 
+
 You have two choices:
+
 
 1. Upload a text file in native Characters (like a short story 
 or even an e-book) in UTF-8 encoded format.
@@ -183,7 +199,9 @@ the following characters, and selected "Chinese to English". If you
 are learning English instead, you could similarly choose "English to Spanish":
 
 
+
 <h2>花园里有三只蝴蝶，一只是红色的，一只是黄色的，一只是白色的。</h2>
+
 
 
 Here is a similar example if you are learning English:
@@ -197,6 +215,7 @@ Since we assume the user is starting from scratch, MLL has never seen
 these characters before and will create a new story in your database
 containing your new story.
 
+
 Click on the <b>Top Left</b> corner of the page to expand the navigation
 section:
 
@@ -206,6 +225,7 @@ section:
 
 
 There are 4 sections in the left-hand pane:
+
 
 <ol>
 <li class='anch'><b>"Untranslated"</b>: These are stories that you just uploaded but
@@ -262,6 +282,7 @@ Now, we get to the good stuff first: Review mode is the first of the
 three modes and designed to give the language learner and opportunity 
 to read a "Sanitized" translated story.
 
+
 This mode is used to build "clean" material for the learner to read. We
 want to be able to process large amounts of meanings (and pinyin if this
 is a character-based language) for the learner from MLL as fast as 
@@ -277,8 +298,10 @@ With Character-based languages, not all words have a single meaning, and in
 particular with Chinese, not all characters have the same tone,
 and even words that have the same tone don't have the same meaning!
 
+
 In "Review" mode, a new learner will want to get a "buddy" who is a native
 speaker to "review" their newly uploaded story in this mode:
+
 
 
 <img width='20%' src="https://raw.githubusercontent.com/hinesmr/mica/master/serve/images/viewmode.png"/>
@@ -290,8 +313,10 @@ also are called <b>"Polyphomes"</b>. These are words that have been identified
 as not having a single meaning and/or sound per word and are fuzzy or 
 have the same sound but multiple definitions (for Chinese only).
 
+
 As you can see from the "Legend" on the side, MLL classifies
 and analyzes words in different ways:
+
 
 <div style='font-weight: bold; color: grey; display: inline'>Grey words</div> only have a single sound and single meaning, and by
 clicking on them you will see their translations of the word 
@@ -299,6 +324,7 @@ after the story was processed. For the reviewer, it is not necessary to
 spend to much time on these words as they are NOT Polyphomes
 and their translations already accurate. (If they are not correct, then
 the database used by MLL can sometimes be wrong as well - it is not impossible).
+
 
 <div style='font-weight: bold; color: green; display: inline'>Green words</div> only have a single sound but have different
 meanings. For Character-based languages, technically, they are not polyphomes, but they 
@@ -308,11 +334,13 @@ the wrong meaning. However, even if the wrong meaning is memorized without
 a proper review by a native speaker, the incorrect meaning will immediately
 become obvious in context as the meaning will likely not make much sense.
 
+
 <div style='font-weight: bold; color: red; display: inline'>Red words</div> may several different sounds
 as well sounds. These words need special attention by the reviewer 
 so that the language learner does memorize the wrong meaning or tone. 
 Eventually, more advanced learners can perform these reviews by oneself
 because they will be able to select the correct choice by reading in context.
+
 
 <div style='font-weight: bold; color: black; display: inline'>Black words</div> are words that have a "history" of being wrong
 because they were previously reviewed and corrected in the past across
@@ -321,6 +349,7 @@ automatically recognize these words upon new translations and assigns
 percentages to figure out which polyphomes have the highest chance of 
 being correct. The new story does not have any black words yet because 
 we have not performed any corrections - to come later.
+
 
 In the below example, we have clicked on the the words and pinyin 
 for 'one': "yī" (一). This first results in exposing a small blue 'play
@@ -351,11 +380,13 @@ the 'Default' selected polyphome is incorrect - it translates to
 common in Chinese). Also noticed that because it's green, all the
 sounds are exactly the same, but only differ in their English meaning.
 
+
 Checking this is very important distinction in MLL, because later in
 'Read' mode, MLL will keep track of exactly which words the learner
 has memorized and which words the learner has not memorized. So,
 if you don't correct the polyphomes, MLL will think you have memorized
 the wrong word, when in fact you have not.
+
 
 So, by choosing the 'Select' button, we can correct MLL so that
 the correct word is 'inside':
@@ -372,6 +403,7 @@ has recorded how 'popular' this selection is and will re-use this
 information the next time a story is translated, so that the
 reviewer does not need to select it again in the future.
 
+
 Upon refreshing the page, this character is now listed as
 'black', indicating that it now has a history in MLL:
 
@@ -385,10 +417,12 @@ the right-hand side of the page indicating that this particular
 word has undergone that number of changes in the history
 of the database of stories for this user.
 
+
 The next time a story that is translated containing this word,
 MLL will modify the default choice to be the most popular one
 so that the reviewer can focus their time on harder-to-identify
 words.
+
 
 Finally, let's take a look at "red" words, as in the word 'zhī' (只):
 
@@ -402,6 +436,7 @@ there are both a 1st tone and 3rd tone listings for the same
 character. This time, MLL chose the correct choice by
 default, so there is no need to spend anymore time on this word. 
 
+
 Unfortunately, if you haven't learned at least a little of your new
 language before starting the software, you'll have to ask your best
 friend, your significant other, or your co-worker who
@@ -411,6 +446,7 @@ choice is wrong or not by yourself.
 
 
 <h4 id='reviewromanized'>Romanized Reviewing:</h4>
+
 
 When learning a romanized language, like English, the most difficult thing for MLL
 to get right the first time around is verb conjugation and pronouns. While we do our
@@ -574,12 +610,13 @@ using the software over time.)
 
 
 What does this mean? If a word is automatically expanded upon
-first loading the page, it means that you have not yet memorized
-the word.
+first loading the page, it means that you have not yet memorized the word.
+
 
 Let's start by interacting with MLL: Let's click on some of
 the translations to indicate that we have memorized a couple of
 the most commonly early-learned words:
+
 
 We have clicked on the translations of the words "yī" (一), and 'zhī' (只):
 
@@ -617,20 +654,24 @@ useful tracking information:
 This is kind of self-explanatory, but gives you some rewarding information
 about exactly what percentage of the words you have memorized.
 
+
 And, let's say that a week later you have forgotten a particular word, you can
 simply find the word in the list, click the 'X' and the MLL
 will record that the word has been forgotten (or un-memorized).
+
 
 Even if you forget the word, but don't want to remove it from the
 memorization list, you can just click on the 'black' pinyin readings
 of the words to expose the original translation without
 telling MLL to track anything additionally.
 
+
 Furthermore: Just as in the 'Review' and 'Edit' modes, newly translated
 stories will automatically track which words you have memorized and
 which ones you have not memorized without you having to re-select
 them in the future. As the database grows with more stories, there's
 no need for you to make additional selections unless your memory changes.
+
 
 This where the real power comes from: 
 You can now spend much finer granularities of time using the 
@@ -731,12 +772,14 @@ language, a single "word" can be composed of multiple picture-based
 characters. This mode will be disabled if your story is originally
 written in English.
 
+
 In the above example, the characters (穿着) are incorrectly
 grouped together by MLL, and since they are grouped together
 they have a single, fixed meaning: 'Chuān zhuó', which translates
 as "attire" a [beautiful flower dress]. This is not correct, and instead 
 the characters should be separated, as in: (穿 着), which instead 
 means: "Chuān zhe", which translates as "wear a" [beautiful flower dress].
+
 
 Without a native speaker reviewing the story, the language learner
 might clue in to the fact that 'attire' doesn't make much sense
@@ -770,6 +813,7 @@ the individual characters in pieces and return an instant result:
 As you can see, the individual characters for (穿着) actually
 translate roughly to: "wear a" [beautiful flower dress] as 
 opposed to "attire" [beautiful flower dress].
+
 
 Solution: To solve this problem, you would click on the "Split"
 button at the top of the page selecting only the individual characters
@@ -847,6 +891,7 @@ The characters in the story will then read as:
 for a merged group of words - the result is that the characters will
 continue to remain separated).
 
+
 Finally, MLL is also smart enough to know the history of various
 merged and split words. By clicking the 'forget' button on the left
 hand side of the story and re-translating the story (or by translating
@@ -865,14 +910,17 @@ presented as it was originally translated without the proper edits,
 but instead, MLL is showing us that the two previous words and
 characters are "suggested" to be merged and split.
 
+
 All of these tools together are designed to make the reading experience
 as accurate as possible and as the language learner gets better and
 better, they will need to rely less and less on others to correct
 the story for them and more on themselves.
 
+
 Notice there is a "Try Recommendations" in both Review Mode and Edit modes.
 This option will "Bulk" edit or "Bulk" review any words recommended by MLL
 that were found to need review or editing based on your previous usage history.
+
 
 This is very useful in large books, like PDFs, where lots of content has
 a similar, highly-repetitive review/edit history. MLLs analytics can automatically
