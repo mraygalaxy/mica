@@ -43,7 +43,7 @@ if not mobile :
     from apns import APNs, Frame, Payload
     from crypticle import *
     from oauthlib.common import to_unicode
-    from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError
+    from oauthlib.oauth2.rfc6749.errors import MissingTokenError, InvalidGrantError, InvalidClientIdError
     from requests_oauthlib import OAuth2Session
     from requests_oauthlib.compliance_fixes import facebook_compliance_fix
     from requests.exceptions import ConnectionError as requests_ConnectionError
@@ -4971,16 +4971,21 @@ class MICA(object):
         except MissingTokenError, e :
             for line in format_exc().splitlines() :
                 merr(line)
-            return True, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
+            return None, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please report the above exception to the author. Thank you")
         except InvalidGrantError, e :
             for line in format_exc().splitlines() :
                 merr(line)
             merr("Someone tried to use an old URL with an old Code")
-            return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+            return None, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+        except InvalidClientIdError, e :
+            for line in format_exc().splitlines() :
+                merr(line)
+            merr("Invalid client ID error?")
+            return None, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
         except requests_ConnectionError, e :
             for line in format_exc().splitlines() :
                 merr(line)
-            return False, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
+            return None, _("The oauth protocol had an error") + ": " + str(e) + "." + _("Please try again. Thank you")
 
         mverbose("Read Alien returned content is: " + str(r.content))
         values = json_loads(r.content)
@@ -5424,10 +5429,9 @@ class MICA(object):
                 # page again and wait for an ajax request to do that stuff.
                 # There might also be an error here.
 
-                # api == False means both:
-                # 1. We need the 2nd-state ajax to complete the login (good)
-                # 2. There was an error.
-                if api :
+                # api == False We need the 2nd-state ajax to complete the login (good)
+                # api == True or None: There was an error.
+                if api in [True, None] :
                     return self.api(req, oauth_result)
                 else :
                     req.messages = oauth_result

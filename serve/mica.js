@@ -85,6 +85,7 @@ function connect_complete(json, opaque) {
     } else {
         $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + json.desc + "</div>");
         $("#newaccountresultdestination").attr("style", "display: block");
+        $("#maindisplay").attr("style", "display: none");
     }
 }
 
