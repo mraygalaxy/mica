@@ -87,6 +87,36 @@ class CommonElement(Element) :
         return pull, push
 
     @renderer
+    def switchlangs(self, request, tag) :
+        first = True
+        original_language = catalogs.language
+        for l, readable in softlangs :
+            if not first :
+                tag(" | ")
+            else :
+                first = False
+
+            self.req.mica.install_local_language(self.req, l)
+            tag(tags.a(**{"style" : "cursor: pointer", "onclick" : "window.location.href='" + "/switchlang?lang=" + l + "'", "data-role" : "none"})(_(readable)))
+
+        self.req.mica.install_local_language(self.req, original_language)
+        return tag
+
+    @renderer
+    def thirdparty(self, request, tag) :
+        for name, creds in self.req.oauth.iteritems() :
+            if name == "redirect" :
+                continue
+
+            servicetag = tags.a(**{ "onclick" : "loading()", "href" : self.req.session.value["states_urls"]["urls"][name], "title" : name, "data-ajax" : "false", "id" : "oauth_" + name})
+            servicetag(tags.img(width='50px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
+
+            tag(tags.td(servicetag))
+
+        return tag
+
+
+    @renderer
     def languages(self, request, tag) :
         if "learnlanguage" in self.req.session.value :
             wanted = supported_map[self.req.session.value["learnlanguage"]] + "," + supported_map[self.req.session.value["language"]]
@@ -231,6 +261,7 @@ class TranslationsElement(CommonElement) :
                      me = _("me"),
                      largemessage = _("A very large message has been received. This might be due to an attack meant to degrade the chat performance. Output has been shortened."),
                      alltitle = _("Read Alien: Meta Language Learning"),
+                     companyname = _("Read Alien"),
                      notification = _("ReadAlien Message from"),
                 )
         return tag
@@ -352,37 +383,12 @@ class ChatElement(CommonElement) :
 
 class FrontPageElement(CommonElement) :
     @renderer
-    def switchlangs(self, request, tag) :
-        first = True
-        original_language = catalogs.language
-        for l, readable in softlangs :
-            if not first :
-                tag(" | ")
-            else :
-                first = False
-
-            self.req.mica.install_local_language(self.req, l)
-            tag(tags.a(**{"href" : "/switchlang?lang=" + l, "data-role" : "none"})(_(readable)))
-
-        self.req.mica.install_local_language(self.req, original_language)
-        return tag
-
-    @renderer
-    def thirdparty(self, request, tag) :
-        for name, creds in self.req.oauth.iteritems() :
-            if name == "redirect" :
-                continue
-
-            servicetag = tags.a(**{ "onclick" : "loading()", "href" : self.req.session.value["states_urls"]["urls"][name], "title" : name, "data-ajax" : "false", "id" : "oauth_" + name})
-            servicetag(tags.img(width='30px', src=self.req.mpath + "/" + creds["icon"], style='padding-left: 5px'))
-
-            tag(tags.td(servicetag))
-
-        return tag
-
-    @renderer
     def head(self, request, tag) :
         return HTMLElement(self.req)
+
+    @renderer
+    def login(self, request, tag) :
+        return LoginElement(self.req)
         
     @renderer
     def advertise(self, request, tag) :
@@ -708,7 +714,6 @@ class HTMLElement(CommonElement):
     @renderer
     def html(self, request, tag) :
         tag.fillSlots(
-                     alltitle = _("Read Alien: Meta Language Learning"),
                      jqmcss = self.req.mpath + "/jquery.mobile.structure-1.4.5.min.css",
                      jqmtheme = self.req.mpath + "/jqmica/jqmica.min.css",
                      jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
@@ -732,7 +737,25 @@ class HTMLElement(CommonElement):
                      conversefull = self.req.mpath + "/converse-1.0.3.js",
                      chat = _("Chat"),
                      couchjs = self.req.mpath + "/jquery.couch-1.5.js",
+                     alltitle = _("Read Alien: Meta Language Learning"),
+                     companyname = _("Read Alien"),
                      ajaxformjs = self.req.mpath + "/jquery.form.min.js",
+                    )
+
+        return tag
+
+class LoginElement(CommonElement):
+    @renderer
+    def form(self, request, tag) :
+        tag.fillSlots(
+                      softwarename = _("Read Alien Learning"),
+                      signinwith = _("Sign in with"),
+                      username = _("OR Use a local account") if not mobile else _("Account"),
+                      password = _("Password / Token"),
+                      address = _("Address"),
+                      # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
+                      rememberme = _("Remember Me"),
+                      signin = _("Login"),
                     )
 
         return tag

@@ -1,0 +1,79 @@
+<form ajaxfinish='connect_complete' class='ajaxform' data-ajax="false" method="POST" action="connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto' xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="form">
+        <!--(if mobile)-->
+        <table style='align: right'>
+		<td style='width: 2px'/>
+		<td style='color: black'><i class='glyphicon glyphicon-download'></i></td>
+		<td style='width: 2px'/>
+		<td style='width: 2px'/>
+		<td class='badge' id='pullstat'><t:slot name='pull'/></td>
+		<td style='width: 2px'/>
+		<td style='color: black'><i class='glyphicon glyphicon-upload'></i></td>
+		<td style='width: 2px'/>
+		<td class='badge' id='pushstat'><t:slot name='push'/></td>
+        </table>
+        <!--(end)-->
+    <table style='margin: 0 auto'>
+        <tr>
+        <td style='font-size: x-small; margin: 0 auto; color: black' t:render='switchlangs'></td>
+        </tr>
+        <!--(if not mobile)-->
+        <tr><td style='color: black'>
+            <br/><h4><b><t:slot name='signinwith'/>:</b></h4>
+            <table>
+            <tr t:render="thirdparty" style='display: inline'/>
+            </table>
+            <br/>
+        </td></tr>
+        <!--(end)-->
+    </table>
+    <div class='panel panel-default'>
+        <div class='panel-heading' id='loginpanel'>
+        <!--(if not mobile)-->
+            <a class='btn btn-primary' data-toggle='collapse' href='#logincollapse'><t:slot name='username'/></a>
+        <!--(end)-->
+        </div>
+        <div class='collapse' id='logincollapse' style='color: black'>
+            <div class='panel-body'>
+                <table style='margin: 0 auto'>
+                    <tr><td>
+                        <div style='display:inline'>
+                            <input type='text' id='username' name='username' placeholder='Username'
+                            value='@!req.session.value['last_username'] if 'last_username' in req.session.value else ''!@'>
+                            </input>
+                        </div>
+                    </td></tr><tr><td>
+                        <input type="password" id="password" name="password" placeholder="Password" />
+                    </td></tr><tr><td style='color: black'>
+                        <div class="slide1">
+                            <div class="tri1"></div>
+                            <u data-role='none'><t:slot name='address'/></u>
+                        </div>
+                        <div class="view1">
+                            <div style="display:inline">
+                            <input data-role='none' type='text' id='address' name='address' placeholder='Address'
+                            value='@!req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else req.credentials!@'>
+                            </input>
+                            </div>
+                        </div>
+                    </td></tr><tr><td>
+                        <label>
+                        <!--(if 'last_remember' in req.session.value)-->
+                        <input style='display: none' type='checkbox' name='remember' checked='checked'/>
+                        <!--(else)-->
+                        <input type='checkbox' name='remember'/>
+                        <!--(end)-->
+                        <t:slot name='rememberme'/>
+                        </label>
+                    </td></tr><tr><td>
+                        <input type='hidden' name="connect" value='1'/>
+                        <button type="submit" class="btn-primary btn-block"><t:slot name='signin'/></button>
+                    </td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<!--(if mobile)-->
+<script>$('#logincollapse').show()</script>
+<!--(end)-->
+</form>

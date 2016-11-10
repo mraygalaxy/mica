@@ -1,204 +1,303 @@
-<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="advertise">
+<html class='nojs' xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="advertise">
 <head t:render="head"/>
 <body>
-    <div class='row-fluid'>
-        <div class='col-lg-3' id='leftpane'>
     <!--(if mobile)-->
-        <table>
-        <td style='width: 2px'/>
-        <td><i class='glyphicon glyphicon-download'></i></td>
-        <td style='width: 2px'/>
-        <td style='width: 2px'/>
-        <td class='badge' id='pullstat'><t:slot name='pull'/></td>
-        <td style='width: 2px'/>
-        <td><i class='glyphicon glyphicon-upload'></i></td>
-        <td style='width: 2px'/>
-        <td class='badge' id='pushstat'><t:slot name='push'/></td>
-        </table>
-    <!--(end)-->
-            <div style='display: inline; margin: 0 auto'>
-                <br/>
-                <form ajaxfinish='connect_complete' class='ajaxform' data-ajax="false" method="POST" action="connect" accept-charset="UTF-8" style='background:  #dfdfdf; border-radius: 15px; display: inline-block; padding: 15px; margin: 0 auto'>
-                    <table style='margin: 0 auto'>
-                        <tr><td style='color: black'> <b><t:slot name='softwarename'/></b></td></tr>
-                        <!--(if not mobile)-->
-                        <tr>
-                        <td style='font-size: x-small; margin: 0 auto; color: black' t:render='switchlangs'></td>
-                        </tr>
-                        <tr><td style='color: black'>
-                            <br/><h4><b><t:slot name='signinwith'/>:</b></h4>
-                            <table>
-                            <tr t:render="thirdparty" style='display: inline'/>
-                            </table>
-                            <br/>
-                        </td></tr>
-                        <!--(end)-->
-                        <tr><td style='color: black'>
-                            <t:slot name='username'/>: 
-                        </td></tr><tr><td>
-                            <div style='display:inline'>
-                                <input type='text' id='username' name='username' placeholder='Username'
-                                value='@!req.session.value['last_username'] if 'last_username' in req.session.value else ''!@'>
-                                </input>
-                            </div>
-                         </td></tr><tr><td style='color: black'>
-                            <t:slot name='password'/>:
-                         </td></tr><tr><td>
-                            <input type="password" id="password" name="password" placeholder="Password" />
-                        </td></tr><tr><td style='color: black'>
-                            <div class="slide1">
-                                <div class="tri1"></div>
-                                <u data-role='none'><t:slot name='address'/></u>
-                            </div>
-                            <div class="view1">
-                                <div style="display:inline">
-                                <input data-role='none' type='text' id='address' name='address' placeholder='Address'
-                                value='@!req.session.value["address"] if ("address" in req.session.value and req.session.value["address"] is not None) else req.credentials!@'>
-                                </input>
-                                </div>
-                            </div>
-                        </td></tr><tr><td>
-                            <label>
-                            <!--(if 'last_remember' in req.session.value)-->
-                            <input style='display: none' type='checkbox' name='remember' checked='checked'/>
-                            <!--(else)-->
-                            <input type='checkbox' name='remember'/>
-                            <!--(end)-->
-                            <t:slot name='rememberme'/>
-                            </label>
-                        </td></tr><tr><td>
-                            <input type='hidden' name="connect" value='1'/>
-                            <button type="submit" class="btn-primary btn-block"><t:slot name='signin'/></button>
-                        </td></tr><tr><td>
-                        <!--
-                        <h4><t:slot name="connect"/>.</h4>
-                        <p/>
-                        <br/><t:slot name="experimental"/>.
-                        -->
-                        </td></tr>
-                    </table>
-                </form>
-            </div>
-        </div><!-- col-lg-3 -->
-        <div class='col-lg-9'>
-            <br/>
-            <div id='newaccountresultdestination'><div t:render='error'/></div> 
-            <div id='maindisplay'>
-                <!--(if not mobile)--> 
-                    <div style='display: inline'>
-                        <div style="margin: 0 auto; padding-left: 40px; padding-bottom: 20px; padding-right: 40px;">
-                            <div  style='background: #dfdfdf; border-radius: 15px; padding: 10px'>
-                                <h2 style='font-size: x-large; color: black'><b><t:slot name="learn"/>.</b></h2>
-                                <br/>
-                                <div style='font-size: medium; color: black'>
-                                <t:slot name="offline"/>.
-                                <h4><b><a href="/help"><t:slot name="howitworks"/>.</a></b></h4>
-                                <p/>
-                                <br/>
-                                <a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.
-                                </div>
-                            </div>
-                        </div>
-                        <div style="color: black; width: 90%; margin: 0 auto; border-radius: 15px" id="carousel" class="carousel slide" data-ride="carousel">
-                            <!-- Menu -->
-                            <ol style='margin-top: 20px' class="carousel-indicators">
-                                <li data-target="#carousel" data-slide-to="0" class="active"></li>
-                                <li data-target="#carousel" data-slide-to="1"></li>
-                                <li data-target="#carousel" data-slide-to="2"></li>
-                                <li data-target="#carousel" data-slide-to="3"></li>
-                                <li data-target="#carousel" data-slide-to="4"></li>
-                                <li data-target="#carousel" data-slide-to="5"></li>
-                                <li data-target="#carousel" data-slide-to="6"></li>
-                                <li data-target="#carousel" data-slide-to="7"></li>
-                                <li data-target="#carousel" data-slide-to="8"></li>
-                            </ol>
-                            
-                            <!-- Items -->
-                            <div style='width=100%' class="carousel-inner" t:render="pages"/>
+	<div t:render="login"/>
+	<br/>
+	<br/>
+	<br/><t:slot name="feel"/>
+	<br/>
+	<br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
+    <!--(else)-->
+	<header role="banner" id="fh5co-header">
+			<div class="container">
+			    <nav class="navbar navbar-default">
+		        <div class="navbar-header">
+		        	<!-- Mobile Toggle Menu Button -->
+					<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><i></i></a>
+		          	 <img width='50px' src="serve/images/icon-120x120.png"/>&#160;<a class="navbar-brand" href="/"><t:slot name='companyname'/></a>
+        <div class='fh5co-owl-text' style='font-size: x-small; display: inline' t:render='switchlangs'/>
+		        </div>
+		        <div id="navbar" class="navbar-collapse collapse">
+		          <ul class="nav navbar-nav navbar-right">
+		            <li class="active"><a href="#" data-nav-section="home"><span>Home</span></a></li>
+		            <li><a href="#" data-nav-section="chat"><span>Chat</span></a></li>
+		            <li><a href="#" data-nav-section="login"><span>Login</span></a></li>
+		            <li><a href="#" data-nav-section="features"><span>Features</span></a></li>
+		            <li><a href="#" data-nav-section="mobile"><span>Mobile</span></a></li>
+		          </ul>
+		        </div>
+			    </nav>
+		  </div>
+	</header>
 
-                            <a href="#carousel" class="left carousel-control" data-slide="prev">
-                                <span class="glyphicon glyphicon-chevron-left"></span>
-                            </a>
-                            <a href="#carousel" class="right carousel-control" data-slide="next">
-                                <span class="glyphicon glyphicon-chevron-right"></span>
-                            </a>
-                        </div>
-                    </div>
-                <!--(end)-->
-            </div>
-        </div><!-- col-lg-9 -->
-    </div><!-- row-fluid -->
-    <!--(if front_ads)-->    
-    <div class='row-fluid'>
-        <div class='col-lg-12'>
-		<br/>
-		<br/>
-		<table>
-		<tr>
-		<td>
-		<a href="https://itunes.apple.com/us/app/mica-learning/id915942138"><img src="/serve/images/ios.svg" height='40px'/></a>
-		&#160;
-		<a href='https://play.google.com/store/apps/details?id=com.hinespot.mica'><img src="/serve/images/google.png" height='40px'/></a>
-		&#160;
-		<a href='http://www.amazon.com/gp/product/B00PENU7VU'><img src="/serve/images/amazon2.png" height='40px'/></a>
-		&#160;
-		<br/>
-		<!--
-		<script data-gratipay-username="hinesmr" data-gratipay-widget="button" src="//gttp.co/v1.js"></script>
-		<script data-gratipay-username="hinesmr" src="//gttp.co/v1.js"></script>
-		-->
-		&#160;
-		<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-		<input type="hidden" name="cmd" value="_s-xclick"/>
-		<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
-		<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"/>
-		<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1"/>
-		</form>
-		&#160;
-		<!--
-		<script type="text/javascript" src="https://blockchain.info//Resources/wallet/pay-now-button.js"></script>
-		<div style="font-size:16px;margin:0 auto;width:300px" class="blockchain-btn" data-address="3Gx3avPAr651qw9AkSmfbpZ36VpeTNzVXs" data-shared="false">
-		<div class="blockchain stage-begin">
-		<img height='30px' src="https://blockchain.info//Resources/buttons/donate_64.png"/>
+    <div id='newaccountresultdestination'><div t:render='error'/></div> 
+    <div id='maindisplay'>
+	<div id="slider" data-section="home">
+		<div class="owl-carousel owl-carousel-fullwidth">
+			<!-- You may change the background color here. -->
+		    <div class="item" style="background: #352f44;">
+		    	<div class="container" style="position: relative;">
+		    		<div class="row">
+					    <div class="col-md-6 col-sm-6">
+			    			<div class="fh5co-owl-text-wrap">
+						    	<div class="fh5co-owl-text">
+						    		<h1 class="fh5co-lead to-animate">Democratize Languages</h1>
+									<h2 class="fh5co-sub-lead to-animate">Learning a language should be just like reading a book.</h2>
+						    	</div>
+						    </div>
+					    </div>
+					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
+						<div class="row">
+					    	<div class="iphone to-animate-2"><img src="serve/images/story15.png" alt="Spanish Example"/></div>
+						</div>
+						<br/>
+						<br/>
+						<br/>
+						<div class="row">
+					    	<div class="iphone to-animate-2" style='width: 100%'><img src="serve/images/badselected.png" alt="Chinese Example"/></div>
+						</div>
+						<br/>
+						<br/>
+						<br/>
+						<div class="row">
+						<div class="iphone to-animate-2 fh5co-owl-text">
+						    <a href="#" data-nav-section="login" class="btn btn-primary btn-lg">Spanish and Chinese for Free</a>
+						</div>
+						</div>
+					    </div>
+
+		    		</div>
+		    	</div>
+		    </div>
+			<!-- You may change the background color here.  -->
+		    <div class="item" style="background: #38569f;">
+		    	<div class="container" style="position: relative;">
+		    		<div class="row">
+		    			<div class="col-md-7 col-sm-7">
+			    			<div class="fh5co-owl-text-wrap">
+						    	<div class="fh5co-owl-text">
+						    		<h1 class="fh5co-lead to-animate">Learn foreign literature that you provide.<br/> On your terms.</h1>
+									<h2 class="fh5co-sub-lead to-animate">Offline-first. Mobile-first.</h2>
+									<p class="to-animate-2"><b><a href="/help"><t:slot name="howitworks"/>.</a></b></p>
+						    	</div>
+						    </div>
+					    </div>
+					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
+					    	<div class="iphone to-animate-2">
+							<iframe width="560" height="315" src="//www.youtube.com/embed/CrT78VMc9V4" frameborder="0" allowfullscreen='1'></iframe>
+							</div>
+					    </div>
+
+		    		</div>
+		    	</div>
+		    </div>
+
+		    <div class="item" style="background-image:url(serve/crewimages/slide_5.jpg)">
+		    	<div class="overlay"></div>
+		    	<div class="container" style="position: relative;">
+		    		<div class="row">
+		    			<div class="col-md-7 col-sm-7">
+			    			<div class="fh5co-owl-text-wrap">
+						    	<div class="fh5co-owl-text">
+						    		<h1 class="fh5co-lead to-animate">Data-driven software tracks your language.<br/>So you don't have to.</h1>
+									<h2 class="fh5co-sub-lead to-animate">Offline-first. Mobile-first.</h2>
+									<p class="to-animate-2">
+										<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+										<input type="hidden" name="cmd" value="_s-xclick"/>
+										<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
+										<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"/>
+										<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1"/>
+										</form>
+									</p>
+						    	</div>
+						    </div>
+					    </div>
+					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
+					    	<div class="iphone to-animate-2"><img src="serve/images/polysimple3.png" alt="Chinese Example"/></div>
+					    </div>
+
+		    		</div>
+		    	</div>
+		    </div>
+
 		</div>
-		<div height='30px' class="blockchain stage-loading" style="text-align:center">
-		<img src="https://blockchain.info//Resources/loading-large.gif"/>
-		</div>
-		<div class="blockchain stage-ready">
-		<p align="center"><t:slot name="bitcoin"/>:<b>[[address]]</b></p>
-		<p align="center" class="qr-code"></p>
-		</div>
-		<div class="blockchain stage-paid">
-		Donation of <b>[[value]] BTC</b> Received. Thank You.
-		</div>
-		<div class="blockchain stage-error">
-		<font color="red">[[error]]</font>
-		</div>
-		</div>
-		-->
-		</td>
-		<td>&#160;</td>
-		<td>
-		<iframe width="560" height="315" src="//www.youtube.com/embed/CrT78VMc9V4" frameborder="0" allowfullscreen='1'></iframe>
-		</td>
-		</tr>
-		</table>
 	</div>
-    </div>
+	
+	<div id="fh5co-about-us" data-section="chat">
+		<div class="container">
+			<div class="row row-bottom-padded-lg" id="about-us">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="to-animate">Chat like a native.</h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 to-animate">
+							<h3>Data drives your chats in real-time.<br/>Guess all day. Learn all night.</h3>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 to-animate">
+					<img src="serve/images/chatpro1.png" class="img-responsive img-rounded" alt="Chat Interface"/>
+				</div>
+				<div class="col-md-4 to-animate">
+					<img src="serve/images/chatpro2.png" class="img-responsive img-rounded" alt="Chat Interface"/>
+				</div>
+				<div class="col-md-5 to-animate">
+					<h2>Tonal languages are hard.<br/>We make it intuitive.</h2>
+					<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in Bookmarksgrove right at the coast of the Semantics, a large language ocean. A small river named Duden flows by their place and supplies it with the necessary regelialia. </p>
+					<p>It is a paradisematic country, in which roasted parts of sentences fly into your mouth. Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day.</p>
+					<p class="to-animate-2"><a href="#" data-nav-section="login" class="btn btn-primary btn-lg">Login and try it</a></p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="fh5co-our-services" data-section="login">
+		<div class="container">
+			<div class="row row-bottom-padded-sm">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="to-animate">Login. Ditch the flash cards.</h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 to-animate">
+							<h3>Upload up to 300MB of literature for free.</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12 text-center">
+					<div class='to-animate' t:render="login"/>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div id="fh5co-features" data-section="features">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="single-animate animate-features-1">Features</h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 single-animate animate-features-2">
+							<h3>The language experience you didn't know that existed..</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row row-bottom-padded-sm">
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-present"></i></div>
+					<div class="fh5co-desc">
+						<h3>Free up to 300MB</h3>
+						<p>Pay only for the content that you import. Donate if you'd like additional space.</p>
+					</div>	
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-eye"></i></div>
+					<div class="fh5co-desc">
+						<h3>Analytics</h3>
+						<p>Learn in context. Words and statistics are cross-referenced across stories.</p>
+					</div>
+				</div>
+				<div class="clearfix visible-sm-block visible-xs-block"></div>
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-crop"></i></div>
+					<div class="fh5co-desc">
+						<h3>Always mobile.</h3>
+						<p>Your device is by far the best way to use the system. Read on a tablet. Chat on your phone.</p>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-umbrella"></i></div>
+					<div class="fh5co-desc">
+						<h3>Open Source</h3>
+						<p>Our designs and algorithms are open for all to see: <a href='https://github.com/hinesmr/mica'>Check it out.</a></p>
+					</div>
+				</div>
+				<div class="clearfix visible-sm-block visible-xs-block"></div>
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-speedometer"></i></div>
+					<div class="fh5co-desc">
+						<h3>You choose the complexity.</h3>
+						<p>By importing your own stories, you don't depend on us to provide them for you.</p>
+					</div>	
+				</div>
+				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
+					<div class="fh5co-icon"><i class="icon-heart"></i></div>
+					<div class="fh5co-desc">
+						<h3>Chat with assistance.</h3>
+						<p>Instant messaging that's smart enough to read your own vocabulary in real-time.</p>
+					</div>
+				</div>
+				<div class="clearfix visible-sm-block visible-xs-block"></div>
+			</div>
+			<div class="row">
+				<div class="col-md-4 col-md-offset-4 single-animate animate-features-3">
+					<a href="#" style="cursor: pointer" onclick="window.location.href='help'" class="btn btn-primary btn-block">Learn More</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="fh5co-pricing" data-section="mobile" style='background: white'>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="single-animate animate-pricing-1">Mobile-ready. Offline-ready.</h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 subtext single-animate animate-pricing-2">
+							<h3>Synchronize all your devices.<br/>Take languages offline and on-the-go.</h3>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row text-center">
+				<div class="col-md-4 col-sm-6 text-center">
+					<div class="price-box to-animate">
+						<a href="https://itunes.apple.com/us/app/mica-learning/id915942138"><img src="/serve/images/ios.svg" height='40px'/></a>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6">
+					<div class="price-box to-animate">
+						<a href='https://play.google.com/store/apps/details?id=com.hinespot.mica'><img src="/serve/images/google.png" height='40px'/></a>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-6 to-animate">
+					<div class="price-box">
+						<a href='http://www.amazon.com/gp/product/B00PENU7VU'><img src="/serve/images/amazon2.png" height='40px'/></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	</div>
+
+	<footer id="footer" role="contentinfo">
+		<div class="container">
+			<div class="row row-bottom-padded-sm">
+				<div class="col-md-12">
+					<p class="copyright text-center">&#169; 2016 <a href="/">readalien.com</a>. All Rights Reserved.</p>
+					<p class='text-center'><a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.</p>
+				</div>
+			</div>
+		</div>
+	</footer>
+	
+	
+	
+	<!-- jQuery Easing -->
+	<script src="serve/crewjs/jquery.easing.1.3.js"></script>
+	<!-- Waypoints -->
+	<script src="serve/crewjs/jquery.waypoints.min.js"></script>
+	<!-- Owl Carousel -->
+	<script src="serve/crewjs/owl.carousel.min.js"></script>
+
+
+	<!-- Main JS (Do not remove) -->
+	<script src="serve/crewjs/main.js"></script>
     <!--(end)-->
-    <div class='row-fluid'>
-        <div class='col-lg-12' style='color: white'>
-                <!--(if mobile)-->
-		<br/><t:slot name="feel"/>
-		<br/>
-		<br/><t:slot name="access"/> @ <b>http://readalien.com</b>.
-                <!--(else)-->
-                <!--<br/><t:slot name='contact'/> <a href="http://michael.hinespot.com">http://michael.hinespot.com</a>-->.
-                <!--(end)-->
-	</div>
-    </div>
     <script>
     BOOTSCRIPTHEAD 
     </script>
+
 </body>
 </html>
