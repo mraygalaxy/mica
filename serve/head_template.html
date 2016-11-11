@@ -61,6 +61,7 @@
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
                     <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
                     <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
+                    <li><a onclick="rotatestories();"><i class='glyphicon glyphicon-refresh'></i>&#160;<t:slot name='storyrotate'/></a></li>
                 </ul>
             </div>
 	<!--(if not mobile)-->
@@ -95,6 +96,7 @@
         <div id='instanterror'></div>
     </div></div>
     <div data-role='page' id='stories'>
+
         <div data-role='content'>
 		<h4><t:slot name='stories'/></h4>
 		<div id='storypages'></div>
@@ -105,6 +107,7 @@
 		    <li><a href='#reviewing'><t:slot name='notreviewed'/></a></li>
 		    <li><a href='#newstory'><t:slot name='newstory'/></a></li>
 		    <li><a href='#untranslated'><t:slot name='untranslated'/></a></li>
+		    <li><a href='#finished'><t:slot name='finished'/></a></li>
 		    <li><a href='#finished'><t:slot name='finished'/></a></li>
 		</ul>
 	    <br/>

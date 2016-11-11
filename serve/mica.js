@@ -200,7 +200,7 @@ function go(form_id, url, error, callback, opaque){
 
         if (go_to_messages) {
             $.mobile.navigate("#messages");
-            setTimeout("loadstories(false, '#stories');", 5000);
+            setTimeout("loadstories(false, ['#stories', false]);", 5000);
         }
     }
 
@@ -280,7 +280,7 @@ function trans_poll_complete(json, uuid) {
     } else {
         firstloaded = false;
         $("#translationstatus" + uuid).html(local('donereload'));
-        loadstories(false, false);
+        loadstories(false, [false, false]);
     }
 }
 
@@ -296,7 +296,7 @@ function trans_stop(json, uuid) {
     do_refresh = false;
     $("#translationstatus").html(json.desc);
     $("#translationstatus" + uuid).html('Done! Please reload.');
-    loadstories(false, "#reviewing");
+    loadstories(false, ["#reviewing", false]);
 }
 
 function trans_start(uuid) {
@@ -1107,7 +1107,7 @@ function storylist_complete(json, params) {
 
         $("#" + params.element).html(json.storylist);
     } else if(json.reload) {
-        loadstories(false, false);
+        loadstories(false, [false, false]);
     }
 
     if (params.cleanup) {
@@ -1161,9 +1161,15 @@ function finishedloading(storylist, navto) {
     done();
 }
 
-function loadstories(json, navto) {
+function loadstories(json, opaque) {
+    navto = opaque[0];
+    rotatechat = opaque[1];
     $("#storypages").html("<p/><br/>" + spinner + "&nbsp;" + local("loadingstories") + "...");
-    go(false, 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60),
+    url = 'storylist&tzoffset=' + (((new Date()).getTimezoneOffset()) * 60)
+    if (rotatechat) {
+        url += "&force_rotate=1";
+    }
+    go(false, url,
         unavailable(false),
         storylist_complete,
         { element: 'storypages', navto: navto});
@@ -1173,14 +1179,14 @@ function reviewstory(uuid, which) {
     go(false, 'home&reviewed=' + which + '&uuid=' + uuid,
         unavailable(false),
         loadstories,
-        (which == 1) ? "#reading" : "#reviewing");
+        [(which == 1) ? "#reading" : "#reviewing", false]);
 }
 
 function finishstory(uuid, which) {
     go(false, 'home&finished=' + which + '&uuid=' + uuid,
         unavailable(false),
         loadstories,
-        (which == 1) ? "#finished" : "#reading");
+        [(which == 1) ? "#finished" : "#reading", false]);
 }
 
 function checkauth(xhr) {
@@ -1229,7 +1235,7 @@ function validatetext_complete(json, opaque) {
                             console.log("Yay. TXT saved. reloading stories.");
                             $('#uploadModal').modal('hide');
                             $.mobile.navigate('#stories');
-                            loadstories(false, "#newstory");
+                            loadstories(false, ["#newstory", false]);
                             done();
                             console.log("Stories should be loaded now.");
                         }
@@ -1293,7 +1299,7 @@ function validatefile_complete(json, opaque) {
                             done();
                             $('#uploadModal').modal('hide');
                             $.mobile.navigate('#stories');
-                            loadstories(false, "#newstory");
+                            loadstories(false, ["#newstory", false]);
                         },
                         error: function(response) {
                             // Need to call the API to delete this story,
@@ -1312,6 +1318,11 @@ function validatefile_complete(json, opaque) {
         done();
         alert("Failed to add your story. Please try again.");
     }
+}
+
+function rotatestories() {
+    $.mobile.navigate('#stories');
+    loadstories(false, [false, true]);
 }
 
 function validatefile() {
@@ -1475,7 +1486,7 @@ function start_learning_complete(json, action) {
 
     if (reloadstories) {
         $.mobile.navigate('#stories');
-        loadstories(false, false);
+        loadstories(false, [false, false]);
     }
 }
 
