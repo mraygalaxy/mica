@@ -16,9 +16,9 @@
 			    <nav class="navbar navbar-default">
 		        <div class="navbar-header">
 		        	<!-- Mobile Toggle Menu Button -->
-					<a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><i></i></a>
+				 <a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><i></i></a>
 		          	 <img width='50px' src="serve/images/icon-120x120.png"/>&#160;<a class="navbar-brand" href="/"><t:slot name='companyname'/></a>
-        <div class='fh5co-owl-text' style='font-size: x-small; display: inline' t:render='switchlangs'/>
+				 <div class='fh5co-owl-text' style='font-size: x-small; display: inline' t:render='switchlangs'/>
 		        </div>
 		        <div id="navbar" class="navbar-collapse collapse">
 		          <ul class="nav navbar-nav navbar-right">
@@ -27,6 +27,7 @@
 		            <li><a href="#" data-nav-section="login"><span>Login</span></a></li>
 		            <li><a href="#" data-nav-section="features"><span>Features</span></a></li>
 		            <li><a href="#" data-nav-section="mobile"><span>Mobile</span></a></li>
+		            <li><a href="#" data-nav-section="opensource"><span>Open Source</span></a></li>
 		          </ul>
 		        </div>
 			    </nav>
@@ -35,7 +36,6 @@
 
 	<div id="slider" data-section="home">
 		<div class="owl-carousel owl-carousel-fullwidth">
-			<!-- You may change the background color here. -->
 		    <div class="item" style="background: #352f44;">
 		    	<div class="container" style="position: relative;">
 		    		<div class="row">
@@ -44,6 +44,7 @@
 						    	<div class="fh5co-owl-text">
 						    		<h1 class="fh5co-lead to-animate">Democratize Languages</h1>
 									<h2 class="fh5co-sub-lead to-animate">Learning a language should be just like reading a book.</h2>
+										<h3 class="fh5co-sub-lead to-animate"><a href='http://github.com/hinesmr/mica'>Driven by open-source</a>.</h3>
 						    	</div>
 						    </div>
 					    </div>
@@ -70,7 +71,6 @@
 		    		</div>
 		    	</div>
 		    </div>
-			<!-- You may change the background color here.  -->
 		    <div class="item" style="background: #38569f;">
 		    	<div class="container" style="position: relative;">
 		    		<div class="row">
@@ -128,10 +128,10 @@
 		<div class="container">
 			<div class="row row-bottom-padded-lg" id="about-us">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="to-animate">Chat like a native.</h2>
+					<h2 class="to-animate">Chat like a native. Reduce the fear.</h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 to-animate">
-							<h3>Data drives your chats in real-time.<br/>Guess all day. Learn all night.</h3>
+							<h3>Data drives your language in real-time.<br/>Guess all day. Learn all night.</h3>
 						</div>
 					</div>
 				</div>
@@ -142,9 +142,10 @@
 					<img src="serve/images/chatpro2.png" class="img-responsive img-rounded" alt="Chat Interface"/>
 				</div>
 				<div class="col-md-5 to-animate">
-					<h2>Tonal languages are hard.<br/>We make it intuitive.</h2>
-					<p>Far far away, behind the word mountains, far from the countries Vokalia and Consonantia, there live the blind texts. Separated they live in Bookmarksgrove right at the coast of the Semantics, a large language ocean. A small river named Duden flows by their place and supplies it with the necessary regelialia. </p>
-					<p>It is a paradisematic country, in which roasted parts of sentences fly into your mouth. Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day.</p>
+					<h2>Tonal languages are hard.<br/>We bring an end to rote-memorization.</h2>
+					<p>Overlay verb conjugations with an IME-style keyboard to real-time assist the person you're talking to. Data from the literature that you read feeds directly into a context-based learning experience.</p>
+					<p>We support polyphomes, character grouping/merging, and complex parsing of character-based languages.</p>
+					<p>If we don't conjugate verbs correctly, the data will tell us how to do it right the next time.</p>
 					<p class="to-animate-2"><a href="#" data-nav-section="login" class="btn btn-primary btn-lg">Login and try it</a></p>
 				</div>
 			</div>
@@ -158,11 +159,10 @@
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 to-animate">
 							<h3>Upload up to 300MB of literature for free.</h3>
+							<h3>Unlimited content on your mobile devices.</h3>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div class="row">
 				<div class="col-md-12 text-center">
 					<div class='to-animate' t:render="login"/>
 				</div>
@@ -187,7 +187,13 @@
 					<div class="fh5co-icon"><i class="icon-present"></i></div>
 					<div class="fh5co-desc">
 						<h3>Free up to 300MB</h3>
-						<p>Pay only for the content that you import. Donate if you'd like additional space.</p>
+						<p>Pay only for the content that you import. 
+						<form id='donateform' action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+							<input type="hidden" name="cmd" value="_s-xclick"/>
+							<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
+							<a onclick="$('#donateform').submit();" style='cursor: pointer'>Donate if you'd like additional space</a>.
+						</form>
+</p>
 					</div>	
 				</div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
@@ -244,7 +250,7 @@
 					<h2 class="single-animate animate-pricing-1">Mobile-ready. Offline-ready.</h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 subtext single-animate animate-pricing-2">
-							<h3>Synchronize all your devices.<br/>Take languages offline and on-the-go.</h3>
+							<h3>Synchronized across all your devices.<br/>Take languages offline and on-the-go.</h3>
 						</div>
 					</div>
 				</div>
@@ -263,6 +269,30 @@
 				<div class="col-md-4 col-sm-6 to-animate">
 					<div class="price-box">
 						<a href='http://www.amazon.com/gp/product/B00PENU7VU'><img src="/serve/images/amazon2.png" height='40px'/></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="fh5co-pricing" data-section="opensource">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="single-animate animate-pricing-1">Open-source language for all.</h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 subtext single-animate animate-pricing-2">
+						<h3>Tech Stack:</h3>
+						<ul class='list-group' style='color: black'>
+						<li class="list-group-item">Git Repository: <a href="http://github.com/hinesmr/mica">http://github.com/hinesmr/mica</a></li>
+						<li class="list-group-item">Python + Python-for-Android + Kivy-iOS</li>
+						<li class="list-group-item">Docker, Linux, HAProxy, REST, RPC, Nginx, Ubuntu</li>
+						<li class="list-group-item">CouchDB + Couchbase Mobile + SQLite</li>
+						<li class="list-group-item">XMPP + Ejabberd + converse.js</li>
+						<li class="list-group-item">Jquery Mobile + Bootstrap</li>
+						<li class="list-group-item">Xcode, Android Studio</li>
+						</ul>
+						</div>
 					</div>
 				</div>
 			</div>
