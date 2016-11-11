@@ -5433,8 +5433,10 @@ class MICA(object):
 
                 # api == False We need the 2nd-state ajax to complete the login (good)
                 # api == True or None: There was an error.
-                if api in [True, None] :
+                if api is True :
                     return self.api(req, oauth_result)
+                elif api is None :
+                    return self.bad_api(req, oauth_result)
                 else :
                     req.messages = oauth_result
                     return self.render_frontpage(req)
