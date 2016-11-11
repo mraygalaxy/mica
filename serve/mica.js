@@ -700,13 +700,15 @@ function restore_pageimg_width() {
 function finish_new_account_complete(json, opaque) {
     $("#newaccountresultdestination").html(json.desc);
     $("#newaccountresultdestination").attr("style", "display: block");
-    if(json.success) {
-        $("#maindisplay").attr("style", "display: none");
-        $("#fh5co-header").attr("style", "display: none");
+    if(!json.success) {
+        $("#maindisplay").attr("style", "display: block");
+        $("#fh5co-header").attr("style", "display: block");
     }
 }
 
 function finish_new_account(code, who, state) {
+    $("#maindisplay").attr("style", "display: none");
+    //$("#fh5co-header").attr("style", "display: none");
     go(false, "api?human=0&alien=" + who + "&connect=1&finish=1&code=" + code + "&state=" + state, unavailable(false), finish_new_account_complete, false);
 }
 
