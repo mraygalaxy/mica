@@ -209,7 +209,7 @@ $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", fun
         }
         console.log("Going to: " + where + " from " + from);
         if (where == 'stories') {
-            loadstories(false, false);
+            loadstories(false, [false, false]);
         } else if (where == 'chat') {
             if ("Notification" in window && Notification.permission != 'denied') {
                 Notification.requestPermission();
