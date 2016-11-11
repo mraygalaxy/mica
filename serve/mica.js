@@ -86,6 +86,7 @@ function connect_complete(json, opaque) {
         $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + json.desc + "</div>");
         $("#newaccountresultdestination").attr("style", "display: block");
         $("#maindisplay").attr("style", "display: none");
+        $("#fh5co-header").attr("style", "display: none");
     }
 }
 
@@ -701,6 +702,7 @@ function finish_new_account_complete(json, opaque) {
     $("#newaccountresultdestination").attr("style", "display: block");
     if(json.success) {
         $("#maindisplay").attr("style", "display: none");
+        $("#fh5co-header").attr("style", "display: none");
     }
 }
 
