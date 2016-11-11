@@ -4934,7 +4934,7 @@ class MICA(object):
 
         if not req.http.params.get("finish") :
             return False, """
-                <h3><img src='%(mpath)s/%(spinner)s' width='30px'/>&#160;%(signin)s...</h3>
+                <h4><img src='%(mpath)s/%(spinner)s' width='25px'/>&#160;%(signin)s...</h4>
                 <script>
                     $('#maindisplay').attr('style', 'display: none');
                     finish_new_account('%(code)s', '%(who)s', '%(state)s');
