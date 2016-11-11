@@ -698,6 +698,7 @@ function restore_pageimg_width() {
 
 function finish_new_account_complete(json, opaque) {
     $("#newaccountresultdestination").html(json.desc);
+    $("#maindisplay").attr("style", "display: none");
 }
 
 function finish_new_account(code, who, state) {
