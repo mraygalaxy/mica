@@ -4936,6 +4936,7 @@ class MICA(object):
             return False, """
                 <img src='%(mpath)s/%(spinner)s' width='15px'/>&#160;%(signin)s...
                 <script>
+                    $("#maindisplay").attr("style", "display: none");
                     finish_new_account('%(code)s', '%(who)s', '%(state)s');
                 </script>
             """ % dict(mpath = req.mpath,
