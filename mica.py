@@ -5025,7 +5025,7 @@ class MICA(object):
             mverbose("Language: " + language)
 
             output = """
-                <div style='margin: 100px'>
+                <div style='margin-left: 50px'>
                 <br/><br/>%(welcome)s
                 <br/><br/>Save this Password: %(password)s
                 <br/><br/>%(firsttime)s,&#160;
@@ -5042,7 +5042,7 @@ class MICA(object):
                        start = _("Start learning!"),
                        password = password,
                        firsttime = _("If this is your first time here"),
-                       welcome = "<div style='margin: 100px'>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.") + "</div>")
+                       welcome = "<div style='margin-left: 50px'>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.") + "</div>")
 
             req.messages = output
         else :
