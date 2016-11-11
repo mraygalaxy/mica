@@ -4934,7 +4934,7 @@ class MICA(object):
 
         if not req.http.params.get("finish") :
             return False, """
-                <img src='%(mpath)s/%(spinner)s' width='15px'/>&#160;%(signin)s...
+                <h3><img src='%(mpath)s/%(spinner)s' width='30px'/>&#160;%(signin)s...</h3>
                 <script>
                     $('#maindisplay').attr('style', 'display: none');
                     finish_new_account('%(code)s', '%(who)s', '%(state)s');
@@ -5052,7 +5052,7 @@ class MICA(object):
             if "source" not in auth_user or ("source" in auth_user and auth_user["source"] != who) :
                 source = "mica" if "source" not in auth_user else auth_user["source"]
                 return False, _("We're sorry, but someone has already created an account with your credentials") + ":&#160;" + _("Original login service") + ":&#160;<b>" + source + "</b>&#160;." + _("Please choose a different service and try again")
-            req.messages = "<h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/';</script>"
+            req.messages = "<h3 style='color: white'>" + _("Redirecting") + "...</h3><script>window.location.href='/'; $('#maindisplay').attr('style', 'display: none'); $('#fh5co-header').attr('style', 'display: none');</script>"
 
         from_third_party["password"] = password
 
