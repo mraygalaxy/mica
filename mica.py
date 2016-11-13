@@ -3378,7 +3378,7 @@ class MICA(object):
                             if ret != False :
                                 py, target = ret
                                 if py :
-                                    romanization += py
+                                    romanization += " " + py
 
                         if romanization != "" :
                             mverbose("Appending: " + romanization + " to " + message)
