@@ -61,7 +61,9 @@
                     <li><a href='#aboutModal' data-toggle='modal'><i class='glyphicon glyphicon-info-sign'></i>&#160;<t:slot name='about'/></a></li>
                     <li><a href='#help'><i class='glyphicon glyphicon-question-sign'></i>&#160;<t:slot name='help'/></a></li>
                     <li><a href='#privacy'><i class='glyphicon glyphicon-lock'></i>&#160;<t:slot name='privacy'/></a></li>
+                    <!--(if not mobile)-->
                     <li><a onclick="rotatestories();"><i class='glyphicon glyphicon-refresh'></i>&#160;<t:slot name='storyrotate'/></a></li>
+                    <!--(end)-->
                 </ul>
             </div>
 	<!--(if not mobile)-->
