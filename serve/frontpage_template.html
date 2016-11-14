@@ -1,6 +1,6 @@
 <html class='nojs' xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="advertise">
 <head t:render="head"/>
-<body>
+<body id='mainbody'>
     <!--(if mobile)-->
 	<div t:render="login"/>
 	<br/>
@@ -84,7 +84,9 @@
 					    </div>
 					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
 					    	<div class="iphone to-animate-2">
-							<iframe width="560" height="315" src="//www.youtube.com/embed/CrT78VMc9V4" frameborder="0" allowfullscreen='1'></iframe>
+							<!--<iframe width="560" height="315" src="//www.youtube.com/embed/CrT78VMc9V4" frameborder="0" allowfullscreen='1'></iframe>-->
+							<div class="js-lazyYT" data-youtube-id="CrT78VMc9V4" data-width="560" data-height="315"></div>
+
 							</div>
 					    </div>
 
@@ -105,8 +107,8 @@
 										<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 										<input type="hidden" name="cmd" value="_s-xclick"/>
 										<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
-										<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"/>
-										<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1"/>
+										<input type="image" src="/serve/images/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"/>
+										<img alt="" border="0" src="/serve/images/btn_donate_LG.gif" width="1" height="1"/>
 										</form>
 									</p>
 						    	</div>
@@ -309,13 +311,12 @@
 		</div>
 	</footer>
 	
-	
-	
 	<!-- crewjs dependencies -->
 	<!-- cd serve -->
-	<!-- cat crewjs/jquery.easing.1.3.js crewjs/jquery.waypoints.min.js crewjs/owl.carousel.min.js crewjs/main.js > crew.js -->
-        <!-- uglifyjs crew.js > crew.min.js -->
-	<script src="serve/crew.min.js"></script>
+	<!-- cat crewjs/jquery.easing.1.3.js crewjs/jquery.waypoints.min.js crewjs/owl.carousel.min.js crewjs/main.js > crewjs/crew.js -->
+        <!-- uglifyjs crewjs/crew.js > crewjs/crew.min.js -->
+        <script><t:attr name='src'><t:slot name='crewjs'/></t:attr></script>
+	<script>$('.js-lazyYT').lazyYT('AIzaSyAp4u_iF4_MANng1Hq5kh_GHeczmcZqp9c');</script>
     <!--(end)-->
     <script>
     BOOTSCRIPTHEAD 

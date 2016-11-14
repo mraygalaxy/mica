@@ -10,11 +10,11 @@
     https://coolors.co/app/264653-2a9d8f-e9c46a-f4a261-e76f51
     http://paletton.com/#uid=53f0u0knsvIdILAj5Cftgu3uBmZ
  */
-/* $font-path: "../fonticons/fonts/" !default; */
+/* $font-path: "/serve/fonticons/fonts/" !default; */
 @font-face {
   font-family: 'Converse-js';
-  src: url("https://readalien.com/serve/fonticons/fonts/icomoon.eot?-mnoxh0");
-  src: url("https://readalien.com/serve/fonticons/fonts/icomoon.eot?#iefix-mnoxh0") format("embedded-opentype"), url("https://readalien.com/serve/fonticons/fonts/icomoon.woff?-mnoxh0") format("woff"), url("https://readalien.com/serve/fonticons/fonts/icomoon.ttf?-mnoxh0") format("truetype"), url("https://readalien.com/serve/fonticons/fonts/icomoon.svg?-mnoxh0#icomoon") format("svg");
+  src: url("/serve/fonticons/fonts/icomoon.eot?-mnoxh0");
+  src: url("/serve/fonticons/fonts/icomoon.eot?#iefix-mnoxh0") format("embedded-opentype"), url("/serve/fonticons/fonts/icomoon.woff?-mnoxh0") format("woff"), url("/serve/fonticons/fonts/icomoon.ttf?-mnoxh0") format("truetype"), url("/serve/fonticons/fonts/icomoon.svg?-mnoxh0#icomoon") format("svg");
   font-weight: normal;
   font-style: normal; }
 .icon-conversejs {
@@ -2531,8 +2531,8 @@ ul.features {
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url('../fonts/fontawesome-webfont.eot?v=4.1.0');
-  src: url('../fonts/fontawesome-webfont.eot?#iefix&v=4.1.0') format('embedded-opentype'), url('../fonts/fontawesome-webfont.woff?v=4.1.0') format('woff'), url('../fonts/fontawesome-webfont.ttf?v=4.1.0') format('truetype'), url('../fonts/fontawesome-webfont.svg?v=4.1.0#fontawesomeregular') format('svg');
+  src: url('/serve/fonts/fontawesome-webfont.eot');
+  src: url('/serve/fonts/fontawesome-webfont.eot') format('embedded-opentype'), url('/serve/fonts/fontawesome-webfont.woff') format('woff'), url('/serve/fonts/fontawesome-webfont.ttf') format('truetype'), url('/serve/fonts/fontawesome-webfont.svg') format('svg');
   font-weight: normal;
   font-style: normal;
 }

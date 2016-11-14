@@ -41,7 +41,7 @@ class MessagesElement(Element) :
         return tag
 
 class CommonElement(Element) :
-    def __init__(self, req, template_name = False, conditionals = {}) :
+    def __init__(self, req, template_name = False, conditionals = {}, frontpage = False) :
         super(CommonElement, self).__init__() 
         self.req = req
         if not template_name :
@@ -50,6 +50,7 @@ class CommonElement(Element) :
 
         conditionals["mobile"] = mobile
         conditionals["req"] = req
+        conditionals["frontpage"] = frontpage
 
         zoom_level = 1.0
 
@@ -384,7 +385,7 @@ class ChatElement(CommonElement) :
 class FrontPageElement(CommonElement) :
     @renderer
     def head(self, request, tag) :
-        return HTMLElement(self.req)
+        return HTMLElement(self.req, frontpage = True)
 
     @renderer
     def login(self, request, tag) :
@@ -394,6 +395,7 @@ class FrontPageElement(CommonElement) :
     def advertise(self, request, tag) :
         pull, push = self.pullpush()
         tag.fillSlots(learn =_("Democratize Languages: Learning a language should be just like reading a book"),
+                      crewjs = self.req.mpath + "/crewjs/crew.min.js",
                       offline = _("Read Alien also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       howitworks = _("Read about how it works"),
                       donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
@@ -791,6 +793,9 @@ class HTMLElement(CommonElement):
                      alltitle = _("Read Alien: Meta Language Learning"),
                      companyname = _("Read Alien"),
                      ajaxformjs = self.req.mpath + "/jquery.form.min.js",
+                     lazyyoutubecss = self.req.mpath + "/lazyyoutube.css",
+                     lazyyoutubejs = self.req.mpath + "/lazyyoutube.js",
+                     crewcss = self.req.mpath + "/crewcss/crew.min.css",
                     )
 
         return tag

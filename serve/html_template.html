@@ -1,94 +1,60 @@
 <head xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="html">
-      <meta charset="utf-8"/>
-      <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-      <title><t:slot name='alltitle'/></title>
-      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-      <meta name="description"><t:attr name='content'><t:slot name='alltitle'/></t:attr></meta>
-      <meta name="author" content="Michael R. Hines"/>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title><t:slot name='alltitle'/></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description"><t:attr name='content'><t:slot name='alltitle'/></t:attr></meta>
+    <meta name="author" content="Michael R. Hines"/>
 
-	<!--
-	<meta property="og:title"><t:slot name='alltitle'/></meta>
-	<meta property="og:image" content=""/>
-	<meta property="og:url" content=""/>
-	<meta property="og:site_name" content="Read Alien"/>
-	<meta property="og:description" content="Read Alien"/>
-	<meta name="twitter:title" content="" />
-	<meta name="twitter:image" content="" />
-	<meta name="twitter:url" content="" />
-	<meta name="twitter:card" content="" />
-	-->
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
+    <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
+    <!--(if frontpage)-->
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='lazyyoutubecss'/></t:attr></link>
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='crewcss'/></t:attr></link>
+    <!--(else)-->
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='imecss'/></t:attr></link>
+    <link rel="stylesheet"><t:attr name='href'><t:slot name='conversecss'/></t:attr></link>
+    <!--(end)-->
 
-	<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,600,400italic,700' rel='stylesheet' type='text/css'/>
-	<link rel="stylesheet" href="serve/crewcss/animate.css"/>
-	<!-- Icomoon Icon Fonts-->
-	<link rel="stylesheet" href="serve/crewcss/icomoon.css"/>
-	<!-- Simple Line Icons -->
-	<link rel="stylesheet" href="serve/crewcss/simple-line-icons.css"/>
-	<!-- Owl Carousel -->
-	<link rel="stylesheet" href="serve/crewcss/owl.carousel.min.css"/>
-	<link rel="stylesheet" href="serve/crewcss/owl.theme.default.min.css"/>
+    <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
 
-	<link rel="stylesheet" href="serve/crewcss/style.css"/>
-
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmcss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmtheme'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='jqmthemeicons'/></t:attr></link>
-      <link rel='stylesheet'><t:attr name='href'><t:slot name='bootmincss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='micacss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='imecss'/></t:attr></link>
-      <link rel="stylesheet"><t:attr name='href'><t:slot name='conversecss'/></t:attr></link>
-<!-- converse.css was made by: -->
-<!-- cd serve/ -->
-<!-- cat converse-1.0.3.css converse-theme.css font-awesome.min.css > converse.css -->
-<!-- uglifycss converse.css > converse.min.css -->
-<!--
-      <link rel="stylesheet" href='/serve/converse-1.0.3.css'/>
-      <link rel="stylesheet" href='/serve/converse-theme.css'/>
-      <link rel="stylesheet" href='/serve/font-awesome.min.css'/>
--->
-      <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
-
-      <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
-      <!--<script><t:attr name='src'><t:slot name='jquery_full'/></t:attr></script>-->
-      <script><t:attr name='src'><t:slot name='couchjs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='ajaxformjs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
-      <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
-      <script><t:attr name='src'><t:slot name='ime'/></t:attr></script> <script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
-
+    <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
+    <!--(if not frontpage)-->
+    <script><t:attr name='src'><t:slot name='couchjs'/></t:attr></script>
+    <script><t:attr name='src'><t:slot name='ajaxformjs'/></t:attr></script>
+    <!--(end)-->
+    <script><t:attr name='src'><t:slot name='bootminjs'/></t:attr></script>
+    <!--(if not frontpage)-->
+    <script><t:attr name='src'><t:slot name='bootpagejs'/></t:attr></script>
+    <!--(end)-->
+    <script><t:attr name='src'><t:slot name='jqmjs'/></t:attr></script>
+    <!--(if frontpage)-->
+    <script><t:attr name='src'><t:slot name='lazyyoutubejs'/></t:attr></script>
 	<script src="serve/crewjs/modernizr-2.6.2.min.js"></script>
-
 	<!--[if lt IE 9]>
 	<script src="serve/crewjs/respond.min.js"></script>
 	<![endif]-->
+    <!--(end)-->
 
+    <script charset="utf-8"><t:attr name='src'><t:slot name='micajs'/></t:attr></script>
+
+    <!--(if not frontpage)-->
+    <script><t:attr name='src'><t:slot name='ime'/></t:attr></script> <script><t:attr name='src'><t:slot name='caret'/></t:attr></script>
+
+      <!-- converse.js is separated from the rest of its chat.js dependencies -->
       <script><t:attr name='src'><t:slot name='chatjs'/></t:attr></script>
-      <!--<script><t:attr name='src'><t:slot name='chatjsfull'/></t:attr></script>-->
       <script id='conversescript'><t:attr name='src'><t:slot name='converse'/></t:attr></script>
-      <!--<script id='conversescript'><t:attr name='src'><t:slot name='conversefull'/></t:attr></script>-->
+    <!--(end)-->
 
-<!--
-      <script src='/serve/jquery.browser.js'/>
-      <script src='/serve/typeahead.js'/>
-      <script src='/serve/strophe-1.2.9.js'/>
-      <script src='/serve/strophe.disco.js'/>
-      <script src='/serve/strophe.vcard.js'/>
-      <script src='/serve/strophe.ping.js'/>
-      <script src='/serve/strophe.rsm.js'/>
-      <script src='/serve/underscore-1.8.3.js'/>
-      <script src='/serve/backbone-1.3.3.js'/>
-      <script src='/serve/backbone.overview.js'/>
-      <script src='/serve/backbone.browserStorage.js'/>
-      <script src='/serve/jed.js'/>
-      <script src='/serve/converse-locales.js'/>
-      <script src='/serve/moment-with-locales-2.15.2.js'/>
-      <script id='conversescript' src='/serve/converse-1.0.3.js'/>
--->
-      <div style='display: none' id='alltitle'><t:slot name='alltitle'/></div>
-      <script>$('title').html(local('alltitle'));</script>
-      <meta name='viewport' content="width=device-width, initial-scale=@!zoom_level!@, user-scalable=no, maximum-scale=1"/>
+    <div style='display: none' id='alltitle'><t:slot name='alltitle'/></div>
+    <script>$('title').html(local('alltitle'));</script>
+    <!--(if frontpage)-->
+    <script>frontpage = true;</script>
+    <!--(end)-->
+    <meta name='viewport' content="width=device-width, initial-scale=@!zoom_level!@, user-scalable=no, maximum-scale=1"/>
 </head>
 
 <!-- in order to support converse.js reloadability during reconnects in a more flexible manner,
@@ -99,3 +65,11 @@
 <!-- uglifyjs converse-1.0.3.js converse.min.js -->
 <!-- uglifyjs chat.js > chat.min.js -->
 
+<!-- cd serve -->
+<!-- cat crewcss/google.css crewcss/animate.css crewcss/icomoon.css crewcss/simple-line-icons.css crewcss/owl.carousel.min.css crewcss/owl.theme.default.min.css crewcss/style.css > crewcss/crew.css -->
+<!-- uglifycss crewcss/crew.css > crewcss/crew.min.css -->
+
+<!-- converse.css was made by: -->
+<!-- cd serve/ -->
+<!-- cat converse-1.0.3.css converse-theme.css font-awesome.min.css > converse.css -->
+<!-- uglifycss converse.css > converse.min.css -->

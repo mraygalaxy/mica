@@ -1,6 +1,7 @@
 var last_data = '';
 var first_time = false;
 var debug = false;
+var frontpage = false;
 //var debug = true;
 function unavailable(error) {
     if (!error) {
