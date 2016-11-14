@@ -13,19 +13,18 @@
 			<div class="container">
 			    <nav class="navbar navbar-default">
 		        <div class="navbar-header">
-		        	<!-- Mobile Toggle Menu Button -->
 				 <a href="#" class="js-fh5co-nav-toggle fh5co-nav-toggle" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><i></i></a>
 		          	 <img width='50px' src="serve/images/icon-120x120.png"/>&#160;<a class="navbar-brand" href="/"><t:slot name='companyname'/></a>
 				 <div class='fh5co-owl-text' style='font-size: x-small; display: inline' t:render='switchlangs'/>
 		        </div>
 		        <div id="navbar" class="navbar-collapse collapse">
 		          <ul class="nav navbar-nav navbar-right">
-		            <li class="active"><a href="#" data-nav-section="home"><span>Home</span></a></li>
-		            <li><a href="#" data-nav-section="chat"><span>Chat</span></a></li>
-		            <li><a href="#" data-nav-section="login"><span>Login</span></a></li>
-		            <li><a href="#" data-nav-section="features"><span>Features</span></a></li>
-		            <li><a href="#" data-nav-section="mobile"><span>Mobile</span></a></li>
-		            <li><a href="#" data-nav-section="opensource"><span>Open Source</span></a></li>
+		            <li class="active"><a href="#" data-nav-section="home"><span><t:slot name='home'/></span></a></li>
+		            <li><a href="#" data-nav-section="chat"><span><t:slot name='chat'/></span></a></li>
+		            <li><a href="#" data-nav-section="login"><span><t:slot name='login'/></span></a></li>
+		            <li><a href="#" data-nav-section="features"><span><t:slot name='features'/></span></a></li>
+		            <li><a href="#" data-nav-section="mobile"><span><t:slot name='mobile'/></span></a></li>
+		            <li><a href="#" data-nav-section="opensource"><span><t:slot name='opensource'/></span></a></li>
 		          </ul>
 		        </div>
 			    </nav>
@@ -42,28 +41,28 @@
 					    <div class="col-md-6 col-sm-6">
 			    			<div class="fh5co-owl-text-wrap">
 						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate">Democratize Languages</h1>
-									<h2 class="fh5co-sub-lead to-animate">Learning a language should be just like reading a book.</h2>
-										<h3 class="fh5co-sub-lead to-animate"><a href='http://github.com/hinesmr/mica'>Driven by open-source</a>.</h3>
+						    		<h1 class="fh5co-lead to-animate"><t:slot name='democratize'/></h1>
+									<h2 class="fh5co-sub-lead to-animate"><t:slot name='learningshould'/>.</h2>
+										<h3 class="fh5co-sub-lead to-animate"><a href='http://github.com/hinesmr/mica'><t:slot name='driven'/></a>.</h3>
 						    	</div>
 						    </div>
 					    </div>
 					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
 						<div class="row">
-					    	<div class="iphone to-animate-2"><img src="serve/images/story15.png" alt="Spanish Example"/></div>
+					    	<div class="iphone to-animate-2"><img src="serve/images/story15.png"/><t:attr name='alt'><t:slot name='spanishexample'/></t:attr></div>
 						</div>
 						<br/>
 						<br/>
 						<br/>
 						<div class="row">
-					    	<div class="iphone to-animate-2" style='width: 100%'><img src="serve/images/badselected.png" alt="Chinese Example"/></div>
+					    	<div class="iphone to-animate-2" style='width: 100%'><img src="serve/images/badselected.png"/><t:attr name='alt'><t:slot name='chineseexample'/></t:attr></div>
 						</div>
 						<br/>
 						<br/>
 						<br/>
 						<div class="row">
 						<div class="iphone to-animate-2 fh5co-owl-text">
-						    <a href="#" data-nav-section="login" class="btn btn-primary btn-lg">Spanish and Chinese for Free</a>
+						    <a href="#" data-nav-section="login" class="btn btn-primary btn-lg"><t:slot name='spanishchineseforfree'/></a>
 						</div>
 						</div>
 					    </div>
@@ -77,8 +76,8 @@
 		    			<div class="col-md-7 col-sm-7">
 			    			<div class="fh5co-owl-text-wrap">
 						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate">Learn foreign literature that you provide.<br/> On your terms.</h1>
-									<h2 class="fh5co-sub-lead to-animate">Offline-first. Mobile-first.</h2>
+						    		<h1 class="fh5co-lead to-animate"><t:slot name='youprovide'/>.<br/> <t:slot name='yourterms'/>.</h1>
+									<h2 class="fh5co-sub-lead to-animate"><t:slot name='offlinemobile'/></h2>
 									<p class="to-animate-2"><b><a href="/help"><t:slot name="howitworks"/>.</a></b></p>
 						    	</div>
 						    </div>
@@ -100,8 +99,8 @@
 		    			<div class="col-md-7 col-sm-7">
 			    			<div class="fh5co-owl-text-wrap">
 						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate">Data-driven software tracks your language.<br/>So you don't have to.</h1>
-									<h2 class="fh5co-sub-lead to-animate">Offline-first. Mobile-first.</h2>
+						    		<h1 class="fh5co-lead to-animate"><t:slot name='datadriven'/>.<br/><t:slot name='haveto'/>.</h1>
+									<h2 class="fh5co-sub-lead to-animate"><t:slot name='offlinemobile'/></h2>
 									<p class="to-animate-2">
 										<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 										<input type="hidden" name="cmd" value="_s-xclick"/>
@@ -128,25 +127,25 @@
 		<div class="container">
 			<div class="row row-bottom-padded-lg" id="about-us">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="to-animate">Chat like a native. Reduce the fear.</h2>
+					<h2 class="to-animate"><t:slot name='native'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 to-animate">
-							<h3>Data drives your language in real-time.<br/>Guess all day. Learn all night.</h3>
+							<h3><t:slot name='realtime'/><br/><t:slot name='guess'/></h3>
 						</div>
 					</div>
 				</div>
 				<div class="col-md-3 to-animate">
-					<img src="serve/images/chatpro1.png" class="img-responsive img-rounded" alt="Chat Interface"/>
+					<img src="serve/images/chatpro1.png" class="img-responsive img-rounded"/>
 				</div>
 				<div class="col-md-4 to-animate">
-					<img src="serve/images/chatpro2.png" class="img-responsive img-rounded" alt="Chat Interface"/>
+					<img src="serve/images/chatpro2.png" class="img-responsive img-rounded"/>
 				</div>
 				<div class="col-md-5 to-animate">
-					<h2>Tonal languages are hard.<br/>We bring an end to rote-memorization.</h2>
-					<p>Overlay verb conjugations with an IME-style keyboard to real-time assist the person you're talking to. Data from the literature that you read feeds directly into a context-based learning experience.</p>
-					<p>We support polyphomes, character grouping/merging, and complex parsing of character-based languages.</p>
-					<p>If we don't conjugate verbs correctly, the data will tell us how to do it right the next time.</p>
-					<p class="to-animate-2"><a href="#" data-nav-section="login" class="btn btn-primary btn-lg">Login and try it</a></p>
+					<h2><t:slot name='tonal'/><br/><t:slot name='rote'/></h2>
+					<p><t:slot name='overlay'/></p>
+					<p><t:slot name='polyphomes'/></p>
+					<p><t:slot name='conjugate'/></p>
+					<p class="to-animate-2"><a href="#" data-nav-section="login" class="btn btn-primary btn-lg"><t:slot name='tryit'/></a></p>
 				</div>
 			</div>
 		</div>
@@ -155,11 +154,11 @@
 		<div class="container">
 			<div class="row row-bottom-padded-sm">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="to-animate">Login. Ditch the flash cards.</h2>
+					<h2 class="to-animate"><t:slot name='ditch'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 to-animate">
-							<h3>Upload up to 300MB of literature for free.</h3>
-							<h3>Unlimited content on your mobile devices.</h3>
+							<h3><t:slot name='upload'/></h3>
+							<h3><t:slot name='unlimited'/></h3>
 							<div class='to-animate' t:render="login"/>
 						</div>
 					</div>
@@ -172,10 +171,10 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="single-animate animate-features-1">Features</h2>
+					<h2 class="single-animate animate-features-1"><t:slot name='features'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 single-animate animate-features-2">
-							<h3>The language experience you didn't know existed...</h3>
+							<h3><t:slot name='experience'/>...</h3>
 						</div>
 					</div>
 				</div>
@@ -184,12 +183,12 @@
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-present"></i></div>
 					<div class="fh5co-desc">
-						<h3>Free up to 300MB</h3>
-						<p>Pay only for the content that you import. 
+						<h3><t:slot name='upto'/></h3>
+						<p><t:slot name='payonly'/> 
 						<form id='donateform' action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 							<input type="hidden" name="cmd" value="_s-xclick"/>
 							<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
-							<a onclick="$('#donateform').submit();" style='cursor: pointer'>Donate if you'd like additional space</a>.
+							<a onclick="$('#donateform').submit();" style='cursor: pointer'><t:slot name='donate'/></a>.
 						</form>
 </p>
 					</div>	
@@ -197,45 +196,45 @@
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-eye"></i></div>
 					<div class="fh5co-desc">
-						<h3>Analytics</h3>
-						<p>Learn in context. Words and statistics are cross-referenced across stories.</p>
+						<h3><t:slot name='analytics'/></h3>
+						<p><t:slot name='incontext'/>.</p>
 					</div>
 				</div>
 				<div class="clearfix visible-sm-block visible-xs-block"></div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-crop"></i></div>
 					<div class="fh5co-desc">
-						<h3>Always mobile.</h3>
-						<p>Your device is by far the best way to use the system. Read on a tablet. Chat on your phone.</p>
+						<h3><t:slot name='alwaysmobile'/>.</h3>
+						<p><t:slot name='byfar'/>.</p>
 					</div>
 				</div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-umbrella"></i></div>
 					<div class="fh5co-desc">
-						<h3>Open Source</h3>
-						<p>Our designs and algorithms are open for all to see: <a href='https://github.com/hinesmr/mica'>Check it out.</a></p>
+						<h3><t:slot name='opensource'/></h3>
+						<p><t:slot name='designs'/>: <a href='https://github.com/hinesmr/mica'><t:slot name='checkitout'/>.</a></p>
 					</div>
 				</div>
 				<div class="clearfix visible-sm-block visible-xs-block"></div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-speedometer"></i></div>
 					<div class="fh5co-desc">
-						<h3>You choose the complexity.</h3>
-						<p>By importing your own stories, you don't depend on us to provide them for you.</p>
+						<h3><t:slot name='youchoose'/>.</h3>
+						<p><t:slot name='byimporting'/>.</p>
 					</div>	
 				</div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
 					<div class="fh5co-icon"><i class="icon-heart"></i></div>
 					<div class="fh5co-desc">
-						<h3>Chat with assistance.</h3>
-						<p>Instant messaging that's smart enough to read your own vocabulary in real-time.</p>
+						<h3><t:slot name='chatwith'/></h3>
+						<p><t:slot name='instantmessaging'/></p>
 					</div>
 				</div>
 				<div class="clearfix visible-sm-block visible-xs-block"></div>
 			</div>
 			<div class="row">
 				<div class="col-md-4 col-md-offset-4 single-animate animate-features-3">
-					<a href="#" style="cursor: pointer" onclick="window.location.href='help'" class="btn btn-primary btn-block">Learn More</a>
+					<a href="#" style="cursor: pointer" onclick="window.location.href='help'" class="btn btn-primary btn-block"><t:slot name='learnmore'/></a>
 				</div>
 			</div>
 		</div>
@@ -245,10 +244,10 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="single-animate animate-pricing-1">Mobile-ready. Offline-ready.</h2>
+					<h2 class="single-animate animate-pricing-1"><t:slot name='readyready'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 subtext single-animate animate-pricing-2">
-							<h3>Synchronized across all your devices.<br/>Take languages offline and on-the-go.</h3>
+							<h3><t:slot name='synchronized'/><br/><t:slot name='take'/></h3>
 						</div>
 					</div>
 				</div>
@@ -277,10 +276,10 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-md-12 section-heading text-center">
-					<h2 class="single-animate animate-pricing-1">Open-source language for all.</h2>
+					<h2 class="single-animate animate-pricing-1"><t:slot name='openforall'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 subtext single-animate animate-pricing-2">
-						<h3>Tech Stack:</h3>
+						<h3><t:slot name='techstack'/>:</h3>
 						<ul class='list-group' style='color: black'>
 						<li class="list-group-item">Git Repository: <a href="http://github.com/hinesmr/mica">http://github.com/hinesmr/mica</a></li>
 						<li class="list-group-item">Python + Python-for-Android + Kivy-iOS</li>
@@ -303,7 +302,7 @@
 		<div class="container">
 			<div class="row row-bottom-padded-sm">
 				<div class="col-md-12">
-					<p class="copyright text-center">&#169; 2016 <a href="/">readalien.com</a>. All Rights Reserved.</p>
+					<p class="copyright text-center">&#169; 2016 <a href="/">readalien.com</a>. <t:slot name='reserved'/></p>
 					<p class='text-center'><a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.</p>
 				</div>
 			</div>
@@ -312,16 +311,11 @@
 	
 	
 	
-	<!-- jQuery Easing -->
-	<script src="serve/crewjs/jquery.easing.1.3.js"></script>
-	<!-- Waypoints -->
-	<script src="serve/crewjs/jquery.waypoints.min.js"></script>
-	<!-- Owl Carousel -->
-	<script src="serve/crewjs/owl.carousel.min.js"></script>
-
-
-	<!-- Main JS (Do not remove) -->
-	<script src="serve/crewjs/main.js"></script>
+	<!-- crewjs dependencies -->
+	<!-- cd serve -->
+	<!-- cat crewjs/jquery.easing.1.3.js crewjs/jquery.waypoints.min.js crewjs/owl.carousel.min.js crewjs/main.js > crew.js -->
+        <!-- uglifyjs crew.js > crew.min.js -->
+	<script src="serve/crew.min.js"></script>
     <!--(end)-->
     <script>
     BOOTSCRIPTHEAD 
