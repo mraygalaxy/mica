@@ -65,8 +65,10 @@ function switchlist() {
    go(false, 'home&switchlist=' + (list_mode ? '0' : '1'), unavailable(false), switchlist_complete, false);
 }
 
-$("[data-role='header'],[data-role='footer']").toolbar();
-$("[data-role='panel']").panel().enhanceWithin();
+if (!frontpage) {
+    $("[data-role='header'],[data-role='footer']").toolbar();
+    $("[data-role='panel']").panel().enhanceWithin();
+}
 
 //$.mobile.ignoreContentEnabled = true;
 //$(document).bind("mobileinit", function(){
@@ -261,7 +263,9 @@ $(document).on('ready', function() {
 		$("div.tri1").toggleClass("toggle1");
 	});
     form_loaded(false, true);
-    switchstart();
+    if (!frontpage) {
+        switchstart();
+    }
 });
 
 
@@ -293,32 +297,35 @@ $(document).ready(function () {
 });
 
 var translist = [];
-$.couch.urlPrefix = $('#creds').html();
-var db = $.couch.db($('#database').html());
-var authorization = false;
 
-if ($("#authtype").html() != undefined && $("#authtype").html() != 'cookie') {
-   authorization = "Basic " + Base64.encode($("#username").html() + ":" + $('#token').html());
-   console.log("Trying to login to local couch...");
-   $.ajax({
-        type: "GET",
-        url: $('#creds').html() + "/_session",
-        dataType: "json",
-        xhrFields: {withCredentials: true},
-        beforeSend: function(xhr) {
-            xhr.setRequestHeader("Accept", "application/json");
-            xhr.setRequestHeader("Authorization", authorization);
-        },
-        complete: function(req) {
-          if (req.status == 200) {
-            console.log("Couch login success!");
-          } else {
-            console.log("Couch login failed.");
-            var resp = $.parseJSON(req.responseText);
-            alert("Failed to login to couch listener on mobile! " + req.status + " " + resp.error + " " + resp.reason);
-          }
-        }
-    });
+if (!frontpage) {
+    $.couch.urlPrefix = $('#creds').html();
+    var db = $.couch.db($('#database').html());
+    var authorization = false;
+
+    if ($("#authtype").html() != undefined && $("#authtype").html() != 'cookie') {
+       authorization = "Basic " + Base64.encode($("#username").html() + ":" + $('#token').html());
+       console.log("Trying to login to local couch...");
+       $.ajax({
+            type: "GET",
+            url: $('#creds').html() + "/_session",
+            dataType: "json",
+            xhrFields: {withCredentials: true},
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader("Accept", "application/json");
+                xhr.setRequestHeader("Authorization", authorization);
+            },
+            complete: function(req) {
+              if (req.status == 200) {
+                console.log("Couch login success!");
+              } else {
+                console.log("Couch login failed.");
+                var resp = $.parseJSON(req.responseText);
+                alert("Failed to login to couch listener on mobile! " + req.status + " " + resp.error + " " + resp.reason);
+              }
+            }
+        });
+    }
 }
 
 function showNotifications(msgfrom, msg, lang) {
