@@ -161,6 +161,7 @@
 						<div class="col-md-8 col-md-offset-2 to-animate">
 							<h3><t:slot name='upload'/></h3>
 							<h3><t:slot name='unlimited'/></h3>
+							<h4><a href="mailto:support@readalien.com?Subject=[support] question?" target="_top"><t:slot name='emailsupport'/></a></h4>
 							<div class='to-animate' t:render="login"/>
 						</div>
 					</div>
@@ -306,7 +307,8 @@
 				<div class="col-md-12">
 					<p class="copyright text-center">&#169; 2016 <a href="/">readalien.com</a>. <t:slot name='reserved'/></p>
 					<p class='text-center'><a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.</p>
-					<p class='text-center'><a style="cursor: pointer" onclick="window.location.href='privacy'" href="#"><t:slot name="privacy"/></a>.</p>
+					<p class='text-center'><a style="cursor: pointer" onclick="window.location.href='privacy'" href="#"><t:slot name="privacy"/></a> | 
+					<a href="mailto:support@readalien.com?Subject=[support] question?" target="_top"><t:slot name='support'/></a></p>
 				</div>
 			</div>
 		</div>
