@@ -4870,6 +4870,8 @@ class MICA(object):
             firstload = "reading"
 
         try :
+            # This first-loading is becoming increasingly problematic. Just stop doing it.
+            firstload = False
             return self.api(req, json = dict(firstload = firstload, translist = translist, reload = False, storylist = u"".join(storylist)))
         except Exception, e:
             merr("Storylist fill failed: " + str(e))

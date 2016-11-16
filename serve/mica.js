@@ -1143,13 +1143,8 @@ function finishedloading(storylist, navto) {
         if (!$(this).attr('src')) {
             eval($(this).text());
         }
-    });
+   });
 
-   /* 
-    * This auto-switching of storylist categories
-    * is increasingly problematic. Just stop doing it.
-    */
-   /*
    if (navto) {
        $.mobile.navigate(navto);
    } else if(firstload != false && !firstloaded) {
@@ -1157,9 +1152,9 @@ function finishedloading(storylist, navto) {
         firstload = false;
         firstloaded = true;
    }
-   */
 
-    done();
+   done();
+   $("#storypages").html("");
 }
 
 function loadstories(json, opaque) {
