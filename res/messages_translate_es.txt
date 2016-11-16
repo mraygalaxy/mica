@@ -1,0 +1,671 @@
+msgid ""
+"We're sorry, but you cannot have colon ':' characters in your account name "
+"or email address."
+msgstr ""
+
+#. When uploading a story, you can't have colons in the file name
+msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
+msgstr ""
+
+msgid "days"
+msgstr ""
+
+msgid "day"
+msgstr ""
+
+msgid "weeks"
+msgstr ""
+
+msgid "week"
+msgstr ""
+
+msgid "months"
+msgstr ""
+
+msgid "month"
+msgstr ""
+
+msgid "year"
+msgstr ""
+
+msgid "years"
+msgstr ""
+
+msgid "Priming database for you. Please wait."
+msgstr ""
+
+msgid "Database optimized."
+msgstr ""
+
+#. These two messages together effectively say "Chat with: xxxxx"
+#. 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
+#. Chat / Instant Messaging
+#. Navigation label to click to switch to the chat window
+msgid "Chat"
+msgstr ""
+
+msgid "today"
+msgstr ""
+
+msgid "this"
+msgstr ""
+
+msgid "ago"
+msgstr ""
+
+msgid "w/"
+msgstr ""
+
+msgid "API access denied"
+msgstr ""
+
+msgid "No result"
+msgstr ""
+
+msgid "Chat error"
+msgstr ""
+
+msgid "Success! Learning Language changed"
+msgstr ""
+
+#. 'Learning language' refers to the language that the user is trying to learn
+msgid "Learning Language"
+msgstr ""
+
+#. 'Learning language' refers to the language that the user is trying to learn
+msgid "Change Learning Language"
+msgstr ""
+
+msgid "We're sorry, but chat for this language pair is not supported"
+msgstr ""
+
+msgid "to"
+msgstr ""
+
+msgid "as indicated by your account preferences"
+msgstr ""
+
+msgid ""
+"Please choose a different 'Learning Language' in your accout preferences. "
+"Thank you."
+msgstr ""
+
+msgid "Recent"
+msgstr ""
+
+#. History of chat messages with other users
+#. Button to show a user's chat history
+msgid "Chat History"
+msgstr ""
+
+#. Indicates that the chat software is starting up...
+msgid "Loading Chat"
+msgstr ""
+
+#. Incoming chat messages
+msgid "Your Chat Username is: "
+msgstr ""
+
+msgid "Send Message"
+msgstr ""
+
+#. Destination of chat receiver
+msgid "To"
+msgstr ""
+
+#. Send a chat message
+#. Send an instant message
+msgid "Send"
+msgstr ""
+
+#. In Chat mode, from what source language to what target language should translations occur.
+msgid "Learn (translate) from"
+msgstr ""
+
+#. Notification from the online chat system that another user is logged in and has become available.
+msgid "has become available"
+msgstr ""
+
+#. Notification from the online chat system that another user has changed status, like 'away' or 'available'.
+msgid "has set their presence to"
+msgstr ""
+
+#. Appears in Chat mode and allows user to disable IME input system for character-based languages.
+msgid "phonetic typing"
+msgstr ""
+
+#. Use a traditional or simplified character IME system
+msgid "Traditional"
+msgstr ""
+
+#. We need the user to gives a username of someone to chat with
+msgid "Please provide the address of someone to chat with."
+msgstr ""
+
+msgid ""
+"Disconnected: You have probably logged in from a different web-browser. To "
+"resume your chat please sign-out an then sign-in again. Thank you."
+msgstr ""
+
+#. A general error message
+msgid "An error occured"
+msgstr ""
+
+#. This message appears as part of a count-down message indicating how many seconds are left before the system re-connects to the chat
+msgid "Seconds left to reconnect"
+msgstr ""
+
+msgid "decades"
+msgstr ""
+
+msgid ""
+"Your device either does not have adequate signal strength or your connection "
+"does not have adequate connectivity. While you do have a connection (3/4G or "
+"Wifi), we were not able to reach the server."
+msgstr ""
+
+msgid "(template) Please report the above exception to the author. Thank you"
+msgstr ""
+
+msgid "(unknown) Please report the above exception to the author. Thank you"
+msgstr ""
+
+msgid "Lost connectivity to the database. Please come back later."
+msgstr ""
+
+msgid ""
+"(outer unknown) Please report the exception above to the author. Thank you."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Rotating Old Merged Chats From Database"
+msgstr ""
+
+msgid "Initialization Complete! Story ready for translation"
+msgstr ""
+
+msgid ""
+"This account is not fully synchronized. Be sure to touch 'Synchronize' for "
+"the story before reading it. You can follow the progress at the top of the "
+"screen until the 'download' arrow reaches 100."
+msgstr ""
+
+msgid "You have been logged out."
+msgstr ""
+
+msgid "Internet access error. Offline instant translation only: "
+msgstr ""
+
+msgid "Internet access error. Offline translation only: "
+msgstr ""
+
+#. Beginning of a message.
+msgid "No story loaded. Go to the 'Stories' tab"
+msgstr ""
+
+#. end of a message
+msgid "or create one by going to Account => Upload New Story"
+msgstr ""
+
+msgid "Quota requests need to be done on the website."
+msgstr ""
+
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+msgid "Server not configured correctly. Can't modify quotas"
+msgstr ""
+
+msgid "No such account. Cannot quotas."
+msgstr ""
+
+msgid "Success! Quota was changed"
+msgstr ""
+
+msgid "unlimited"
+msgstr ""
+
+msgid "for user"
+msgstr ""
+
+msgid "Error: Quota could not be changed"
+msgstr ""
+
+msgid "Sorry. Why is your email so long?"
+msgstr ""
+
+msgid "Sorry. Email with spaces in it?"
+msgstr ""
+
+msgid "Sorry. Invalid email address."
+msgstr ""
+
+msgid "Failed to change primary synchronization. Please try again"
+msgstr ""
+
+msgid "Failed to change file synchronization. Please try again"
+msgstr ""
+
+msgid "Storylist failed"
+msgstr ""
+
+msgid "The oauth protocol had an error"
+msgstr ""
+
+msgid "Please try again. Thank you"
+msgstr ""
+
+msgid ""
+"We're sorry, but the oauth provider is missing information for your account"
+msgstr ""
+
+msgid "Happy Learning"
+msgstr ""
+
+#. User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
+msgid "Invalid credentials"
+msgstr ""
+
+msgid "Bulk review complete"
+msgstr ""
+
+msgid "Initializing Story in Database"
+msgstr ""
+
+#. statistics in reading mode are disabled
+msgid "Statistics Disabled"
+msgstr ""
+
+#. This is a standard error message that a request on the website failed.
+msgid ""
+"Failed to issue request. We're sorry. Please report what you tried to do to "
+"the author. Thank you."
+msgstr ""
+
+msgid "Mobile Device Instructions for Teachers"
+msgstr ""
+
+msgid "Get 'Xabber' for Android"
+msgstr ""
+
+msgid "Get 'ChatSecure' for Android"
+msgstr ""
+
+msgid "Get 'ChatSecure' for iOS"
+msgstr ""
+
+msgid "Instructions"
+msgstr ""
+
+msgid "Server"
+msgstr ""
+
+msgid "do not use 'www'"
+msgstr ""
+
+msgid "Encryption/Security"
+msgstr ""
+
+msgid "Yes / SSL / TLS / SASL Authentication"
+msgstr ""
+
+msgid "Port (if needed)"
+msgstr ""
+
+#. This is a button for the user to restart the current webpage
+#. Refresh the current webpage
+msgid "Refresh"
+msgstr ""
+
+#. A 'local' account is an account that does not use a social network, like facebook or google.
+msgid "OR Use a local account"
+msgstr ""
+
+msgid "<b>MICA</b> is a <b>new way</b> to learn a language."
+msgstr ""
+
+#. Change a user's quota on the website
+msgid "Change Quota"
+msgstr ""
+
+msgid ""
+"Please change your email address on the website. Will support mobile in a "
+"future version"
+msgstr ""
+
+msgid "Story imported. Please initialized it on the website."
+msgstr ""
+
+#. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
+msgid "Logout"
+msgstr ""
+
+msgid "New Story"
+msgstr ""
+
+#. Navigation label to click to learn a story / view the story for learning.
+msgid "Learn"
+msgstr ""
+
+#. Label indicating a list of 'new' stories that have just been uploaded / imported into the website
+msgid "New"
+msgstr ""
+
+#. Button allowing the user to initialize a new story that has just been uploaded / imported into the website.
+msgid "Initialize Story"
+msgstr ""
+
+msgid ""
+"This account is not fully synchronized. Please wait a minute or two for "
+"initial replication and login again. You can follow the progress at the top "
+"of the screen until the 'download' arrow reaches 100."
+msgstr ""
+
+msgid "Application reset. Please login again."
+msgstr ""
+
+#. Button that confirms that the user wants to perform an action.
+msgid "Yes, do it."
+msgstr ""
+
+msgid "Are you sure? This is IRREVERSIBLE."
+msgstr ""
+
+#. Wipe the mobile application's data and start over
+msgid "Reset application to defaults"
+msgstr ""
+
+#. Message on the mobile device when a story is imported for the first time.
+msgid "Story imported. Please initialize it on the website."
+msgstr ""
+
+#. The user has completed logging out / signing out already - then this message appears.
+msgid "Disconnected from Read Alien"
+msgstr ""
+
+msgid "Read Alien is busy processing the following. Please wait"
+msgstr ""
+
+#. Beginning of a message
+msgid ""
+"We're sorry. The Read Alien database on this device already belongs to the "
+"user"
+msgstr ""
+
+msgid ""
+"a new account. This requirement is because Read Alien databases can become "
+"large over time, so we want you to be aware of that. Thanks."
+msgstr ""
+
+#. front-page website message
+msgid ""
+"Read Alien also works offline on mobile devices and automatically stays in "
+"sync with both iOS and Android"
+msgstr ""
+
+msgid ""
+"To get a \"feel\" for how Read Alien works, you can use the DEMO account "
+"with the username 'demo' and password 'micademo'. This account will load pre-"
+"existing stories from the online demo account, but all changes you make will "
+"not be synchronized."
+msgstr ""
+
+#. name of the company
+#. name of the ocmpany
+msgid "Read Alien Learning"
+msgstr ""
+
+msgid "<b>Read Alien</b> is a <b>new way</b> to learn a language."
+msgstr ""
+
+msgid ""
+"Read Alien works by <b>analytics</b>: You read <b>existing</b> books or "
+"stories and it <b>tracks your brain</b>."
+msgstr ""
+
+msgid ""
+"Read Alien is not a translator. It makes you <b>learn by reading</b> in "
+"context."
+msgstr ""
+
+msgid ""
+"Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."
+msgstr ""
+
+#. 'me' refers to the yourself inside of a chat window.
+msgid "me"
+msgstr ""
+
+#. This message appears in a chat window.
+msgid ""
+"A very large message has been received. This might be due to an attack meant "
+"to degrade the chat performance. Output has been shortened."
+msgstr ""
+
+#. name of the company.
+msgid "Read Alien: Meta Language Learning"
+msgstr ""
+
+#. This appears as a push notification on a mobile device when a notification arrives.
+msgid "ReadAlien Message from"
+msgstr ""
+
+#. Buddy list
+msgid "Buddies"
+msgstr ""
+
+#. front-page website message
+msgid ""
+"Democratize Languages: Learning a language should be just like reading a book"
+msgstr ""
+
+#. This appears when we do not have internet connectivity
+msgid "Internet access is unavailable. Chat offline."
+msgstr ""
+
+#. name of the company
+msgid "Read Alien"
+msgstr ""
+
+#. Landing page navigation link #1: Scroll back to the beginning
+msgid "Home"
+msgstr ""
+
+#. An example story / book in Spanish
+msgid "Spanish Example"
+msgstr ""
+
+#. An example story / book in Chinese
+msgid "Chinese Example"
+msgstr ""
+
+#. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
+msgid "Offline-first. Mobile-first."
+msgstr ""
+
+#. Features of this software
+msgid "Features"
+msgstr ""
+
+#. Mobile device
+msgid "Mobile"
+msgstr ""
+
+#. Open source software
+msgid "Open Source"
+msgstr ""
+
+#. Front-page message
+msgid "Democratize Languages"
+msgstr ""
+
+#. "driven" means that the software is powered by open-source software
+msgid "Driven by open-source"
+msgstr ""
+
+#. Front-page message: learn spanish and chinese for free
+msgid "Spanish and Chinese for Free"
+msgstr ""
+
+#. Learn a language by uploading your own foreign literature
+msgid "Learn foreign literature that you provide"
+msgstr ""
+
+#. Learn the way you want to
+msgid "On your terms"
+msgstr ""
+
+#. This software uses data to track your language progress
+msgid "Data-driven software tracks your language"
+msgstr ""
+
+#. This means that you don't have to work that hard
+msgid "So you don't have to"
+msgstr ""
+
+#. Reduce the fear of communication in a foreign language by chatting with native speakers
+msgid "Chat like a native. Reduce the fear."
+msgstr ""
+
+#. We use data to assist your language experience
+msgid "Data drives your language in real-time."
+msgstr ""
+
+#. Guess what words you know and don't know. Learn the language for a long time.
+msgid "Guess all day. Learn all night."
+msgstr ""
+
+#. Languages that have multiple tons (like chinese) are hard to learn.
+msgid "Tonal languages are hard."
+msgstr ""
+
+#. You do not need to use rote-memorization (repeat, repeat, repeat) to learn the language
+msgid "We bring an end to rote-memorization."
+msgstr ""
+
+#. We show you your vocabulary at the same time you are typing in the chat window
+msgid ""
+"Overlay verb conjugations with an IME-style keyboard to real-time assist the "
+"person you're talking to. Data from the literature that you read feeds "
+"directly into a context-based learning experience."
+msgstr ""
+
+#. Polyphomes refer to multiple tones in a language, like chinese. grouping merging refers to putting two characters together to form a whole word.
+msgid ""
+"We support polyphomes, character grouping/merging, and complex parsing of "
+"character-based languages."
+msgstr ""
+
+#. Conjugate refers to romanized languages, like Spanish, that have different spellings of a verb for different tenses.
+msgid ""
+"If we don't conjugate verbs correctly, the data will tell us how to do it "
+"right the next time."
+msgstr ""
+
+#. Login to the website and try the system
+msgid "Login and try it"
+msgstr ""
+
+#. Login to the website. Stop using flash cards to learn the language.
+msgid "Login. Ditch the flash cards."
+msgstr ""
+
+#. You get a quota of 300MB on the website.
+msgid "Upload up to 300MB of literature for free."
+msgstr ""
+
+#. Mobile device is free and does not have a limit or a quota.
+msgid "Unlimited content on your mobile devices."
+msgstr ""
+
+#. We made something that you have never seen before
+msgid "The language experience you didn't know existed"
+msgstr ""
+
+#. You get a quota of 300MB on the website.
+msgid "Free up to 300MB"
+msgstr ""
+
+#. You pay for content, not for subscription.
+msgid "Pay only for the content that you import."
+msgstr ""
+
+#. Invitation to the user to donate money to get more space.
+msgid "Donate if you'd like additional space"
+msgstr ""
+
+#. Analytics is a technology term for when the software tries to make a prediction about you based on data and patterns.
+msgid "Analytics"
+msgstr ""
+
+#. You learn by reading stories in context. We track those words and statistics across all the stories that you import into the system.
+msgid ""
+"Learn in context. Words and statistics are cross-referenced across stories"
+msgstr ""
+
+#. This means that we make the mobile application a priority.
+msgid "Always mobile"
+msgstr ""
+
+msgid ""
+"Your device is by far the best way to use the system. Read on a tablet. Chat "
+"on your phone"
+msgstr ""
+
+#. Our software, design, and algorithms are open-source.
+msgid "Our designs and algorithms are open for all to see"
+msgstr ""
+
+#. Try the system
+msgid "Check it out"
+msgstr ""
+
+#. You choose the complexity by importing whatever you want
+msgid "You choose the complexity"
+msgstr ""
+
+msgid ""
+"By importing your own stories, you don't depend on us to provide them for you"
+msgstr ""
+
+#. 'assistance' means the data vocabulary assists you while you are chatting
+msgid "Chat with assistance"
+msgstr ""
+
+#. Same as previous comment: the data vocabulary assists you while you are chatting
+msgid ""
+"Instant messaging that's smart enough to read your own vocabulary in real-"
+"time."
+msgstr ""
+
+#. Button to click to learn more about how the system works
+msgid "Learn More"
+msgstr ""
+
+#. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
+msgid "Mobile-ready. Offline-ready."
+msgstr ""
+
+#. The software knows how to keep the website and the mobile device synchronized together
+msgid "Synchronized across all your devices."
+msgstr ""
+
+#. This means that the mobile device works offline while you are using the system.
+msgid "Take languages offline and on-the-go."
+msgstr ""
+
+#. This software is open source
+msgid "Open-source language for all."
+msgstr ""
+
+#. A 'tech stack' is a technology term that refers to a list of all the different technologies used to build the software.
+msgid "Tech Stack"
+msgstr ""
+
+#. This is a standard copyright message at the bottom of the website.
+msgid "All Rights Reserved."
+msgstr ""
+
+#. Label indicating a list of stories that have not finished being reviewed
+msgid "Reviewing"
+msgstr ""

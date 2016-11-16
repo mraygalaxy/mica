@@ -1,4 +1,4 @@
-# English => Chinese Simplified Localizations for MICA
+# English => Chinese Simplified Localizations for readalien.com 
 msgid ""
 msgstr ""
 "Project-Id-Version: beta\n"
@@ -24,6 +24,7 @@ msgstr "编辑"
 msgid "Read"
 msgstr "阅读"
 
+#. Account username to login with
 msgid "Account"
 msgstr "帐户"
 
@@ -111,11 +112,11 @@ msgstr "线上翻译"
 msgid "Offline"
 msgstr "线下翻译"
 
-#. SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+#. Chinese-only: SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "SPLIT"
 msgstr "分开过的"
 
-#. MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+#. Chinese-only: MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
 msgid "MERGE"
 msgstr "合并过的"
 
@@ -123,16 +124,19 @@ msgstr "合并过的"
 msgid "No edit history available."
 msgstr "不存在修改历史。"
 
+#. Chinese-only: merge/split means that we are indicating to the user that a particular group of characters was either split into separate characters or that a group of characters was merged into a single group
 msgid "These characters were previously merged into a word"
 msgstr "这些字以前合并成一个词"
 
 msgid "This word was previously split into characters"
 msgstr "这个词以前分解成单个字"
 
-#. These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
+#. This is a button that performs some modifications to a story automatically based on a series of recommendations.
+#. Chinese-only: These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
 msgid "Try Recommendations"
 msgstr "试试推荐"
 
+#. This is a button that allows a particular page of a story to be re-translated.
 #. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
 msgstr "重新翻译本页"
@@ -189,6 +193,7 @@ msgstr "默认"
 msgid "Select"
 msgstr "选择"
 
+#. Button to delete something
 #. This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
 msgid "Delete"
 msgstr "删除"
@@ -219,6 +224,7 @@ msgstr "未翻译"
 msgid "Untranslated story!"
 msgstr "未翻译的故事！"
 
+#. List of all stories
 msgid "Stories"
 msgstr "故事"
 
@@ -226,6 +232,7 @@ msgstr "故事"
 msgid "Finished reading"
 msgstr "已读完"
 
+#. Label indicating a list of stories that a user is currently reading
 msgid "Reading"
 msgstr "阅读"
 
@@ -289,6 +296,7 @@ msgid "Invalid story uuid"
 msgstr "无效的故事uuid"
 
 #. Finished reviewing a story in review mode.
+#. Label indicating a list of stories that a user is finished with
 msgid "Finished"
 msgstr "阅读完成"
 
@@ -301,12 +309,15 @@ msgstr "忘记"
 msgid "Mode changed"
 msgstr "模式转换改变"
 
+#. This is a button that appears in 'Reading' mode and allows the story to show only the text intead of the original book's picture or the original story's picture
 msgid "show text only"
 msgstr "仅显示文字"
 
+#. This is a button that appears in 'Reading' mode and allows the user to show both the original book's picture and text side-by-side in the same window
 msgid "side-by-side text and image"
 msgstr "并列文字和图片"
 
+#. This is a button that appears in 'Reading' mode and allows the user to show only the original book's picture without the text
 msgid "show image only"
 msgstr "只显示图片"
 
@@ -350,6 +361,7 @@ msgstr "本页记得的单词"
 msgid "Unique words this page"
 msgstr "本页所有单词"
 
+#. This is informing the user that there is no data in the system and to encourage them to begin reading this particular story.
 msgid "No words memorized. Get to work!"
 msgstr "不记得一个。加油！"
 
@@ -392,6 +404,7 @@ msgstr "原文阅读正在建设中"
 msgid "Database compaction complete for your account"
 msgstr "数据库已清空"
 
+#. Cleanup the database
 msgid "Compact databases"
 msgstr "清空数据库"
 
@@ -426,18 +439,24 @@ msgstr "用户"
 msgid "password changed"
 msgstr "密码修改成功"
 
+#. Change/submit the value of a field on the website.
+#. Button to change 'something'. General button.
 msgid "Change"
 msgstr "修改"
 
+#. List of user accounts
 msgid "Accounts"
 msgstr "账户"
 
 msgid "Server is misconfigured. Cannot list accounts."
 msgstr "服务配置错误，不能显示账户"
 
+#. Switch the system interface to what language?
 msgid "Language"
 msgstr "语言"
 
+#. Switch the website to a different language
+#. Switch the system interface to what language?
 msgid "Change Language"
 msgstr "改变语言"
 
@@ -450,6 +469,7 @@ msgstr "新密码"
 msgid "Confirm Password"
 msgstr "确认密码"
 
+#. Change your password
 msgid "Change Password"
 msgstr "修改密码"
 
@@ -485,6 +505,7 @@ msgstr "单词数量不能超过1000个并且大于5个"
 msgid "Success! Mobile Characters-per-line in a story set to:"
 msgstr "成功！移动设备每行词汇数设置为："
 
+#. Change the number of characters per line
 msgid "Characters per line"
 msgstr "每行词汇量"
 
@@ -501,7 +522,7 @@ msgstr "APP放大仿小度数必须是大于0.5小于3.0的"
 msgid "Success! App zoom level set to:"
 msgstr "成功！APP放大仿小度数设置为："
 
-#. the zoom level or characters-per-line limit
+#. Change the mobile application zoom level
 msgid "Change Viewing configuration"
 msgstr "改变视图配置"
 
@@ -514,6 +535,7 @@ msgstr "网络放大放小度数必须大于0.5小于3.0的"
 msgid "Success! Web zoom level set to:"
 msgstr "成功！网络放大放小度数设置为："
 
+#. Mobile application default zoom level
 msgid "Default zoom level"
 msgstr "默认放大放小值"
 
@@ -571,6 +593,7 @@ msgstr "MICA不是翻译器。它是让你在有上下文中<b> 边阅读边学�
 msgid "Flashcards are stupid. <br/><b>Try MICA!</b> and learn a new language."
 msgstr "抽认卡很怂。<br/><b>试试MICA！</b>学习一种新语言。"
 
+#. Front-page message
 msgid "Learning a language should be just like reading a book"
 msgstr "学习语言应该就像阅读一本书一样。"
 
@@ -579,6 +602,7 @@ msgid ""
 "with both iOS and Android"
 msgstr "在IOS和Android设备上MICA同样可以在没有网络的情况下运行，而且保证同步。"
 
+#. front-page website message
 msgid "Read about how it works"
 msgstr "请阅读这个是怎么工作的。"
 
@@ -669,9 +693,11 @@ msgstr "哪个语言"
 msgid "Remove Spaces?"
 msgstr "删除空格"
 
+#. UTF-8 is a type of file format that.
 msgid "NOTE: Story *must* be UTF-8 encoded"
 msgstr "注意：故事*必须*是UTF-8代码的"
 
+#. This particular type of file is not supported/implemented
 msgid "not implemented"
 msgstr "没有被执行"
 
@@ -687,12 +713,14 @@ msgstr "单页"
 msgid "What kind of file is this?"
 msgstr "这是什么类型的文件？"
 
+#. Choose a file from your computer to upload
 msgid "Select File"
 msgstr "选择文件"
 
 msgid "Upload File"
 msgstr "上传文件"
 
+#. Button to upload a file
 msgid "Or Upload a File Instead"
 msgstr "或者上传一个文件"
 
@@ -700,19 +728,23 @@ msgstr "或者上传一个文件"
 msgid "Unique Name"
 msgstr "单一独特的名字"
 
+#. Button to upload a new block of text
 msgid "Upload Text"
 msgstr "上传文本"
 
+#. Instruction to select from the option to copy/paste a story or upload a file
 msgid "Copy/Paste a Story"
 msgstr "复制/粘贴故事"
 
+#. Upload a new story button
 msgid "Upload Story"
 msgstr "上传故事"
 
+#. This is used for Chinese characters when grouping or separating characters together into a single word
 msgid "Split/Merge Words"
 msgstr "分开/合并词语"
 
-#. Create account button
+#. Create a new account button
 msgid "Create"
 msgstr "创建"
 
@@ -733,6 +765,8 @@ msgstr "创建新账户"
 msgid "About this software"
 msgstr "软件简介"
 
+#. Login to the website
+#. Button to login to the website
 msgid "Login"
 msgstr "登陆"
 
@@ -740,43 +774,56 @@ msgstr "登陆"
 msgid "Remember Me"
 msgstr "记住我"
 
+#. An address is a website address for the location of the database.
 msgid "Address"
 msgstr "地址"
 
+#. Chinese-only: This appears when a user wants to split/merge characters into a single group or into separate groups
 msgid "Split this word into multiple characters"
 msgstr "把这个词分解成多个字"
 
 msgid "Merge these characters into a single word"
 msgstr "合并这些字变成一个词"
 
+#. This appears when an instant translation is in progress
 #. This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
+#. A status message indicating that the system has gone to the internet to perform a translations of one or more words requested by the user.
 msgid "Doing instant translation..."
 msgstr "进行在线翻译"
 
+#. An instant translation message appears when choosing to translate an individual word
+#. The result of an instant translation of one or more words that the user has clicked on.
 msgid "Instant Translation"
 msgstr "在线翻译"
 
+#. This appears as a title for the results of an instant translation of one or more words
+#. This is a button that tells the software to go and translate the words that were selected by the user
 msgid "instant translation of one or more words"
 msgstr "一个词或者多个次的在线翻译"
 
 msgid "No instant translation available."
 msgstr "翻译不存在"
 
+#. This is the actual translation result of all the words put together
 msgid "Selected instant translation"
 msgstr "整体翻译"
 
+#. This is a label that takes the online instant translation and breaks the words into individual pieces.
 msgid "Piecemeal instant translation"
 msgstr "单个翻译"
 
 msgid "No internet access. Offline instant translation only."
 msgstr "无网络链接。离线使用。"
 
+#. This is a label the appears on the results of an instant translation that indicates which part of the translation came from an online database instead of an offline database.
 msgid "Online instant translation"
 msgstr "在线翻译"
 
+#. This is a label the appears on the results of an instant translation that indicates which part of the translation came from an offline database instead of an online database.
 msgid "Offline instant translation"
 msgstr "离线翻译"
 
+#. We were not able to find any translations for the words that were requested.
 msgid "No instant translation found."
 msgstr "找不到"
 
@@ -789,6 +836,7 @@ msgstr "请等待同步完成进行翻译。"
 msgid "Skip to page"
 msgstr "跳到"
 
+#. This is a button that allows the user to toggle/hide/show the translations of all the words in the story.
 msgid "show/hide translations"
 msgstr "显示/隐藏翻译"
 
@@ -801,12 +849,14 @@ msgstr "更换邮箱失败"
 msgid "Success! Email changed"
 msgstr "成功！邮件修改成功"
 
+#. change your email address
 msgid "Email Address"
 msgstr "邮箱地址"
 
 msgid "Please Provide"
 msgstr "请提供"
 
+#. change your email address
 msgid "Change Email"
 msgstr "修改邮箱"
 
@@ -827,6 +877,7 @@ msgstr ""
 msgid "Signing you in, Please wait"
 msgstr "正在登陆，请稍后"
 
+#. This appears when you open a story for reading
 msgid "Loading story, Please wait"
 msgstr "加载故事，请稍后"
 
@@ -929,18 +980,23 @@ msgstr "请书写或者修改"
 msgid "You will need it to login to your mobile device"
 msgstr "你需要登陆你的移动设备"
 
+#. Old password for changing your password
 msgid "Old Password / Token"
 msgstr "老的密码"
 
+#. New password for changing your password
 msgid "New Password / Token"
 msgstr "新密码"
 
+#. Confirm New password for changing your password
 msgid "Confirm Password / Token"
 msgstr "确认密码"
 
+#. change your password
 msgid "Change Password / Token"
 msgstr "修改密码"
 
+#. reset your password if you forgot it
 msgid "Reset Password / Token"
 msgstr "重置密码"
 
@@ -955,9 +1011,11 @@ msgstr ""
 "网络账户。当你创建了一个网络账户，你可以用你的邮箱和密码来登陆任意一个你喜欢"
 "的设备。"
 
+#. No file was selected for upload
 msgid "None Selected"
 msgstr "没有选择任何一个"
 
+#. 'Sign in with' a specific social network, like facebook or google
 msgid "Sign in with"
 msgstr "登陆"
 
@@ -965,12 +1023,16 @@ msgstr "登陆"
 msgid "Which language"
 msgstr "那种语言"
 
+#. Instruction to pick from a list of options
 msgid "Choose one"
 msgstr "选择一个"
 
+#. When uploading a story, this appears when the user forgot to do something
 msgid "* Please fill in required fields"
 msgstr "请填写所要求的地方"
 
+#. Just a password
+#. type your password
 msgid "Password / Token"
 msgstr "密码"
 
@@ -1029,6 +1091,7 @@ msgstr "成功！帐户已删除。"
 msgid "Your account has been permanently deleted."
 msgstr "你帐户被永久删除了。"
 
+#. Do you want to delete your account?
 msgid "Delete Account?"
 msgstr "确定删除帐户吗？"
 
@@ -1168,9 +1231,11 @@ msgstr ""
 msgid "Syncing"
 msgstr "正在同步"
 
+#. This is a status message indicating whether or not to start downloading a story to the mobile device.
 msgid "Start Syncing"
 msgstr "开始同步"
 
+#. This is a status message indicating whether or not to stop downloading a story to the mobile device.
 msgid "Stop Syncing"
 msgstr "停止同步"
 
@@ -1196,6 +1261,7 @@ msgstr "成功了！我们将开始分发该词典在您的设备"
 msgid "Success! We will no longer distribute that dictionary to your devices"
 msgstr "成功了！我们将那本字典不再分发给您的设备"
 
+#. This is a title for a section indicating that we are allowing the user to download certain language dictionaries offline to be used with the mobile application.
 msgid "Dictionaries"
 msgstr "字典"
 
@@ -1225,18 +1291,23 @@ msgstr "下载"
 msgid "Downloading"
 msgstr "正在下载"
 
+#. direct the user to contact information for the website
 msgid "For assistance, Contact:"
 msgstr "如需帮助，请联系："
 
+#. This is a status message indicating that a story has been 'requested' for download to the mobile device.
 msgid "Requesting"
 msgstr "正在请求"
 
+#. This is a status message indicating that a story has been 'started' for download to the mobile device.
 msgid "Started (stop?)"
 msgstr "开始了 (停?)"
 
+#. This is a status message indicating that a story has begun, but not yet fully 'stopped' for download to the mobile device.
 msgid "Stopping"
 msgstr "是停"
 
+#. This is a status message indicating that a story has been 'stopped' for download to the mobile device.
 msgid "Stopped (start?)"
 msgstr "停止了 (开始?)"
 
@@ -1311,6 +1382,7 @@ msgid ""
 "or email address."
 msgstr ""
 
+#. When uploading a story, you can't have colons in the file name
 msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
 msgstr ""
 
@@ -1346,6 +1418,8 @@ msgstr ""
 
 #. These two messages together effectively say "Chat with: xxxxx"
 #. 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
+#. Chat / Instant Messaging
+#. Navigation label to click to switch to the chat window
 msgid "Chat"
 msgstr ""
 
@@ -1373,9 +1447,11 @@ msgstr ""
 msgid "Success! Learning Language changed"
 msgstr ""
 
+#. 'Learning language' refers to the language that the user is trying to learn
 msgid "Learning Language"
 msgstr ""
 
+#. 'Learning language' refers to the language that the user is trying to learn
 msgid "Change Learning Language"
 msgstr ""
 
@@ -1396,6 +1472,8 @@ msgstr ""
 msgid "Recent"
 msgstr ""
 
+#. History of chat messages with other users
+#. Button to show a user's chat history
 msgid "Chat History"
 msgstr ""
 
@@ -1415,6 +1493,7 @@ msgid "To"
 msgstr ""
 
 #. Send a chat message
+#. Send an instant message
 msgid "Send"
 msgstr ""
 
@@ -1438,6 +1517,7 @@ msgstr ""
 msgid "Traditional"
 msgstr ""
 
+#. We need the user to gives a username of someone to chat with
 msgid "Please provide the address of someone to chat with."
 msgstr ""
 
@@ -1446,9 +1526,11 @@ msgid ""
 "resume your chat please sign-out an then sign-in again. Thank you."
 msgstr ""
 
+#. A general error message
 msgid "An error occured"
 msgstr ""
 
+#. This message appears as part of a count-down message indicating how many seconds are left before the system re-connects to the chat
 msgid "Seconds left to reconnect"
 msgstr ""
 
@@ -1573,6 +1655,7 @@ msgstr ""
 msgid "Statistics Disabled"
 msgstr ""
 
+#. This is a standard error message that a request on the website failed.
 msgid ""
 "Failed to issue request. We're sorry. Please report what you tried to do to "
 "the author. Thank you."
@@ -1608,15 +1691,19 @@ msgstr ""
 msgid "Port (if needed)"
 msgstr ""
 
+#. This is a button for the user to restart the current webpage
+#. Refresh the current webpage
 msgid "Refresh"
 msgstr ""
 
+#. A 'local' account is an account that does not use a social network, like facebook or google.
 msgid "OR Use a local account"
 msgstr ""
 
 msgid "<b>MICA</b> is a <b>new way</b> to learn a language."
 msgstr ""
 
+#. Change a user's quota on the website
 msgid "Change Quota"
 msgstr ""
 
@@ -1635,12 +1722,15 @@ msgstr ""
 msgid "New Story"
 msgstr ""
 
+#. Navigation label to click to learn a story / view the story for learning.
 msgid "Learn"
 msgstr ""
 
+#. Label indicating a list of 'new' stories that have just been uploaded / imported into the website
 msgid "New"
 msgstr ""
 
+#. Button allowing the user to initialize a new story that has just been uploaded / imported into the website.
 msgid "Initialize Story"
 msgstr ""
 
@@ -1653,15 +1743,18 @@ msgstr ""
 msgid "Application reset. Please login again."
 msgstr ""
 
+#. Button that confirms that the user wants to perform an action.
 msgid "Yes, do it."
 msgstr ""
 
 msgid "Are you sure? This is IRREVERSIBLE."
 msgstr ""
 
+#. Wipe the mobile application's data and start over
 msgid "Reset application to defaults"
 msgstr ""
 
+#. Message on the mobile device when a story is imported for the first time.
 msgid "Story imported. Please initialize it on the website."
 msgstr ""
 
@@ -1683,6 +1776,7 @@ msgid ""
 "large over time, so we want you to be aware of that. Thanks."
 msgstr ""
 
+#. front-page website message
 msgid ""
 "Read Alien also works offline on mobile devices and automatically stays in "
 "sync with both iOS and Android"
@@ -1695,6 +1789,8 @@ msgid ""
 "not be synchronized."
 msgstr ""
 
+#. name of the company
+#. name of the ocmpany
 msgid "Read Alien Learning"
 msgstr ""
 
@@ -1715,17 +1811,21 @@ msgid ""
 "Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."
 msgstr ""
 
+#. 'me' refers to the yourself inside of a chat window.
 msgid "me"
 msgstr ""
 
+#. This message appears in a chat window.
 msgid ""
 "A very large message has been received. This might be due to an attack meant "
 "to degrade the chat performance. Output has been shortened."
 msgstr ""
 
+#. name of the company.
 msgid "Read Alien: Meta Language Learning"
 msgstr ""
 
+#. This appears as a push notification on a mobile device when a notification arrives.
 msgid "ReadAlien Message from"
 msgstr ""
 
@@ -1733,9 +1833,218 @@ msgstr ""
 msgid "Buddies"
 msgstr ""
 
+#. front-page website message
 msgid ""
 "Democratize Languages: Learning a language should be just like reading a book"
 msgstr ""
 
+#. This appears when we do not have internet connectivity
 msgid "Internet access is unavailable. Chat offline."
+msgstr ""
+
+#. name of the company
+msgid "Read Alien"
+msgstr ""
+
+#. Landing page navigation link #1: Scroll back to the beginning
+msgid "Home"
+msgstr ""
+
+#. An example story / book in Spanish
+msgid "Spanish Example"
+msgstr ""
+
+#. An example story / book in Chinese
+msgid "Chinese Example"
+msgstr ""
+
+#. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
+msgid "Offline-first. Mobile-first."
+msgstr ""
+
+#. Features of this software
+msgid "Features"
+msgstr ""
+
+#. Mobile device
+msgid "Mobile"
+msgstr ""
+
+#. Open source software
+msgid "Open Source"
+msgstr ""
+
+#. Front-page message
+msgid "Democratize Languages"
+msgstr ""
+
+#. "driven" means that the software is powered by open-source software
+msgid "Driven by open-source"
+msgstr ""
+
+#. Front-page message: learn spanish and chinese for free
+msgid "Spanish and Chinese for Free"
+msgstr ""
+
+#. Learn a language by uploading your own foreign literature
+msgid "Learn foreign literature that you provide"
+msgstr ""
+
+#. Learn the way you want to
+msgid "On your terms"
+msgstr ""
+
+#. This software uses data to track your language progress
+msgid "Data-driven software tracks your language"
+msgstr ""
+
+#. This means that you don't have to work that hard
+msgid "So you don't have to"
+msgstr ""
+
+#. Reduce the fear of communication in a foreign language by chatting with native speakers
+msgid "Chat like a native. Reduce the fear."
+msgstr ""
+
+#. We use data to assist your language experience
+msgid "Data drives your language in real-time."
+msgstr ""
+
+#. Guess what words you know and don't know. Learn the language for a long time.
+msgid "Guess all day. Learn all night."
+msgstr ""
+
+#. Languages that have multiple tons (like chinese) are hard to learn.
+msgid "Tonal languages are hard."
+msgstr ""
+
+#. You do not need to use rote-memorization (repeat, repeat, repeat) to learn the language
+msgid "We bring an end to rote-memorization."
+msgstr ""
+
+#. We show you your vocabulary at the same time you are typing in the chat window
+msgid ""
+"Overlay verb conjugations with an IME-style keyboard to real-time assist the "
+"person you're talking to. Data from the literature that you read feeds "
+"directly into a context-based learning experience."
+msgstr ""
+
+#. Polyphomes refer to multiple tones in a language, like chinese. grouping merging refers to putting two characters together to form a whole word.
+msgid ""
+"We support polyphomes, character grouping/merging, and complex parsing of "
+"character-based languages."
+msgstr ""
+
+#. Conjugate refers to romanized languages, like Spanish, that have different spellings of a verb for different tenses.
+msgid ""
+"If we don't conjugate verbs correctly, the data will tell us how to do it "
+"right the next time."
+msgstr ""
+
+#. Login to the website and try the system
+msgid "Login and try it"
+msgstr ""
+
+#. Login to the website. Stop using flash cards to learn the language.
+msgid "Login. Ditch the flash cards."
+msgstr ""
+
+#. You get a quota of 300MB on the website.
+msgid "Upload up to 300MB of literature for free."
+msgstr ""
+
+#. Mobile device is free and does not have a limit or a quota.
+msgid "Unlimited content on your mobile devices."
+msgstr ""
+
+#. We made something that you have never seen before
+msgid "The language experience you didn't know existed"
+msgstr ""
+
+#. You get a quota of 300MB on the website.
+msgid "Free up to 300MB"
+msgstr ""
+
+#. You pay for content, not for subscription.
+msgid "Pay only for the content that you import."
+msgstr ""
+
+#. Invitation to the user to donate money to get more space.
+msgid "Donate if you'd like additional space"
+msgstr ""
+
+#. Analytics is a technology term for when the software tries to make a prediction about you based on data and patterns.
+msgid "Analytics"
+msgstr ""
+
+#. You learn by reading stories in context. We track those words and statistics across all the stories that you import into the system.
+msgid ""
+"Learn in context. Words and statistics are cross-referenced across stories"
+msgstr ""
+
+#. This means that we make the mobile application a priority.
+msgid "Always mobile"
+msgstr ""
+
+msgid ""
+"Your device is by far the best way to use the system. Read on a tablet. Chat "
+"on your phone"
+msgstr ""
+
+#. Our software, design, and algorithms are open-source.
+msgid "Our designs and algorithms are open for all to see"
+msgstr ""
+
+#. Try the system
+msgid "Check it out"
+msgstr ""
+
+#. You choose the complexity by importing whatever you want
+msgid "You choose the complexity"
+msgstr ""
+
+msgid ""
+"By importing your own stories, you don't depend on us to provide them for you"
+msgstr ""
+
+#. 'assistance' means the data vocabulary assists you while you are chatting
+msgid "Chat with assistance"
+msgstr ""
+
+#. Same as previous comment: the data vocabulary assists you while you are chatting
+msgid ""
+"Instant messaging that's smart enough to read your own vocabulary in real-"
+"time."
+msgstr ""
+
+#. Button to click to learn more about how the system works
+msgid "Learn More"
+msgstr ""
+
+#. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
+msgid "Mobile-ready. Offline-ready."
+msgstr ""
+
+#. The software knows how to keep the website and the mobile device synchronized together
+msgid "Synchronized across all your devices."
+msgstr ""
+
+#. This means that the mobile device works offline while you are using the system.
+msgid "Take languages offline and on-the-go."
+msgstr ""
+
+#. This software is open source
+msgid "Open-source language for all."
+msgstr ""
+
+#. A 'tech stack' is a technology term that refers to a list of all the different technologies used to build the software.
+msgid "Tech Stack"
+msgstr ""
+
+#. This is a standard copyright message at the bottom of the website.
+msgid "All Rights Reserved."
+msgstr ""
+
+#. Label indicating a list of stories that have not finished being reviewed
+msgid "Reviewing"
 msgstr ""
