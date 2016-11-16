@@ -160,11 +160,14 @@ class ReviewElement(CommonElement) :
                      legend4 = _("Definitely wrong previously"),
                      # This appears UNDER the Legend in Review mode. It itemizes a detailed history of the changes that were made for all words of this page in the story while in review mode.
                      history = _("Change History"),
+                     # This is a button that performs some modifications to a story automatically based on a series of recommendations.
                      tryrecco = _("Try Recommendations"),
+                     # Change/submit the value of a field on the website.
                      reviewchange = _("Change"),
                      # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
                      norecommend = _("No review recommendations available."),
                      nb_page = self.req.page,
+                     # This is a button that allows a particular page of a story to be re-translated.
                      repage = _("Re-translate page"),
                      )
         return tag
@@ -181,6 +184,7 @@ class ReadElement(CommonElement) :
                         uniquepage = _("Unique words this page"),
                         # statistics in reading mode are disabled
                         statdisabled = _("Statistics Disabled"),
+                        # This is informing the user that there is no data in the system and to encourage them to begin reading this particular story.
                         nowords = _("No words memorized. Get to work!"),
                      )
         return tag
@@ -251,18 +255,30 @@ class TranslationsElement(CommonElement) :
                      # These appear in the Account menu and toggle between "Stats Hidden" and "Stats Shown" so that the statistics of each page can appear or disappear
                      statshide = _("Stats Hidden"),
                      statsshown = _("Stats Shown"),
+                     # This is a status message indicating that a story has been 'requested' for download to the mobile device.
                      requesting = _("Requesting"),
+                     # This is a status message indicating that a story has been 'started' for download to the mobile device.
                      started = _("Started (stop?)"),
+                     # This is a status message indicating that a story has begun, but not yet fully 'stopped' for download to the mobile device.
                      stopping = _("Stopping"),
+                     # This is a status message indicating that a story has been 'stopped' for download to the mobile device.
                      stopped = _("Stopped (start?)"),
+                     # This is a status message indicating whether or not to start downloading a story to the mobile device.
                      startsync = _("Start Syncing"),
+                     # This is a status message indicating whether or not to stop downloading a story to the mobile device.
                      stopsync = _("Stop Syncing"),
+                     # This is a standard error message that a request on the website failed. 
                      requestfailed = _("Failed to issue request. We're sorry. Please report what you tried to do to the author. Thank you."),
                      favicon = self.req.mpath + "/icon-120x120.png",
+                     # 'me' refers to the yourself inside of a chat window. 
                      me = _("me"),
+                     # This message appears in a chat window.
                      largemessage = _("A very large message has been received. This might be due to an attack meant to degrade the chat performance. Output has been shortened."),
+                     # name of the company.
                      alltitle = _("Read Alien: Meta Language Learning"),
+                     # name of the company
                      companyname = _("Read Alien"),
+                     # This appears as a push notification on a mobile device when a notification arrives. 
                      notification = _("ReadAlien Message from"),
                 )
         return tag
@@ -282,57 +298,63 @@ class ModalsElement(CommonElement) :
                      # This is one of the 'Account' menu items that describes the author of the software.
                      aboutsoftware = _("About this software"),
                      createnewaccount = _("Create New Account"),
-                     # Create account button
+                     # Create a new account button
                      create = _("Create"),
+                     # Upload a new story button
                      uploadstory = _("Upload Story"),
+                     # When uploading a story, this appears when the user forgot to do something
                      missing = _("* Please fill in required fields"),
+                     # When uploading a story, you can't have colons in the file name
                      nocolons = _("* File/Story name cannot have colons ':' characters in it. Please fix."),
+                     # Instruction to pick from a list of options
                      choose = _("Choose one"),
+                     # Instruction to select from the option to copy/paste a story or upload a file
                      copypaste = _("Copy/Paste a Story"),
                      # Unique name to identify this story in the system
                      uniquename = _("Unique Name"),
                      # Which language to learn, that is.
                      langtype = _("Which language"),
+                     # Button to upload a new block of text
                      uploadtext = _("Upload Text"),
+                     # Button to upload a file
                      uploadinstead = _("Or Upload a File Instead"),
+                     # Choose a file from your computer to upload
                      selectfile = _("Select File"),
                      # i.e. PDF or TXT
                      whatkindfile = _("What kind of file is this?"),
+                     # No file was selected for upload
                      noneselected = _("None Selected"),
                      # Source story consists of multiple pages, like a PDF
                      multipage = _("multi-page"),
                      # Story is just a blob of TXT, such as copy/paste.
                      singlepage = _("single-page"),
+                     # This particular type of file is not supported/implemented
                      notimplemented = _("not implemented"),
                      uploadfile = _("Upload File"),
+                     # UTF-8 is a type of file format that.
                      mustbeencoded = _("NOTE: Story *must* be UTF-8 encoded"),
                      spinner = tags.img(src=self.req.mpath + '/'+ spinner, width='15px'),
                      # This appears on the front page when you login. It is the HTTP address of the website.
                      signing = _("Signing you in, Please wait"),
+                     # This appears when you open a story for reading
                      loading = _("Loading story, Please wait"),
                      loadingwait = _("If you have re-installed or this is your first time logging in on this device and you have chosen to synchronize many stories at the same time, this can take a while, because we need to calculate some information to organize things on your device. Be patient."),
                      # Compacting can also be translated as "cleaning" database.
                      compacting = _("Compacting database, Please wait"),
+                     # An instant translation message appears when choosing to translate an individual word
                      instant = _("Instant Translation"),
+                     # This is used for Chinese characters when grouping or separating characters together into a single word
                      splitmerge = _("Split/Merge Words"),
+                     # Button that confirms that the user wants to perform an action.
                      deleteconfirm = _("Yes, do it."),
                      suredelete = _("Are you sure? This is IRREVERSIBLE."),
                      username = self.req.session.value["username"],
                      chatusername = self.req.session.value["username"].replace("@", "%40"),
+                     # Do you want to delete your account?
                      delete = _("Delete Account?"),
-                      # This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
-                      reviews = _("Bulk Review Words"),
-                      mobileinstructions = _("Mobile Device Instructions for Teachers"),
-                      xabberandroid = _("Get 'Xabber' for Android"),
-                      chatsecureandroid = _("Get 'ChatSecure' for Android"),
-                      chatsecureios = _("Get 'ChatSecure' for iOS"),
-                      instructions = _("Instructions"),
-                      usernamelabel = _("Username"),
-                      serverlabel = _("Server"),
-                      nowww = _("do not use 'www'"),
-                      security = _("Encryption/Security"),
-                      yes = _("Yes / SSL / TLS / SASL Authentication"),
-                      port = _("Port (if needed)"),
+                     # This is the title of a pop-up when the user click's "Try Recommendations" in Review mode to process several words in 'bulk' at one time
+                     reviews = _("Bulk Review Words"),
+                     # This is a button that displays a set of instructions for teachers to use the mobile device.
                      )
         return tag
 
@@ -356,10 +378,14 @@ class ChatElement(CommonElement) :
                       to = _("To"),
                       server = self.req.main_server,
                       domain = self.req.main_server,
+                      # Send an instant message
                       sendbutton = _("Send"),
+                      # This appears as a title for the results of an instant translation of one or more words
                       processinstanttitle = _("instant translation of one or more words"),
                       processinstant = processinstantclick(self.req, request, tag),
+                      # This appears when an instant translation is in progress
                       performingtranslation= _("Doing instant translation..."),
+                      # This appears when we do not have internet connectivity
                       chatoffline = _("Internet access is unavailable. Chat offline."),
                       # In Chat mode, from what source language to what target language should translations occur.
                       chatlangtype = _("Learn (translate) from"),
@@ -371,14 +397,16 @@ class ChatElement(CommonElement) :
                       phonetic = _("phonetic typing"),
                       # Use a traditional or simplified character IME system
                       traditional = _("Traditional"),
+                      # We need the user to gives a username of someone to chat with
                       provideaddress = _("Please provide the address of someone to chat with."),
                       jabber_key = self.req.session.value["jabber_key"],
                       notauthorized = _("Disconnected: You have probably logged in from a different web-browser. To resume your chat please sign-out an then sign-in again. Thank you."),
+                      # A general error message
                       chaterror = _("An error occured"),
+                      # This message appears as part of a count-down message indicating how many seconds are left before the system re-connects to the chat
                       secsleft = _("Seconds left to reconnect"),
+                      # This is a button for the user to restart the current webpage
                       refreshtitle = _("Refresh"),
-                      mobileinstructions = _("Mobile Device Instructions for Teachers"),
-
                      )
         return tag
 
@@ -394,11 +422,13 @@ class FrontPageElement(CommonElement) :
     @renderer
     def advertise(self, request, tag) :
         pull, push = self.pullpush()
+                      # front-page website message
         tag.fillSlots(learn =_("Democratize Languages: Learning a language should be just like reading a book"),
                       crewjs = self.req.mpath + "/crewjs/crew.min.js",
+                      # front-page website message
                       offline = _("Read Alien also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
+                      # front-page website message
                       howitworks = _("Read about how it works"),
-                      donation =_("Running the website on a cloud server is not free, so account signups are not open. If you'd like an account, please consider donating to make the server bigger."),
                       # Beginning of a sentence
                       mailinglist = _("Join the mailing list"),
                       # end of sentence.
@@ -409,69 +439,124 @@ class FrontPageElement(CommonElement) :
                       bitcoin = _("Please Donate To Bitcoin Address"),
                       feel = _("To get a \"feel\" for how Read Alien works, you can use the DEMO account with the username 'demo' and password 'micademo'. This account will load pre-existing stories from the online demo account, but all changes you make will not be synchronized."),
                       access = _("To login to this application with a regular account and begin syncing all of your devices with your web account, you must first request a free web account online @ http://readalien.com. After you have created an online account, you can then login with your email and password from your online account using any device that you like."),
+                      # direct the user to contact information for the website
                       contact = _("For assistance, Contact:"),
+                      # A 'local' account is an account that does not use a social network, like facebook or google.
                       username = _("OR Use a local account") if not mobile else _("Account"),
+                      # An address is a website address for the location of the database.
                       address = _("Address"),
+                      # Just a password
                       password = _("Password / Token"),
+                      # Login to the website 
                       signin = _("Login"),
                       # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
                       rememberme = _("Remember Me"),
+                      # name of the company
                       softwarename = _("Read Alien Learning"),
+                      # Switch the website to a different language
                       changelang = _("Change Language"),
+                      # 'Sign in with' a specific social network, like facebook or google
                       signinwith = _("Sign in with"),
                       headjs = self.req.mpath + "/head.js",
                       pull = pull,
                       push = push,
                       # Landing page navigation link #1: Scroll back to the beginning
                       home = _("Home"),
+                      # An example story / book in Spanish
                       spanishexample = _("Spanish Example"),
+                      # An example story / book in Chinese 
                       chineseexample = _("Chinese Example"),
+                      # This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
                       offlinemobile = _("Offline-first. Mobile-first."),
+                      # Chat / Instant Messaging
                       chat = _("Chat"),
+                      # Login to the website
                       login = _("Login"),
+                      # Features of this software
                       features = _("Features"),
+                      # Mobile device
                       mobile = _("Mobile"),
+                      # Open source software
                       opensource = _("Open Source"),
+                      # Front-page message
                       democratize = _("Democratize Languages"),
+                      # Front-page message
                       learningshould = _("Learning a language should be just like reading a book"),
+                      # "driven" means that the software is powered by open-source software
                       driven = _("Driven by open-source"),
+                      # Front-page message: learn spanish and chinese for free
                       spanishchineseforfree = _("Spanish and Chinese for Free"),
+                      # Learn a language by uploading your own foreign literature
                       youprovide= _("Learn foreign literature that you provide"),
+                      # Learn the way you want to
                       yourterms = _("On your terms"),
+                      # This software uses data to track your language progress
                       datadriven = _("Data-driven software tracks your language"),
+                      # This means that you don't have to work that hard 
                       haveto = _("So you don't have to"),
+                      # Reduce the fear of communication in a foreign language by chatting with native speakers 
                       native = _("Chat like a native. Reduce the fear."),
+                      # We use data to assist your language experience
                       realtime = _("Data drives your language in real-time."),
+                      # Guess what words you know and don't know. Learn the language for a long time.
                       guess = _("Guess all day. Learn all night."),
+                      # Languages that have multiple tons (like chinese) are hard to learn.
                       tonal = _("Tonal languages are hard."),
+                      # You do not need to use rote-memorization (repeat, repeat, repeat) to learn the language
                       rote = _("We bring an end to rote-memorization."),
+                      # We show you your vocabulary at the same time you are typing in the chat window
                       overlay = _("Overlay verb conjugations with an IME-style keyboard to real-time assist the person you're talking to. Data from the literature that you read feeds directly into a context-based learning experience."),
+                      # Polyphomes refer to multiple tones in a language, like chinese. grouping merging refers to putting two characters together to form a whole word.
                       polyphomes = _("We support polyphomes, character grouping/merging, and complex parsing of character-based languages."),
+                      # Conjugate refers to romanized languages, like Spanish, that have different spellings of a verb for different tenses.
                       conjugate = _("If we don't conjugate verbs correctly, the data will tell us how to do it right the next time."),
+                      # Login to the website and try the system
                       tryit = _("Login and try it"),
+                      # Login to the website. Stop using flash cards to learn the language.
                       ditch = _("Login. Ditch the flash cards."),
+                      # You get a quota of 300MB on the website.
                       upload = _("Upload up to 300MB of literature for free."),
+                      # Mobile device is free and does not have a limit or a quota.
                       unlimited = _("Unlimited content on your mobile devices."),
+                      # We made something that you have never seen before
                       experience = _("The language experience you didn't know existed"),
+                      # You get a quota of 300MB on the website.
                       upto = _("Free up to 300MB"),
+                      # You pay for content, not for subscription.
                       payonly = _("Pay only for the content that you import."),
+                      # Invitation to the user to donate money to get more space.
                       donate = _("Donate if you'd like additional space"),
+                      # Analytics is a technology term for when the software tries to make a prediction about you based on data and patterns.
                       analytics = _("Analytics"),
+                      # You learn by reading stories in context. We track those words and statistics across all the stories that you import into the system.
                       incontext = _("Learn in context. Words and statistics are cross-referenced across stories"),
+                      # This means that we make the mobile application a priority.
                       alwaysmobile = _("Always mobile"),
                       byfar = _("Your device is by far the best way to use the system. Read on a tablet. Chat on your phone"),
+                      # Our software, design, and algorithms are open-source.
                       designs = _("Our designs and algorithms are open for all to see"),
+                      # Try the system
                       checkitout = _("Check it out"),
+                      # You choose the complexity by importing whatever you want
                       youchoose = _("You choose the complexity"),
                       byimporting = _("By importing your own stories, you don't depend on us to provide them for you"),
+                      # 'assistance' means the data vocabulary assists you while you are chatting
                       chatwith = _("Chat with assistance"),
+                      # Same as previous comment: the data vocabulary assists you while you are chatting
                       instantmessaging = _("Instant messaging that's smart enough to read your own vocabulary in real-time."),
+                      # Button to click to learn more about how the system works
                       learnmore = _("Learn More"),
+                      # This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
                       readyready = _("Mobile-ready. Offline-ready."),
+                      # The software knows how to keep the website and the mobile device synchronized together
                       synchronized = _("Synchronized across all your devices."),
+                      # This means that the mobile device works offline while you are using the system.
                       take = _("Take languages offline and on-the-go."),
+                      # This software is open source
                       openforall = _("Open-source language for all."),
+                      # A 'tech stack' is a technology term that refers to a list of all the different technologies used to build the software.
                       techstack = _("Tech Stack"),
+                      # This is a standard copyright message at the bottom of the website.
                       reserved = _("All Rights Reserved."),
                       )
         return tag
@@ -521,9 +606,10 @@ class EditElement(CommonElement) :
         tag.fillSlots(editname = _("Legend"),
                       nb_page = self.req.page,
                       uuid = self.req.uuid,
+                      # Chinese-only: merge/split means that we are indicating to the user that a particular group of characters was either split into separate characters or that a group of characters was merged into a single group
                       previousmerge = _("These characters were previously merged into a word"),
                       previoussplit = _("This word was previously split into characters"),
-                      # These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
+                      #  Chinese-only: These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
                       tryrecco = _("Try Recommendations"),
                       # Re-translate the current page that the user is reading right now.
                       repage = _("Re-translate page"),
@@ -531,9 +617,9 @@ class EditElement(CommonElement) :
                       editdisabled = _("Edit history Disabled."),
                       # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
                       noedits = _("No edit history available."),
-                      # MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+                      # Chinese-only: MERGE is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
                       merge = _("MERGE"),
-                      # SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
+                      # Chinese-only: SPLIT is one of two options in "Edit" mode: split or merge. This is only used for character-based languages, like, Chinese where a word can consist of more than one individual character. In these cases, the software helps the user to selectively split words apart into separate characters or merge characters together into a single word.
                       split = _("SPLIT"),
                       
                      )
@@ -608,12 +694,19 @@ class ViewElement(CommonElement) :
                       bothclass = tclasses["both"],
                       processinstant = processinstantclick(self.req, request, tag),
                       meaningclass = tclasses["meaning"],
+                      # This is a button that appears in 'Reading' mode and allows the story to show only the text intead of the original book's picture or the original story's picture
                       textclasstitle = _("show text only"),
+                      # This is a button that appears in 'Reading' mode and allows the user to show both the original book's picture and text side-by-side in the same window
                       bothclasstitle = _("side-by-side text and image"),
+                      # This is a button that appears in 'Reading' mode and allows the user to show only the original book's picture without the text
                       imageclasstitle = _("show image only"),
+                      # This is a button that tells the software to go and translate the words that were selected by the user
                       processinstanttitle = _("instant translation of one or more words"),
+                      # This is a button that allows the user to toggle/hide/show the translations of all the words in the story.
                       meaningclasstitle = _("show/hide translations"),
+                      # Chinese-only: This appears when a user wants to split/merge characters into a single group or into separate groups
                       processsplits = splits, processmerges = merges, processsplitstitle = _("Split this word into multiple characters"), processmergestitle = _("Merge these characters into a single word"),
+                      # Refresh the current webpage
                       refreshtitle = _("Refresh"),
                       resultshow = 'display: block' if self.req.viewpageresult else 'display: none',
                       result = (self.req.viewpageresult + ".") if self.req.viewpageresult else '',
@@ -658,6 +751,7 @@ class AccountElement(CommonElement):
     @renderer
     def dicts(self, request, tag) :
         if mobile :
+            # This is a title for a section indicating that we are allowing the user to download certain language dictionaries offline to be used with the mobile application.
             tag(_("Dictionaries") + "?")
         else :
             # This allows the user to indicate on the website whether or not their mobile devices should synchronize a particular dictionary to their device.
@@ -724,36 +818,57 @@ class AccountElement(CommonElement):
                         account = _("Account"),
                         username = self.req.session.value["username"],
                         offline = _("Offline dictionaries are required for using 'Edit' mode of some character-based languages and for re-translating individual pages in Review mode. Instant translations require internet access, so you can skip these downloads if your stories have already been edited/reviewed and you are mostly using 'Reading' mode. Each dictionary is somewhere between 30 to 50 MB each"),
-                        # the zoom level or characters-per-line limit
+                        # Change the mobile application zoom level
                         changeview = _("Change Viewing configuration"),
+                        # Change the number of characters per line
                         charperline = _("Characters per line"),
                         perline = self.req.chars_per_line,
+                        # Button to change 'something'. General button.
                         change = _("Change"),
+                        # Change a user's quota on the website
                         changequota = _("Change Quota"),
+                        # Mobile application default zoom level
                         zoom = _("Default zoom level"),
                         defaultzoom = self.req.default_zoom,
+                        # Button to change 'something'. General button.
                         zoomchange = _("Change"),
+                        # Switch the system interface to what language?
                         language =_("Language"),
+                        # Switch the system interface to what language?
                         changelang = _("Change Language"),
+                        # 'Learning language' refers to the language that the user is trying to learn 
                         learninglanguage = _("Learning Language"),
+                        # 'Learning language' refers to the language that the user is trying to learn 
                         changelearnlang = _("Change Learning Language"),
+                        # Cleanup the database
                         compact = _("Compact databases"),
+                        # Change your password
                         changepass = _("Change Password"),
+                        # change your email address
                         changeemail = _("Email Address"),
                         email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
                         emailchange = _("Please change your email address on the website. Will support mobile in a future version"),
+                        # change your email address
                         changemail = _("Change Email"),
                         deleteaccount = _("Delete Account?"),
+                        # Wipe the mobile application's data and start over
                         mobiledelete = _("Reset application to defaults"),
+                        # Old password for changing your password
                         oldpassword =_("Old Password / Token"),
+                        # New password for changing your password
                         password = _("New Password / Token"),
+                        # Confirm New password for changing your password
                         confirm = _("Confirm Password / Token"),
+                        # change your password
                         passchange = _("Change Password / Token"),
+                        # reset your password if you forgot it
                         reset = _("Reset Password / Token"),
                         passonline = _("Please change your password on the website. Will support mobile in a future version."),
+                        # List of user accounts
                         accounts = _("Accounts"),
                         resultshow = 'display: block; padding: 10px' if self.req.accountpageresult else 'display: none',
                         result = (self.req.accountpageresult + ".") if self.req.accountpageresult else '',
+                        # Button to delete something
                         delete = _("Delete"),
                         pull = pull,
                         push = push,
@@ -804,13 +919,19 @@ class LoginElement(CommonElement):
     @renderer
     def form(self, request, tag) :
         tag.fillSlots(
+                      # name of the ocmpany
                       softwarename = _("Read Alien Learning"),
+                      # 'Sign in with' a specific social network, like facebook or google
                       signinwith = _("Sign in with"),
+                      # A 'local' account is an account that does not use a social network, like facebook or google.
                       username = _("OR Use a local account") if not mobile else _("Account"),
+                      # type your password
                       password = _("Password / Token"),
+                      # An address is a website address for the location of the database.
                       address = _("Address"),
                       # This appears on the front page when you login and indicates whether to remember your username the next time you logout/login.
                       rememberme = _("Remember Me"),
+                      # Button to login to the website
                       signin = _("Login"),
                     )
 
@@ -844,20 +965,28 @@ class HeadElement(CommonElement):
 
         tag.fillSlots(
                      mobile = 'true' if mobile else 'false',
+                     # Message on the mobile device when a story is imported for the first time.
                      pleaseinitonline = _("Story imported. Please initialize it on the website."),
-                     storyrotate = _("Chat History"),
-                     notreviewed = _("Not Reviewed"),
+                     # History of chat messages with other users
                      chatting = _("Chat History"),
+                     # Button to show a user's chat history
+                     storyrotate = _("Chat History"),
+                     # Label indicating a list of stories that have not finished being reviewed
+                     notreviewed = _("Reviewing"),
+                     # Label indicating a list of stories that a user is currently reading
                      reading = _("Reading"),
                      # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
                      untranslated = _("Untranslated"),
+                     # Label indicating a list of stories that a user is finished with
                      finished = _("Finished"),
+                     # List of all stories
                      stories = _("Stories"),
                      email = _("Email Address"),
                      # The next series of messages occur in a dialog used to upload a new story. Stories can be uploaded by copy-and-paste or by PDF, currently and the user can choose a number of languages.
                      userlang = _("Preferred Language"),
                      # Character-based languages do not have a lot of spaces, so we provide an option to remove them before translation and review.
                      removespaces = _("Remove Spaces?"),
+                     # Account username to login with
                      username = _("Account"),
                      accountusername = self.req.session.value["username"],
                      account = _("Username"),
@@ -907,21 +1036,32 @@ class HeadElement(CommonElement):
                      uploadstory = _("New Story"),
                      # Make a new account, a button inside the 'Account' section of the top-most navigation panel
                      newaccount = _("New Account"),
+                     # Navigation label to click to switch to the chat window
                      chat = _("Chat"),
+                     # Navigation label to click to learn a story / view the story for learning. 
                      learn = _("Learn"),
+                     # The result of an instant translation of one or more words that the user has clicked on.
                      instant = _("Instant Translation"),
+                     # A status message indicating that the system has gone to the internet to perform a translations of one or more words requested by the user.
                      performingtranslation= _("Doing instant translation..."),
                      spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
                      token = self.req.session.value['cookie'] if not mobile else self.req.session.value['password'],
                      creds = self.req.credentials,
                      database = self.req.database,
                      authtype = "cookie" if not mobile else "pass",
+                     # Label indicating a list of 'new' stories that have just been uploaded / imported into the website
                      newstory = _("New"),
+                     # Button allowing the user to initialize a new story that has just been uploaded / imported into the website.
                      storyinit = _("Initialize Story"),
+                     # This is a label the appears on the results of an instant translation that indicates which part of the translation came from an online database instead of an offline database. 
                      onlineinstant = _("Online instant translation"),
+                     # This is the actual translation result of all the words put together
                      selectedinstant = _("Selected instant translation"),
+                     # This is a label that takes the online instant translation and breaks the words into individual pieces.
                      piecemealinstant = _("Piecemeal instant translation"),
+                     # This is a label the appears on the results of an instant translation that indicates which part of the translation came from an offline database instead of an online database. 
                      offlineinstant = _("Offline instant translation"),
+                     # We were not able to find any translations for the words that were requested.
                      noinstant = _("No instant translation found."),
                      )
         return tag
