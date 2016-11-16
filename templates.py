@@ -429,6 +429,8 @@ class FrontPageElement(CommonElement) :
                       offline = _("Read Alien also works offline on mobile devices and automatically stays in sync with both iOS and Android"),
                       # front-page website message
                       howitworks = _("Read about how it works"),
+                      # The software's privacy policy, such as what user information we keep and do not keep.
+                      privacy = _("Privacy"),
                       # Beginning of a sentence
                       mailinglist = _("Join the mailing list"),
                       # end of sentence.
