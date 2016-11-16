@@ -560,6 +560,9 @@ class FrontPageElement(CommonElement) :
                       techstack = _("Tech Stack"),
                       # This is a standard copyright message at the bottom of the website.
                       reserved = _("All Rights Reserved."),
+                     # Support means the email support for help with problems with the system
+                      emailsupport = _("Email Support"),
+                      support = _("Support"),
                       )
         return tag
 
@@ -1065,6 +1068,8 @@ class HeadElement(CommonElement):
                      offlineinstant = _("Offline instant translation"),
                      # We were not able to find any translations for the words that were requested.
                      noinstant = _("No instant translation found."),
+                     # Support means the email support for help with problems with the system
+                     support = _("Support"),
                      )
         return tag
 
