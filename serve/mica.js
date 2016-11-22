@@ -688,10 +688,10 @@ function process_reviews(uuid, batch) {
       $('#reviewModal').modal('show');
 }
 
-function change_pageimg_width() {
-    $('#pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
-    $('#pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
-    $('#pageimg' + curr_img_num).css('bottom', 0);
+function change_pageimg_width(mode) {
+    $('#' + mode + 'pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
+    $('#' + mode + 'pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
+    $('#' + mode + 'pageimg' + curr_img_num).css('bottom', 0);
 }
 
 function restore_pageimg_width() {
@@ -757,10 +757,11 @@ function view_actual(mode, uuid, page, others, first) {
 
         $("#pagecontent" + mode).html("<div class='col-md-5 nopadding'><div id='" + mode + "pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext" + mode + "' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
 
+        /* This stopped working */
         $('#' + mode + 'pageimg' + curr_img_num).affix();
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width);
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width);
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width);
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix.bs.affix', function() {change_pageimg_width(mode)});
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix-top.bs.affix', function() {change_pageimg_width(mode)});
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix-bottom.bs.affix', function() {change_pageimg_width(mode)});
 
         go(false, url, unavailable(false), function(json, opaque) { $('#pagetext' + mode).html(json.desc); start_trans_id += json.desc.length; view_actual(next_mode(others), uuid, page, others, false); }, false);
 
