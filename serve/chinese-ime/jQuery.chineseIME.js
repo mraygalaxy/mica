@@ -97,8 +97,6 @@
         };
     };
 
-    $.wordDatabase = new WordDatabase();
-
     $.fn.extend({
         insertAtCaret: function(myValue){
           return this.each(function(i) {
@@ -128,6 +126,7 @@
     });
 
     $.chineseInput = function(el, options){
+
         // To avoid scope issues, use 'self' instead of 'this'
         // to reference this class from internal events and functions.
         var self = this;
@@ -135,8 +134,10 @@
         // Access to jQuery and DOM versions of element
         self.$el = $(el);
         self.el = el;
+     	self.el.last_key_was_backspace = false;
+        self.el.wordDatabase = new WordDatabase();
 
-        self.id = String(parseInt(Math.random() * 10000) * parseInt(Math.random() * 10000));
+        self.el.id = String(parseInt(Math.random() * 10000) * parseInt(Math.random() * 10000));
 
          // Set null options object if no options are provided
         if(!options || typeof options !== 'object') options = {};
@@ -151,22 +152,22 @@
 
         var foo = "bar";
 
-        $.receivePush = function(select_idx) {
-            self.makeSelection(select_idx - 1);
-            self.updateDialog();
+        self.el.receivePush = function(select_idx) {
+            self.el.makeSelection(select_idx - 1);
+            self.el.updateDialog();
         }
 
-        self.resetCurrent = function() {
-            self.currentText = '';
-            self.currentPage = 0;
-            self.currentSelection = 1;
-            self.lastPage = false;
+        self.el.resetCurrent = function() {
+            self.el.currentText = '';
+            self.el.currentPage = 0;
+            self.el.currentSelection = 1;
+            self.el.lastPage = false;
         }
 
-        self.clearOld = function(amount) {
+        self.el.clearOld = function(amount) {
             var txt = self.$el.val(); 
             if (amount == -1) {
-                amount = self.currentText.length;
+                amount = self.el.currentText.length;
             } else if(amount == -2) {
                 self.$el.val('');
                 return;
@@ -176,9 +177,9 @@
         }
 
 
-        self.resetCurrent();
-        self.inputText = '';
-        self.clearOld(-2);
+        self.el.resetCurrent();
+        self.el.inputText = '';
+        self.el.clearOld(-2);
         self.$el.focus();
         //self.options = [];
         self.html = "<ul data-role='none' class='options' style='color: black'></ul>";
@@ -191,31 +192,31 @@
         self.$el.data("chineseInput", self);
         
         self.nothing = function() {
-	    console.log("keydown called, but doing nothing.");
+            console.log("keydown called, but doing nothing.");
             event.preventDefault();
             return false; 
         }
-        self.init = function(){
-            self.options = $.extend({},$.chineseInput.defaultOptions, options);
+        self.el.init = function(){
+            self.el.options = $.extend({},$.chineseInput.defaultOptions, options);
             
-            self.$el.on( "keypress", self.keyPress);
-	        self.$el.on( "keyup", self.keyPress);
-	        self.$el.unbind().bind('input propertychange', self.keyPress);
-	        //$('#sendForm').submit(function(ev) {ev.preventDefault(); self.keyPress(ev)});
+            self.$el.on( "keypress", self.el.keyPress);
+	        self.$el.on( "keyup", self.el.keyPress);
+	        self.$el.unbind().bind('input propertychange', self.el.keyPress);
+	        //$('#sendForm').submit(function(ev) {ev.preventDefault(); self.el.keyPress(ev)});
 
-            self.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
-            self.$toolbar.insertAfter(self.$el);
-            self.$toolbar.css({'position': 'absolute', 'z-index': 1000}).show();
-            self.reposition(self.$toolbar);
+            self.el.$toolbar = $('<div id="chinese-toolbar-' + self.id + '"></div>');
+            self.el.$toolbar.insertAfter(self.$el);
+            self.el.$toolbar.css({'position': 'absolute', 'z-index': 1000}).show();
+            self.el.reposition(self.el.$toolbar);
 
-            $.wordDatabase.traditional = false;
+            self.el.wordDatabase.traditional = false;
 
             $(window).resize($.proxy(function() { // TODO: attach to textarea resize event
-                this.self.updateDialog();
-                this.self.reposition();
+                this.self.el.updateDialog();
+                this.self.el.reposition();
             }, {'self': self}));
 
-            self.reposition();
+            self.el.reposition();
         };
         
 
@@ -231,28 +232,26 @@
                 }
         */
 
-	self.last_key_was_backspace = false;
-
-        self.keyPress = function(event){
-            if (self.options.active) {
+        self.el.keyPress = function(event){
+            if (self.el.options.active) {
                 var beforeCheck = self.$el.val() || "";
                 var key = '';
                 var backspace = 0;
-                self.last_key_was_backspace = false;
-                console.log("inputText: " + self.inputText + " beforeCheck " + beforeCheck + " currentText " + self.currentText);
-                if (beforeCheck.length > self.inputText.length) {
-                    var diff = (beforeCheck.length - self.inputText.length);
-                    if (self.inputText.length == 0) {
+                self.el.last_key_was_backspace = false;
+                console.log("inputText: " + self.el.inputText + " beforeCheck " + beforeCheck + " currentText " + self.el.currentText);
+                if (beforeCheck.length > self.el.inputText.length) {
+                    var diff = (beforeCheck.length - self.el.inputText.length);
+                    if (self.el.inputText.length == 0) {
                         key = beforeCheck;
                     } else {
                         key = beforeCheck.substring(beforeCheck.length - diff, beforeCheck.length)
                     }
-                } else if(beforeCheck.length < self.inputText.length) {
-                    backspace = self.inputText.length - beforeCheck.length;
+                } else if(beforeCheck.length < self.el.inputText.length) {
+                    backspace = self.el.inputText.length - beforeCheck.length;
                 } else {
-                    if (self.currentText.length == 0) {
+                    if (self.el.currentText.length == 0) {
                         console.log("No new text. Sending what's left.")
-                        self.sendText();
+                        self.el.sendText();
                     }
                     console.log("Returning early. Booooooooooooo.");
                     return false;
@@ -261,13 +260,13 @@
                     console.log("Caught key " + key);
 
                 //if (/[a-zA-Z]/.test(key)){ 
-                    self.inputText = beforeCheck;
+                    self.el.inputText = beforeCheck;
                     // pressed a character
-                    if (self.currentText.length <= 20){ 
+                    if (self.el.currentText.length <= 20){ 
                         // set maximum num characters to arbitrary 20 limit
-                        self.currentText += key;
+                        self.el.currentText += key;
                     }
-                } else if (self.currentText.length > 0) {
+                } else if (self.el.currentText.length > 0) {
                     if (key == ' '){ 
                         // pressed space
                         /* I don't like the behavior of pressing space
@@ -279,117 +278,117 @@
                         var chat_source_language = pair[0];
                         var chat_target_language = pair[1];  
                         //if (chat_target_language != "zh" && chat_target_language != "zh-CHS") {
-                        //    self.clearOld(-1);
-                        //    self.makeSelection(self.currentSelection - 1);
+                        //    self.el.clearOld(-1);
+                        //    self.el.makeSelection(self.el.currentSelection - 1);
                         //} else {
-                            self.resetCurrent();
+                            self.el.resetCurrent();
                         //}
-                        self.inputText = self.$el.val();
+                        self.el.inputText = self.$el.val();
                     } else if (/[1-8]/.test(key)) { 
                       // pressed number between 1 and 8
-                        self.clearOld(1);
-                        $.receivePush(parseInt(key));
+                        self.el.clearOld(1);
+                        self.el.receivePush(parseInt(key));
                         return false;
                     } else if (key == ',') { // go to previous page
-                        self.previousPage();
+                        self.el.previousPage();
                     } else if (key == '.') { // go to next page
-                        self.nextPage();
+                        self.el.nextPage();
                     } else if (key == '') {
                         if (backspace) {
-                            self.last_key_was_backspace = true;
-                            self.currentText = self.currentText.substring(0, self.currentText.length - backspace);
-                            self.inputText = beforeCheck;
+                            self.el.last_key_was_backspace = true;
+                            self.el.currentText = self.el.currentText.substring(0, self.el.currentText.length - backspace);
+                            self.el.inputText = beforeCheck;
                         } else {
                             // enter key pressed -- accept phonetic input
-                            self.clearOld(-1);
-                            self.addText(self.currentText);
-                            self.resetCurrent();
+                            self.el.clearOld(-1);
+                            self.el.addText(self.el.currentText);
+                            self.el.resetCurrent();
                         }
                     }
                 } else {
-                    self.inputText = beforeCheck;
+                    self.el.inputText = beforeCheck;
                 }
                     // enter send text in MICA chat system
                     //self.sendText();
-                self.updateDialog();
+                self.el.updateDialog();
             }
             console.log("Finished with keypress now.");
             return false;
         };
 
-        self.sendText = function() {
+        self.el.sendText = function() {
             if (self.$el.val() != "") {
                 var e = $.Event('keydown', { keyCode: 13 });
                 self.$el.trigger(e);
-                self.clearOld(-2);
+                self.el.clearOld(-2);
             }
-            self.inputText = "";
-            self.clearOld(-2);
-            self.resetCurrent();
-            self.updateDialog();
+            self.el.inputText = "";
+            self.el.clearOld(-2);
+            self.el.resetCurrent();
+            self.el.updateDialog();
         }
 
-        self.addText = function(text){
+        self.el.addText = function(text){
             self.$el.insertAtCaret(text);
         };
 
-        self.nextPage = function(){                
-            if (!self.lastPage) {
-                self.currentPage += 1;
+        self.el.nextPage = function(){                
+            if (!self.el.lastPage) {
+                self.el.currentPage += 1;
             }
-            self.updateDialog();
+            self.el.updateDialog();
         }
 
-        self.previousPage = function(){
-            self.currentPage = parseInt(Math.max(0, self.currentPage - 1));
-            self.lastPage = false;
-            self.updateDialog();
+        self.el.previousPage = function(){
+            self.el.currentPage = parseInt(Math.max(0, self.el.currentPage - 1));
+            self.el.lastPage = false;
+            self.el.updateDialog();
         }
 
-        self.nextChoice = function(){
-            if (self.currentSelection < 8) {
-                self.currentSelection += 1;
-                self.updateDialog();
+        self.el.nextChoice = function(){
+            if (self.el.currentSelection < 8) {
+                self.el.currentSelection += 1;
+                self.el.updateDialog();
             } else {
-                self.currentSelection = 1;
-                self.nextPage(); 
+                self.el.currentSelection = 1;
+                self.el.nextPage(); 
             }
         }
 
-        self.previousChoice = function(){
-            if (self.currentSelection > 1) {
-                self.currentSelection -= 1;
-                self.updateDialog();
-            } else if (self.currentPage > 0) {
-                self.currentSelection = 8;
-                self.previousPage(); 
+        self.el.previousChoice = function(){
+            if (self.el.currentSelection > 1) {
+                self.el.currentSelection -= 1;
+                self.el.updateDialog();
+            } else if (self.el.currentPage > 0) {
+                self.el.currentSelection = 8;
+                self.el.previousPage(); 
             }
         }
 
-        self.makeSelection = function(selectionIndex){
-            var choices = $.wordDatabase.getChoices(self.currentText);
-            selectionIndex += self.currentPage * 8; // add current page to index
+        self.el.makeSelection = function(selectionIndex){
+            var choices = self.el.wordDatabase.getChoices(self.el.currentText);
+            selectionIndex += self.el.currentPage * 8; // add current page to index
             if (selectionIndex < 0) { 
-                self.clearOld(-1);
+                self.el.clearOld(-1);
                 // if selection is smaller than zero, we use the text input as is, effectively canceling smart input
-                self.addText(self.currentText);
-                self.resetCurrent();
+                self.el.addText(self.el.currentText);
+                self.el.resetCurrent();
             }
             if (choices && selectionIndex < choices.length){
-                self.clearOld(-1);
+                self.el.clearOld(-1);
                 choice = choices[selectionIndex];
-                len = $.wordDatabase.getLength(self.currentText, selectionIndex);
-                self.addText(choice);
-                self.resetCurrent();
+                len = self.el.wordDatabase.getLength(self.el.currentText, selectionIndex);
+                self.el.addText(choice);
+                self.el.resetCurrent();
             }
 
-            self.inputText = self.$el.val();
+            self.el.inputText = self.$el.val();
         };
 
-        self.reposition = function($el){
+        self.el.reposition = function($el){
             var $toolbar = $el;
             if (!$toolbar){
-                $toolbar = self.$toolbar;
+                $toolbar = self.el.$toolbar;
             }
             $toolbar.css({'padding': '0 0 10px 5px'}).
                      position({my: 'left bottom',
@@ -398,10 +397,10 @@
                                 collision: "none"});
         }
 
-        self.last_api = '';
-        self.updateDialog = function(){
+        self.el.last_api = '';
+        self.el.updateDialog = function(){
                 
-            if (!self.last_key_was_backspace && self.currentText.length > 0) {
+            if (!self.el.last_key_was_backspace && self.el.currentText.length > 0) {
 
                 var pair = getPairs(); 
 
@@ -410,21 +409,21 @@
 
 		/*
                 if (chat_target_language == "zh" || chat_target_language == "zh-CHS") {
-                    var options = [self.currentText];
+                    var options = [self.el.currentText];
                 } else {
-                    var options = self.getOptionsFromDatabase(self.currentText, self.currentPage);
+                    var options = self.getOptionsFromDatabase(self.el.currentText, self.el.currentPage);
                 }
 		*/
                 var chat_language = chat_target_language;
                     
-                var micaurl = "chat_ime&ime=1&mode=read&source=" + self.currentText + "&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
+                var micaurl = "chat_ime&ime=1&mode=read&source=" + self.el.currentText + "&target_language=" + chat_target_language + "&source_language=" + chat_source_language + "&lang=" + chat_language;
 
-                if (micaurl == self.last_api) {
+                if (micaurl == self.el.last_api) {
                         console.log("Ignoring duplicate api request from wierd keypress");
                         return false;
                 }
 
-                self.last_api = micaurl;
+                self.el.last_api = micaurl;
 
                 //if (true || options && options.length){
                 var $box = $('#chinese-ime');
@@ -434,15 +433,15 @@
                                 html(self.html)
                         $('#chat_content').append($box);
                 }
-                    //$box.find('.typing').text(self.currentText);
+                    //$box.find('.typing').text(self.el.currentText);
 
                  go(false, micaurl, unavailable(false),   
                         function(json, opaque){
                             console.log("Response: " + json); 
                             if(json.success)  {
-                                if (!$.wordDatabase.hasWord(json.result.word, 10)){
-                                    $.wordDatabase.addWord(json.result.word, 10);
-                                    $.wordDatabase.setChoices(json.result.word, json.result.chars, json.result.lens);
+                                if (!self.el.wordDatabase.hasWord(json.result.word, 10)){
+                                    self.el.wordDatabase.addWord(json.result.word, 10);
+                                    self.el.wordDatabase.setChoices(json.result.word, json.result.chars, json.result.lens);
                                 }
 
                                 $box.find('ul').html(open_or_close(json.result.human));
@@ -464,23 +463,23 @@
             }
         };
 
-        self.getOptionsFromDatabase = function(text, page, num){
-            if (typeof page == 'undefined') { page = self.currentPage; }
+        self.el.getOptionsFromDatabase = function(text, page, num){
+            if (typeof page == 'undefined') { page = self.el.currentPage; }
             if (typeof num == 'undefined') { num = 8; }
-            var options = $.wordDatabase.getChoices(text);
+            var options = self.el.wordDatabase.getChoices(text);
             if (options && options.length >= (page + 1) * num) {
                 // we have options in the database already, and enough of them
                 return options.slice(page*num, (page+1)*num);
             } else if (options && options[options.length-1] == text) {
                 // if the last option is the text itself, it means we've exhausted all suggestions
-                self.lastPage = true;
+                self.el.lastPage = true;
                 return options.slice(page*num);
             }
             return false; // we need to call ajax first
         };
         
         // Run initializer
-        self.init();
+        self.el.init();
     };
     
     $.chineseInput.defaultOptions = {
