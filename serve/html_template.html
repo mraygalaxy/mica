@@ -21,6 +21,9 @@
 
     <link rel='shortcut icon' type='image/x-icon'><t:attr name='href'><t:slot name='favicon'/></t:attr></link>
 
+    <!--(if not frontpage and not mobile)-->
+	<script src='https://checkout.stripe.com/checkout.js'/>
+    <!--(end)-->
     <script><t:attr name='src'><t:slot name='jquery'/></t:attr></script>
     <!--(if not frontpage)-->
     <script><t:attr name='src'><t:slot name='couchjs'/></t:attr></script>

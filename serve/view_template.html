@@ -21,7 +21,6 @@
                             <div id='readingheader'>
                                 <div id='translationstatus'></div>
                                 <table data-role='none' style="margin-bottom: 10px">
-                                   <!--<tr><td><div id='instantspin' style='display: none'><t:slot name="spinner"/><b style='font-size: x-large'>&#160;<t:slot name='performingtranslation'/></b></div></td></tr>-->
                                     <tr>
                                         <td><button data-role='none' type='button' id='goto' class='btn btn-default'><t:attr name='title'><t:slot name='gotitle'/></t:attr><t:slot name='go'/>:</button>
                                         <input data-role='none' id='gotoval' type='text' size='2'/> / <div id='pagetotal' style='display: inline'></div></td>
@@ -32,14 +31,19 @@
                                             <button data-role='none' type='button' id='sideButton'><t:attr name='title'><t:slot name='bothclasstitle'/></t:attr><t:attr name='class'><t:slot name='bothclass'/></t:attr><i class='glyphicon glyphicon-th-list'></i></button>
                                             <button data-role='none' type='button' id='imageButton'><t:attr name='title'><t:slot name='imageclasstitle'/></t:attr><t:attr name='class'><t:slot name='imageclass'/></t:attr><i class='glyphicon glyphicon-picture'></i></button>
                                             <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-                                            <!--(if action == 'read')-->
                                             <button data-role='none' type='button' id='meaningButton'><t:attr name='title'><t:slot name='meaningclasstitle'/></t:attr><t:attr name='class'><t:slot name='meaningclass'/></t:attr><i class='glyphicon glyphicon-expand'></i></button>
-                                            <!--(end)-->
-                                            <!--(if action == 'edit')-->
                                             <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processsplitstitle'/></t:attr><t:attr name='onclick'><t:slot name='processsplits'/></t:attr><i class='glyphicon glyphicon-resize-full'></i></button>
                                             <button data-role='none' type='button' class='btn btn-default' href='#'><t:attr name='title'><t:slot name='processmergestitle'/></t:attr><t:attr name='onclick'><t:slot name='processmerges'/></t:attr><i class='glyphicon glyphicon-resize-small'></i></button>
-                                            <!--(end)-->
                                             <button data-role='none' type='button' class='btn btn-default' onclick='view(current_mode, current_uuid, current_page)'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
+                                        </div>
+                                        </td>
+                                        <td>&#160;&#160;&#160;</td>
+                                        <td>
+                                        <div style='display: inline' data-role='none' class='btn-group'>
+                                            <button id='homebutt' data-role='none' type='button' class='btn btn-default' onclick="view_show('home')"><t:attr name='title'><t:slot name='reviewmode'/></t:attr><i class='glyphicon glyphicon-search'></i></button>
+                                            <button id='editbutt' data-role='none' type='button' class='btn btn-default' onclick="view_show('edit')"><t:attr name='title'><t:slot name='editmode'/></t:attr><i class='glyphicon glyphicon-pencil'></i></button>
+                                            <button id='readbutt' data-role='none' type='button' class='btn btn-default' onclick="view_show('read')"><t:attr name='title'><t:slot name='readmode'/></t:attr><i class='glyphicon glyphicon-book'></i></button>
+                                            <script></script>
                                         </div>
                                         </td>
                                         <td>&#160;&#160;&#160;</td>
@@ -52,7 +56,9 @@
                     </div><!-- row for header section -->
                     <div class='row-fluid'>
                         <div class='col-lg-12 nopadding'>
-                            <div id='pagecontent'></div>
+                            <div id='pagecontenthome' style='display: none'></div>
+                            <div id='pagecontentedit' style='display: none'></div>
+                            <div id='pagecontentread' style='display: none'></div>
                         </div>
                     </div>
                 </div><!-- outer md-10 all section --> 
@@ -60,7 +66,9 @@
                 <div class='col-lg-2 nopadding'>
                     <div data-offset-top='55' data-offset-bottom='0' id='statsheader'>
                         <h4><b><t:slot name='storyname'/></b></h4>
-                        <t:slot name="stats"/> 
+                        <div id='statshome' style='display: none'/>
+                        <div id='statsedit' style='display: none'/>
+                        <div id='statsread' style='display: none'/>
                     </div><!-- statsheader -->
                 </div><!-- col-lg-2 stats section -->
             </div><!-- inner row-fluid -->

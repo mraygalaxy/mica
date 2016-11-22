@@ -5,6 +5,7 @@
 <b><t:slot name='account'/>: <t:slot name='username'/></b>
 </h4>
 <table>
+<tr>
 <!--(if mobile)-->
 <td style='width: 2px'/>
 <td><i class='glyphicon glyphicon-download'></i></td>
@@ -17,10 +18,46 @@
 <td class='badge' id='pushstat3'><t:slot name='push'/></td>
 <td style='width: 2px'/>
 <!--(end)-->
-<td><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a></td>
-<td style='width: 2px'>&#160;/&#160;</td>
-<td><a href=''><span class='badge' id='quotastat'><t:slot name='quotastat'/></span></a></td>
+
+<td><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a>
+&#160;/&#160;
+<a href=''><span class='badge' id='quotastat'><t:slot name='currentplan'/>: $@!(amount / 100 * (int(quota_stat) / 1000)) if quota_stat > 300 else 0!@ / <t:slot name='quotastat'/></span></a><br/><br/></td>
+
+<!--(if not mobile and billable)--> 
+        </tr><tr><td>
+  <!--(if email)--> 
+    <!--(if quota_stat <= 300)-->
+	<button id='payButton' data-role='none' class='btn btn-default btn-primary stripe-button'><t:slot name='upgrade'/> 1 GB</button>
+	<script>
+		stripe_install('@!stripe_public!@', '@!email!@', @!amount!@, '$@!amount / 100!@' + ' ' + local('stripedesc'));
+	</script>
+    <!--(else)-->
+        </td></tr><tr>
+        <td colspan='10' style='vertical-align: bottom'>
+      <!--(if upgradeable)-->
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
+        <input type='hidden' name='charge' value='upgrade'/>
+        <button data-role='none' type='submit' class='btn btn-default btn-primary'><t:slot name="upgrade"/> $@!amount / 100!@ / GB / month</button>
+        </form>
+      <!--(end)-->
+        </td></tr><tr>
+        <td style='vertical-align: bottom'>
+      <!--(if downgradeable)-->
+        <form class='ajaxform' data-ajax='false' action='account' method='post'>
+        <input type='hidden' name='charge' value='downgrade'/>
+        <button data-role='none' type='submit' class='btn btn-default btn-primary'><t:slot name="downgrade"/> $@!amount / 100!@ / GB / month</button>
+        </form>
+        <br/>
+      <!--(end)-->
+    <!--(end)-->
+  <!--(else)-->
+        <i><b><t:slot name='cannotupgrade'/></b></i>
+  <!--(end)-->
+	</td>
+<!--(end)-->
+</tr>
 </table>
+<br/>
 <h4><b t:render='dicts'/></h4>
 <h5>(<t:slot name='offline'/>.)</h5>
 <table t:render='databases'/>
@@ -95,7 +132,7 @@
     </form>                                   
 
     <form class='ajaxform' data-ajax='false' action='account' method='post'>
-        <input type='hidden' name='resetpassword' value='1'/>
+/bin/bash: ./run.sh: No such file or directory
         <button type="submit" class="btn btn-default btn-primary"><t:slot name="reset"/></button>
     </form>                                   
     <!--(else)-->
@@ -122,7 +159,7 @@
                 <td>@!result["key"]["name"]!@</td>
                 <td>&#160;&#160;@!result["key"]["email"] if "email" in result["key"] else "no email =("!@</td>
                 <td>&#160;&#160;Source:@!result["key"]["source"] if "source" in result["key"] else "mica"!@&#160;&#160;</td>
-                <td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'><t:slot name='delete'/></button></form></td>
+                <td><div id='delete@!result['key']['name']!@' style='display: none'><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='deleteaccount' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><button type='submit' class='btn btn-default btn-primary'>Sure?</button></form></div><button data-role='none' onclick="$('#delete@!result['key']['name']!@').attr('style', 'display: inline'); $(this).attr('style', 'display: none');" class="btn btn-default btn-primary"><t:slot name='delete'/></button></td>
                 <td>&#160;&#160;</td><td><form class='ajaxform' data-ajax='false' action='account' method='post'><input type='hidden' name='changequota' value='1'/><input type='hidden' name='username' value='@!result['key']['name']!@'/><input type='text' name='quota' value="@!result['key']['quota'] if 'quota' in result['key'] else '300'!@"/><button type='submit' class='btn btn-default btn-primary'><t:slot name='changequota'/></button></form></td>
                 </tr>
         <!--(end)-->
@@ -139,4 +176,8 @@
     <t:slot name='mobiledelete'/>
     <!--(end)-->
     </button>
+    <script>
+    done();
+    form_loaded(false, true);
+    </script>
 </div>

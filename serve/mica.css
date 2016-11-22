@@ -164,6 +164,11 @@ span.splitoutline {
     border-color:#287EC7;
 }
 
+td.notop { border-top: solid black;}
+td.noleft { border-left: solid #dfdfdf;}
+td.noright { border-right: solid #dfdfdf;}
+td.nobottom { border-bottom: solid #dfdfdf; }
+
 td.mergetop { border-top: solid red; }
 td.mergebottom { border-bottom: solid red; }
 td.mergeleft { border-left: solid red; }
@@ -290,6 +295,10 @@ body {
 .pagetable td {
     padding-right: 5px;
     margin-bottom: 10px;
+}
+
+table.pagetable {
+   margin-bottom: 5px;
 }
 
 .pagetable tr {

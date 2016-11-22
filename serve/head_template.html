@@ -44,9 +44,6 @@
 		    <li>
 			<b id='username'><t:slot name='accountusername'/></b>
 		    </li>
-                    <li><a onclick="start_learning('home', 'view', {})"><i class='glyphicon glyphicon-search'></i> <t:slot name='reviewmode'/></a></li>
-                    <li><a onclick="start_learning('edit', 'view', {})"><i class='glyphicon glyphicon-pencil'></i> <t:slot name='editmode'/></a></li>
-                    <li><a onclick="start_learning('read', 'view', {})"><i class='glyphicon glyphicon-book'></i> <t:slot name='readmode'/></a></li>
                     <li><a href='#uploadModal' onclick="$('#settings').panel('close');" data-toggle='modal' data-keyboard='false'><i class="glyphicon glyphicon-upload"/> <t:slot name='uploadstory'/></a></li>
                     <!--(if not mobile and "isadmin" in req.session.value and req.session.value["isadmin"])-->
                     <li>

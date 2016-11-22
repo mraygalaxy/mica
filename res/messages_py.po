@@ -2096,3 +2096,103 @@ msgstr ""
 #. Label indicating a list of stories that have not finished being reviewed
 msgid "Reviewing"
 msgstr ""
+
+#. Support means the email support for help with problems with the system
+msgid "Email Support"
+msgstr ""
+
+#. Support means the email support for help with problems with the system
+msgid "Support"
+msgstr ""
+
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+msgid "Server not configured correctly. Can't bill users"
+msgstr ""
+
+#. This message occurs when there is a billing error and the email address is wrong.
+msgid "Invalid email address. Upgrade failed. Your card was NOT charged"
+msgstr ""
+
+#. The next two messages go together.
+msgid "You already have a subscription."
+msgstr ""
+
+msgid "Upgrade failed. Your card was NOT charged"
+msgstr ""
+
+msgid ""
+"There was a problem with your purchase. Your card was NOT billed. Please try "
+"again later."
+msgstr ""
+
+msgid ""
+"Your current plan is already at maximum. Contact support@readalien.com if "
+"you're interested in a larger, custom plan"
+msgstr ""
+
+msgid "Your already have the lowest plan. Cannot downgrade any further"
+msgstr ""
+
+#. The next three messages all go together.
+msgid "Your current database is"
+msgstr ""
+
+msgid "In order to downgrade to"
+msgstr ""
+
+msgid ""
+"per month, please remove stories or chat history from your account or "
+"contact support@readalien.com for further assistance."
+msgstr ""
+
+msgid ""
+"You don't have an existing subscription. Please contact support@readalien."
+"com for assistance."
+msgstr ""
+
+msgid "Your subscription was changed successfully!"
+msgstr ""
+
+msgid ""
+"You have more than one subscription in the system. We have NOT changed your "
+"current subscription. Please contact support@readalien.com for assistance."
+msgstr ""
+
+msgid ""
+"There was a problem changing your subscription. Please contact "
+"support@readalien.com."
+msgstr ""
+
+msgid "You do not have a subscription yet. Change failed for: "
+msgstr ""
+
+msgid "Thank you! Your subscription has successfully changed."
+msgstr ""
+
+#. Message to allow user to Upgrade their subscription
+msgid "Upgrade"
+msgstr ""
+
+#. Message to Downgrade their subscription
+msgid "Downgrade"
+msgstr ""
+
+#. Message indicating that the user cannot upgrade their subscription without
+msgid "Cannot upgrade without email address"
+msgstr ""
+
+msgid "Add 1GB / month of language content"
+msgstr ""
+
+msgid "per GB / month of language content"
+msgstr ""
+
+msgid "Current Plan"
+msgstr ""
+
+#. The next two message go together to tell the user what the price is.
+msgid "Pay only"
+msgstr ""
+
+msgid "month for each additional GB of content"
+msgstr ""

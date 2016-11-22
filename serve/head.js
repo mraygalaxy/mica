@@ -55,7 +55,9 @@ function switchlist_complete(json, opaque) {
     done();
     if (json.success) {
        switchinstall(json.list_mode);
-       listreload(current_mode, current_uuid, current_page);
+       var others = $.extend({}, modes);
+       others[current_mode] = false;
+       listreload(current_mode, current_uuid, current_page, others, true);
     } else {
         alert(json.desc);
     }
@@ -117,7 +119,7 @@ function form_loaded_complete(data, opaque) {
     form_loaded(data, true);
 }
 
-function form_loaded(data, do_forms) {
+function form_loaded(unused, do_forms) {
     $.mobile.silentScroll(0);
     if (do_forms) {
         $("form.ajaxform").each(function() {
@@ -149,7 +151,7 @@ function loading() {
     $.mobile.loading( "show", {
         text: "Loading",
         textVisible: true,
-        theme: "z",
+        theme: "a",
         html: ""
     });
 }
@@ -165,6 +167,7 @@ $(document).on("pagecontainershow", function (e, data) {
 function account_complete(json, opaque) {
     $("#account_content").html(json.desc);
     form_loaded(json.desc, opaque);
+    done();
 }
 
 function help_complete(json, opaque) {
