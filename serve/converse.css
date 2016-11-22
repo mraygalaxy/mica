@@ -2432,7 +2432,7 @@ a:focus {
 }
 .btn-default {
   border: 1px solid #82B397;
-  color: #82B397;
+/*  color: #82B397;*/
 }
 .btn-default:hover,
 .btn-default:focus {

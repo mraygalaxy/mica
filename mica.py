@@ -38,6 +38,7 @@ uploads_enabled = True
 dbtag = "MICA"
 
 if not mobile :
+    import stripe
     from gcm import *
     from gcm.gcm import GCMNotRegisteredException
     from apns import APNs, Frame, Payload
@@ -1907,10 +1908,8 @@ class MICA(object):
         if action == "edit" :
             sources['mergegroups'] = self.view_keys(req, "mergegroups", units)
             sources['splits'] = self.view_keys(req, "splits", units)
-        elif action == "home" :
-            sources['tonechanges'] = self.view_keys(req, "tonechanges", units)
-        elif action == "read" :
-            sources['memorized2'] = self.view_keys(req, "memorized2", units)
+        sources['tonechanges'] = self.view_keys(req, "tonechanges", units)
+        sources['memorized2'] = self.view_keys(req, "memorized2", units)
 
         mverbose("View Page " + str(page) + " story " + str(name) + " building...")
         batch = -1
@@ -1940,28 +1939,35 @@ class MICA(object):
 
                 if action == "edit" :
                     prev_merge, req.template_dict["merge_end"], use_batch, batch, tmp_class = self.view_check_edits(prev_merge, sources, unit, py, word_idx, line, source, batch)
+                else :
+                    req.template_dict["merge_end"] = False
+
+                '''
+                for nothing in ["top", "bottom", "left", "right" ] :
+                    if ("merge" + nothing) not in tmp_class :
+                        tmp_class.append("no" + nothing)
+                '''
 
                 if py :
                     if (py not in gp.punctuation) and not unit["punctuation"] :
-                        if action == "home" :
-                            largest_hcode, req.template_dict["largest_index"], req.template_dict["largest_target"], req.template_dict["color"], add_count = self.view_check_reviews(req, sources, source, unit, py)
+                        largest_hcode, req.template_dict["largest_index"], req.template_dict["largest_target"], req.template_dict["color"], add_count = self.view_check_reviews(req, sources, source, unit, py)
 
-                            if req.template_dict["largest_hcode"] :
-                                if not recommendations :
-                                    recommendations = 0
-                                recommendations += 1
+                        if req.template_dict["largest_hcode"] :
+                            if not recommendations :
+                                recommendations = 0
+                            recommendations += 1
 
                     if action != "home" :
                         req.template_dict["color"] = "grey" if not unit["punctuation"] else "white"
                     if action == "home" and len(unit["multiple_target"]) :
                         req.template_dict["polyphomes"] = self.polyphomes(req, story, uuid, unit, nb_unit, trans_id, page)
 
-                    if action == 'read' :
-                        if unit["hash"] in sources['memorized2'] :
-                            memorized = True
+                    if unit["hash"] in sources['memorized2'] :
+                        memorized = True
 
                 if "timestamp" in unit and unit["punctuation"] :
                     req.template_dict["chatlog"] = source + u": " + " (" + datetime_datetime.fromtimestamp(int(unit["timestamp"]) + tzoffset).strftime(period_view_mapping[story["name"].split(";")[1]]) + ")" + ": "
+
                 req.template_dict.update(dict(
                     default_web_zoom = req.session.value["default_web_zoom"],
                     tmpclass = " ".join(tmp_class),
@@ -2013,9 +2019,6 @@ class MICA(object):
                     <td style='padding-right: 10px'/>
                 """)
                 for word in words :
-                    line_out.append("""
-                        <td style='padding-right: 5px'/>
-                    """)
                     line_out.append(word[row_idx])
 
                 line_out.append("""
@@ -2041,6 +2044,7 @@ class MICA(object):
                 chatpage_fh.close()
             else :
                 output += line_out
+                #output.append("<br/>")
 
                 if recommendations :
                     # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
@@ -3251,9 +3255,7 @@ class MICA(object):
 
         req.mica = self
         req.view_percent = '{0:.1f}'.format(float(self.views_ready[req.session.value['username']]) / float(len(self.view_runs)) * 100.0)
-        disk_size = req.db.info()["disk_size"]
-        mdebug("Raw disk size: " + str(disk_size))
-        req.disk_stat = disk_size / 1024 / 1024
+        req.disk_stat = req.db.info()["disk_size"] / 1024 / 1024
         req.quota_stat = req.session.value["quota"]
         req.user = req.db.try_get(self.acct(req.session.value['username']))
         req.username = req.session.value['username']
@@ -3265,7 +3267,6 @@ class MICA(object):
             req.database = req.session.value["database"]
             req.credentials = couch_adapter.credentials(params)
         contents = run_template(req, HeadElement)
-        fh = open(cwd + 'serve/head.js')
 
         bootscript = self.bootscript() + u"""
             if (window.location.hash == "") {
@@ -3307,6 +3308,10 @@ class MICA(object):
             req.session.save()
 
     def render_frontpage(self, req) :
+        req.billable = True if "billing_rate" in params else False
+        if req.billable :
+            req.stripe_public = params["stripe_public"]
+            req.amount = params["billing_rate"]
         self.install_local_language(req)
         if not mobile :
             req.oauth = params["oauth"]
@@ -4218,6 +4223,7 @@ class MICA(object):
         return self.api(req, desc = run_template(req, ReadElement))
 
     def render_story(self, req, uuid, start_page) :
+        start_trans_id = int(req.http.params.get("start_trans_id", 0))
         req.viewpageresult = False
         view_mode = "text"
         if "view_mode" in req.session.value :
@@ -4274,8 +4280,11 @@ class MICA(object):
                     chat = history = True if ("filetype" in story and story["filetype"] == "chat") else False
                     if chat :
                         output += "<table style='width: 100%'>\n"
-                    req.session.value["last_view_mode"] = req.action
-                    output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history)
+                    sd = int(req.http.params.get("skip_default", 0))
+                    mdebug("skip_default?: " + str(sd)) 
+                    if not sd:
+                        req.session.value["last_view_mode"] = req.action
+                    output = self.view_page(req, uuid, name, story, req.action, output, page, req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"], meaning_mode, chat = chat, history = history, start_trans_id = start_trans_id)
                     self.set_page(req, story, page)
                     if chat :
                         output += "</table>"
@@ -4317,15 +4326,69 @@ class MICA(object):
             final = req.db[self.story(req, story["name"]) + ":final"]["0"]
             return self.api(req, final.encode("utf-8").replace("\n","<br/>"))
 
+
+    def upgrade(self, auth_user) :
+        plan = 0
+        newplan = 1 
+        if auth_user["quota"] < 1000 :
+            plan = 0
+            newplan = 1
+        elif auth_user["quota"] == 1000 :
+            plan = 1
+            newplan = 2
+        elif auth_user["quota"] == 2000 :
+            plan = 2
+            newplan = 3
+        elif auth_user["quota"] == 3000 :
+            plan = 3
+            newplan = False
+
+        destplan = "ra" + str(newplan)
+
+        return plan, newplan, destplan
+
+    def downgrade(self, auth_user) :
+        plan = 0
+        newplan = False 
+        if auth_user["quota"] <= 300 :
+            plan = 0
+            newplan = False
+        if auth_user["quota"] < 1000 :
+            plan = 0
+            newplan = False 
+        elif auth_user["quota"] == 1000 :
+            plan = 1
+            newplan = 0.3
+        elif auth_user["quota"] == 2000 :
+            plan = 2
+            newplan = 1
+        elif auth_user["quota"] == 3000 :
+            plan = 3
+            newplan = 2
+        else :
+            merr("QUOTA NOT RECOGNIZED: " + str(auth_user["quota"]))
+            plan = False
+            newplan = False
+
+        destplan = "ra" + str(int(newplan))
+
+        return plan, newplan, destplan
+
+    def remove_stripe(self, req, auth_user) :
+        if "stripe_id" in auth_user :
+            mdebug("Deleting stripe customer.")
+            customer = stripe.Customer.retrieve(auth_user["stripe_id"])
+            customer.delete()
+            del auth_user["stripe_id"]
+            if "active_until" in auth_user :
+                del auth_user["active_until"]
+
     def render_account(self, req, story) :
         json = { "test_success" : False }
         req.accountpageresult = False
         username = req.session.value["username"].lower()
         user = req.db.try_get(self.acct(username))
-        disk_size = req.db.info()["disk_size"]
-        mdebug("Raw disk size: " + str(disk_size))
-        req.disk_stat = disk_size / 1024 / 1024
-        req.quota_stat = req.session.value["quota"]
+        disk_size = req.db.info()["disk_size"] / 1024 / 1024
         out = ""
 
         if not user :
@@ -4333,7 +4396,167 @@ class MICA(object):
             print_stack()
             return self.warn_not_replicated(req)
 
-        if req.http.params.get("pack") :
+        if req.http.params.get("charge") and req.http.params.get("charge") in ["start", "upgrade", "downgrade"] :
+            if mobile :
+                json["success"] = False
+                req.accountpageresult = _("Go away and die.")
+            else :
+                if not self.userdb :
+                    # This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+                    req.accountpageresult = _("Server not configured correctly. Can't bill users")
+                    json["success"] = False
+                else :
+                    charge = req.http.params.get("charge")
+                    billed = False
+                    auth_user = self.userdb.try_get("org.couchdb.user:" + username)
+
+                    # TODO: Webhooks integration and management of 'active_until' both upon initial user login and during a hook.
+
+                    if not auth_user or "email" not in auth_user : 
+                        # This message occurs when there is a billing error and the email address is wrong.
+                        req.accountpageresult = _("Invalid email address. Upgrade failed. Your card was NOT charged")
+                        json["success"] = False
+                    else :
+                        if charge == "start" and req.http.params.get("stripeToken") and req.http.params.get("stripeToken") :
+                            if "stripe_id" in auth_user :
+                                # The next two messages go together.
+                                req.accountpageresult = _("You already have a subscription.") + str(auth_user["email"]) + ". " + _("Upgrade failed. Your card was NOT charged")
+                                json["success"] = False
+                            else :
+                                token = req.http.params.get("stripeToken")
+                                email = req.http.params.get("stripeEmail")
+
+                                customer = False
+
+                                plan, newplan, destplan = self.upgrade(auth_user) 
+
+                                mdebug("We want to switch user " + email + " to plan " + destplan)
+
+                                try :
+                                    customer = stripe.Customer.create(
+                                        source = token,
+                                        plan = destplan,
+                                        email = email 
+                                    )
+
+                                    mdebug("Returned customer object: " + str(customer))
+                                    if customer :
+                                        billed = True
+                                        auth_user["quota"] = newplan * 1000
+                                        auth_user["stripe_id"] = customer["id"]
+                                    else :
+                                        req.accountpageresult = "Code 2:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+
+                                except stripe.error.CardError as e:
+                                    # Since it's a decline, stripe.error.CardError will be caught
+                                    body = e.json_body
+                                    err  = body['error']
+
+                                    merr("Status is: %s" % e.http_status)
+                                    merr("Type is: %s" % err['type'])
+                                    merr("Code is: %s" % err['code'])
+                                    # param is '' in this case
+                                    merr("Param is: %s" % err['param'])
+                                    merr("Message is: %s" % err['message'])
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 8:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except stripe.error.RateLimitError as e:
+                                    # Too many requests made to the API too quickly
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 7:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except stripe.error.InvalidRequestError as e:
+                                    # Invalid parameters were supplied to Stripe's API
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 6:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except stripe.error.AuthenticationError as e:
+                                    # Authentication with Stripe's API failed
+                                    # (maybe you changed API keys recently)
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 5:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except stripe.error.APIConnectionError as e:
+                                    # Network communication with Stripe failed
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 4:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except stripe.error.StripeError as e:
+                                    # Display a very generic error to the user, and maybe send
+                                    # yourself an email
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 3:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+                                except Exception, e :
+                                    merr("Failed to bill customer: " + str(e))
+                                    req.accountpageresult = "Code 1:" + _("There was a problem with your purchase. Your card was NOT billed. Please try again later.")
+
+                        else:
+                            if "stripe_id" in auth_user :
+                                if charge == "upgrade" :
+                                    plan, newplan, destplan = self.upgrade(auth_user) 
+                                    mdebug("We want to upgrade user " + auth_user["email"] + " to plan " + destplan + " " + str(newplan))
+                                    if not newplan :
+                                        req.accountpageresult = _("Your current plan is already at maximum. Contact support@readalien.com if you're interested in a larger, custom plan")
+                                        json["success"] = False
+
+                                elif charge == "downgrade" :
+                                    plan, newplan, destplan = self.downgrade(auth_user) 
+                                    mdebug("We want downgrade user " + auth_user["email"] + " to plan " + destplan + " " + str(newplan))
+                                    if not newplan :
+                                        req.accountpageresult = _("Your already have the lowest plan. Cannot downgrade any further")
+                                        json["success"] = False
+
+                                    if disk_size > (newplan * 1000) :
+                                        # The next three messages all go together.
+                                        req.accountpageresult = _("Your current database is") + " " + str(disk_size) + " MB" + ". " + _("In order to downgrade to") + " " + str(int(newplan * 1000)) + " MB " + _("per month, please remove stories or chat history from your account or contact support@readalien.com for further assistance.")
+                                        json["success"] = False
+                                        newplan = False
+                                    
+                                if newplan :
+                                    try :
+                                        mdebug("Retrieving customer.")
+                                        customer = stripe.Customer.retrieve(auth_user["stripe_id"])
+                                        auth_user["quota"] = int(newplan * 1000)
+                                        if newplan == 0.3 :
+                                            self.remove_stripe(req, auth_user)
+                                            customer = False
+                                            billed = True
+                                        else :
+                                            subscriptions = stripe.Subscription.list(customer = auth_user["stripe_id"])
+                                            if len(subscriptions["data"]) == 0 :
+                                                req.accountpageresult = _("You don't have an existing subscription. Please contact support@readalien.com for assistance.")
+                                                json["success"] = False
+                                                '''
+                                                stripe.Subscription.create(
+                                                  customer = auth_user["stripe_id"],
+                                                  plan = destplan
+                                                  source = token,
+                                                )
+                                                '''
+                                            elif len(subscriptions["data"]) == 1 :
+                                                mdebug("Modifying subscription.")
+                                                subscription = subscriptions["data"][0]
+                                                subscription.plan = destplan 
+                                                subscription.save()
+                                                req.accountpageresult = _("Your subscription was changed successfully!")
+                                                billed = True
+                                            else :
+                                                mdebug(str(subscriptions["data"]))
+                                                req.accountpageresult = _("You have more than one subscription in the system. We have NOT changed your current subscription. Please contact support@readalien.com for assistance.")
+                                                json["success"] = False
+                                    except Exception, e :
+                                        req.accountpageresult = "Code 9:" + _("There was a problem changing your subscription. Please contact support@readalien.com.")
+                                        json["success"] = False
+                            else :
+                                req.accountpageresult = _("You do not have a subscription yet. Change failed for: ") + str(auth_user["email"])
+                                json["success"] = False
+
+                        if not billed :
+                            json["success"] = False
+                        else :
+                            req.accountpageresult = _("Thank you! Your subscription has successfully changed.")
+                            # 1-day grace period. 2-days in the case of 30-day months.
+                            req.session.value["quota"] = auth_user["quota"]
+                            auth_user["active_until"] = timest() + (32 * 24 * 60 * 60)
+                            self.userdb["org.couchdb.user:" + username] = auth_user
+
+        elif req.http.params.get("pack") :
             mdebug("Compacting...")
             req.db.compact()
             req.db.cleanup()
@@ -4497,6 +4720,7 @@ class MICA(object):
 
                             del self.userdb["org.couchdb.user:" + username]
                             del self.cs[dbname]
+                            self.remove_stripe(req, auth_user)
 
                             if req.session.value["username"] != username :
                                 req.accountpageresult = _("Success! Account was deleted") + ": " + username
@@ -4550,6 +4774,8 @@ class MICA(object):
                                     req.accountpageresult = _("Go away and die.")
                                     json["success"] = False
                                 else :
+                                    if newquota == -1 :
+                                        self.remove_stripe(req, auth_user)
                                     auth_user["quota"] = newquota
                                     req.session.value["quota"] = newquota
                                     self.userdb["org.couchdb.user:" + username] = auth_user
@@ -4728,7 +4954,16 @@ class MICA(object):
         req.user = user
         req.processors = self.processors
         req.scratch = params["scratch"]
+        req.disk_stat = disk_size
+        req.quota_stat = req.session.value["quota"]
+        req.downgradeable = True if req.quota_stat > 300 else False
+        req.upgradeable = True if req.quota_stat < 3000 else False
+        req.email = req.user["email"] if ("email" in req.user and req.user["email"].strip() != "") else False 
         req.userdb = self.userdb
+        req.billable = True if "billing_rate" in params else False
+        if req.billable :
+            req.stripe_public = params["stripe_public"]
+            req.amount = params["billing_rate"]
         return self.api(req, out + run_template(req, AccountElement), json = json)
 
     def render_chat(self, req, unused_story) :
@@ -5570,6 +5805,10 @@ class MICA(object):
             req.session.value["meaning_mode"] = req.http.params.get("meaningmode")
             return self.api(req)
 
+        if req.http.params.get("last_view_mode") :
+            req.session.value["last_view_mode"] = req.http.params.get("last_view_mode")
+            return self.api(req)
+
         if req.http.params.get("switchlist") :
             req.session.value["list_mode"] = True if int(req.http.params.get("switchlist")) == 1 else False
             return self.api(req, json = {"list_mode" : req.session.value["list_mode"]})
@@ -5641,7 +5880,7 @@ class MICA(object):
         if req.action in ["home", "read", "edit" ] :
             return self.render_story(req, uuid, start_page)
 
-        if req.action in ["stories", "storylist", "account", "chat", "prebind", "connected" ] :
+        if req.action in ["stories", "storylist", "account", "chat", "prebind", "connected", "plan" ] :
             func = getattr(self, "render_" + req.action)
             return func(req, story)
 
@@ -6021,6 +6260,12 @@ def go(p) :
             log.startLogging(DailyLogFile.fromFullPath(params["tlog"]), setStdout=True)
     else :
         mdebug("Skipping twisted log")
+
+    if not mobile :
+        if "stripe_secret" in params :
+            stripe.api_key = params["stripe_secret"]
+        else :
+            mwarn("NO STRIPE API KEY. Cannot bill.")
 
     try :
         if params["slaves"] :

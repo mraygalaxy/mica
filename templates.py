@@ -63,7 +63,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story"] :
+        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story", "email" , "amount", "quota_stat", "billable", "upgradeable", "downgradeable", "stripe_public" ] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -280,6 +280,8 @@ class TranslationsElement(CommonElement) :
                      companyname = _("Read Alien"),
                      # This appears as a push notification on a mobile device when a notification arrives. 
                      notification = _("ReadAlien Message from"),
+                     stripedesc = _("per GB / month of language content"),
+                     language = self.req.session.value["language"],
                 )
         return tag
 
@@ -563,6 +565,9 @@ class FrontPageElement(CommonElement) :
                      # Support means the email support for help with problems with the system
                       emailsupport = _("Email Support"),
                       support = _("Support"),
+                      # The next two message go together to tell the user what the price is.
+                      pay = _("Pay only"),
+                      permonth = _("month for each additional GB of content"),
                       )
         return tag
 
@@ -663,14 +668,6 @@ class ViewElement(CommonElement) :
             if self.req.session.value["meaning_mode"] == "true" :
                 tclasses["meaning"] += "active "
             tclasses["meaning"] += "btn btn-default"
-        stats = ""
-
-        if self.req.action in ["read"] :
-            stats = tags.div(id='memolist')
-        elif self.req.action == "edit" :
-            stats = tags.div(id='editslist')
-        elif self.req.action == "home" :
-            stats = tags.div(id='history')
 
         uuid = 'bad_uuid'
 
@@ -687,7 +684,6 @@ class ViewElement(CommonElement) :
 
         tag.fillSlots(storyname = self.req.story_name.replace("_", " "),
                       spinner = tags.img(src=self.req.mpath + '/' + spinner, width='15px'),
-                      stats = stats,
                       # This appears while reading a story: An 'instant translation' occurs by first clicking on one of the words, the word is highlighted. Then by clicking a button in the inner icon-bar that has a square with an arrow inside, it will perform an instant translation of the selected words by checking both offline and online dictionaries and the pop-up a dialog with the result of the instant translation.
                       performingtranslation= _("Doing instant translation..."),
                       # 'Go' or 'Skip' ahead to a specific page in a book/story.
@@ -715,6 +711,12 @@ class ViewElement(CommonElement) :
                       refreshtitle = _("Refresh"),
                       resultshow = 'display: block' if self.req.viewpageresult else 'display: none',
                       result = (self.req.viewpageresult + ".") if self.req.viewpageresult else '',
+                      # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
+                      reviewmode = _("Review"),
+                      # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
+                      editmode = _("Edit"),
+                      # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
+                      readmode = _("Read"),
                       )
         
         return tag
@@ -818,7 +820,7 @@ class AccountElement(CommonElement):
     def accountslots(self, request, tag) :
         pull, push = self.pullpush()
         diskstat = str(self.req.disk_stat) + " MB"
-        quotastat = (str(self.req.quota_stat) if self.req.quota_stat != -1 else "unlimited") + " MB"
+        quotastat = (str(self.req.quota_stat) if self.req.quota_stat != -1 else "unlimited") + " MB / " + _("month")
         tag.fillSlots(
                         account = _("Account"),
                         username = self.req.session.value["username"],
@@ -851,7 +853,7 @@ class AccountElement(CommonElement):
                         changepass = _("Change Password"),
                         # change your email address
                         changeemail = _("Email Address"),
-                        email = self.req.user["email"] if "email" in self.req.user else _("Please Provide"),
+                        email = self.req.email if self.req.email else _("Please Provide"),
                         emailchange = _("Please change your email address on the website. Will support mobile in a future version"),
                         # change your email address
                         changemail = _("Change Email"),
@@ -879,6 +881,15 @@ class AccountElement(CommonElement):
                         push = push,
                         diskstat = diskstat,
                         quotastat = quotastat,
+                        # Message to allow user to Upgrade their subscription
+                        upgrade = _("Upgrade"),
+                        # Message to Downgrade their subscription
+                        downgrade = _("Downgrade"),
+                        # Message indicating that the user cannot upgrade their subscription without
+                        cannotupgrade = _("Cannot upgrade without email address"),
+                        companyname = _("Read Alien"),
+                        currentplan = _("Current Plan"),
+
 
                      )
         return tag
@@ -998,8 +1009,6 @@ class HeadElement(CommonElement):
                      password = _("Password / Token"),
                      # confirm password
                      confirmpass = _("Confirm"),
-                     # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
-                     readmode = _("Read"),
                      # This appears in the left-hand pop-out side panel and allows the user to throw away (i.e. Forget) the currently processed version of a story. Afterwards, the user can subsequently throw away the story completely or re-translate it. 
                      forget = _("Forget"),
                     # This appears in the left-hand pop-out side panel and allows the user to change their mind and indicate that they are indeed not finished reading the story. This will move the story back into the 'Reading' section. 
@@ -1022,6 +1031,8 @@ class HeadElement(CommonElement):
                      reviewmode = _("Review"),
                      # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel
                      editmode = _("Edit"),
+                     # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
+                     readmode = _("Read"),
                      mpath = self.req.mpath + '/icon-120x120.png',
                      pull = pull,
                      push = push,

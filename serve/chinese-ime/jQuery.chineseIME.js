@@ -130,7 +130,6 @@
     $.chineseInput = function(el, options){
         // To avoid scope issues, use 'self' instead of 'this'
         // to reference this class from internal events and functions.
-        console.log("1. INITIALIZING IME.....");
         var self = this;
         
         // Access to jQuery and DOM versions of element

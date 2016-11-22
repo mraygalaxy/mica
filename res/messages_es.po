@@ -1484,406 +1484,439 @@ msgid ""
 "We're sorry, but you cannot have colon ':' characters in your account name "
 "or email address."
 msgstr ""
+"Lo sentimos, pero no puede incluir dos puntos «:» en el nombre de cuenta o "
+"la dirección de correo electrónico."
 
 #. When uploading a story, you can't have colons in the file name
 msgid "* File/Story name cannot have colons ':' characters in it. Please fix."
 msgstr ""
+"* El nombre de archivo/historia no puede contener dos puntos «:». Corríjalo."
 
 msgid "days"
-msgstr ""
+msgstr "días"
 
 msgid "day"
-msgstr ""
+msgstr "día"
 
 msgid "weeks"
-msgstr ""
+msgstr "semanas"
 
 msgid "week"
-msgstr ""
+msgstr "semana"
 
 msgid "months"
-msgstr ""
+msgstr "meses"
 
 msgid "month"
-msgstr ""
+msgstr "mes"
 
 msgid "year"
-msgstr ""
+msgstr "año"
 
 msgid "years"
-msgstr ""
+msgstr "años"
 
 msgid "Priming database for you. Please wait."
-msgstr ""
+msgstr "Preparando la base de datos. Espere un momento."
 
 msgid "Database optimized."
-msgstr ""
+msgstr "Base de datos optimizada."
 
 #. These two messages together effectively say "Chat with: xxxxx"
 #. 'Chat' is a mode where users can practice chatting with each other live with the assistance of the software and their learning history.
 #. Chat / Instant Messaging
 #. Navigation label to click to switch to the chat window
 msgid "Chat"
-msgstr ""
+msgstr "Chat"
 
 msgid "today"
-msgstr ""
+msgstr "hoy"
 
 msgid "this"
-msgstr ""
+msgstr "esto"
 
 msgid "ago"
-msgstr ""
+msgstr "atrás"
 
 msgid "w/"
-msgstr ""
+msgstr "c/"
 
 msgid "API access denied"
-msgstr ""
+msgstr "Se denegó el acceso a la API"
 
 msgid "No result"
-msgstr ""
+msgstr "No hay resultados"
 
 msgid "Chat error"
-msgstr ""
+msgstr "Error del chat"
 
 msgid "Success! Learning Language changed"
-msgstr ""
+msgstr "¡Éxito! Se ha cambiado el idioma meta"
 
 #. 'Learning language' refers to the language that the user is trying to learn
 msgid "Learning Language"
-msgstr ""
+msgstr "Idioma meta"
 
 #. 'Learning language' refers to the language that the user is trying to learn
 msgid "Change Learning Language"
-msgstr ""
+msgstr "Cambiar el idioma meta"
 
 msgid "We're sorry, but chat for this language pair is not supported"
-msgstr ""
+msgstr "Lo sentimos, pero no se admite este par de idiomas"
 
 msgid "to"
-msgstr ""
+msgstr "a"
 
 msgid "as indicated by your account preferences"
-msgstr ""
+msgstr "como sus preferencias de cuenta indican"
 
 msgid ""
 "Please choose a different 'Learning Language' in your accout preferences. "
 "Thank you."
 msgstr ""
+"Seleccione otro «idioma meta» en las preferencias de su cuenta. Gracias."
 
 msgid "Recent"
-msgstr ""
+msgstr "Recientes"
 
 #. History of chat messages with other users
 #. Button to show a user's chat history
 msgid "Chat History"
-msgstr ""
+msgstr "Historial de chat"
 
 #. Indicates that the chat software is starting up...
 msgid "Loading Chat"
-msgstr ""
+msgstr "Cargando el chat"
 
 #. Incoming chat messages
 msgid "Your Chat Username is: "
-msgstr ""
+msgstr "Su nombre de usuario del chat es:"
 
 msgid "Send Message"
-msgstr ""
+msgstr "Enviar mensaje"
 
 #. Destination of chat receiver
 msgid "To"
-msgstr ""
+msgstr "A"
 
 #. Send a chat message
 #. Send an instant message
 msgid "Send"
-msgstr ""
+msgstr "Enviar"
 
 #. In Chat mode, from what source language to what target language should translations occur.
 msgid "Learn (translate) from"
-msgstr ""
+msgstr "Aprender (traducir) del"
 
 #. Notification from the online chat system that another user is logged in and has become available.
 msgid "has become available"
-msgstr ""
+msgstr "está disponible"
 
 #. Notification from the online chat system that another user has changed status, like 'away' or 'available'.
 msgid "has set their presence to"
-msgstr ""
+msgstr "ha configurado su estado como"
 
 #. Appears in Chat mode and allows user to disable IME input system for character-based languages.
 msgid "phonetic typing"
-msgstr ""
+msgstr "escritura fonética"
 
 #. Use a traditional or simplified character IME system
 msgid "Traditional"
-msgstr ""
+msgstr "Tradicional"
 
 #. We need the user to gives a username of someone to chat with
 msgid "Please provide the address of someone to chat with."
-msgstr ""
+msgstr "Proporcione la dirección de la persona con quien quiere charlar."
 
 msgid ""
 "Disconnected: You have probably logged in from a different web-browser. To "
 "resume your chat please sign-out an then sign-in again. Thank you."
 msgstr ""
+"Desconectado: probablemente ha accedido a su cuenta en otro navegador web. "
+"Para continuar con el chat, cierre la sesión e inicie una nueva. Gracias."
 
 #. A general error message
 msgid "An error occured"
-msgstr ""
+msgstr "Se ha producido un error"
 
 #. This message appears as part of a count-down message indicating how many seconds are left before the system re-connects to the chat
 msgid "Seconds left to reconnect"
-msgstr ""
+msgstr "Segundos restantes para reconectarse"
 
 msgid "decades"
-msgstr ""
+msgstr "décadas"
 
 msgid ""
 "Your device either does not have adequate signal strength or your connection "
 "does not have adequate connectivity. While you do have a connection (3/4G or "
 "Wifi), we were not able to reach the server."
 msgstr ""
+"O bien su dispositivo no cuenta con la fuerza de señal suficiente o su "
+"conexión es inestable. Aunque la conexión está establecida (3/4G o WiFi), no "
+"pudimos conectar con el servidor."
 
 msgid "(template) Please report the above exception to the author. Thank you"
-msgstr ""
+msgstr "(plantilla) Informe de la excepción anterior al autor. Gracias"
 
 msgid "(unknown) Please report the above exception to the author. Thank you"
-msgstr ""
+msgstr "(desconocido) Informe de la excepción anterior al autor. Gracias"
 
 msgid "Lost connectivity to the database. Please come back later."
 msgstr ""
+"Se perdió la conectividad con la base de datos. Inténtelo de nuevo más tarde."
 
 msgid ""
 "(outer unknown) Please report the exception above to the author. Thank you."
 msgstr ""
+"(desconocido saliente) Informe de la excepción anterior al autor. Gracias."
 
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 msgid "Rotating Old Merged Chats From Database"
-msgstr ""
+msgstr "Permutando los chats combinados anteriores de la base de datos"
 
 msgid "Initialization Complete! Story ready for translation"
-msgstr ""
+msgstr "¡Inicialización terminada! La historia está lista para su traducción"
 
 msgid ""
 "This account is not fully synchronized. Be sure to touch 'Synchronize' for "
 "the story before reading it. You can follow the progress at the top of the "
 "screen until the 'download' arrow reaches 100."
 msgstr ""
+"Esta cuenta no se ha sincronizado completamente. Asegúrese de pulsar en la "
+"opción «Sincronizar» de la historia antes de leerla. Podrá seguir el "
+"progreso en la parte superior de la pantalla hasta que la flecha «Descarga» "
+"llegue a 100."
 
 msgid "You have been logged out."
-msgstr ""
+msgstr "Ha finalizado su sesión."
 
 msgid "Internet access error. Offline instant translation only: "
-msgstr ""
+msgstr "Error de acceso a Internet. Solo traducción instantánea sin conexión: "
 
 msgid "Internet access error. Offline translation only: "
-msgstr ""
+msgstr "Error de acceso a Internet. Solo traducción sin conexión: "
 
 #. Beginning of a message.
 msgid "No story loaded. Go to the 'Stories' tab"
-msgstr ""
+msgstr "No se cargó ninguna historia. Vaya a la pestaña «Historias»"
 
 #. end of a message
 msgid "or create one by going to Account => Upload New Story"
-msgstr ""
+msgstr "o cree una yendo a Cuenta => Subir historia nueva"
 
 msgid "Quota requests need to be done on the website."
-msgstr ""
+msgstr "Se deben realizar solicitudes de cupo en el sitio web."
 
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't modify quotas"
 msgstr ""
+"El servidor no se ha configurado correctamente. No se pueden modificar los "
+"cupos"
 
 msgid "No such account. Cannot quotas."
-msgstr ""
+msgstr "No existe esta cuenta. No se pueden modificar los cupos."
 
 msgid "Success! Quota was changed"
-msgstr ""
+msgstr "¡Éxito! Se ha modificado el cupo"
 
 msgid "unlimited"
-msgstr ""
+msgstr "ilimitado"
 
 msgid "for user"
-msgstr ""
+msgstr "para el usuario"
 
 msgid "Error: Quota could not be changed"
-msgstr ""
+msgstr "Error: no se pudo modificar el cupo"
 
 msgid "Sorry. Why is your email so long?"
-msgstr ""
+msgstr "Lo sentimos. ¿Por qué es tan largo su correo electrónico?"
 
 msgid "Sorry. Email with spaces in it?"
-msgstr ""
+msgstr "Lo sentimos. ¿Pueden tener espacios los correos electrónicos?"
 
 msgid "Sorry. Invalid email address."
-msgstr ""
+msgstr "Lo sentimos. La dirección de correo electrónico no es válida."
 
 msgid "Failed to change primary synchronization. Please try again"
-msgstr ""
+msgstr "No se pudo modificar la sincronización primaria. Inténtelo de nuevo"
 
 msgid "Failed to change file synchronization. Please try again"
-msgstr ""
+msgstr "No se pudo modificar la sincronización de archivos. Inténtelo de nuevo"
 
 msgid "Storylist failed"
-msgstr ""
+msgstr "Falló la lista de historias"
 
 msgid "The oauth protocol had an error"
-msgstr ""
+msgstr "Se produjo un error en el protocolo OAuth"
 
 msgid "Please try again. Thank you"
-msgstr ""
+msgstr "Inténtelo de nuevo. Gracias"
 
 msgid ""
 "We're sorry, but the oauth provider is missing information for your account"
 msgstr ""
+"Lo sentimos, pero el proveedor OAuth carece de información sobre su cuenta"
 
 msgid "Happy Learning"
-msgstr ""
+msgstr "Feliz aprendizaje"
 
 #. User provided the wrong username or password. But do not translate as 'username' or 'password' because that is a security risk that reveals to brute-force attackers whether or not an account actually exists.
 msgid "Invalid credentials"
-msgstr ""
+msgstr "Credenciales de acceso no válidas"
 
 msgid "Bulk review complete"
-msgstr ""
+msgstr "Revisión masiva finalizada"
 
 msgid "Initializing Story in Database"
-msgstr ""
+msgstr "Inicializando la historia en la base de datos"
 
 #. statistics in reading mode are disabled
 msgid "Statistics Disabled"
-msgstr ""
+msgstr "Estadísticas desactivadas"
 
 #. This is a standard error message that a request on the website failed.
 msgid ""
 "Failed to issue request. We're sorry. Please report what you tried to do to "
 "the author. Thank you."
 msgstr ""
+"No se pudo emitir la solicitud. Lo sentimos. Informe de lo que intentó "
+"realizar al autor. Gracias."
 
 msgid "Mobile Device Instructions for Teachers"
-msgstr ""
+msgstr "Instrucciones para maestros sobre dispositivos móviles"
 
 msgid "Get 'Xabber' for Android"
-msgstr ""
+msgstr "Obtener «Xabber» para Android"
 
 msgid "Get 'ChatSecure' for Android"
-msgstr ""
+msgstr "Obtener «ChatSecure» para Android"
 
 msgid "Get 'ChatSecure' for iOS"
-msgstr ""
+msgstr "Obtener «ChatSecure» para iOS"
 
 msgid "Instructions"
-msgstr ""
+msgstr "Instrucciones"
 
 msgid "Server"
-msgstr ""
+msgstr "Servidor"
 
 msgid "do not use 'www'"
-msgstr ""
+msgstr "no añada «www»"
 
 msgid "Encryption/Security"
-msgstr ""
+msgstr "Cifrado/seguridad"
 
 msgid "Yes / SSL / TLS / SASL Authentication"
-msgstr ""
+msgstr "Sí/autenticación SSL/TLS/SASL"
 
 msgid "Port (if needed)"
-msgstr ""
+msgstr "Puerto (si es necesario)"
 
 #. This is a button for the user to restart the current webpage
 #. Refresh the current webpage
 msgid "Refresh"
-msgstr ""
+msgstr "Actualizar"
 
 #. A 'local' account is an account that does not use a social network, like facebook or google.
 msgid "OR Use a local account"
-msgstr ""
+msgstr "O utilice una cuenta local"
 
 msgid "<b>MICA</b> is a <b>new way</b> to learn a language."
-msgstr ""
+msgstr "<b>MICA</b> es una <b>nueva manera</b> de aprender idiomas."
 
 #. Change a user's quota on the website
 msgid "Change Quota"
-msgstr ""
+msgstr "Cambiar cupo"
 
 msgid ""
 "Please change your email address on the website. Will support mobile in a "
 "future version"
 msgstr ""
+"Modifique su dirección de correo electrónico en el sitio web. Admitiremos "
+"dispositivos móviles en una versión futura"
 
 msgid "Story imported. Please initialized it on the website."
-msgstr ""
+msgstr "Historia importada. Inicialícela en el sitio web."
 
 #. Disconnect means the same as "logout" or "sign out" and is located inside the 'Account' dropdown on the top-most navigation panel.
 msgid "Logout"
-msgstr ""
+msgstr "Cerrar la sesión"
 
 msgid "New Story"
-msgstr ""
+msgstr "Historia nueva"
 
 #. Navigation label to click to learn a story / view the story for learning.
 msgid "Learn"
-msgstr ""
+msgstr "Aprender"
 
 #. Label indicating a list of 'new' stories that have just been uploaded / imported into the website
 msgid "New"
-msgstr ""
+msgstr "Nuevo"
 
 #. Button allowing the user to initialize a new story that has just been uploaded / imported into the website.
 msgid "Initialize Story"
-msgstr ""
+msgstr "Inicializar historia"
 
 msgid ""
 "This account is not fully synchronized. Please wait a minute or two for "
 "initial replication and login again. You can follow the progress at the top "
 "of the screen until the 'download' arrow reaches 100."
 msgstr ""
+"Esta cuenta no se ha sincronizado completamente. Espere un par de minutos "
+"para que termine la replicación e inicie sesión de nuevo. Podrá seguir el "
+"progreso en la parte superior de la pantalla hasta que la flecha «Descarga» "
+"llegue a 100."
 
 msgid "Application reset. Please login again."
-msgstr ""
+msgstr "Aplicación restablecida. Inicie sesión de nuevo."
 
 #. Button that confirms that the user wants to perform an action.
 msgid "Yes, do it."
-msgstr ""
+msgstr "Sí, adelante."
 
 msgid "Are you sure? This is IRREVERSIBLE."
-msgstr ""
+msgstr "¿Lo confirma? Esta acción es IRREVERSIBLE."
 
 #. Wipe the mobile application's data and start over
 msgid "Reset application to defaults"
-msgstr ""
+msgstr "Restablecer aplicación a sus valores predeterminados"
 
 #. Message on the mobile device when a story is imported for the first time.
 msgid "Story imported. Please initialize it on the website."
-msgstr ""
+msgstr "Historia importada. Inicialícela en el sitio web."
 
 #. The user has completed logging out / signing out already - then this message appears.
 msgid "Disconnected from Read Alien"
-msgstr ""
+msgstr "Desconectado de Read Alien"
 
 msgid "Read Alien is busy processing the following. Please wait"
-msgstr ""
+msgstr "Read Alien está ocupado procesando lo siguiente. Espere"
 
 #. Beginning of a message
 msgid ""
 "We're sorry. The Read Alien database on this device already belongs to the "
 "user"
 msgstr ""
+"Lo sentimos. La base de datos de Read Alien de este dispositivo ya pertenece "
+"al usuario"
 
 msgid ""
 "a new account. This requirement is because Read Alien databases can become "
 "large over time, so we want you to be aware of that. Thanks."
 msgstr ""
+"una cuenta nueva. Este requisito existe porque las bases de datos de Read "
+"Alien pueden volverse grandes con el tiempo, y queremos que esté consciente "
+"de ello. Gracias."
 
 #. front-page website message
 msgid ""
 "Read Alien also works offline on mobile devices and automatically stays in "
 "sync with both iOS and Android"
 msgstr ""
+"Read Alien también funciona sin conexión en dispositivos móviles y se "
+"sincroniza automáticamente con iOS y Android"
 
 msgid ""
 "To get a \"feel\" for how Read Alien works, you can use the DEMO account "
@@ -1891,139 +1924,152 @@ msgid ""
 "existing stories from the online demo account, but all changes you make will "
 "not be synchronized."
 msgstr ""
+"Para darse una idea del funcionamiento de Read Alien, puede utilizar la "
+"cuenta de DEMOSTRACIÓN con el nombre de usuario «demo» y la contraseña "
+"«micademo». Esta cuenta cargará historias preexistentes de la cuenta de "
+"demostración en línea, pero cualquier cambio que realice no se sincronizará."
 
 #. name of the company
 #. name of the ocmpany
 msgid "Read Alien Learning"
-msgstr ""
+msgstr "Aprendizaje Read Alien"
 
 msgid "<b>Read Alien</b> is a <b>new way</b> to learn a language."
-msgstr ""
+msgstr "<b>Read Alien</b> es una <b>nueva manera</b> de aprender idiomas."
 
 msgid ""
 "Read Alien works by <b>analytics</b>: You read <b>existing</b> books or "
 "stories and it <b>tracks your brain</b>."
 msgstr ""
+"Read Alien funciona mediante <b>análisis</b>: mientras lee libros o "
+"historias <b>existentes</b>, <b>dará seguimiento a su cerebro</b>."
 
 msgid ""
 "Read Alien is not a translator. It makes you <b>learn by reading</b> in "
 "context."
 msgstr ""
+"Read Alien no es un traductor. Le hará <b>aprender leyendo</b> con contexto."
 
 msgid ""
 "Flashcards are stupid. <br/><b>Try Read Alien!</b> and learn a new language."
 msgstr ""
+"Las fichas son cosa del pasado. <br/><b>¡Pruebe Read Alien!</b> y aprenda "
+"una lengua nueva."
 
 #. 'me' refers to the yourself inside of a chat window.
 msgid "me"
-msgstr ""
+msgstr "yo"
 
 #. This message appears in a chat window.
 msgid ""
 "A very large message has been received. This might be due to an attack meant "
 "to degrade the chat performance. Output has been shortened."
 msgstr ""
+"Se ha recibido un mensaje muy grande. Esto puede deberse a un ataque para "
+"mermar el rendimiento del chat. Se ha abreviado la salida."
 
 #. name of the company.
 msgid "Read Alien: Meta Language Learning"
-msgstr ""
+msgstr "Read Alien: metaaprendizaje de idiomas"
 
 #. This appears as a push notification on a mobile device when a notification arrives.
 msgid "ReadAlien Message from"
-msgstr ""
+msgstr "Mensaje de ReadAlien de"
 
 #. Buddy list
 msgid "Buddies"
-msgstr ""
+msgstr "Amigos"
 
 #. front-page website message
 msgid ""
 "Democratize Languages: Learning a language should be just like reading a book"
 msgstr ""
+"Democratización lingüística: aprender un idioma debería ser tan sencillo "
+"como leer un libro"
 
 #. This appears when we do not have internet connectivity
 msgid "Internet access is unavailable. Chat offline."
-msgstr ""
+msgstr "No está disponible el acceso a Internet. Chat sin conexión."
 
 #. name of the company
 msgid "Read Alien"
-msgstr ""
+msgstr "Read Alien"
 
 #. Landing page navigation link #1: Scroll back to the beginning
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #. An example story / book in Spanish
 msgid "Spanish Example"
-msgstr ""
+msgstr "Ejemplo en español"
 
 #. An example story / book in Chinese
 msgid "Chinese Example"
-msgstr ""
+msgstr "Ejemplo en chino"
 
 #. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
 msgid "Offline-first. Mobile-first."
-msgstr ""
+msgstr "Funciona sin conexión. Amigable con los móviles."
 
 #. Features of this software
 msgid "Features"
-msgstr ""
+msgstr "Funciones"
 
 #. Mobile device
 msgid "Mobile"
-msgstr ""
+msgstr "Móvil"
 
 #. Open source software
 msgid "Open Source"
-msgstr ""
+msgstr "Código abierto"
 
 #. Front-page message
 msgid "Democratize Languages"
-msgstr ""
+msgstr "Democratización lingüística"
 
 #. "driven" means that the software is powered by open-source software
 msgid "Driven by open-source"
-msgstr ""
+msgstr "Impulsada por el código abierto"
 
 #. Front-page message: learn spanish and chinese for free
 msgid "Spanish and Chinese for Free"
-msgstr ""
+msgstr "Español y chino gratis"
 
 #. Learn a language by uploading your own foreign literature
 msgid "Learn foreign literature that you provide"
-msgstr ""
+msgstr "Aprenda con literatura extranjera provista por usted"
 
 #. Learn the way you want to
 msgid "On your terms"
-msgstr ""
+msgstr "Bajo sus condiciones"
 
 #. This software uses data to track your language progress
 msgid "Data-driven software tracks your language"
-msgstr ""
+msgstr "Software dirigido por datos que lleva seguimiento de su lengua"
 
 #. This means that you don't have to work that hard
 msgid "So you don't have to"
-msgstr ""
+msgstr "Para que usted no tenga que hacerlo"
 
 #. Reduce the fear of communication in a foreign language by chatting with native speakers
 msgid "Chat like a native. Reduce the fear."
-msgstr ""
+msgstr "Charle como un nativo. Disminuya el miedo."
 
 #. We use data to assist your language experience
 msgid "Data drives your language in real-time."
-msgstr ""
+msgstr "Los datos impulsan su lengua en tiempo real."
 
 #. Guess what words you know and don't know. Learn the language for a long time.
 msgid "Guess all day. Learn all night."
-msgstr ""
+msgstr "Adivine de día. Aprenda de noche."
 
 #. Languages that have multiple tons (like chinese) are hard to learn.
 msgid "Tonal languages are hard."
-msgstr ""
+msgstr "Las lenguas tonales son difíciles."
 
 #. You do not need to use rote-memorization (repeat, repeat, repeat) to learn the language
 msgid "We bring an end to rote-memorization."
-msgstr ""
+msgstr "Le ponemos fin a la memorización por repetición."
 
 #. We show you your vocabulary at the same time you are typing in the chat window
 msgid ""
@@ -2031,123 +2077,240 @@ msgid ""
 "person you're talking to. Data from the literature that you read feeds "
 "directly into a context-based learning experience."
 msgstr ""
+"Mostramos conjugaciones verbales en un teclado estilo IME para ayudar en "
+"tiempo real a la persona con quien esté conversando. Los datos de la "
+"literatura que lee contribuye directamente con una experiencia de "
+"aprendizaje basada en contextos."
 
 #. Polyphomes refer to multiple tones in a language, like chinese. grouping merging refers to putting two characters together to form a whole word.
 msgid ""
 "We support polyphomes, character grouping/merging, and complex parsing of "
 "character-based languages."
 msgstr ""
+"Admitimos polifonemas, agrupación/combinación de caracteres y análisis "
+"sintáctico complejo para idiomas basados en caracteres."
 
 #. Conjugate refers to romanized languages, like Spanish, that have different spellings of a verb for different tenses.
 msgid ""
 "If we don't conjugate verbs correctly, the data will tell us how to do it "
 "right the next time."
 msgstr ""
+"Si no conjugamos los verbos correctamente, los datos nos indicarán cómo "
+"hacerlo bien la próxima vez."
 
 #. Login to the website and try the system
 msgid "Login and try it"
-msgstr ""
+msgstr "Inicie sesión y pruébelo"
 
 #. Login to the website. Stop using flash cards to learn the language.
 msgid "Login. Ditch the flash cards."
-msgstr ""
+msgstr "Inicie sesión. Deshágase de las fichas de memorización."
 
 #. You get a quota of 300MB on the website.
 msgid "Upload up to 300MB of literature for free."
-msgstr ""
+msgstr "Cargue gratis hasta 300 MB de literatura."
 
 #. Mobile device is free and does not have a limit or a quota.
 msgid "Unlimited content on your mobile devices."
-msgstr ""
+msgstr "Contenido ilimitado en sus dispositivos móviles."
 
 #. We made something that you have never seen before
 msgid "The language experience you didn't know existed"
-msgstr ""
+msgstr "La experiencia lingüística que ni se imaginaba que existía"
 
 #. You get a quota of 300MB on the website.
 msgid "Free up to 300MB"
-msgstr ""
+msgstr "Hasta 300 MB gratis "
 
 #. You pay for content, not for subscription.
 msgid "Pay only for the content that you import."
-msgstr ""
+msgstr "Pague solo por el contenido que importe."
 
 #. Invitation to the user to donate money to get more space.
 msgid "Donate if you'd like additional space"
-msgstr ""
+msgstr "Haga una donación para recibir más espacio"
 
 #. Analytics is a technology term for when the software tries to make a prediction about you based on data and patterns.
 msgid "Analytics"
-msgstr ""
+msgstr "Análisis"
 
 #. You learn by reading stories in context. We track those words and statistics across all the stories that you import into the system.
 msgid ""
 "Learn in context. Words and statistics are cross-referenced across stories"
 msgstr ""
+"Aprenda en contexto. Las palabras y las estadísticas se enlazan "
+"recíprocamente a través de las historias"
 
 #. This means that we make the mobile application a priority.
 msgid "Always mobile"
-msgstr ""
+msgstr "Siempre móvil"
 
 msgid ""
 "Your device is by far the best way to use the system. Read on a tablet. Chat "
 "on your phone"
 msgstr ""
+"Su dispositivo es, con diferencia, la mejor manera de usar el sistema. Lea "
+"en una tableta. Chatee en su teléfono"
 
 #. Our software, design, and algorithms are open-source.
 msgid "Our designs and algorithms are open for all to see"
 msgstr ""
+"Nuestros diseños y algoritmos son abiertos y cualquiera puede consultarlos"
 
 #. Try the system
 msgid "Check it out"
-msgstr ""
+msgstr "Compruébelo"
 
 #. You choose the complexity by importing whatever you want
 msgid "You choose the complexity"
-msgstr ""
+msgstr "Usted elige la complejidad"
 
 msgid ""
 "By importing your own stories, you don't depend on us to provide them for you"
 msgstr ""
+"Al importar sus propias historias, no necesita depender de nosotros para "
+"proporcionárselas"
 
 #. 'assistance' means the data vocabulary assists you while you are chatting
 msgid "Chat with assistance"
-msgstr ""
+msgstr "Chat con asistencia"
 
 #. Same as previous comment: the data vocabulary assists you while you are chatting
 msgid ""
 "Instant messaging that's smart enough to read your own vocabulary in real-"
 "time."
 msgstr ""
+"Mensajería instantánea inteligente que lee su propio vocabulario en tiempo "
+"real."
 
 #. Button to click to learn more about how the system works
 msgid "Learn More"
-msgstr ""
+msgstr "Conocer más"
 
 #. This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
 msgid "Mobile-ready. Offline-ready."
-msgstr ""
+msgstr "Preparado para móviles. Diseñado para funcionar sin conexión."
 
 #. The software knows how to keep the website and the mobile device synchronized together
 msgid "Synchronized across all your devices."
-msgstr ""
+msgstr "Sincronizado en todos sus dispositivos."
 
 #. This means that the mobile device works offline while you are using the system.
 msgid "Take languages offline and on-the-go."
-msgstr ""
+msgstr "Lleve sus lenguas consigo y sin necesidad de conexión"
 
 #. This software is open source
 msgid "Open-source language for all."
-msgstr ""
+msgstr "Idiomas para todos, de código abierto."
 
 #. A 'tech stack' is a technology term that refers to a list of all the different technologies used to build the software.
 msgid "Tech Stack"
-msgstr ""
+msgstr "Tecnología utilizada"
 
 #. This is a standard copyright message at the bottom of the website.
 msgid "All Rights Reserved."
-msgstr ""
+msgstr "Todos los derechos reservados."
 
 #. Label indicating a list of stories that have not finished being reviewed
 msgid "Reviewing"
+msgstr "En revisión"
+
+#. Support means the email support for help with problems with the system
+msgid "Email Support"
+msgstr "Soporte de correo electrónico"
+
+#. Support means the email support for help with problems with the system
+msgid "Support"
+msgstr "Soporte"
+
+#. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
+msgid "Server not configured correctly. Can't bill users"
+msgstr ""
+
+#. This message occurs when there is a billing error and the email address is wrong.
+msgid "Invalid email address. Upgrade failed. Your card was NOT charged"
+msgstr ""
+
+#. The next two messages go together.
+msgid "You already have a subscription."
+msgstr ""
+
+msgid "Upgrade failed. Your card was NOT charged"
+msgstr ""
+
+msgid ""
+"There was a problem with your purchase. Your card was NOT billed. Please try "
+"again later."
+msgstr ""
+
+msgid ""
+"Your current plan is already at maximum. Contact support@readalien.com if "
+"you're interested in a larger, custom plan"
+msgstr ""
+
+msgid "Your already have the lowest plan. Cannot downgrade any further"
+msgstr ""
+
+#. The next three messages all go together.
+msgid "Your current database is"
+msgstr ""
+
+msgid "In order to downgrade to"
+msgstr ""
+
+msgid ""
+"per month, please remove stories or chat history from your account or "
+"contact support@readalien.com for further assistance."
+msgstr ""
+
+msgid ""
+"You don't have an existing subscription. Please contact support@readalien."
+"com for assistance."
+msgstr ""
+
+msgid "Your subscription was changed successfully!"
+msgstr ""
+
+msgid ""
+"You have more than one subscription in the system. We have NOT changed your "
+"current subscription. Please contact support@readalien.com for assistance."
+msgstr ""
+
+msgid ""
+"There was a problem changing your subscription. Please contact "
+"support@readalien.com."
+msgstr ""
+
+msgid "You do not have a subscription yet. Change failed for: "
+msgstr ""
+
+msgid "Thank you! Your subscription has successfully changed."
+msgstr ""
+
+#. Message to allow user to Upgrade their subscription
+msgid "Upgrade"
+msgstr ""
+
+#. Message to Downgrade their subscription
+msgid "Downgrade"
+msgstr ""
+
+#. Message indicating that the user cannot upgrade their subscription without
+msgid "Cannot upgrade without email address"
+msgstr ""
+
+msgid "Add 1GB / month of language content"
+msgstr ""
+
+msgid "per GB / month of language content"
+msgstr ""
+
+msgid "Current Plan"
+msgstr ""
+
+#. The next two message go together to tell the user what the price is.
+msgid "Pay only"
+msgstr ""
+
+msgid "month for each additional GB of content"
 msgstr ""

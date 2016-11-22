@@ -1,38 +1,38 @@
-var last_data = '';
-var first_time = false;
-var debug = false;
-var frontpage = false;
-//var debug = true;
-function unavailable(error) {
-    if (!error) {
-        error = local('requestfailed');
-        if (error = "" || !error || error == undefined) {
-            error = "unavailable(false)";
+    var last_data = '';
+    var first_time = false;
+    var debug = false;
+    var frontpage = false;
+    //var debug = true;
+    function unavailable(error) {
+        if (!error) {
+            error = local('requestfailed');
+            if (error = "" || !error || error == undefined) {
+                error = "unavailable(false)";
+            }
         }
-    }
 
-    return "<div class='img-rounded jumbotron style='padding: 10px'>" + error + "</div>";
-}
-var prmstr = window.location.search.substr(1);
-var prmarr = prmstr.split ("&");
-var params = {};
-var heromsg = "<div class='hero-unit' style='padding: 5px'>";
-var translist = [];
-for ( var i = 0; i < prmarr.length; i++) {
-    var tmparr = prmarr[i].split("=");
-    params[tmparr[0]] = tmparr[1];
-}
-var active = "app";
-var liststate = "all";
-var storytarget = 'none';
-var firstload = false;
-var firstloaded = false;
-var exploded_uuid = false;
-var exploded_name = false;
-var ci;
-var con = false;
-var jid = false;
-var first_reconnect = true;
+        return "<div class='img-rounded jumbotron style='padding: 10px'>" + error + "</div>";
+    }
+    var prmstr = window.location.search.substr(1);
+    var prmarr = prmstr.split ("&");
+    var params = {};
+    var heromsg = "<div class='hero-unit' style='padding: 5px'>";
+    var translist = [];
+    for ( var i = 0; i < prmarr.length; i++) {
+        var tmparr = prmarr[i].split("=");
+        params[tmparr[0]] = tmparr[1];
+    }
+    var active = "app";
+    var liststate = "all";
+    var storytarget = 'none';
+    var firstload = false;
+    var firstloaded = false;
+    var exploded_uuid = false;
+    var exploded_name = false;
+    var ci;
+    var con = false;
+    var jid = false;
+    var first_reconnect = true;
 var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
 var list_mode = true;
 var last_opened = "";
@@ -161,7 +161,7 @@ function go(form_id, url, error, callback, opaque){
                     response = JSON.parse(response);
                     $(id).html(response.desc);
                 } catch(err) {
-                    console.log("ERROR parsing: " + response);
+                    console.log("ERROR parsing: " + response + ": " + err);
                     $(id).html(response);
                 }
             } else {
@@ -174,7 +174,7 @@ function go(form_id, url, error, callback, opaque){
                             firstloaded = false;
                         }
                     } catch(err) {
-                        console.log("ERROR parsing: " + response);
+                        console.log("ERROR parsing: " + response + ": " + err);
                     }
                 }
             }
@@ -188,7 +188,7 @@ function go(form_id, url, error, callback, opaque){
             } else {
                 go_callback(callback, response, opaque);
 
-                if(id != undefined && id != '' && response.indexOf('<script') != -1) {
+                if(id != undefined && id != '' && htmlresp && response.indexOf('<script') != -1) {
                     //have to replace script or else jQuery will remove them
                     $(response.replace(/script/gi, 'mikescript')).find('mikescript').each(function (index, domEle) {
                         if (!$(this).attr('src')) {
@@ -713,44 +713,102 @@ function finish_new_account(code, who, state) {
     go(false, "api?human=0&alien=" + who + "&connect=1&finish=1&code=" + code + "&state=" + state, unavailable(false), finish_new_account_complete, false);
 }
 
-function view(mode, uuid, page) {
-    $("#gotoval").val(page + 1);
-    $("#pagetotal").html(current_pages);
-    var url = mode + '&view=1&uuid=' + uuid + '&page=' + page;
+function next_mode(others) {
+    var opts = Object.keys(modes); 
+    for(x = 0; x < opts.length; x++) {
+        if (others[opts[x]]) {
+            others[opts[x]] = false;
+            return opts[x];
 
-    window.scrollTo(0, 0);
+        }
+    }
+    return false;
+}
+
+function view_show(mode) {
+    $("#pagecontent" + mode).attr("style", "display: block");
+    $("#stats" + mode).attr("style", "display: block");
+    var others = $.extend({}, modes);
+    others[mode] = false;
+    while(true) {
+        next = next_mode(others);
+        if(!next)
+            break;
+        $("#pagecontent" + next).attr("style", "display: none");
+        $("#stats" + next).attr("style", "display: none");
+    }
+    $('#' + mode + 'butt').attr('class', 'active btn btn-default');
+    go(false, 'read&skip_default=1&last_view_mode=' + mode, unavailable(false), false, false);
+    $.mobile.navigate('#learn');
+}
+function view_actual(mode, uuid, page, others, first) {
+    if (!mode) {
+        //done;
+        return;
+    }
+    var url = mode + '&view=1&uuid=' + uuid + '&page=' + page + "&start_trans_id=" + start_trans_id;
+
+    if(!first) {
+        url += "&skip_default=1";
+    }
+  
     if (show_both) {
         curr_img_num += 1;
 
-        $("#pagecontent").html("<div class='col-md-5 nopadding'><div id='pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
+        $("#pagecontent" + mode).html("<div class='col-md-5 nopadding'><div id='" + mode + "pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext" + mode + "' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
 
-        $('#pageimg' + curr_img_num).affix();
-        $('#pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width);
-        $('#pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width);
-        $('#pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width);
+        $('#' + mode + 'pageimg' + curr_img_num).affix();
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix.bs.affix', change_pageimg_width);
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix-top.bs.affix', restore_pageimg_width);
+        $('#' + mode + 'pageimg' + curr_img_num).on('affix-bottom.bs.affix', restore_pageimg_width);
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#pagetext').html(json.desc) }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#pagetext' + mode).html(json.desc); start_trans_id += json.desc.length; view_actual(next_mode(others), uuid, page, others, false); }, false);
 
         url += "&image=0";
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#pageimg' + curr_img_num).html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#' + mode + 'pageimg' + curr_img_num).html(json.desc); }, false);
     } else {
-        $("#pagecontent").html("<div class='col-md-12 nopadding'><div id='pagesingle'></div></div>");
+        $("#pagecontent" + mode).html("<div class='col-md-12 nopadding'><div id='" + mode + "pagesingle'></div></div>");
         if (view_images) {
             url += "&image=0";
-            $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...");
+            $("#" + mode + "pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...");
         } else {
-            $("#pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
+            $("#" + mode + "pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
         }
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#pagesingle').html(json.desc); }, false);
+        go(false, url, unavailable(false), function(json, opaque) { $('#' + mode + 'pagesingle').html(json.desc); start_trans_id += json.desc.length; view_actual(next_mode(others), uuid, page, others, false); }, false);
     }
 
-    listreload(mode, uuid, page);
+    if (first) {
+        $("#pagecontent" + mode).attr("style", "display: block");
+    }
+}
    	
+
+var modes = {
+    home: true,
+    edit: true,
+    read: true
+}
+
+function view(mode, uuid, page) {
+    $("#gotoval").val(page + 1);
+    $("#pagetotal").html(current_pages);
+
+    window.scrollTo(0, 0);
+
+
+    var others = $.extend({}, modes);
+    others[mode] = false;
+    var clone = $.extend({}, others);
+        
+    view_actual(mode, uuid, page, others, true);
+    listreload(mode, uuid, page, clone, true);
+
     current_page = page;
     current_mode = mode;
     current_uuid = uuid;
+
     $('#loadingModal').modal('hide');
 
     /*
@@ -761,9 +819,8 @@ function view(mode, uuid, page) {
      * So, just add it back below, and it seems OK.
      */
     $('#readingheader').affix();
-    $('#readingheader').on('affix-top.bs.affix', function() {
-            return false;
-    });
+    $('#readingheader').on('affix-top.bs.affix', function() { return false; });
+    view_show(mode);
 }
 
 function install_pages(mode, pages, uuid, start, view_mode, reload, meaning_mode) {
@@ -977,34 +1034,38 @@ function modifyStyleRuleValue(style, selector, newstyle, sheet) {
 }
 
 function list_reload_complete(json, opaque) {
-      $("#" + opaque).html(json.desc);
+      var mode = opaque[0];
+      var uuid = opaque[1];
+      var page = opaque[2];
+      var others = opaque[3];
+      var first = opaque[4];
+
+      var next = next_mode(others);
+      
+      $("#stats" + mode).html(json.desc);
+
+      if (first) {
+          $("#stats" + mode).attr('style', 'display: block');
+      }
+
       form_loaded(false, true);
+
+      if(next) {
+          listreload(next, uuid, page, others, false);
+      }
 }
 
-function listreload(mode, uuid, page) {
-       if (mode == "read") {
-           if (list_mode)
-               $("#memolist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, 'read&uuid=' + uuid + '&memolist=1&page=' + page,
-              unavailable(false),
-              list_reload_complete,
-              "memolist");
+function listreload(mode, uuid, page, others, first) {
+       var target = { read: 'memo', edit: 'edits', home: 'review' };
 
-       } else if (mode == "edit") {
-           if (list_mode)
-               $("#editslist").html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
-           go(false, 'edit&uuid=' + uuid + '&editslist=1&page=' + page,
-                  unavailable(false),
-                  list_reload_complete,
-                  'editslist');
-       } else if (mode == "home") {
-           if (list_mode)
-               $("#history").html(spinner + "&nbsp;<h4>" + local('loadingstatistics') + "...</h4>");
-           go(false, 'home&uuid=' + uuid + '&reviewlist=1&page=' + page,
-                  unavailable(false),
-                  list_reload_complete,
-                  'history');
-       }
+       if (list_mode)
+           $("#stats" + mode).html(spinner + "&nbsp;<h4>" + local("loadingstatistics") + "...</h4>");
+
+       if(first)
+           $("#stats" + mode).attr('style', 'display: block');
+
+       go(false, mode + '&uuid=' + uuid + '&' + target[mode] + 'list=1&page=' + page,
+           unavailable(false), list_reload_complete, [mode, uuid, page, others, first]);
 }
 
 function installreading() {
@@ -1085,6 +1146,17 @@ function installreading() {
             reveal_all(false);
        }
     });
+
+    var opts = Object.keys(modes); 
+    for(x = 0; x < opts.length; x++) {
+        tmode = opts[x];
+        $('#' + tmode + 'butt').click(function () {
+            for(y = 0; y < opts.length; y++) {
+                $('#' + opts[y] + 'butt').attr('class', 'btn btn-default');
+            }
+            $(this).attr('class', 'active btn btn-default');
+        });
+    }
 }
 
 function syncstory(name, uuid) {
@@ -1470,12 +1542,8 @@ function start_learning_complete(json, action) {
         $.mobile.navigate('#learn');
     }
     if (json.success) {
-        //if (action == 'storyinit') {
-        //   window.location.href = "/#stories";
-        //} else {
             learn_loaded = true;
             install_pages_if_needed(json);
-        //}
     } else {
         alert(json.desc);
     }
@@ -1580,3 +1648,33 @@ function new_manual_account_complete(json) {
     done();
 }
 
+function stripe_install(key, email, amount, description) {
+    var handler = StripeCheckout.configure({
+          key: key,
+		  image : 'serve/icon-120x120.png',
+          locale: local('language'),
+          token: function(token) {
+            loading();
+            var url = 'account';
+            url += '&charge=start';
+            url += '&stripeEmail=' + token.email;
+            url += '&stripeToken=' + token.id;
+            go(false, url, unavailable(false), account_complete, true);
+          }
+        });
+
+    $("#payButton").click(function(e) {
+      handler.open({
+        //zip-code: true,
+        email: email,
+        name: local('companyname'),
+        description: description,
+        amount: amount, 
+      });
+      e.preventDefault();
+    });
+
+    window.addEventListener('popstate', function() {
+      handler.close();
+    });
+}
