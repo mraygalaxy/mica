@@ -2077,89 +2077,95 @@ msgstr "支持"
 
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't bill users"
-msgstr ""
+msgstr "服务器错误，不能付款"
 
 #. This message occurs when there is a billing error and the email address is wrong.
 msgid "Invalid email address. Upgrade failed. Your card was NOT charged"
-msgstr ""
+msgstr "邮箱地址不正确，升级错误，您的信用卡将不会被收费"
 
 #. The next two messages go together.
 msgid "You already have a subscription."
-msgstr ""
+msgstr "您已经有订阅服务了。"
 
 msgid "Upgrade failed. Your card was NOT charged"
-msgstr ""
+msgstr "升级失败，您的卡不会被收费"
 
 msgid ""
 "There was a problem with your purchase. Your card was NOT billed. Please try "
 "again later."
-msgstr ""
+msgstr "付费发生错误，您的卡不会被收费。请稍后再试。"
 
 msgid ""
 "Your current plan is already at maximum. Contact support@readalien.com if "
 "you're interested in a larger, custom plan"
 msgstr ""
+"您现在的订阅服务已经是最大。如果您想拥有更大的定制服务，请联系"
+"support@readalien.com"
 
 msgid "Your already have the lowest plan. Cannot downgrade any further"
-msgstr ""
+msgstr "您的订阅服务已经是我们的最基本计划了。不能继续降级"
 
 #. The next three messages all go together.
 msgid "Your current database is"
-msgstr ""
+msgstr "您现在的数据库"
 
 msgid "In order to downgrade to"
-msgstr ""
+msgstr "为了降级"
 
 msgid ""
 "per month, please remove stories or chat history from your account or "
 "contact support@readalien.com for further assistance."
 msgstr ""
+"每个月，请删除账户内故事或者聊天记录。如有需要请联系客服support @readalien."
+"com。"
 
 msgid ""
 "You don't have an existing subscription. Please contact support@readalien."
 "com for assistance."
-msgstr ""
+msgstr "您没有订阅任何服务，请联系客服support@readalien.com。"
 
 msgid "Your subscription was changed successfully!"
-msgstr ""
+msgstr "您的订阅服务更改成功！"
 
 msgid ""
 "You have more than one subscription in the system. We have NOT changed your "
 "current subscription. Please contact support@readalien.com for assistance."
 msgstr ""
+"您账户内有多个订阅服务，我们没有更改您的现有计划。请马上联系客服"
+"support@readalien.com。"
 
 msgid ""
 "There was a problem changing your subscription. Please contact "
 "support@readalien.com."
-msgstr ""
+msgstr "在更改您的订阅服务时发生错误，请马上联系客服support@readalien.com。"
 
 msgid "You do not have a subscription yet. Change failed for: "
-msgstr ""
+msgstr "您暂时没有任何订阅服务。修改失败： "
 
 msgid "Thank you! Your subscription has successfully changed."
-msgstr ""
+msgstr "谢谢您！您的订阅成功。"
 
 #. Message to allow user to Upgrade their subscription
 msgid "Upgrade"
-msgstr ""
+msgstr "升级"
 
 #. Message to Downgrade their subscription
 msgid "Downgrade"
-msgstr ""
+msgstr "降级"
 
 #. Message indicating that the user cannot upgrade their subscription without
 msgid "Cannot upgrade without email address"
-msgstr ""
+msgstr "没有邮箱地址不能升级"
 
 msgid "per GB / month of language content"
-msgstr ""
+msgstr "每GB每个月语言内容"
 
 msgid "Current Plan"
-msgstr ""
+msgstr "现有计划"
 
 #. The next two message go together to tell the user what the price is.
 msgid "Pay only"
-msgstr ""
+msgstr "售价仅"
 
 msgid "month for each additional GB of content"
-msgstr ""
+msgstr "每月每GB内容"
