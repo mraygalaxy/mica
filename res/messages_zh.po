@@ -2077,7 +2077,7 @@ msgstr "支持"
 
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't bill users"
-msgstr "服务器错误，不能付款"
+msgstr "服务器配置不正确，无法为用户计费"
 
 #. This message occurs when there is a billing error and the email address is wrong.
 msgid "Invalid email address. Upgrade failed. Your card was NOT charged"
