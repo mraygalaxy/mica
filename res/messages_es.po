@@ -2226,91 +2226,107 @@ msgstr "Soporte"
 #. This message appears only on the website when used by administrators to indicate that the server is misconfigured and does not have the right privileges to create new accounts in the system.
 msgid "Server not configured correctly. Can't bill users"
 msgstr ""
+"Servidor no configurado correctamente. No se puede facturar a los usuarios"
 
 #. This message occurs when there is a billing error and the email address is wrong.
 msgid "Invalid email address. Upgrade failed. Your card was NOT charged"
 msgstr ""
+"Dirección de correo electrónico inválida. No se ha podido actualizar. Su "
+"tarjeta no ha recibido ningún cargo"
 
 #. The next two messages go together.
 msgid "You already have a subscription."
-msgstr ""
+msgstr "Usted ya tiene una subscripción"
 
 msgid "Upgrade failed. Your card was NOT charged"
-msgstr ""
+msgstr "Actualización Fallida. Su tarjeta no ha recibido ningún cargo"
 
 msgid ""
 "There was a problem with your purchase. Your card was NOT billed. Please try "
 "again later."
 msgstr ""
+"Ha habido un problema con su compra. Su tarjeta no ha recibido ningún cargo "
+"intente nuevamente más tarde."
 
 msgid ""
 "Your current plan is already at maximum. Contact support@readalien.com if "
 "you're interested in a larger, custom plan"
 msgstr ""
+"Su plan actual ya está al máximo. Contacte a support@readlien.com si está "
+"interesado en un plan personalizado más grande"
 
 msgid "Your already have the lowest plan. Cannot downgrade any further"
-msgstr ""
+msgstr "Usted ya tiene el plan más bajo. No se puede seguir bajando"
 
 #. The next three messages all go together.
 msgid "Your current database is"
-msgstr ""
+msgstr "Su base de datos actual es"
 
 msgid "In order to downgrade to"
-msgstr ""
+msgstr "Para bajar a"
 
 msgid ""
 "per month, please remove stories or chat history from your account or "
 "contact support@readalien.com for further assistance."
 msgstr ""
+"por mes, por favor remueva el historial del chat de su cuenta o contácte a "
+"support@redalien.com para mayor información."
 
 msgid ""
 "You don't have an existing subscription. Please contact support@readalien."
 "com for assistance."
 msgstr ""
+"No tiene ninguna subscripción. Por favor contacte a support@readlien.com "
+"para mayor asistencia."
 
 msgid "Your subscription was changed successfully!"
-msgstr ""
+msgstr "¡Su subscripción fue cambiada con éxito!"
 
 msgid ""
 "You have more than one subscription in the system. We have NOT changed your "
 "current subscription. Please contact support@readalien.com for assistance."
 msgstr ""
+"Usted tiene más de una subscripción en el sistema. No hemos cambiado su "
+"subscripción actual. Contacte a support@readalien.com para mayor asistencia."
 
 msgid ""
 "There was a problem changing your subscription. Please contact "
 "support@readalien.com."
 msgstr ""
+"Ha habido un problema cambiando su subscripción. Por favor contacte a "
+"support@readlien.com."
 
 msgid "You do not have a subscription yet. Change failed for: "
 msgstr ""
+"Usted todavía no tiene ninguna subscripción. Cambio interrumpido debido a:"
 
 msgid "Thank you! Your subscription has successfully changed."
-msgstr ""
+msgstr "¡Gracias! Su subscripción se ha cambiado satisfactoriamente."
 
 #. Message to allow user to Upgrade their subscription
 msgid "Upgrade"
-msgstr ""
+msgstr "Actualizar"
 
 #. Message to Downgrade their subscription
 msgid "Downgrade"
-msgstr ""
+msgstr "Desactualizar"
 
 #. Message indicating that the user cannot upgrade their subscription without
 msgid "Cannot upgrade without email address"
-msgstr ""
+msgstr "No se puede actualizar sin dirección de correo electrónico"
 
 msgid "Add 1GB / month of language content"
-msgstr ""
+msgstr "Añadir 1GB / mes de contenido de idioma"
 
 msgid "per GB / month of language content"
-msgstr ""
+msgstr "por GB / mes de contenido de idioma"
 
 msgid "Current Plan"
-msgstr ""
+msgstr "Plan Actual"
 
 #. The next two message go together to tell the user what the price is.
 msgid "Pay only"
-msgstr ""
+msgstr "Solo pagar"
 
 msgid "month for each additional GB of content"
-msgstr ""
+msgstr "mes para cada GB adicional de contenido"
