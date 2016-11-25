@@ -5267,7 +5267,7 @@ class MICA(object):
                 <br/><br/>%(welcome)s
                 <br/><br/>Save this Password: %(password)s
                 <br/><br/>%(firsttime)s,&#160;
-                <a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/help'>%(tutorial)s</a>
+                <a rel='external' data-role='none' class='btn btn-default' style='color: black' href='#help'>%(tutorial)s</a>
                 <br/><br/>%(happy)s!</h4>
                 <br/><a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/'>%(start)s</a>
                 </div>
