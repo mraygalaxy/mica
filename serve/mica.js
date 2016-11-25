@@ -769,7 +769,7 @@ function view_actual(mode, uuid, page, others, first) {
 
         go(false, url, unavailable(false), function(json, opaque) { $('#' + mode + 'pageimg' + curr_img_num).html(json.desc); }, false);
     } else {
-        $("#pagecontent" + mode).html("<div class='col-md-12 nopadding'><div id='" + mode + "pagesingle'></div></div>");
+        $("#pagecontent" + mode).html("<div class='nopadding'><div id='" + mode + "pagesingle'></div></div>");
         if (view_images) {
             url += "&image=0";
             $("#" + mode + "pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...");
