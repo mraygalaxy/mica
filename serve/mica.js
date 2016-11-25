@@ -747,6 +747,13 @@ function view_show(mode) {
     go(false, 'read&skip_default=1&last_view_mode=' + mode, unavailable(false), false, false);
     $.mobile.navigate('#learn');
 }
+
+function got_image(json, opaque) {
+    var mode = opaque[0];
+    var curr_img_num = opaque[1];
+    var obj = $('#' + mode + 'pageimg' + curr_img_num);
+    obj.html(json.desc);
+}
 function view_actual(mode, uuid, page, others, first) {
     if (!mode) {
         //done;
@@ -773,7 +780,7 @@ function view_actual(mode, uuid, page, others, first) {
 
         url += "&image=0";
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#' + mode + 'pageimg' + curr_img_num).html(json.desc); }, false);
+        go(false, url, unavailable(false), got_image, [mode, curr_img_num]);
     } else {
         $("#pagecontent" + mode).html("<div class='nopadding'><div id='" + mode + "pagesingle'></div></div>");
         if (view_images) {
