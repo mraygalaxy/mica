@@ -70,6 +70,9 @@ function switchlist() {
 if (!frontpage) {
     $("[data-role='header'],[data-role='footer']").toolbar();
     $("[data-role='panel']").panel().enhanceWithin();
+    $(document).on('show.bs.popover', function() {
+      $('.popover').not(this).popover('hide');
+    });
 }
 
 //$.mobile.ignoreContentEnabled = true;
