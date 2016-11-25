@@ -615,6 +615,8 @@ function ctest() {
         var cb = chatbox.$el.find("textarea.chat-textarea");
         if (cb.attr("ime") == undefined || cb.attr("ime") != "1") {
             cb.attr("ime", "1");
+            cb.attr("autocapitalize", "off");
+            cb.attr("autocorrect", "off");
             var ci = cb.chineseInput({
                 debug: false,
                 input: {
