@@ -7,19 +7,11 @@
 <table>
 <tr>
 <!--(if mobile)-->
-<td style='width: 2px'/>
-<td><i class='glyphicon glyphicon-download'></i></td>
-<td style='width: 2px'/>
-<td style='width: 2px'/>
-<td class='badge' id='pullstat3'><t:slot name='pull'/></td>
-<td style='width: 2px'/>
-<td><i class='glyphicon glyphicon-upload'></i></td>
-<td style='width: 2px'/>
-<td class='badge' id='pushstat3'><t:slot name='push'/></td>
+<td><i class='glyphicon glyphicon-download'></i>&#160;<span id='pullstat3' class='badge'><t:slot name='pull'/></span>&#160;<i class='glyphicon glyphicon-upload'></i>&#160;<span id='pushstat3' class='badge'><t:slot name='push'/></span></td>
 </tr><tr>
 <!--(end)-->
 
-<td><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a>
+<td colspan='10'><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a>
 &#160;/&#160;
 <a href=''><span class='badge' id='quotastat'><t:slot name='currentplan'/>: $@!(amount / 100 * (int(quota_stat) / 1000)) if quota_stat > 300 else 0!@ / <t:slot name='quotastat'/></span></a><br/><br/></td>
 
