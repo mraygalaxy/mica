@@ -16,10 +16,9 @@
 <td><i class='glyphicon glyphicon-upload'></i></td>
 <td style='width: 2px'/>
 <td class='badge' id='pushstat3'><t:slot name='push'/></td>
-<td style='width: 2px'/>
 <!--(end)-->
 
-<td><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a>
+</tr><tr><td><a href=''><span class='badge' id='diskstat'><t:slot name='diskstat'/></span></a>
 &#160;/&#160;
 <a href=''><span class='badge' id='quotastat'><t:slot name='currentplan'/>: $@!(amount / 100 * (int(quota_stat) / 1000)) if quota_stat > 300 else 0!@ / <t:slot name='quotastat'/></span></a><br/><br/></td>
 
