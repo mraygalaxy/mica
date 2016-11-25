@@ -16,7 +16,7 @@
                index='@!index!@'>
                     <t:attr name='class'><t:slot name='transclass'/></t:attr>
                <!--(if chat and 'select_idx' in unit)-->
-                    <t:attr name='onclick'>select_chat_option('@!unit['select_idx']!@');</t:attr>
+                    <t:attr name='onclick'>select_chat_option(this, '@!unit['select_idx']!@');</t:attr>
                <!--(else)-->
                     <t:attr name='onclick'>select_toggle('@!trans_id!@')</t:attr>
                <!--(end)-->

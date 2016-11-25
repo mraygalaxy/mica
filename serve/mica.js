@@ -602,8 +602,14 @@ function select_toggle(name) {
        }
 }
 
-function select_chat_option(select_idx) {
-    $.receivePush(select_idx);
+function select_chat_option(me, select_idx) {
+    var mee = $(me);
+    var ul = mee.closest('ul');
+    var boxid = ul.attr('prefid');
+    var chatbox = $("[id='" + boxid + "']");
+    var cbox = chatbox.find("textarea.chat-textarea");
+    var nbox = cbox.get(0);
+    nbox.receivePush(select_idx);
 }
 
 function multipopinstall(trans_id) {
