@@ -613,8 +613,10 @@ function ctest() {
 
     converse.listen.on('chatBoxOpened', function (event, chatbox) {
         var cb = chatbox.$el.find("textarea.chat-textarea");
+        var cbox = cb.closest("div.chatbox");
         if (cb.attr("ime") == undefined || cb.attr("ime") != "1") {
             cb.attr("ime", "1");
+            cb.attr("username", chat_username);
             cb.attr("autocapitalize", "off");
             cb.attr("autocorrect", "off");
             var ci = cb.chineseInput({
@@ -624,7 +626,8 @@ function ctest() {
                     allowChange: true
                 },
                 allowHide: true,
-                active: true
+                active: true,
+                unique: cbox.attr("id"),
             });
         }
     });

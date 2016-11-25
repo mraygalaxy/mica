@@ -134,6 +134,7 @@
         // Access to jQuery and DOM versions of element
         self.$el = $(el);
         self.el = el;
+        self.el.prefid = options.unique;
      	self.el.last_key_was_backspace = false;
         self.el.wordDatabase = new WordDatabase();
 
@@ -444,7 +445,9 @@
                                     self.el.wordDatabase.setChoices(json.result.word, json.result.chars, json.result.lens);
                                 }
 
-                                $box.find('ul').html(open_or_close(json.result.human));
+                                var boxul = $box.find('ul');
+                                boxul.html(open_or_close(json.result.human));
+                                boxul.attr("prefid", self.el.prefid);
                             } else {
                                 $box.find('ul').html(open_or_close(json.desc));
                             }
