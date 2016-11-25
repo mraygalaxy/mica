@@ -694,10 +694,10 @@ function process_reviews(uuid, batch) {
       $('#reviewModal').modal('show');
 }
 
-function change_pageimg_width(mode) {
-    $('#' + mode + 'pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
-    $('#' + mode + 'pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
-    $('#' + mode + 'pageimg' + curr_img_num).css('bottom', 0);
+function change_pageimg_width(curr_img_num) {
+    $('#pageimg' + curr_img_num).css('width', $('#pageimg' + curr_img_num).width());
+    $('#pageimg' + curr_img_num).css('top', 55 + $('#readingheader').height());
+    $('#pageimg' + curr_img_num).css('bottom', 0);
 }
 
 function restore_pageimg_width() {
@@ -745,18 +745,31 @@ function view_show(mode) {
     }
     $('#' + mode + 'butt').attr('class', 'active btn btn-default');
     go(false, 'read&skip_default=1&last_view_mode=' + mode, unavailable(false), false, false);
+
+    /*
+     * For some strange reason, each time JQM tries
+     * to show the page, bootstrap receives some kind
+     * of trigger event to remove the affix properties
+     * of the div, so it turns off the affixed behavior.
+     * So, just add it back below, and it seems OK.
+     */
+    $('#readingheader').affix();
+    $('#readingheader').on('affix-top.bs.affix', function() { return false; });
     $.mobile.navigate('#learn');
 }
 
 function got_image(json, opaque) {
-    var mode = opaque[0];
-    var curr_img_num = opaque[1];
-    var obj = $('#' + mode + 'pageimg' + curr_img_num);
+    var curr_img_num = opaque[0];
+    var obj = $('#pageimg' + curr_img_num);
     obj.html(json.desc);
+    obj.affix();
+    change_pageimg_width(curr_img_num);
+    obj.on('affix.bs.affix', function() {change_pageimg_width(curr_img_num)});
+    obj.on('affix-top.bs.affix', function() {change_pageimg_width(curr_img_num)});
+    obj.on('affix-bottom.bs.affix', function() {change_pageimg_width(curr_img_num)});
 }
 function view_actual(mode, uuid, page, others, first) {
     if (!mode) {
-        //done;
         return;
     }
     var url = mode + '&view=1&uuid=' + uuid + '&page=' + page + "&start_trans_id=" + start_trans_id;
@@ -765,22 +778,40 @@ function view_actual(mode, uuid, page, others, first) {
         url += "&skip_default=1";
     }
   
+    if (first) {
+        holders = "";
+        if (show_both) {
+            curr_img_num += 1;
+        }
+        text = "<div id='pagecontenthome' style='display: none'/><div id='pagecontentedit' style='display: none'/><div id='pagecontentread' style='display: none'/>";
+        image = "<div id='pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div>";
+        if (show_both) {
+            holders = "<div class='col-md-5 nopadding'>" + image + "</div><div class='col-md-7 nopadding'>" + text + "</div>";
+        } else {
+            if (view_images) {
+                holders = image;
+            } else {
+                holders = text;
+            }
+        }
+
+        $("#pagecontent").html(holders);
+    }
+
     if (show_both) {
-        curr_img_num += 1;
+        $("#pagecontent" + mode).html("<div style='padding-left: 5px' id='pagetext" + mode + "' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div>");
 
-        $("#pagecontent" + mode).html("<div class='col-md-5 nopadding'><div id='" + mode + "pageimg" + curr_img_num + "'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingimage") + "...</div></div><div style='padding-left: 5px' id='pagetext" + mode + "' class='col-md-7 nopadding'>" + "<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...</div></div>");
+        go(false, url, unavailable(false), 
+            function(json, opaque) { 
+                $('#pagetext' + mode).html(json.desc);
+                start_trans_id += json.desc.length;
+                view_actual(next_mode(others), uuid, page, others, false);
+            }, false);
 
-        /* This stopped working */
-        $('#' + mode + 'pageimg' + curr_img_num).affix();
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix.bs.affix', function() {change_pageimg_width(mode)});
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix-top.bs.affix', function() {change_pageimg_width(mode)});
-        $('#' + mode + 'pageimg' + curr_img_num).on('affix-bottom.bs.affix', function() {change_pageimg_width(mode)});
+        if (first) {
+            go(false, url + "&image=0", unavailable(false), got_image, [curr_img_num]);
+        }
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#pagetext' + mode).html(json.desc); start_trans_id += json.desc.length; view_actual(next_mode(others), uuid, page, others, false); }, false);
-
-        url += "&image=0";
-
-        go(false, url, unavailable(false), got_image, [mode, curr_img_num]);
     } else {
         $("#pagecontent" + mode).html("<div class='nopadding'><div id='" + mode + "pagesingle'></div></div>");
         if (view_images) {
@@ -790,7 +821,17 @@ function view_actual(mode, uuid, page, others, first) {
             $("#" + mode + "pagesingle").html("<br/><br/>" + spinner + "&nbsp;" + local("loadingtext") + "...");
         }
 
-        go(false, url, unavailable(false), function(json, opaque) { $('#' + mode + 'pagesingle').html(json.desc); start_trans_id += json.desc.length; view_actual(next_mode(others), uuid, page, others, false); }, false);
+        go(false, url, unavailable(false), 
+            function(json, opaque) { 
+                start_trans_id += json.desc.length
+                if(view_images) {
+                    $('#pagecontent').html(json.desc);
+                } else {
+                    $('#' + mode + 'pagesingle').html(json.desc);
+                    view_actual(next_mode(others), uuid, page, others, false);
+                }
+            },
+            false);
     }
 
     if (first) {
@@ -824,16 +865,6 @@ function view(mode, uuid, page) {
     current_uuid = uuid;
 
     $('#loadingModal').modal('hide');
-
-    /*
-     * For some strange reason, each time JQM tries
-     * to show the page, bootstrap receives some kind
-     * of trigger event to remove the affix properties
-     * of the div, so it turns off the affixed behavior.
-     * So, just add it back below, and it seems OK.
-     */
-    $('#readingheader').affix();
-    $('#readingheader').on('affix-top.bs.affix', function() { return false; });
     view_show(mode);
 }
 
@@ -1552,6 +1583,7 @@ function start_learning_complete(json, action) {
     $('#loadingModal').modal('hide');
     if (!reloadstories) {
         $('#readingheader').affix();
+        $('#readingheader').on('affix-top.bs.affix', function() { return false; });
         $('#learn_content').html(json.desc);
         $.mobile.navigate('#learn');
     }
