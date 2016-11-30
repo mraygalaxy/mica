@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # coding: utf-8
 
 from pwd import getpwuid
@@ -425,7 +426,7 @@ class MICA(object):
 
     def prime_db(self, req, specific_views = False) :
         username = req.session.value["username"].lower()
-        self.new_job(req, self.view_runner, False, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
+        self.new_job(req, self.view_runner, _("Priming database for you. Please wait."), username, True, args = [username, self.dbs[username]], kwargs = dict(specific_views = specific_views))
 
     def verify_db(self, req, dbname, cookie = False, password = False, username = False, prime = True) :
         if not username :
@@ -2296,7 +2297,7 @@ class MICA(object):
         if req.http.params.get("force_rotate") :
             for peer in peer_list :
                 mdebug("We should roll chat periods for peer: " + str(peer))
-                self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
+                self.new_job(req, self.roll_peer, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
         return [untrans_count, reading, noreview, untrans, finish, reading_count, chatting, storynew, newstory_count, translist]
 
     def memocount(self, req, story, page):
@@ -2648,6 +2649,9 @@ class MICA(object):
             fp.close()
             os_remove(sourcepath)
 
+        if not mobile :
+            self.render_translate(req, req.db[self.story(req, name)])
+
         return _("Initialization Complete! Story ready for translation") + ": " + filename
 
     def add_story_from_source(self, req, filename, filetype, source_lang, target_lang) :
@@ -2694,7 +2698,7 @@ class MICA(object):
                 merr(line)
             return self.bad_api(req, str(e))
 
-        return self.api(req, json = {'storykey' : self.story(req, filename), 'uuid' : new_uuid})
+        return self.api(req, json = {'storykey' : self.story(req, filename), 'uuid' : new_uuid, 'filename': filename, 'next_stage' : False if mobile else True})
 
     def flush_pages(self, req, name):
         mdebug("Ready to flush translated pages.")
@@ -3017,10 +3021,7 @@ class MICA(object):
         return unit
 
     @serial
-    def run_job_complete(self, req, cleanup, self_delete, job) :
-        if cleanup :
-            cleanup(*args, **kwargs)
-
+    def run_job_complete(self, req, self_delete, job) :
         if self_delete and job["success"] :
             mdebug("Deleting job immediately. Not adding to list")
             try :
@@ -3047,7 +3048,7 @@ class MICA(object):
                 self.jobsmutex.release()
                 raise e
 
-    def run_job(self, req, func, cleanup, job, self_delete, args, kwargs) :
+    def run_job(self, req, func, job, self_delete, args, kwargs) :
         setattr(current_thread(), "in_a_job", True)
         self.install_local_language(req)
 
@@ -3066,11 +3067,11 @@ class MICA(object):
 
         delattr(current_thread(), "in_a_job")
 
-        self.run_job_complete(req, cleanup, self_delete, job)
+        self.run_job_complete(req, self_delete, job)
 
         req.db.detach_thread()
 
-    def new_job(self, req, func, cleanup, description, obj, self_delete, args = [], kwargs = {}) :
+    def new_job(self, req, func, description, obj, self_delete, args = [], kwargs = {}) :
         out = ""
         job = { "uuid" : str(uuid_uuid4()),
                "description" : description,
@@ -3090,7 +3091,7 @@ class MICA(object):
             if not jobs :
                 jobs = {"list" : {}}
 
-            vt = Thread(target=self.run_job, args = [req, func, cleanup, job, self_delete, args, kwargs])
+            vt = Thread(target=self.run_job, args = [req, func, job, self_delete, args, kwargs])
             vt.daemon = True
             jobs["list"][job["uuid"]] = job
             req.db[dbtag + ":jobs"] = jobs
@@ -3931,18 +3932,18 @@ class MICA(object):
 
         return self.api(req, _("Chat error"), json = out, error = failed)
 
+    def sanitize_filename(self, filename) :
+        return filename.lower().replace(" ","_").replace(",","_").replace(";","_").replace("&","_")
+
     def render_uploadfile(self, req) :
-        filetype = req.http.params.get("filetype")
         langtype = req.http.params.get("languagetype")
-        filename = req.http.params.get("filename")
         source_lang, target_lang = langtype.split(",")
-        return self.add_story_from_source(req, filename.lower().replace(" ","_").replace(",","_").replace(";","_"), filetype, source_lang, target_lang)
+        return self.add_story_from_source(req, self.sanitize_filename(req.http.params.get("filename")), req.http.params.get("filetype"), source_lang, target_lang)
 
     def render_uploadtext(self, req) :
-        filename = req.http.params.get("storyname").lower().replace(" ","_").replace(",","_").replace(";","_")
         langtype = req.http.params.get("languagetype")
         source_lang, target_lang = langtype.split(",")
-        return self.add_story_from_source(req, filename, "txt", source_lang, target_lang)
+        return self.add_story_from_source(req, self.sanitize_filename(req.http.params.get("storyname")), "txt", source_lang, target_lang)
 
     def render_tstatus(self, req, story) :
         uuid = story["uuid"]
@@ -4022,17 +4023,6 @@ class MICA(object):
             pt = Thread(target = self.parse, args = [req, story])
             pt.daemon = True
             pt.start()
-            '''
-            try :
-            except OSError, e :
-                mwarn("Problem before warn_not_replicated:")
-                for line in format_exc().splitlines() :
-                    mwarn(line)
-                output += self.warn_not_replicated(req)
-            except Exception, e :
-                output += _("Failed to translate story") + ": " + str(e)
-            output += _("Translation complete!")
-            '''
         return self.api(req, output, json = {"uuid" : story["uuid"]})
 
     def render_jobs(self, req, jobs) :
@@ -4981,7 +4971,7 @@ class MICA(object):
             tzoffset = int(req.http.params.get("tzoffset"))
 
             if not mobile :
-                self.new_job(req, self.roll_peer, False, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
+                self.new_job(req, self.roll_peer, _("Rotating Old Merged Chats From Database"), peer, True, args = [req, peer])
 
             out = "<table width='100%'>\n"
             for period_key in ["days", "weeks", "months", "years", "decades"] :
@@ -5105,8 +5095,9 @@ class MICA(object):
             firstload = "reading"
 
         try :
-            # This first-loading is becoming increasingly problematic. Just stop doing it.
-            firstload = False
+            # This first-loading is becoming increasingly problematic. Just stop doing it. (Except for stories actively in translation)
+            if mobile or firstload != "untranslated" or len(translist) == 0 : 
+                firstload = False
             return self.api(req, json = dict(firstload = firstload, translist = translist, reload = False, storylist = u"".join(storylist)))
         except Exception, e:
             merr("Storylist fill failed: " + str(e))
@@ -5773,10 +5764,11 @@ class MICA(object):
                 return self.bad_api(req, "We can't satisfy your request.")
 
         if req.http.params.get("delete") :
-            return self.api(req, self.new_job(req, self.deletestory, False, _("Deleting Story From Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
+            deletenow = True if int(req.http.params.get("now", "0")) else False
+            return self.api(req, self.new_job(req, self.deletestory, _("Deleting Story From Database"), name, deletenow, args = [req, uuid, name]), json = { "job_running" : False if deletenow else True })
 
         if req.http.params.get("storyinit") :
-            return self.api(req, self.new_job(req, self.storyinit, False, _("Initializing Story in Database"), name, False, args = [req, uuid, name]), { "job_running" : True })
+            return self.api(req, self.new_job(req, self.storyinit, _("Initializing Story in Database"), name, False, args = [req, uuid, name]), json = { "job_running" : True })
 
         if uuid :
             if not req.db.doc_exist(self.index(req, uuid)) :
@@ -5792,7 +5784,7 @@ class MICA(object):
             # Resetting means that we are dropping the translate contents of the original story. We are
             # not deleteing the story itself, nor the user's memorization data, only the translated
             # version of the story itself.
-            return self.api(req, self.new_job(req, self.forgetstory, False, _("Resetting Story In Database"), name, False, args = [req, uuid, name]), { "job_running" : True, "uuid" : uuid })
+            return self.api(req, self.new_job(req, self.forgetstory, _("Resetting Story In Database"), name, False, args = [req, uuid, name]), { "job_running" : True, "uuid" : uuid })
 
         if req.http.params.get("switchmode") :
             rmode = req.http.params.get("switchmode")
