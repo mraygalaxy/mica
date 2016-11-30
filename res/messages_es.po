@@ -136,8 +136,6 @@ msgstr "Esta palabra se divide previamente en personajes"
 msgid "Try Recommendations"
 msgstr "Pruebe Recomendaciones"
 
-#. This is a button that allows a particular page of a story to be re-translated.
-#. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
 msgstr "Volver a traducir la página"
 
@@ -202,7 +200,6 @@ msgstr "Seleccione"
 msgid "Delete"
 msgstr "Borrar"
 
-#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Translate"
 msgstr "Traducir"
 
@@ -220,10 +217,6 @@ msgstr "Revisión no completar"
 
 msgid "Not Reviewed"
 msgstr "No es una opinión"
-
-#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-msgid "Untranslated"
-msgstr "No traducida"
 
 msgid "Untranslated story!"
 msgstr "Uistoria sin traducir!"
@@ -1276,7 +1269,6 @@ msgstr "Esta palabra sólo tiene un carácter. No se puede dividir!"
 msgid "You cannot split more than one word at a time!"
 msgstr "No se puede separar más de una palabra a la vez!"
 
-#. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
 msgstr "Traducir"
 
@@ -2330,3 +2322,23 @@ msgstr "Solo pagar"
 
 msgid "month for each additional GB of content"
 msgstr "mes para cada GB adicional de contenido"
+
+msgid "Not ready"
+msgstr ""
+
+#. This is a button that allows a particular page of a story to be re-processed.
+#. Re-translate the current page that the user is reading right now.
+msgid "Reprocess page"
+msgstr ""
+
+#. This appears on the left-hand panel when a story is being actively translated.
+msgid "Processing"
+msgstr ""
+
+#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
+msgid "Not Ready"
+msgstr ""
+
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
+msgid "Process"
+msgstr ""

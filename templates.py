@@ -167,8 +167,8 @@ class ReviewElement(CommonElement) :
                      # This appears inside the pop-up when the user click's "Try recommendations" in Review mode, but there were no recommendations available.
                      norecommend = _("No review recommendations available."),
                      nb_page = self.req.page,
-                     # This is a button that allows a particular page of a story to be re-translated.
-                     repage = _("Re-translate page"),
+                     # This is a button that allows a particular page of a story to be re-processed.
+                     repage = _("Reprocess page"),
                      )
         return tag
 
@@ -243,7 +243,7 @@ class TranslationsElement(CommonElement) :
                      # Also a message in edit mode.
                      cannotsplit = _("You cannot split more than one word at a time!"),
                      # This appears on the left-hand panel when a story is being actively translated.
-                     translating = _("Translating"),
+                     translating = _("Processing"),
                      # This on the main page when a story is being actively translated.
                      storiestranslating = _("Stories in translation"),
                      # This appears after a story has just finished being translated to indicate that you can start using it.
@@ -622,7 +622,7 @@ class EditElement(CommonElement) :
                       #  Chinese-only: These recommendations are edit-mode recommendations offered by the software to bulk-process SPLIT/MERGE operations that have been discovered by analyzing the user's previous edit history.
                       tryrecco = _("Try Recommendations"),
                       # Re-translate the current page that the user is reading right now.
-                      repage = _("Re-translate page"),
+                      repage = _("Reprocess page"),
                       # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
                       editdisabled = _("Edit history Disabled."),
                       # This history consists of an itemized list of words on the right-hand side of the page in Edit mode which have previously split or merged.
@@ -992,7 +992,7 @@ class HeadElement(CommonElement):
                      # Label indicating a list of stories that a user is currently reading
                      reading = _("Reading"),
                      # This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-                     untranslated = _("Untranslated"),
+                     notready = _("Not Ready"),
                      # Label indicating a list of stories that a user is finished with
                      finished = _("Finished"),
                      # List of all stories
@@ -1026,7 +1026,7 @@ class HeadElement(CommonElement):
                      # This appears in the left-hand pop-out side panel and allows the user to remove a story from the system completely.
                      delete = _("Delete"),
                      # This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
-                     translate = _("Translate"),
+                     translate = _("Process"),
                      # 'Review' is a mode in which the software operates and is the first of 4 main buttons on the top-most navigation panel
                      reviewmode = _("Review"),
                      # 'Edit' is a mode in which the software operates and is the second of 4 main buttons on the top-most navigation panel

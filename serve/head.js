@@ -192,7 +192,7 @@ function reset_chat() {
 $(document).off("pagecontainerbeforechange").on("pagecontainerbeforechange", function (e, data) {
    if (typeof data.toPage == "string") {
         var where = data.toPage.split("#")[1];
-        if (firstpageload && (where == "explode" || where == "reading" || where == "newstory" || where == "untranslated")) {
+        if (firstpageload && (where == "explode" || where == "reading" || where == "newstory" || where == "notready")) {
            where = "stories";
         }
 

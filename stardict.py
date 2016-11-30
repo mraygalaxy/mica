@@ -243,7 +243,7 @@ class IdxFileReader(object):
         s = self.db["_word_idx"].select().where(self.db["_word_idx"].c.word_str == word_str.decode("utf-8"))
         rs = s.execute()
         result = rs.fetchone()
-        mdebug("Result for " + word_str + ": " + str(result))
+        mverbose("Result for " + word_str + ": " + str(result))
         if result is None :
             return False
         wlist = eval(result[1])
