@@ -1323,14 +1323,34 @@ $.fn.goDeep = function(levels, func){
     });
 };
 
+function upload_bad(json, step) {
+    done();
+    if (json.success) {
+        go(false, "home&delete=1&uuid=" + json.uuid + "&name=" + json.filename + "&now=1", unavailable(false), false, false);
+        alert(local('requestfailed') + " (" + step + ")");
+    } else {
+        alert(local('reuqestfailed') + ": (" + step + "): " + json.desc);
+    }
+}
+
+function upload_nextstage(json) {
+    if (json.next_stage != undefined && json.next_stage) {
+        start_learning('home', 'storyinit', {uuid: json.uuid, name: json.filename});
+    } else {
+        $.mobile.navigate('#stories');
+        loadstories(false, ["#newstory", false]);
+    }
+    $('#uploadModal').modal('hide');
+    done();
+}
+
 function validatetext_complete(json, opaque) {
     if(json.success) {
         console.log("Completing text upload to key " + json.storykey + "...");
         db.openDoc(json.storykey, {
               error: function(err) {
                     console.log("Boo open doc " + json.storykey + " failed: " + err);
-                    alert("Boo. open Doc " + json.storykey + " failed: " + err);
-                    done();
+                    upload_bad(json, 'cp1');
               },
               success : function(doc) {
                    console.log("Doc created, saving text...");
@@ -1339,18 +1359,10 @@ function validatetext_complete(json, opaque) {
                         authorization: authorization,
                         error: function(saveerr) {
                             console.log("Boo, couldn't save TXT contents: " + saveerr);
-                            alert("Boo. Couldn't save TXT contents: " + saveerr);
-                            // Need to call the API to delete this story,
-                            // both the name and the UUID index
-                            done();
+                            upload_bad(json, 'cp2');
                         },
                         success: function(response) {
-                            console.log("Yay. TXT saved. reloading stories.");
-                            $('#uploadModal').modal('hide');
-                            $.mobile.navigate('#stories');
-                            loadstories(false, ["#newstory", false]);
-                            done();
-                            console.log("Stories should be loaded now.");
+                            upload_nextstage(json);
                         }
                    });
               }
@@ -1358,8 +1370,8 @@ function validatetext_complete(json, opaque) {
             { beforeSend: checkauth }
 );
     } else {
-        done();
-        alert("Failed to add your story. Please try again.");
+        console.log("Failed to add your story. Please try again.");
+        upload_bad(json, 'cp3');
     }
 }
 
@@ -1381,8 +1393,6 @@ function validatetext() {
             return;
     }
 
-    //$("#textform").submit();
-
     loading();
     go([$("#textform"), ''], '', unavailable(false), validatetext_complete, false);
 }
@@ -1392,8 +1402,7 @@ function validatefile_complete(json, opaque) {
         db.openDoc(json.storykey, {
               error: function(err) {
                     console.log("Boo. Doc failed: " + err);
-                    alert("Boo. Doc failed: " + err);
-                    done();
+                    upload_bad(json, 'st1');
               },
               success : function(doc) {
                    var myFile = $('#_attachments').prop('files')[0];
@@ -1408,28 +1417,22 @@ function validatefile_complete(json, opaque) {
                         beforeSend: checkauth,
                         url: url,
                         success: function(response) {
-                            console.log("Yay. file upload worked.");
-                            done();
-                            $('#uploadModal').modal('hide');
-                            $.mobile.navigate('#stories');
-                            loadstories(false, ["#newstory", false]);
+                            upload_nextstage(json);
                         },
                         error: function(response) {
                             // Need to call the API to delete this story,
                             // both the name and the UUID index
-                            done();
-                            alert("Failed to submit your attachment.");
-                            console.log("Boo. Failed to submit attachment.");
+                            console.log("Boo. Failed to submit attachment." + response);
+                            upload_bad(json, 'st2');
                         }
                    });
-
               }
             },
             { beforeSend: checkauth }
         );
     } else {
-        done();
-        alert("Failed to add your story. Please try again.");
+        console.log("Failed to add your story. Please try again.");
+        upload_bad(json, 'st3');
     }
 }
 
