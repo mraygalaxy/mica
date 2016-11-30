@@ -2324,21 +2324,21 @@ msgid "month for each additional GB of content"
 msgstr "mes para cada GB adicional de contenido"
 
 msgid "Not ready"
-msgstr ""
+msgstr "No está listo"
 
 #. This is a button that allows a particular page of a story to be re-processed.
 #. Re-translate the current page that the user is reading right now.
 msgid "Reprocess page"
-msgstr ""
+msgstr "Volver a procesar"
 
 #. This appears on the left-hand panel when a story is being actively translated.
 msgid "Processing"
-msgstr ""
+msgstr "Tratamiento"
 
 #. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
 msgid "Not Ready"
-msgstr ""
+msgstr "no está listo"
 
 #. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Process"
-msgstr ""
+msgstr "transformar"
