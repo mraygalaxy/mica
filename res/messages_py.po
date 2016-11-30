@@ -136,8 +136,6 @@ msgstr "Zhègè cí yǐqián fēnjiě chéng dānge zì"
 msgid "Try Recommendations"
 msgstr "Shìshì tuījiàn"
 
-#. This is a button that allows a particular page of a story to be re-translated.
-#. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
 msgstr "Chóngxīn fānyì běn yè"
 
@@ -200,7 +198,6 @@ msgstr "Xuǎn zé"
 msgid "Delete"
 msgstr "Shān chú"
 
-#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Translate"
 msgstr "Fān yì"
 
@@ -218,10 +215,6 @@ msgstr "Jiǎnchá wèi wángchéng"
 
 msgid "Not Reviewed"
 msgstr "Wèi jiǎnchá"
-
-#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-msgid "Untranslated"
-msgstr "Wèi fānyì"
 
 msgid "Untranslated story!"
 msgstr "Wèi fānyì de gùshì！"
@@ -1227,7 +1220,6 @@ msgstr "Zhège cí zhǐyǒu yīgè zì, bùnéng fēnkāi!"
 msgid "You cannot split more than one word at a time!"
 msgstr "Nǐ yīcì zhǐ néng fēn jiè yīgè cí!"
 
-#. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
 msgstr "Zhèngzài fānyì"
 
@@ -2195,4 +2187,24 @@ msgid "Pay only"
 msgstr ""
 
 msgid "month for each additional GB of content"
+msgstr ""
+
+msgid "Not ready"
+msgstr ""
+
+#. This is a button that allows a particular page of a story to be re-processed.
+#. Re-translate the current page that the user is reading right now.
+msgid "Reprocess page"
+msgstr ""
+
+#. This appears on the left-hand panel when a story is being actively translated.
+msgid "Processing"
+msgstr ""
+
+#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
+msgid "Not Ready"
+msgstr ""
+
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
+msgid "Process"
 msgstr ""

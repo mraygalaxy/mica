@@ -2156,11 +2156,11 @@ class MICA(object):
 
         return result
 
-    def storyTemplate(self, name) :
+    def storyTemplate(self, name, alt = False) :
         return """
         <div data-role='page' id='collapse""" + name + """'>
             <div data-role='content' id='content_collapse""" + name + """'>
-              <h4><b>""" + name + """</b></h4>
+              <h4><b>""" + (name if not alt else alt) + """</b></h4>
               <ul id='listview_collapse""" + name + """' data-role='listview' data-inset='true'>
               """
 
@@ -2188,7 +2188,7 @@ class MICA(object):
         storynew = [self.storyTemplate("New")]
         reading = [self.storyTemplate("Reading")]
         noreview = [self.storyTemplate("Reviewing")]
-        untrans = [self.storyTemplate("Untranslated")]
+        untrans = [self.storyTemplate("Notready", alt = _("Not ready"))]
         finish = [self.storyTemplate("Finished")]
         peer_list = {}
 
@@ -5090,13 +5090,13 @@ class MICA(object):
         if newstory_count :
             firstload = "newstory"
         elif untrans_count :
-            firstload = "untranslated"
+            firstload = "notready"
         elif reading_count :
             firstload = "reading"
 
         try :
             # This first-loading is becoming increasingly problematic. Just stop doing it. (Except for stories actively in translation)
-            if mobile or firstload != "untranslated" or len(translist) == 0 : 
+            if mobile or firstload != "notready" or len(translist) == 0 or untrans_count == 0 : 
                 firstload = False
             return self.api(req, json = dict(firstload = firstload, translist = translist, reload = False, storylist = u"".join(storylist)))
         except Exception, e:

@@ -33,7 +33,7 @@
     var con = false;
     var jid = false;
     var first_reconnect = true;
-var names = ["Reading", "Chatting", "Finished", "Reviewing", "Untranslated", "New"];
+var names = ["Reading", "Chatting", "Finished", "Reviewing", "Notready", "New"];
 var list_mode = true;
 var last_opened = "";
 var view_images = false;
@@ -306,7 +306,7 @@ function trans_start(uuid) {
     first_time = true;
     finish = trans_poll;
     trans_poll(uuid);
-    $.mobile.navigate("#untranslated");
+    $.mobile.navigate("#notready");
     $("#translationstatus").html(spinner + "&nbsp;" + local("storiestranslating") + "...");
     $("#translationstatus" + uuid).html(spinner + "&nbsp;" + local("translating") + "...");
 }

@@ -136,8 +136,6 @@ msgstr "这个词以前分解成单个字"
 msgid "Try Recommendations"
 msgstr "试试推荐"
 
-#. This is a button that allows a particular page of a story to be re-translated.
-#. Re-translate the current page that the user is reading right now.
 msgid "Re-translate page"
 msgstr "重新翻译本页"
 
@@ -198,7 +196,6 @@ msgstr "选择"
 msgid "Delete"
 msgstr "删除"
 
-#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Translate"
 msgstr "翻译"
 
@@ -216,10 +213,6 @@ msgstr "检查未完成"
 
 msgid "Not Reviewed"
 msgstr "未检查"
-
-#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
-msgid "Untranslated"
-msgstr "未翻译"
 
 msgid "Untranslated story!"
 msgstr "未翻译的故事！"
@@ -1185,7 +1178,6 @@ msgstr "这个词只有一个字，不能分开！"
 msgid "You cannot split more than one word at a time!"
 msgstr "你一次只能分解一个词！"
 
-#. This appears on the left-hand panel when a story is being actively translated.
 msgid "Translating"
 msgstr "正在翻译"
 
@@ -2169,3 +2161,23 @@ msgstr "售价仅"
 
 msgid "month for each additional GB of content"
 msgstr "每月每GB内容"
+
+msgid "Not ready"
+msgstr ""
+
+#. This is a button that allows a particular page of a story to be re-processed.
+#. Re-translate the current page that the user is reading right now.
+msgid "Reprocess page"
+msgstr ""
+
+#. This appears on the left-hand panel when a story is being actively translated.
+msgid "Processing"
+msgstr ""
+
+#. This appears in the side-panel when a story was just uploaded and has not yet been processed for reviewing yet.
+msgid "Not Ready"
+msgstr ""
+
+#. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
+msgid "Process"
+msgstr ""
