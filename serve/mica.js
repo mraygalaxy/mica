@@ -848,7 +848,7 @@ var modes = {
 
 function view(mode, uuid, page) {
     $("#gotoval").val(page + 1);
-    $("#pagetotal").html(current_pages);
+    $("#pagetotal").html((current_pages == 0 || current_pages == "0") ? 1 : current_pages);
 
     window.scrollTo(0, 0);
 
