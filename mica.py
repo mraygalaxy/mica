@@ -5620,8 +5620,9 @@ class MICA(object):
         else :
             # This occurs when you come back to the webpage, and were previously reading a story, but need to indicate in which mode to read the story (of three modes).
             out = _("Read, Review, or Edit, my friend?") + "<br/><br/>"
-            out += _("If this is your first time here") + ", <a data-role='none' style='color: black' class='btn btn-primary' href='#help'>"
-            out += _("please read the tutorial") + "</a>"
+            if not mobile :
+                out += _("If this is your first time here") + ", <a data-role='none' style='color: black' class='btn btn-primary' href='#help'>"
+                out += _("please read the tutorial") + "</a>"
             if "last_view_mode" in req.session.value :
                 pageid = "#learn"
 
