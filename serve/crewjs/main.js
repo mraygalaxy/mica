@@ -47,7 +47,7 @@
 		    autoHeight: true,
 		    smartSpeed: 500,
 		    autoplay: true,
-			autoplayTimeout: 10000,
+			autoplayTimeout: 20000,
 			autoplayHoverPause: true,
 		    navText: [	
 		      "<i class='icon-arrow-left2 owl-direction'></i>",
