@@ -269,7 +269,7 @@ class TranslationsElement(CommonElement) :
                      stopsync = _("Stop Syncing"),
                      # This is a standard error message that a request on the website failed. 
                      requestfailed = _("Failed to issue request. We're sorry. Please report what you tried to do to the author. Thank you."),
-                     favicon = self.req.mpath + "/icon-120x120.png",
+                     favicon = self.req.mpath + "/images/icon-new-120x120.png",
                      # 'me' refers to the yourself inside of a chat window. 
                      me = _("me"),
                      # This message appears in a chat window.
@@ -903,7 +903,7 @@ class HTMLElement(CommonElement):
                      jqmthemeicons = self.req.mpath + "/jqmica/jquery.mobile.icons.min.css",
                      bootmincss = self.req.bootstrappath + "/dist/css/bootstrap.min.css",
                      micacss = self.req.mpath + "/mica.css",
-                     favicon = self.req.mpath + "/icon-120x120.png",
+                     favicon = self.req.mpath + "/images/icon-new-120x120.png",
                      imecss = self.req.mpath + "/chinese-ime/ime.css",
                      conversecss = self.req.mpath + "/converse.min.css",
                      jquery = self.req.mpath + "/jquery-1.11.3.min.js",
@@ -1033,7 +1033,7 @@ class HeadElement(CommonElement):
                      editmode = _("Edit"),
                      # 'Read' is a mode in which the software operates and is the third of 4 main buttons on the top-most navigation panel
                      readmode = _("Read"),
-                     mpath = self.req.mpath + '/icon-120x120.png',
+                     mpath = self.req.mpath + '/images/icon-new-120x120.png',
                      pull = pull,
                      push = push,
                      viewstat = viewstat,
