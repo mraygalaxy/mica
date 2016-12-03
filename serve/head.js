@@ -570,7 +570,7 @@ function ctest() {
                     if (this.is_chatroom && attrs.sender === 'them' && (new RegExp("\\b"+this.model.get('nick')+"\\b")).test(text)) {
                         extra_classes += ' mentioned';
                     }
-                    if (text.length > 10000) {
+                    if (text.length > 20000) {
                         text = text.substring(0, 10) + '...';
                         this.showStatusNotification(local("largemessage"), true, true);
                     }
