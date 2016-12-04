@@ -216,6 +216,7 @@ def merr(msg) :
    if duplicate_logger and String :
       duplicate_logger.err(String(prefix() + msg))
 
+global mobile
 mobile = True 
 
 try :

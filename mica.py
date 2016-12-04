@@ -6152,7 +6152,12 @@ class MicaSite(Site) :
 
 def go(p) :
     global params
+    global mobile
+
     params = p
+
+    if "fake_mobile" in mobile and mobile["fake_mobile"] :
+        mobile = True
 
     if "multipliers" not in params :
         params["multipliers"] = { "days" : 7, "weeks" : 4, "months" : 12, "years" : 10, "decades" : 10 }
