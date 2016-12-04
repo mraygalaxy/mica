@@ -26,6 +26,8 @@ from binascii import hexlify as binascii_hexlify
 from sys import settrace as sys_settrace
 from pyratemp import TemplateSyntaxError
 
+import requests
+
 import couch_adapter
 import processors
 from processors import *
@@ -79,6 +81,11 @@ reactor = sys.modules['twisted.internet.reactor']
 from twisted.web.server import Session, Site
 
 from webob import Request, Response, exc
+
+'''
+import httplib
+httplib.HTTPConnection.debuglevel = 3
+'''
 
 if not mobile :
     try :
@@ -394,31 +401,32 @@ class MICA(object):
 
         lookup_username_unquoted = myquote(str(lookup_username))
         username_unquoted = myquote(str(username))
-        userData = "Basic " + (username + ":" + password).encode("base64").rstrip()
 
         for attempt in range(0, 20) :
             try :
                 if attempt > 0 :
                     mdebug("Authentication attempt #" + str(attempt))
-                ureq = urllib2_Request(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted)
-                ureq.add_header('Accept', 'application/json')
-                ureq.add_header("Content-type", "application/x-www-form-urlencoded")
-                ureq.add_header('Authorization', userData)
-                res = urllib2_urlopen(ureq, timeout = 20 if attempt == 0 else 10)
-                rr = res.read()
-                mverbose("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
-                return json_loads(rr), False
-            except urllib2_HTTPError, e :
-                if e.code == 401 :
+                
+                r = requests.get(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted, auth=(username, password), timeout = 20 if attempt == 0 else 10)
+
+                if r.status_code == 401 :
+                    mwarn("Got 401. Will try again.")
                     return False, _("Invalid credentials. Please try again") + "."
+
+                if r.status_code in [200, 201] :
+                    rr = r.text
+                    mverbose("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
+                    return json_loads(rr), False
+
+                mwarn("Got " + str(r.status_code) + ". Will try again.")
+
+            except requests.exceptions.ConnectionError, e :
                 mwarn("HTTP error: " + username + " " + str(e))
-                error = "(HTTP code: " + str(e.code) + ")"
-            except urllib2_URLError, e :
-                mwarn("URL Error: " + username + " " + str(e))
-                error = "(URL error: " + str(e.reason) + ")"
+                error = "(HTTP code: " + str(e) + ")"
             except Exception, e :
                 mwarn("Unknown error: " + username + " " + str(e))
                 error = "(Unknown error: " + str(e) + ")"
+
             sleep(1)
 
         merr("Authentication failure")
