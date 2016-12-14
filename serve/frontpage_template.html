@@ -34,92 +34,31 @@
         <div style='display: inline' id='newaccountresultdestination'><div t:render='error'/></div> 
         <div id='maindisplay'>
 
-	<div id="slider" data-section="home">
-		<div class="owl-carousel owl-carousel-fullwidth">
-		    <div class="item" style="background: #352f44;">
+	<div id="fh5co-pricing" data-section="home" style="background: #352f44;">
 		    	<div class="container" style="position: relative;">
 		    		<div class="row">
 					    <div class="col-md-4 col-sm-4">
 			    			<div class="fh5co-owl-text-wrap">
 						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate"><t:slot name='democratize'/></h1>
-									<h2 class="fh5co-sub-lead to-animate"><t:slot name='learningshould'/>.</h2>
-										<h3 class="fh5co-sub-lead to-animate"><a href='http://github.com/hinesmr/mica'><t:slot name='driven'/></a>.</h3>
-						    	</div>
-						    </div>
+						    		<h1 class="fh5co-lead to-animate" style='color: white'><t:slot name='democratize'/></h1>
+								<br/>
+								<h2 class="fh5co-sub-lead to-animate" style='color: white'><t:slot name='learningshould'/>.</h2>
+								<br/>
+								<h3 class="fh5co-sub-lead to-animate"><a style="cursor: pointer" onclick="window.location.href='help'" href="#"><t:slot name='driven'/></a>.</h3>
+								<br/>
+								<h3 class="fh5co-sub-lead to-animate"><a href="#" style='color: white' data-nav-section="login" class="btn btn-primary btn-lg"><t:slot name='spanishchineseforfree'/></a></h3>
+							</div>
+						</div>
 					    </div>
-					    <div class="col-md-7 col-md-push-1 col-sm-7 col-sm-push-1 iphone-image">
+					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
 						<div class="row">
 					    	<div class="iphone"><img src="serve/images/landing.gif"/></div>
 						</div>
-						<br/>
-						<br/>
-						<br/>
-						<div class="row">
-						<div class="iphone to-animate-2 fh5co-owl-text">
-						    <a href="#" data-nav-section="login" class="btn btn-primary btn-lg"><t:slot name='spanishchineseforfree'/></a>
-						</div>
-						</div>
 					    </div>
 
 		    		</div>
 		    	</div>
-		    </div>
-		    <div class="item" style="background: #38569f;">
-		    	<div class="container" style="position: relative;">
-		    		<div class="row">
-		    			<div class="col-md-7 col-sm-7">
-			    			<div class="fh5co-owl-text-wrap">
-						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate"><t:slot name='youprovide'/>.<br/> <t:slot name='yourterms'/>.</h1>
-									<h2 class="fh5co-sub-lead to-animate"><t:slot name='offlinemobile'/></h2>
-									<p class="to-animate-2"><b><a style="cursor: pointer" onclick="window.location.href='help'" href="#"><t:slot name="howitworks"/>.</a></b></p>
-						    	</div>
-						    </div>
-					    </div>
-					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
-					    	<div class="iphone to-animate-2">
-							<!--<iframe width="560" height="315" src="//www.youtube.com/embed/CrT78VMc9V4" frameborder="0" allowfullscreen='1'></iframe>-->
-							<div class="js-lazyYT" data-youtube-id="CrT78VMc9V4" data-width="560" data-height="315"></div>
-
-							</div>
-					    </div>
-
-		    		</div>
-		    	</div>
-		    </div>
-
-		    <div class="item" style="background-image:url(serve/crewimages/slide_5.jpg)">
-		    	<div class="overlay"></div>
-		    	<div class="container" style="position: relative;">
-		    		<div class="row">
-		    			<div class="col-md-7 col-sm-7">
-			    			<div class="fh5co-owl-text-wrap">
-						    	<div class="fh5co-owl-text">
-						    		<h1 class="fh5co-lead to-animate"><t:slot name='datadriven'/>.<br/><t:slot name='haveto'/>.</h1>
-									<h2 class="fh5co-sub-lead to-animate"><t:slot name='offlinemobile'/></h2>
-									<p class="to-animate-2">
-										<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-										<input type="hidden" name="cmd" value="_s-xclick"/>
-										<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
-										<input type="image" src="/serve/images/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"/>
-										<img alt="" border="0" src="/serve/images/btn_donate_LG.gif" width="1" height="1"/>
-										</form>
-									</p>
-						    	</div>
-						    </div>
-					    </div>
-					    <div class="col-md-5 col-md-push-1 col-sm-5 col-sm-push-1 iphone-image">
-					    	<div class="iphone to-animate-2"><img src="serve/images/tutorial/polysimple3.png" alt="Chinese Example"/></div>
-					    </div>
-
-		    		</div>
-		    	</div>
-		    </div>
-
-		</div>
 	</div>
-	
 	<div id="fh5co-about-us" data-section="chat">
 		<div class="container">
 			<div class="row row-bottom-padded-lg" id="about-us">
@@ -127,7 +66,8 @@
 					<h2 class="to-animate"><t:slot name='native'/></h2>
 					<div class="row">
 						<div class="col-md-8 col-md-offset-2 to-animate">
-							<h3><t:slot name='realtime'/><br/><t:slot name='guess'/></h3>
+							<!--<h3><t:slot name='realtime'/><br/><t:slot name='guess'/></h3>-->
+							<h3><t:slot name='youprovide'/>. <t:slot name='yourterms'/>.</h3>
 						</div>
 					</div>
 				</div>
