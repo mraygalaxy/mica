@@ -62,7 +62,11 @@ mverbose("Initial imports complete")
 
 cwd = re_compile(".*\/").search(os_path.realpath(__file__)).group(0)
 import sys
-sys.path = [cwd, cwd + "mica/"] + sys.path
+
+if mobile :
+    sys.path = [cwd, cwd + "mica/", cwd + "urllib3/"] + sys.path
+else : 
+    sys.path = [cwd, cwd + "mica/"] + sys.path
 
 #Non-python-core
 from zope.interface import Interface, Attribute, implements
@@ -84,8 +88,12 @@ from webob import Request, Response, exc
 
 '''
 import httplib
+import logging
 httplib.HTTPConnection.debuglevel = 3
 httplib.HTTPSConnection.debuglevel = 3
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(DEBUG)
+requests_log.propagate = False
 '''
 
 if not mobile :
