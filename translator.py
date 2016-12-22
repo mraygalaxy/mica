@@ -96,6 +96,7 @@ class Translator(object):
         response = xmlstring = re.sub(' xmlns="[^"]+"', '', response, count=1)
         root = etree.ElementTree.fromstring(response.decode("utf-8-sig"))
         rv = []
+
         for child in root :
             result = {}
             for part in child :
