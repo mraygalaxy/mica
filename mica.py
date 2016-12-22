@@ -30,11 +30,13 @@ import requests
 
 import couch_adapter
 import processors
+
 from processors import *
 from common import *
 from serializable import *
 from translator import *
 from templates import *
+
 from prebind import BOSHClient 
 
 uploads_enabled = True
@@ -1356,25 +1358,10 @@ class MICA(object):
 
         # Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English -- also the end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
         # Pinyin means the romanization of a character-based word, such as Chinese
-        # Default appears in a list of items and indicates which is the default item
-        out = """
-            <div style='color: black'>"
-                %(thiselement)s (%(source)s) %(explain)s:
-                <br/>
-            </div>
-            <table class='table table-hover table-striped' style='font-size: x-small; color: black'>
-                <tr style='color: black'>
-                    %(pinyincolumn)s
-                    <td style='color: black'>%(definition)s</td>
-                    <td style='color: black'>%(defaultchoice)s?</td>
-                </tr>
-
-        """ % dict(thiselement = _("This word") if gp.already_romanized else _("This character"),
+        poly = dict(thiselement = _("This word") if gp.already_romanized else _("This character"),
                    source = ("" if gp.already_romanized else " ").join(unit["source"]),
                    explain = _("has more than one meaning") if gp.already_romanized else _("is polyphonic: (has more than one pronunciation"),
-                   pinyincolumn = "<td style='color: black'>" + _("Pinyin") + "</td>" if len(unit["multiple_sromanization"]) else "",
-                   definition = _("Definition"),
-                   defaultchoice = _("Default")
+                   pinyincolumn =  _("Pinyin") if len(unit["multiple_sromanization"]) else "",
                    )
 
         source = "".join(unit["source"])
@@ -1384,43 +1371,30 @@ class MICA(object):
         if changes :
             total_changes = float(changes["total"])
 
+        poly["rows"] = []
+
         for x in range(0, len(unit["multiple_target"])) :
-            percent = self.get_polyphome_percentage(x, total_changes, changes, unit)
+            prow = {}
+            prow["use_default"] = unit["multiple_correct"] != -1 and x == unit["multiple_correct"]
+            prow["percent"] = self.get_polyphome_percentage(x, total_changes, changes, unit)
+            prow["target"] = " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>")
+
             if len(unit["multiple_sromanization"]) :
-                spy = " ".join(unit["multiple_sromanization"][x])
+                prow["spy"] = " ".join(unit["multiple_sromanization"][x])
             else :
-                spy = " ".join(unit["multiple_target"][x])
+                prow["spy"] = " ".join(unit["multiple_target"][x])
 
-            if unit["multiple_correct"] != -1 and x == unit["multiple_correct"] :
-                link = _("Default")
-            else :
-                link = """
-                        <a style='color: black; font-size: x-small' class='btn-default btn-xs'
-                           onclick="multiselect('%(uuid)s','%(index)s','%(nb_unit)s','%(trans_id)s','%(spy)s','%(page)s')">%(select)s</a>
-                       """ % dict(uuid = uuid,
-                                  index = x,
-                                  nb_unit = nb_unit,
-                                  trans_id = trans_id,
-                                  spy = spy,
-                                  page = page,
-                                  select = _("Select"))
+            poly["rows"].append(prow)
 
-            # 'Select' appears on a button in review mode that allows the user to choose a definition among multiple choices.
-            out += """
-                    <tr>
-                        <td style='color: black'>%(spy)s (%(percent)s %%)</td>
-                        <td style='color: black'>%(target)s</td>
-                        <td>%(link)s</td>
-                    </tr>
-            """ % dict(
-                        percent = percent,
-                        spy = spy,
-                        target = " ".join(unit["multiple_target"][x]).replace("\"", "\\\"").replace("\'", "\\\"").replace("/", " /<br/>"),
-                        link = link)
+            if not prow["use_default"] :
+                prow["uuid"] = uuid 
+                prow["nb_unit"] = nb_unit
+                prow["trans_id"] = trans_id
+                prow["page"] = page
+                prow["index"] = x
 
-        out += "</table>"
-
-        return out
+        req.poly = poly
+        return run_template(req, PolyElement)
 
     def view_keys(self, req, name, _units, source_queries = False) :
         sources = []

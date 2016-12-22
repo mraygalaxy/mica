@@ -41,7 +41,7 @@ class Translator(object):
         self.grant_type = grant_type
         self.access_token = None
         self.test = test
-        self.access_token_url = access_token_url + "/issueToken?Subscription-Key=" + client_secret
+        self.access_token_url = str(access_token_url) + "/issueToken?Subscription-Key=" + str(client_secret)
 
     def get_access_token(self):
         response = False
