@@ -85,6 +85,7 @@ from webob import Request, Response, exc
 '''
 import httplib
 httplib.HTTPConnection.debuglevel = 3
+httplib.HTTPSConnection.debuglevel = 3
 '''
 
 if not mobile :
@@ -6221,10 +6222,10 @@ def go(p) :
         params["test"] = False
 
     if "trans_scope" not in params :
-        params["trans_scope"] = "http://api.microsofttranslator.com"
+        params["trans_scope"] = "https://api.microsofttranslator.com"
 
     if "trans_access_token_url" not in params :
-        params["trans_access_token_url"] = "https://datamarket.accesscontrol.windows.net/v2/OAuth2-13"
+        params["trans_access_token_url"] = "https://api.cognitive.microsoft.com/sts/v1.0"
 
     if params["test"] :
         mdebug("Will run inputs and outputs in test mode.")
