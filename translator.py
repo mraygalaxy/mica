@@ -5,8 +5,12 @@ from urllib import urlencode as urllib_urlencode
 from urllib2 import urlopen as urllib2_urlopen, Request as urllib2_Request
 from json import loads, dumps
 from copy import deepcopy
+from xml import etree
 
 from common import *
+
+import requests
+import re
 
 class ArgumentOutOfRangeException(Exception):
     def __init__(self, message):
@@ -37,22 +41,16 @@ class Translator(object):
         self.grant_type = grant_type
         self.access_token = None
         self.test = test
-        self.access_token_url = access_token_url
+        self.access_token_url = access_token_url + "/issueToken?Subscription-Key=" + client_secret
 
     def get_access_token(self):
-        pre_args = {
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'scope': self.scope,
-            'grant_type': self.grant_type
-        }
-        args = urllib_urlencode(pre_args)
-        
         response = False
         try :
-            data = urllib2_urlopen(self.access_token_url, args, timeout=30).read()
-            response = loads(data)
-            test_log(self.test, loc = self.access_token_url, data = pre_args, response = response, method = "post")
+            mverbose("Sending to: " + self.access_token_url)
+            data = urllib2_urlopen(self.access_token_url, "", timeout=30).read()
+            mverbose("Response: " + str(data))
+            response = data
+            test_log(self.test, loc = self.access_token_url, response = data, method = "post")
         except IOError, e :
             if response :
                 raise TranslateApiException(
@@ -64,66 +62,66 @@ class Translator(object):
         
 
         if response and "error" in response:
-            mdebug("Error in authentication response.")
+            merr("Error in authentication response.")
             raise TranslateApiException(
                 response.get('error_description', 'No Error Description'),
                 response.get('error', 'Unknown Error')
             )
-        return response['access_token']
+        return response
 
-    def call(self, url, p):
+    def call(self, url, p, data = False):
         """Calls the given url with the params urlencoded
         """
         if not self.access_token:
             self.access_token = self.get_access_token()
         final_url = "%s?%s" % (url, urllib_urlencode(p))
-        request = urllib2_Request(final_url,
-            headers={'Authorization': 'Bearer %s' % self.access_token}
-        )
+        headers={'Content-Type' : 'text/xml', 'Authorization': 'Bearer %s' % self.access_token}
 
-        response = urllib2_urlopen(request, timeout=30).read()
+        if data :
+            r = requests.post(url, headers = headers, data = data, timeout=30)
+        else :
+            r = requests.get(final_url, headers = headers, timeout=30)
 
-        rv =  loads(response.decode("utf-8-sig"))
+        response = r.text
 
-        if isinstance(rv, basestring) and \
-                rv.startswith("ArgumentOutOfRangeException"):
-            raise ArgumentOutOfRangeException(rv)
+        if response.count("ArgumentOutOfRangeException"):
+            raise ArgumentOutOfRangeException(response)
 
-        if isinstance(rv, basestring) and \
-                rv.startswith("ArgumentException"):
-            raise ArgumentOutOfRangeException(rv)
+        if response.count("ArgumentException"):
+            raise ArgumentException(response)
 
-        if isinstance(rv, basestring) and \
-                rv.startswith("TranslateApiException"):
-            raise TranslateApiException(rv)
+        if response.count("TranslateApiException"):
+            raise TranslateApiException(response)
 
-        # Log the results of microsoft for unit testing.
+        response = xmlstring = re.sub(' xmlns="[^"]+"', '', response, count=1)
+        root = etree.ElementTree.fromstring(response.decode("utf-8-sig"))
+        rv = []
+        for child in root :
+            result = {}
+            for part in child :
+                name = part.tag
+                if name in ["TranslatedText", "From"] :
+                    mverbose("Setting: " + name + " = " + str(part.text))
+                    result[name] = part.text
+                else :
+                    for number in part :
+                        mverbose("Setting: " + name + " = " + str(number.text))
+                        result[name] = number.text
+            rv.append(result)
 
         if len(rv) > 0 and self.test :
             rvc = deepcopy(rv)
             for idx in range(0, len(rvc)) : 
                 mwarn("RVC idx: " + str(idx) + " is " + str(type(rvc[idx])) + ", " + str(rvc))
                 rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
+
+            # Log the results of microsoft for unit testing.
             test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = rvc))
         return rv
 
 
     def translate(self, text, to_lang, from_lang=None,
             content_type='text/plain', category='general'):
-        """Translates a text string from one language to another.
-
-        :param text: A string representing the text to translate.
-        :param to_lang: A string representing the language code to
-            translate the text into.
-        :param from_lang: A string representing the language code of the
-            translation text. If left None the response will include the
-            result of language auto-detection. (Default: None)
-        :param content_type: The format of the text being translated.
-            The supported formats are "text/plain" and "text/html". Any HTML
-            needs to be well-formed.
-        :param category: The category of the text to translate. The only
-            supported category is "general".
-        """
         p = {
             'text': text.encode('utf8'),
             'to': to_lang,
@@ -132,44 +130,50 @@ class Translator(object):
             }
         if from_lang is not None:
             p['from'] = from_lang
-        return self.call(self.scope + "/V2/Ajax.svc/Translate", p)
+        return self.call(self.scope + "/v2/http.svc/Translate", p)
 
     def translate_array(self, texts, to_lang, from_lang=None, **options):
-        """Translates an array of text strings from one language to another.
-
-        :param texts: A list containing texts for translation.
-        :param to_lang: A string representing the language code to 
-            translate the text into.
-        :param from_lang: A string representing the language code of the 
-            translation text. If left None the response will include the 
-            result of language auto-detection. (Default: None)
-        :param options: A TranslateOptions element containing the values below. 
-            They are all optional and default to the most common settings.
-
-                Category: A string containing the category (domain) of the 
-                    translation. Defaults to "general".
-                ContentType: The format of the text being translated. The 
-                    supported formats are "text/plain" and "text/html". Any 
-                    HTML needs to be well-formed.
-                Uri: A string containing the content location of this 
-                    translation.
-                User: A string used to track the originator of the submission.
-                State: User state to help correlate request and response. The 
-                    same contents will be returned in the response.
-        """
         options = {
             'Category': u"general",
-            'Contenttype': u"text/plain",
+            'Contenttype': u"text/xml",
             'Uri': u'',
             'User': u'default',
             'State': u''
             }.update(options)
         p = {
-            'texts': dumps(texts),
             'to': to_lang,
             'options': dumps(options),
             }
+
         if from_lang is not None:
             p['from'] = from_lang
 
-        return self.call(self.scope + "/V2/Ajax.svc/TranslateArray", p)
+        xml = """
+        <TranslateArrayRequest>
+          <AppId />"""
+
+        if from_lang is not None :
+            if isinstance(from_lang, unicode) :
+                from_lang = from_lang.encode("utf-8")
+            xml += """
+              <From>""" + from_lang + """</From>"""
+
+        xml += """
+          <Texts>
+        """
+
+        for text in texts :
+            if isinstance(text, unicode) :
+                text = text.encode("utf-8")
+            xml += "<string xmlns=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">" + text + "</string>"
+
+        if isinstance(to_lang, unicode) :
+            to_lang = to_lang.encode("utf-8")
+
+        xml += """
+            </Texts>
+          <To>""" + to_lang + """</To>
+        </TranslateArrayRequest>
+        """
+
+        return self.call(self.scope + "/v2/http.svc/TranslateArray", p, data = xml)
