@@ -1,0 +1,27 @@
+<div style='display: inline' lang="en" xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="poly">
+    <div style='color: black'>"
+        @!poly['thiselement']!@ (@!poly['source']!@) @!poly['explain']!@:
+        <br/>
+    </div>
+    <table class='table table-hover table-striped' style='font-size: x-small; color: black'>
+        <tr style='color: black'>
+            <td style='color: black'>@!poly['pinyincolumn']!@</td>
+            <td style='color: black'><t:slot name='definition'/></td>
+            <td style='color: black'><t:slot name='defaultchoice'/>?</td>
+        </tr>
+        <!--(for row in poly['rows'])-->
+          <tr>
+              <td style='color: black'>@!row['spy']!@ (@!row['percent']!@ %%)</td>
+              <td style='color: black'>@!row['target']!@</td>
+              <td>
+              <!--(if row['use_default'])-->
+                <t:slot name='default'/> 
+              <!--(else)-->
+                    <a style='color: black; font-size: x-small' class='btn-default btn-xs'
+                       onclick="multiselect('@!row['uuid']!@','@!row['index']!@','@!row['nb_unit']!@','@!row['trans_id']!@','@!row['spy']!@','@!row['page']!@')"><t:slot name='select'/></a>
+              <!--(end)-->
+              </td>
+          </tr>
+        <!--(end)-->
+    </table>
+</div>

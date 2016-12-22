@@ -63,7 +63,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story", "email" , "amount", "quota_stat", "billable", "upgradeable", "downgradeable", "stripe_public" ] :
+        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story", "email" , "amount", "quota_stat", "billable", "upgradeable", "downgradeable", "stripe_public", "poly" ] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -133,6 +133,19 @@ class CommonElement(Element) :
                 else :
                     option = tags.option(value=l)
                 tag(option(_(readable)))
+        return tag
+
+class PolyElement(CommonElement) :
+    @renderer
+    def poly(self, request, tag) :
+        tag.fillSlots(
+                        # Default appears in a list of items and indicates which is the default item
+                        default = _("Default"),
+                        # 'Select' appears on a button in review mode that allows the user to choose a definition among multiple choices.
+                        select = _("Select"),
+                        definition = _("Definition"),
+                        defaultchoice = _("Default")
+                        )
         return tag
 
 class ReviewElement(CommonElement) :
