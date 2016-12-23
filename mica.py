@@ -2036,7 +2036,6 @@ class MICA(object):
                 chatpage_fh.close()
             else :
                 output += line_out
-                #output.append("<br/>")
 
                 if recommendations :
                     # This appears on a button in review mode on the right-hand side to allow the user to "Bulk Review" a bunch of words that the system has already found for you.
@@ -2147,14 +2146,6 @@ class MICA(object):
 
         return result
 
-    def storyTemplate(self, name, alt = False) :
-        return """
-        <div data-role='page' id='collapse""" + name + """'>
-            <div data-role='content' id='content_collapse""" + name + """'>
-              <h4><b>""" + (name if not alt else alt) + """</b></h4>
-              <ul id='listview_collapse""" + name + """' data-role='listview' data-inset='true'>
-              """
-
     def roll_peer(self, req, peer) :
         if "chats" not in req.session.value :
             req.session.value["chats"] = {"days" : {}, "weeks" : {}, "months" : {}, "years" : {}, "decades" : {}}
@@ -2176,11 +2167,11 @@ class MICA(object):
         reading_count = 0
         newstory_count = 0
         chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
-        storynew = [self.storyTemplate("New")]
-        reading = [self.storyTemplate("Reading")]
-        noreview = [self.storyTemplate("Reviewing")]
-        untrans = [self.storyTemplate("Notready", alt = _("Not ready"))]
-        finish = [self.storyTemplate("Finished")]
+        storynew = [_("New"), False]
+        reading = [_("Reading"), False]
+        noreview = [_("Reviewing"), False]
+        untrans = ["Notready", _("Not ready")]
+        finish = [_("Finished"), False]
         peer_list = {}
 
         items = []
@@ -2211,48 +2202,30 @@ class MICA(object):
                     rname += "From "
 
                 rname += datetime_datetime.fromtimestamp((((int(howmany) * params["counts"][period])) * (60*60*24)) + tzoffset).strftime(period_story_mapping[period_mapping[period]]) + ")"
-            notsure = []
-            notsure.append("\n<li><a onclick=\"explode('")
-            notsure.append(story['uuid'] + "', '" + story['name'] + "'")
-            notsure.append(", '" + rname + "'")
-            notsure.append(", " + ('true' if story["translated"] else 'false'))
-            notsure.append(", " + ('true' if finished else 'false'))
-            notsure.append(", " + ('true' if reviewed else 'false'))
-            notsure.append(", " + ('true' if "filetype" in story and story["filetype"] == "chat" else 'false'))
-            notsure.append(", " + ('true' if "download" not in story or not story["download"] else 'false'))
 
-            if not mobile and not gp.already_romanized and (finished or reviewed) :
-                notsure.append(", 'true'")
-            else :
-                notsure.append(", 'false'")
-
-            notsure.append(", " + ('true' if newstory else 'false'))
-
-            notsure.append(");\" title='" + _("Open") + "' style='font-size: x-small' class='btn-default'>")
-
-            notsure.append("<table class='chattable' width='100%'><tr><td style='color: black'>")
-
-            if "source_language" in story :
-                notsure.append(" <b>(" + story["source_language"].split("-")[0] + ")</b>")
-
-            notsure.append("<b style='word-break: break-all;'> " + rname + "</b>")
-
-            if (finished or reviewed or story["translated"]) and "pr" in story :
-                pr = story["pr"]
-                notsure.append("</td><td style='width: 20%; padding-right: 10px; vertical-align: middle'>")
-                notsure.append("<div class='progress progress-success progress-striped'><div class='progress-bar' style='width: ")
-                notsure.append(pr + "%;'> (" + pr + "%)</div></div></td><td>")
-
-            closing = "</td></tr></table></a></li>"
+            notsure = dict(
+                    uuid = story['uuid'],
+                    name = story['name'],
+                    rname = rname,
+                    translated = 'true' if story["translated"] else 'false',
+                    finished = 'true' if finished else 'false',
+                    reviewed = 'true' if reviewed else 'false',
+                    ischat = 'true' if "filetype" in story and story["filetype"] == "chat" else 'false',
+                    syncstatus = 'true' if "download" not in story or not story["download"] else 'false',
+                    romanized = 'true' if (not mobile and not gp.already_romanized and (finished or reviewed)) else 'false',
+                    newstory = 'true' if newstory else 'false',
+                    title = _("Open"),
+                    source_language = story["source_language"] if "source_language" in story else "zh-CHS",
+                    progress = story["pr"] if ((finished or reviewed or story["translated"]) and "pr" in story) else "0",
+            )
 
             if not story["translated"] :
                 if newstory :
                     newstory_count += 1
-                    storynew += notsure
-                    storynew.append(closing)
+                    storynew.append(notsure)
                 else :
                     untrans_count += 1
-                    untrans += notsure
+                    untrans.append(notsure)
 
                     if not mobile :
                         untrans.append("<div id='transbutton" + story['uuid'] + "'>")
@@ -2266,24 +2239,19 @@ class MICA(object):
 
                     if "translating" in story and story["translating"] :
                         translist.append(story['uuid'])
-                    untrans.append(closing)
             else :
                 if finished :
-                   finish += notsure
-                   finish.append(closing)
+                   finish.append(notsure)
                 elif reviewed :
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
                        peer_list[story["name"].split(";")[3]] = True
-                       chatting[period_mapping[period]] += notsure
-                       chatting[period_mapping[period]].append(closing)
+                       chatting[period_mapping[period]].append(notsure)
                    else :
                        reading_count += 1
-                       reading += notsure
-                       reading.append(closing)
+                       reading.append(notsure)
                 else :
-                   noreview += notsure
-                   noreview.append(closing)
+                   noreview.append(notsure)
 
         if req.http.params.get("force_rotate") :
             for peer in peer_list :
@@ -5060,22 +5028,18 @@ class MICA(object):
 
         untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count, translist = self.makestorylist(req, tzoffset)
 
-        reading.append(u"\n</ul></div></div>\n")
-        noreview.append(u"\n</ul></div></div>\n")
-        untrans.append(u"\n</ul></div></div>\n")
-        finish.append(u"\n</ul></div></div>\n")
-        newstory.append(u"\n</ul></div></div>\n")
-
-        chat_all = [self.storyTemplate("Chatting")]
+        chat_all = [_("Chatting"), False]
 
         for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :
-                chat_all.append("<li>" + _("Recent") + " " + translated_periods[period] + ":</li>")
+                chat_all.append({"chat" : _("Recent") + " " + translated_periods[period]})
                 chat_all += chatting[period]
 
-        chat_all.append(u"\n</ul></div></div>\n")
-
-        storylist += newstory + reading + chat_all + untrans + noreview + finish
+        for sl in [newstory, reading, chat_all, untrans, noreview, finish] :
+            req.cat = sl[0]
+            req.alt = sl[1] 
+            req.catlist = sl[2:]
+            storylist.append(run_template(req, StorylistElement))
 
         firstload = "reviewing"
         if newstory_count :

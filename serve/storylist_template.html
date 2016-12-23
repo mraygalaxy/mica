@@ -1,0 +1,27 @@
+<div xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="storylist" data-role='page'>
+    <t:attr name='id'>collapse@!cat!@</t:attr>
+    <div data-role='content' id='content_collapse@!cat!@'>
+      <h4><b>@!cat if not alt else alt!@</b></h4>
+      <ul id='listview_collapse@!cat!@' data-role='listview' data-inset='true'>
+          <!--(for item in catlist)-->
+             <li>
+              <!--(if 'chat' in item)-->
+                @!item['chat']!@:
+              <!--(else)-->
+                    <a onclick="explode('@!item['uuid']!@', '@!item['name']!@', '@!item['rname']!@', '@!item['translated']!@', '@!item['finished']!@', '@!item['reviewed']!@', '@!item['ischat']!@', '@!item['syncstatus']!@', '@!item['romanized']!@', '@!item['newstory']!@');" 
+                            style="font-size: x-small" class="btn-default" title="@!item['title']!@">
+                        <table class="chattable" width="100%">
+                            <tr>
+                                <td style="color: black"> <b>(@!item['source_language']!@)</b> <b style="word-break: break-all;"> @!item['rname']!@</b> </td>
+                                <td style="width: 20%; padding-right: 10px; vertical-align: middle">
+                                <div class="progress progress-success progress-striped"><div class="progress-bar" style="width: @!item['progress']!@;">@!item['progress']!@&#37;</div></div>
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+              <!--(end)-->
+             </li>
+          <!--(end)-->
+      </ul>
+    </div>
+</div>
