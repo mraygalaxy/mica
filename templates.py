@@ -63,7 +63,7 @@ class CommonElement(Element) :
 
         conditionals["zoom_level"] = zoom_level
 
-        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story", "email" , "amount", "quota_stat", "billable", "upgradeable", "downgradeable", "stripe_public", "poly" ] :
+        for attrs in ["gp", "front_ads", "list_mode", "history", "credentials", "action", "userdb", "memresult", "memallcount", "mempercent", "story", "email" , "amount", "quota_stat", "billable", "upgradeable", "downgradeable", "stripe_public", "poly", "cat", "alt", "catlist" ] :
             if hasattr(self.req, attrs) :
                 conditionals[attrs] = getattr(self.req, attrs)
 
@@ -133,6 +133,11 @@ class CommonElement(Element) :
                 else :
                     option = tags.option(value=l)
                 tag(option(_(readable)))
+        return tag
+
+class StorylistElement(CommonElement) :
+    @renderer
+    def storylist(self, request, tag) :
         return tag
 
 class PolyElement(CommonElement) :
