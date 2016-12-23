@@ -153,6 +153,19 @@ class PolyElement(CommonElement) :
                         )
         return tag
 
+class WelcomeElement(CommonElement) :
+    @renderer
+    def welcome(self, request, tag) :
+        tag.fillSlots(
+                       tutorial = _("please read the tutorial"),
+                       happy = _("Happy Learning"),
+                       start = _("Start learning!"),
+                       password = self.req.password,
+                       firsttime = _("If this is your first time here"),
+                       welcome = _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password."),
+                        )
+        return tag
+
 class ReviewElement(CommonElement) :
     @renderer
     def review(self, request, tag) :

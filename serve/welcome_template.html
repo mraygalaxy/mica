@@ -1,0 +1,14 @@
+<div style='display:inline' xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="welcome">
+        <div style='margin-left: 50px'>
+        <br/><br/><div style='margin-left: 50px'><br/><br/><br/><t:slot name='welcome'/></div>
+        <br/><br/>Save this Password: <t:slot name='password'/>
+        <br/><br/><t:slot name='firsttime'/>,&#160;
+        <a rel='external' data-role='none' class='btn btn-default' style='color: black' href='#help'><t:slot name='tutorial'/></a>
+        <br/><br/><t:slot name='happy'/>!</h4>
+        <br/><a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/'><t:slot name='start'/></a>
+        </div>
+        <script>
+            $('#maindisplay').attr('style', 'display: none');
+            $('#leftpane').attr('style', 'display: none');
+        </script>
+</div>

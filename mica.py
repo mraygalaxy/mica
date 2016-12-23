@@ -5208,27 +5208,8 @@ class MICA(object):
             self.make_account(req, values["email"], password, values["email"], who, language = language)
             mverbose("Language: " + language)
 
-            output = """
-                <div style='margin-left: 50px'>
-                <br/><br/>%(welcome)s
-                <br/><br/>Save this Password: %(password)s
-                <br/><br/>%(firsttime)s,&#160;
-                <a rel='external' data-role='none' class='btn btn-default' style='color: black' href='#help'>%(tutorial)s</a>
-                <br/><br/>%(happy)s!</h4>
-                <br/><a rel='external' data-role='none' class='btn btn-default' style='color: black' href='/'>%(start)s</a>
-                </div>
-                <script>
-                    $('#maindisplay').attr('style', 'display: none');
-                    $('#leftpane').attr('style', 'display: none');
-                </script>
-            """ % dict(tutorial = _("please read the tutorial"),
-                       happy = _("Happy Learning"),
-                       start = _("Start learning!"),
-                       password = password,
-                       firsttime = _("If this is your first time here"),
-                       welcome = "<div style='margin-left: 50px'><br/><br/><br/>" + _("We have created a default password to be used with your mobile device(s). Please write it down somewhere. You will need it only if you want to synchronize your mobile devices with the website. If you do not want to use the mobile application, you can ignore it. If you do not want to write it down, you will have to come back to your account preferences and reset it before trying to login to the mobile application. You are welcome to go to your preferences now and change this password.") + "</div>")
-
-            req.messages = output
+            req.password = password
+            req.messages = run_template(req, WelcomeElement)
         else :
             auth_user = self.userdb["org.couchdb.user:" + values["username"]]
 
