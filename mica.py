@@ -3522,7 +3522,7 @@ class MICA(object):
                     out += _("Internet access error. Try again later: ") + "<br/>"
                 else :
                     out["whole"] = {"source" : source, "target" : _("Internet access error. Try again later: ")}
-                result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
+                #result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
             else :
                 for x in range(0, len(requests)) :
                     if (x + 1) > len(result) :
