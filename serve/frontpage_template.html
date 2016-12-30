@@ -123,13 +123,7 @@
 					<div class="fh5co-icon"><i class="icon-present"></i></div>
 					<div class="fh5co-desc">
 						<p><t:slot name='upto'/></p>
-						<p><t:slot name='payonly'/> 
-						<form id='donateform' action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-							<input type="hidden" name="cmd" value="_s-xclick"/>
-							<input type="hidden" name="hosted_button_id" value="K4YCDA8SZ39EN"/>
-							<a onclick="$('#donateform').submit();" style='cursor: pointer'><t:slot name='donate'/></a>.
-						</form>
-</p>
+						<p><t:slot name='payonly'/></p>
 					</div>	
 				</div>
 				<div class="col-md-4 col-sm-6 col-xs-6 col-xxs-12 fh5co-service to-animate">
@@ -241,7 +235,7 @@
 		<div class="container">
 			<div class="row row-bottom-padded-sm">
 				<div class="col-md-12">
-					<p class="copyright text-center">&#169; 2016 <a href="/">readalien.com</a>. <t:slot name='reserved'/></p>
+					<p class="copyright text-center">&#169; <a href="/">readalien.com</a>, LLC. <t:slot name='reserved'/></p>
 					<p class='text-center'><a href="https://groups.google.com/d/forum/micalang-users"><t:slot name="mailinglist"/></a> <t:slot name="help"/>.</p>
 					<p class='text-center'><img width='50px' src="serve/images/icon-new-120x120.png"/></p>
 					<p class='text-center'><a style="cursor: pointer" onclick="window.location.href='privacy'" href="#"><t:slot name="privacy"/></a> | 
