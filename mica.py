@@ -2088,7 +2088,6 @@ class MICA(object):
                     mdebug("Failed to request online translation: " + str(e))
                     return False
             else :
-                mdebug("Appending what we can't find.")
                 result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
 
             return result
@@ -2183,7 +2182,6 @@ class MICA(object):
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
             tmp_story = result["value"]
             tmp_storyname = tmp_story["name"]
-            mdebug("Found story: " + str(tmp_storyname))
             items.append((tmp_storyname, tmp_story))
 
         items.sort(key = itemhelp, reverse = True)
@@ -2237,10 +2235,8 @@ class MICA(object):
                         translist.append(story['uuid'])
             else :
                 if finished :
-                   mdebug("Appending finished: " + str(notsure))
                    finish.append(notsure)
                 elif reviewed :
-                   mdebug("Appending reviewed: " + str(notsure))
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
                        peer_list[story["name"].split(";")[3]] = True
@@ -2249,7 +2245,6 @@ class MICA(object):
                        reading_count += 1
                        reading.append(notsure)
                 else :
-                   mdebug("Appending not reviewed: " + str(notsure))
                    noreview.append(notsure)
 
         if req.http.params.get("force_rotate") :
@@ -2456,7 +2451,7 @@ class MICA(object):
             sourcepath = "/tmp/mica_uploads/" + binascii_hexlify(os_urandom(4)) + "." + filetype
             mdebug("Will stream upload to " + sourcepath)
             for possible_name in story["_attachments"].keys() :
-                if possible_name.lower() == filename :
+                if possible_name.lower() == filename or self.sanitize_filename(possible_name) == filename :
                     actual_filename = possible_name
                     mdebug("Actual filename is: " + str(actual_filename))
 
