@@ -189,9 +189,11 @@ msgstr "pīnyīn"
 msgid "Definition"
 msgstr "Definición"
 
+#. Default appears in a list of items and indicates which is the default item
 msgid "Default"
 msgstr "Por defecto"
 
+#. 'Select' appears on a button in review mode that allows the user to choose a definition among multiple choices.
 msgid "Select"
 msgstr "Seleccione"
 
@@ -946,7 +948,6 @@ msgstr "Chino a Inglés"
 
 #. Beginning of a sentence. Character may also be translated as 'word' if localized to a language that is already romanized, like English -- also the end of the previous sentence. 'Polyphonic' means that a character has multiple sounds for the same character. For other languages, like English, this word can be ignored and should be translated as simply having more than one meaning (not sound).
 #. Pinyin means the romanization of a character-based word, such as Chinese
-#. Default appears in a list of items and indicates which is the default item
 msgid "This word"
 msgstr "Esta palabra"
 
@@ -2342,3 +2343,6 @@ msgstr "no está listo"
 #. This appears in the left-hand pop-out side panel and allows the user to begin conversion of a newly uploaded story into our learning format.
 msgid "Process"
 msgstr "transformar"
+
+msgid "Chatting"
+msgstr ""
