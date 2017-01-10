@@ -252,7 +252,7 @@ class IdxFileReader(object):
             s = self.db["_index_idx"].select().where(self.db["_index_idx"].c.idx == n)
             rs = s.execute()
             result = rs.fetchone()
-            mdebug("Result index for " + word_str + ": " + str(result))
+            mverbose("Result index for " + word_str + ": " + str(result))
             if result is None :
                 mwarn("Uh Oh: This isn't supposed to happen, is it? English lookup " + word_str + " returns no index at number " + str(n)) 
                 return False
