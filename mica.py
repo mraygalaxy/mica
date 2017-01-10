@@ -418,6 +418,11 @@ class MICA(object):
                 if attempt > 0 :
                     mdebug("Authentication attempt #" + str(attempt))
                 
+                if isinstance(username, unicode) :
+                    username = username.encode("utf-8")
+                if isinstance(password, unicode) :
+                    password = password.encode("utf-8")
+
                 r = requests.get(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted, auth=(username, password), timeout = 20 if attempt == 0 else 10)
 
                 if r.status_code == 401 :
@@ -426,7 +431,7 @@ class MICA(object):
 
                 if r.status_code in [200, 201] :
                     rr = r.text
-                    mverbose("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
+                    mdebug("Authentication success with username: " + username + " : " + str(rr) + " type " + str(type(rr)))
                     return json_loads(rr), False
 
                 mwarn("Got " + str(r.status_code) + ". Will try again.")
