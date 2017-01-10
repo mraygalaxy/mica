@@ -2232,6 +2232,7 @@ class MICA(object):
                     untrans_count += 1
                     untrans.append(notsure)
 
+                    '''
                     if not mobile :
                         untrans.append("<div id='transbutton" + story['uuid'] + "'>")
                         if "last_error" in story and not isinstance(story["last_error"], str) :
@@ -2241,6 +2242,7 @@ class MICA(object):
                         untrans.append("</div>&#160;")
 
                     untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
+                    '''
 
                     if "translating" in story and story["translating"] :
                         translist.append(story['uuid'])
