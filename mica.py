@@ -2172,17 +2172,18 @@ class MICA(object):
         reading_count = 0
         newstory_count = 0
         chatting = {"week" : [], "month" : [], "year" : [], "decade" : []}
-        storynew = [_("New"), False]
-        reading = [_("Reading"), False]
-        noreview = [_("Reviewing"), False]
+        storynew = ["New", _("New")]
+        reading = ["Reading", _("Reading")]
+        noreview = ["Reviewing", _("Reviewing")]
         untrans = ["Notready", _("Not ready")]
-        finish = [_("Finished"), False]
+        finish = ["Finished", _("Finished")]
         peer_list = {}
 
         items = []
         for result in req.db.view("stories/all", startkey=[req.session.value['username']], endkey=[req.session.value['username'], {}]) :
             tmp_story = result["value"]
             tmp_storyname = tmp_story["name"]
+            mdebug("Found story: " + str(tmp_storyname))
             items.append((tmp_storyname, tmp_story))
 
         items.sort(key = itemhelp, reverse = True)
@@ -2232,24 +2233,14 @@ class MICA(object):
                     untrans_count += 1
                     untrans.append(notsure)
 
-                    '''
-                    if not mobile :
-                        untrans.append("<div id='transbutton" + story['uuid'] + "'>")
-                        if "last_error" in story and not isinstance(story["last_error"], str) :
-                            for err in story["last_error"] :
-                                untrans.append("<br/>" + myquote(err.replace("\n", "<br/>")))
-
-                        untrans.append("</div>&#160;")
-
-                    untrans.append("<div style='display: inline' id='translationstatus" + story['uuid'] + "'></div>")
-                    '''
-
                     if "translating" in story and story["translating"] :
                         translist.append(story['uuid'])
             else :
                 if finished :
+                   mdebug("Appending finished: " + str(notsure))
                    finish.append(notsure)
                 elif reviewed :
+                   mdebug("Appending reviewed: " + str(notsure))
                    if "filetype" in story and story["filetype"] == "chat" :
                        period = story["name"].split(";")[1]
                        peer_list[story["name"].split(";")[3]] = True
@@ -2258,6 +2249,7 @@ class MICA(object):
                        reading_count += 1
                        reading.append(notsure)
                 else :
+                   mdebug("Appending not reviewed: " + str(notsure))
                    noreview.append(notsure)
 
         if req.http.params.get("force_rotate") :
@@ -5035,7 +5027,7 @@ class MICA(object):
 
         untrans_count, reading, noreview, untrans, finish, reading_count, chatting, newstory, newstory_count, translist = self.makestorylist(req, tzoffset)
 
-        chat_all = [_("Chatting"), False]
+        chat_all = ["Chatting", _("Chatting")]
 
         for period in [ "week", "month", "year", "decade" ] :
             if len(chatting[period]) :

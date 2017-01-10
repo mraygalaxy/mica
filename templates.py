@@ -138,8 +138,6 @@ class CommonElement(Element) :
 class StorylistElement(CommonElement) :
     @renderer
     def storylist(self, request, tag) :
-        for item in self.req.catlist :
-            mdebug(str(type(item)))
         return tag
 
 class PolyElement(CommonElement) :
