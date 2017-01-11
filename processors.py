@@ -633,7 +633,7 @@ class EnglishSource(RomanizedSource) :
                          u"er" : False,
                          u"d" : False,
                          u"ed" : False,
-                         u"ers" : False,
+                         #u"ers" : False,
                          u"’ve" : False,
                          u"'ve" : False,
                          u"’d" : False,
