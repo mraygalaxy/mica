@@ -2049,7 +2049,7 @@ class MICA(object):
         mdebug("View Page " + str(page) + " story " + str(name) + " complete.")
         return "".join(output)
 
-    def translate_and_check_array(self, req, name, requests, lang, from_lang) :
+    def translate_and_check_array(self, req, name, trans_requests, lang, from_lang) :
         assert(req.http.params.get("username") or "username" in req.session.value)
 
         username = req.http.params.get("username")
@@ -2061,7 +2061,7 @@ class MICA(object):
         if (int(req.http.params.get("test", "0")) or mobile) :
             result = []
             if not params["mobileinternet"] or params["mobileinternet"].connected() != "none" :
-                newdict = {"name" : name, "requests" : json_dumps(requests)}
+                newdict = {"name" : name, "requests" : json_dumps(trans_requests)}
                 for k in req.http.params :
                     if k not in ["test"] :
                         newdict[k] = req.http.params.get(k)
@@ -2073,19 +2073,31 @@ class MICA(object):
                     newdict["password"] = req.session.value["password"]
                 newdict["lang"] = req.session.value["language"]
 
-                mdebug("Preparing online relay with: " + str(newdict) + " to " + params["main_server"])
+                mverbose("Preparing online relay with: " + str(newdict) + " to " + params["main_server"])
 
                 try :
-                    ureq = urllib2_Request("https://" + params["main_server"] + "/online", urlencode(newdict))
-                    mverbose("Returning from online relay")
-                    data = json_loads(urllib2_urlopen(ureq, timeout = 20).read())
-                    mverbose("Finished data read from online relay: " + str(data))
+                    mdebug("Forming request")
+                    transdest = "https://" + params["main_server"] + "/online"
+                    final_url = "%s?%s" % (transdest, urllib_urlencode(newdict))
+                    mdebug("Opening URL: " + transdest)
+                    r = requests.get(final_url, timeout = 20)
+
+                    if r.status_code == 401 :
+                        merr("Got 401.")
+                        return False
+
+                    if r.status_code not in [200, 201] :
+                        merr("Failed translation attempt: " + str(r.status_code))
+                        return False
+
+                    mverbose("Finished data read from online relay: " + str(r.text))
+                    data = json_loads(r.text)
                     if data["success"] :
                         result = data["desc"]["result"]
                     else :
                         result.append({"TranslatedText" : data["desc"]})
                 except Exception, e :
-                    mdebug("Failed to request online translation: " + str(e))
+                    merr("Failed to start online translation: " + str(e))
                     return False
             else :
                 result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
@@ -2106,7 +2118,7 @@ class MICA(object):
                     self.translation_client.access_token = self.translation_client.get_access_token()
 
                 mverbose("Entering online translation.")
-                result = self.translation_client.translate_array(requests, lang, from_lang = from_lang)
+                result = self.translation_client.translate_array(trans_requests, lang, from_lang = from_lang)
                 mverbose("Online Translation result: " + str(result))
 
                 if not len(result) or "TranslatedText" not in result[0] :
@@ -3462,12 +3474,12 @@ class MICA(object):
         out = {"success" : True, "desc" : False}
         target_language = req.http.params.get("target_language")
         source_language = req.http.params.get("source_language")
-        requests = json_loads(req.http.params.get("requests"))
+        trans_requests = json_loads(req.http.params.get("requests"))
         language = req.http.params.get("lang")
 
         self.install_local_language(req, language)
         try :
-            out["result"] = self.translate_and_check_array(req, False, requests, target_language, source_language)
+            out["result"] = self.translate_and_check_array(req, False, trans_requests, target_language, source_language)
         except OnlineTranslateException, e :
             return self.bad_api(req, _("Internet access error. Try again later: "))
 
@@ -3498,7 +3510,7 @@ class MICA(object):
         if human :
             out += "<h4><b>" + _("Online instant translation") + ":</b></h4>"
 
-        requests = [source]
+        trans_requests = [source]
         gp = self.processors[source_language + "," + target_language]
 
         breakout = source.decode("utf-8") if isinstance(source, str) else source
@@ -3507,10 +3519,10 @@ class MICA(object):
 
         if len(breakout) > 1 :
             for x in range(0, len(breakout)) :
-                requests.append(breakout[x].encode("utf-8"))
+                trans_requests.append(breakout[x].encode("utf-8"))
 
         try :
-            result = self.translate_and_check_array(req, False, requests, target_language, source_language)
+            result = self.translate_and_check_array(req, False, trans_requests, target_language, source_language)
             if not result :
                 if human :
                     out += _("Internet access error. Try again later: ") + "<br/>"
@@ -3518,7 +3530,7 @@ class MICA(object):
                     out["whole"] = {"source" : source, "target" : _("Internet access error. Try again later: ")}
                 #result.append({"TranslatedText" : _("No internet access. Offline instant translation only.")})
             else :
-                for x in range(0, len(requests)) :
+                for x in range(0, len(trans_requests)) :
                     if (x + 1) > len(result) :
                         continue
 
@@ -3560,9 +3572,9 @@ class MICA(object):
             out += "<h4><b>" + _("Offline instant translation") + ":</b></h4>"
 
         try :
-            for idx in range(0, len(requests)) :
-                request = requests[idx]
-                if gp.already_romanized and len(requests) > 1 and idx == 0 :
+            for idx in range(0, len(trans_requests)) :
+                request = trans_requests[idx]
+                if gp.already_romanized and len(trans_requests) > 1 and idx == 0 :
                     continue
                 request_decoded = request.decode("utf-8")
                 tar = gp.get_first_translation(gp.handle, request_decoded, False)
