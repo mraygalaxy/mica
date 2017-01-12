@@ -419,9 +419,9 @@ class MICA(object):
                     mdebug("Authentication attempt #" + str(attempt))
                 
                 if isinstance(username, unicode) :
-                    username = username.encode("utf-8")
+                    username = username.encode("utf-8").decode("latin1")
                 if isinstance(password, unicode) :
-                    password = password.encode("utf-8")
+                    password = password.encode("utf-8").decode("latin1")
 
                 r = requests.get(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted, auth=(username, password), timeout = 20 if attempt == 0 else 10)
 
@@ -440,6 +440,8 @@ class MICA(object):
                 mwarn("HTTP error: " + username + " " + str(e))
                 error = "(HTTP code: " + str(e) + ")"
             except Exception, e :
+                for line in format_exc().splitlines() :
+                    mwarn(line)
                 mwarn("Unknown error: " + username + " " + str(e))
                 error = "(Unknown error: " + str(e) + ")"
 
