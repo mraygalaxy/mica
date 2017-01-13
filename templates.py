@@ -409,6 +409,7 @@ class ChatElement(CommonElement) :
                       buddies = _("Buddies"),
                       # Destination of chat receiver
                       to = _("To"),
+                      chathistory = _("Chat History"),
                       server = self.req.main_server,
                       domain = self.req.main_server,
                       # Send an instant message

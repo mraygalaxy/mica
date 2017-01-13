@@ -15,29 +15,28 @@
 
     <div id="sendmsg_pane" style='display: block' class='container-fluid nopadding'>
         <div class='row-fluid'>
-        <div class='col-md-12 nopadding'>
-        <t:slot name="incoming"/>
-        <div id='pagechatsingle'/>
-        </div>
+		<div class='col-md-12 nopadding'>
+			<div id='pagechatsingle'/>
+		</div>
         </div>
         <div class='row-fluid nopadding'>
-        <div class='col-md-12 nopadding'>
-            <div style='height: 20px; border: 3px solid grey' id="iStatus"></div>
-            <form data-ajax='false' id='sendForm' name="sendForm" action='path_to_nowhere'>
-                 <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
-                 <div id='chatoffline' style='display: none'><b><t:slot name='chatoffline'/></b></div>
-                <div class="spaced">
-                    <b><t:slot name='to'/>:</b>
-                    <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
-                    <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
-                    <button data-role='none' type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
-                    <button data-role='none' type='button' class='btn btn-sm btn-default' onclick='reload_history(true);'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
-                </div>
-            </form>
-            <div style='width: 100%; height: 50%; overflow-y: auto; border: 3px solid grey'>
-            <table style='width: 100%' id="iResp"/>
-            </div>
-        </div>
+		<div class='col-md-12 nopadding'>
+		    <form data-ajax='false' id='sendForm' name="sendForm" action='path_to_nowhere'>
+			 <div id='instantspin' style='display: none'><t:slot name="spinner"/><b>&#160;<t:slot name='performingtranslation'/></b></div>
+			 <div id='chatoffline' style='display: none'><b><t:slot name='chatoffline'/></b></div>
+			<div class="spaced">
+			    <button data-role='none' type='button' class='btn btn-default btn-sm' href='#'><t:attr name='title'><t:slot name='processinstanttitle'/></t:attr><t:attr name='onclick'><t:slot name='processinstant'/></t:attr><i class='glyphicon glyphicon-share'></i></button>
+			    <button data-role='none' type='button' class='btn btn-sm btn-default' onclick='reload_history(true);'><t:attr name='title'><t:slot name='refreshtitle'/></t:attr><i class='glyphicon glyphicon-refresh'></i></button>
+	                    <!--<b><t:slot name="incoming"/></b>-->
+			    <b><t:slot name='chathistory'/> <t:slot name='to'/>:</b>
+			    <input data-role='none' type="text" id="sendTo" name="sendTo" tabindex="1" value=''/>
+			    <t:slot name="chatlangtype"/>: <select id='chattextlanguage' name="languagetype" t:render="languages"/>
+			</div>
+		    </form>
+		    <div style='width: 100%; height: 50%; overflow-y: auto; border: 3px solid grey'>
+		    <table style='width: 100%' id="iResp"/>
+		    </div>
+		</div>
         </div>
     </div>
 

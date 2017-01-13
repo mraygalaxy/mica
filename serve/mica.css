@@ -30,8 +30,22 @@
 	margin-top: -55px;
 }
 
+.foreground {
+    /*
+    color: white;
+    */
+    color: black;
+}
+
+.background {
+    /*
+    background: #f0f0f0;
+    */
+    background: white;
+}
+
 a.brand:hover {
-	color : white;
+	color : black;
 }
 a {
 	font-weight:bold;
@@ -251,14 +265,14 @@ html, body, div[data-role = "page"] {
 
 body {
 /*    background-image: url("/serve/alien.jpg"); */
-    background-color: #0f001a; 
+    background-color: white; 
     margin: 0;
     padding-top: 55px;
-    color: white;
+    color: black;
 }
 
 .ui-overlay-a {
-    background-color: #0f001a; 
+    background-color: white; 
 }
 .ui-content {
     background-image: url("/serve/alien.jpg");
@@ -267,7 +281,7 @@ body {
     background-attachment:scroll;
     background-size: 100% auto;
     background: transparent;
-    color: white;
+    color: black;
 }
 
 .ui-page {
@@ -277,7 +291,7 @@ body {
     background-image: url("/serve/alien.jpg");
     background-size:cover;  
     background: transparent;
-    color: white;
+    color: black;
 }
 
 .carousel, .carousel-control.left, .carousel-control.right {
@@ -299,6 +313,8 @@ body {
 
 table.pagetable {
    margin-bottom: 5px;
+   background-color: #dfdfdf;
+   border-radius: 15px;
 }
 
 .pagetable tr {
@@ -306,7 +322,7 @@ table.pagetable {
 }
 
 td {
-    color: white
+    color: black;
 }
 
 .badge {
