@@ -635,9 +635,11 @@ function ctest() {
         }
     });
 
+    console.log("Want to run converse with: **" + local('language') + "**");
     /* TODO: use xhr_user_search and xhr_user_search_url options */
     cparams = {
         bosh_service_url: httpbase, 
+        i18n: locales[local('language')],
         keepalive: true,
         prebind: true,
         prebind_url: "/api?human=0&alien=prebind",
@@ -645,7 +647,7 @@ function ctest() {
         message_carbons: true,
         play_sounds: true,
         roster_groups: true,
-        show_controlbox_by_default: false,
+        show_controlbox_by_default: true,
         allow_otr: false,
 //        debug: true,
         allow_chat_pending_contacts: true,
