@@ -1657,7 +1657,7 @@ function explode(uuid, name, rname, translated, finished, reviewed, ischat, sync
         if (syncstatus) {
             $("#syncstatus").html("<a id='" + name + "' onclick=\"syncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('startsync') + "</a>");
         } else {
-            $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + 'uuid' + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
+            $("#syncstatus").html("<a id='" + name + "' onclick=\"unsyncstory('" + name + "', '" + uuid + "')\"><i class='glyphicon glyphicon-sort'></i> " + local('stopsync') + "</a>");
         }
         $("#syncstatus").attr('style', 'display: block');
     }
