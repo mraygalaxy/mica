@@ -767,13 +767,19 @@ class MICA(object):
                         # password in the session file
                         # This is OK for now since we're running on a phone....
                         mdebug("Trying to restart replication...")
+                        if not self.db.filters(params["local_database"], self.get_filter_params(req)) :
+                            merr("Refreshing main filter installation failed.")
 
-                        if not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                            mdebug("Refreshing session failed to restart main replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+                        elif not self.db.replicate(req.session.value["address"], username, req.session.value["password"], req.session.value["database"], params["local_database"]) :
+                            merr("Refreshing session failed to restart main replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+
                         req.session.value["port"] = self.db.listen(username, req.session.value["password"], params["local_port"])
                         req.session.save()
-                        if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
-                            mdebug("Refreshing session failed to restart file replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
+
+                        if not self.filedb.filters("files", self.get_filter_params(req)) :
+                            merr("Refreshing files filter installation failed.")
+                        elif not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files") :
+                            merr("Refreshing session failed to restart file replication: Although you have authenticated successfully, we could not start replication successfully. Please try again")
                 try :
                     self.verify_db(req, req.session.value["database"], prime = False)
                     resp = self.render(req)
@@ -4812,9 +4818,7 @@ class MICA(object):
 
                 replication_failed = False
                 if mobile :
-                    self.filedb.stop_replication()
-
-                    if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
+                    if not self.db.filters("files", self.get_filter_params(req)) :
                         req.accountpageresult = _("Failed to intiate download of this dictionary. Please try again") + ": " + tofrom
                         replication_failed = True
 
@@ -5014,13 +5018,10 @@ class MICA(object):
             req.session.value["filters"] = tmpuser["filters"]
 
             if mobile :
-                req.db.stop_replication()
-                self.filedb.stop_replication()
-
-                if not self.db.replicate(req.session.value["address"], req.session.value["username"], req.session.value["password"], req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
-                    return self.bad_api(req, _("Failed to change primary synchronization. Please try again") + ": " + tofrom)
-                if not self.filedb.replicate(req.session.value["address"], "files", "password", "files", "files", self.get_filter_params(req)) :
-                    return self.bad_api(req, _("Failed to change file synchronization. Please try again") + ": " + tofrom)
+                if not self.db.filters(params["local_database"], self.get_filter_params(req)) :
+                    return self.bad_api(req, _("Failed to change primary synchronization. Please try again"))
+                if not self.db.filters("files", self.get_filter_params(req)) :
+                    return self.bad_api(req, _("Failed to change file synchronization. Please try again"))
 
             req.db[self.story(req, tmpname)] = tmpstory
             req.db[self.acct(req.session.value["username"])] = tmpuser
@@ -5326,11 +5327,17 @@ class MICA(object):
             if tmpuser and "filters" in tmpuser :
                 mdebug("Found old filters.")
                 req.session.value["filters"] = tmpuser["filters"]
-            if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"], self.get_filter_params(req)) :
+
+            if not self.db.filters(params["local_database"], self.get_filter_params(req)) :
+                return self.bad_api(req, "1) " + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+            if not req.db.replicate(address, username, password, req.session.value["database"], params["local_database"]) :
                 # This 'synchronization' refers to the ability of the story to keep the user's learning progress and interactive history and stories and all other data in sync across both the website and all devices that the user owns.
-                return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
-            if not self.filedb.replicate(address, "files", "password", "files", "files", self.get_filter_params(req)) :
-                return self.bad_api(req, _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+                return self.bad_api(req, "2) " + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+
+            if not self.filedb.filters("files", self.get_filter_params(req)) :
+                return self.bad_api(req, "3) " + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
+            if not self.filedb.replicate(address, "files", "password", "files", "files") :
+                return self.bad_api(req, "4) " + _("Although you have authenticated successfully, we could not start synchronization successfully. Please try again."))
 
         if mobile :
             if "local_username" in params and params["local_username"] and "local_password" in params and params["local_password"] :
