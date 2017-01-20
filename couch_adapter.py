@@ -925,13 +925,21 @@ class AndroidMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def stop_replication(self) :
         self.db.stop_replication(self.dbname)
 
-    def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
+    def filters(self, localdbname, params) :
+        if self.db.filters(localdbname, String(params)) == -1 :
+            mdebug("Filters failed. Boo. =(")
+            return False
+        else :
+            mdebug("Filters installed. Yay.")
+            return True
+
+    def replicate(self, url, user, pw, dbname, localdbname) :
         username_unquoted = myquote(user)
         password_unquoted = myquote(pw)
 
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
-        if self.db.replicate(localdbname, String(full_url), False, String(filterparams)) == -1 :
+        if self.db.replicate(localdbname, String(full_url), False) == -1 :
             mdebug("Replication failed. Boo. =(")
             return False
         else :
@@ -1181,13 +1189,21 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
     def stop_replication(self) :
         self.db.stop_replication_(self.dbname)
 
-    def replicate(self, url, user, pw, dbname, localdbname, filterparams) :
+    def filters(self, localdbname, params) :
+        if self.db.filters__(String(localdbname), String(params)) == -1 :
+            mdebug("Filters failed. Boo. =(")
+            return False
+        else :
+            mdebug("Filters installed. Yay.")
+            return True
+
+    def replicate(self, url, user, pw, dbname, localdbname) :
         username_unquoted = myquote(user)
         password_unquoted = myquote(pw)
 
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
-        if self.db.replicate___(String(localdbname), String(full_url), String(filterparams)) == -1 :
+        if self.db.replicate___(String(localdbname), String(full_url)) == -1 :
             mdebug("Replication failed. Boo. =(")
             return False
         else :
