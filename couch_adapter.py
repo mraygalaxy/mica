@@ -1203,7 +1203,7 @@ class iosMicaDatabaseCouchbaseMobile(MicaDatabase) :
 
         full_url = url.replace("//", "//" + username_unquoted + ":" + password_unquoted + "@") + "/" + dbname
 
-        if self.db.replicate___(String(localdbname), String(full_url)) == -1 :
+        if self.db.replicate__(String(localdbname), String(full_url)) == -1 :
             mdebug("Replication failed. Boo. =(")
             return False
         else :
