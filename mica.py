@@ -1087,7 +1087,7 @@ class MICA(object):
             if lgp.test_complete :
                 continue
             try :
-                if mobile and params["serialize_couch_on_mobile"]:
+                if not proc and mobile and params["serialize_couch_on_mobile"]:
                     self.serial.safe_execute(False, lgp.test_dictionaries, retest = True)
                 else :
                     lgp.test_dictionaries(retest = True)
