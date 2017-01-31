@@ -314,8 +314,8 @@ class Processor(object) :
         return self.get_first_translation_lang(opaque, source, reading, none_if_not_found, debug)
 
 class RomanizedSource(Processor) :
-    def __init__(self, mica, params) :
-        super(RomanizedSource, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(RomanizedSource, self).__init__(mica, params, tofrom)
         self.srcdb = False
         self.structs = {}
         self.matches = {}
@@ -579,8 +579,8 @@ class RomanizedSource(Processor) :
         return False 
 
 class SpanishToEnglish(RomanizedSource) :
-    def __init__(self, mica, params) :
-        super(SpanishToEnglish, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(SpanishToEnglish, self).__init__(mica, params, tofrom)
         self.files = dict(dict_file = "dictd_www.freedict.de_spa-eng.dict", idx_file = "dictd_www.freedict.de_spa-eng.idx", ifo_file = "dictd_www.freedict.de_spa-eng.ifo")
         self.dbname = "span2eng.db"
         self.accented_source = True
@@ -602,8 +602,8 @@ class SpanishToEnglish(RomanizedSource) :
                         })
 
 class EnglishSource(RomanizedSource) :
-    def __init__(self, mica, params) :
-        super(EnglishSource, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(EnglishSource, self).__init__(mica, params, tofrom)
 
         self.structs.update({
                         "abbr." : True,
@@ -714,22 +714,22 @@ class EnglishSource(RomanizedSource) :
 
 
 class EnglishToChineseSimplified(EnglishSource) :
-    def __init__(self, mica, params) :
-        super(EnglishToChineseSimplified, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(EnglishToChineseSimplified, self).__init__(mica, params, tofrom)
         #self.files = dict(dict_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.dict.dz", idx_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.idx", ifo_file = "stardict-quick_eng-zh_CN-2.4.2/quick_eng-zh_CN.ifo")
         #self.files = dict(ifo_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.ifo", idx_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.idx", dict_file = "stardict-langdao-ec-gb-2.4.2/langdao-ec-gb.dict.dz")
         self.files = dict(dict_file = "lazyworm-ec.dict", idx_file = "lazyworm-ec.idx", ifo_file = "lazyworm-ec.ifo")
         self.dbname = "eng.db"
 
 class EnglishToSpanish(EnglishSource) :
-    def __init__(self, mica, params) :
-        super(EnglishToSpanish, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(EnglishToSpanish, self).__init__(mica, params, tofrom)
         self.files = dict(dict_file = "dictd_www.freedict.de_eng-spa.dict", idx_file = "dictd_www.freedict.de_eng-spa.idx", ifo_file = "dictd_www.freedict.de_eng-spa.ifo")
         self.dbname = "eng2span.db"
 
 class ChineseSimplifiedToEnglish(Processor) :
-    def __init__(self, mica, params) :
-        super(ChineseSimplifiedToEnglish, self).__init__(mica, params)
+    def __init__(self, mica, params, tofrom) :
+        super(ChineseSimplifiedToEnglish, self).__init__(mica, params, tofrom)
         self.already_romanized = False 
 
         self.punctuation_letters = {}
