@@ -326,7 +326,7 @@ class MICA(object):
                         listing = self.filedb[dbtag + ":filelisting_" + f]
                         fname = params["scratch"] + f
 
-                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.size_check(f) :
+                        if '_attachments' not in listing or f not in listing['_attachments'] or not self.serial.safe_execute(False, self.size_check, f) :
                             if os_path.isfile(fname) :
                                 minfo("Opening dict file: " + f)
                                 fh = open(fname, 'r')
@@ -1039,7 +1039,6 @@ class MICA(object):
 
         return exported
 
-    @serial
     def size_check(self, f) :
         fname = params["scratch"] + f
         size = os_path.getsize(fname)
@@ -1075,7 +1074,11 @@ class MICA(object):
                             if not self.test_dicts_handle(f) :
                                 break
                         else :
-                            if not self.size_check(f) :
+                            if proc :
+                                check = self.size_check(f)
+                            else :
+                                check = self.serial.safe_execute(False, self.size_check, f)
+                            if not check :
                                 mdebug("Mobile file is different from DB. Deleting and re-exporting: " + f)
                                 os_remove(fname)
                                 recheck = True
