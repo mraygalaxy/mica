@@ -6259,9 +6259,9 @@ def go(p) :
         mica = MICA(db_adapter)
 
         mverbose("INIT Testing dictionary thread")
-        #ct = Thread(target=mica.test_dicts)
-        #ct.daemon = True
-        #ct.start()
+        ct = Thread(target=mica.test_dicts)
+        ct.daemon = True
+        ct.start()
 
         reactor._initThreadPool()
         site = MicaSite(GUIDispatcher(mica))
