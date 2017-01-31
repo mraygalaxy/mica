@@ -76,6 +76,7 @@ class Processor(object) :
         self.accented_source = False
         self.initialized = False
         self.handle = False
+        self.test_complete = False
 
         self.punctuation = {}
         self.punctuation_without_newlines = {}
