@@ -284,7 +284,7 @@ class MICA(object):
 
         for tofrom, readable in processor_map.iteritems() :
             if processor_map[tofrom] :
-                self.processors[tofrom] = getattr(processors, processor_map[tofrom])(self, params)
+                self.processors[tofrom] = getattr(processors, processor_map[tofrom])(self, params, tofrom)
         try :
             mverbose("Checking database access")
             if mobile :
@@ -1058,7 +1058,7 @@ class MICA(object):
                 all_found = True
                 recheck = False
 
-                for name, lgp in self.processors.iteritems() if not proc else [proc] :
+                for name, lgp in (self.processors.iteritems() if not proc else [(proc.tofrom, proc)]) :
                     if lgp.test_complete :
                         continue
 
@@ -1083,7 +1083,7 @@ class MICA(object):
                 if not recheck :
                     sleep(30)
 
-        for name, lgp in self.processors.iteritems() if not proc else [proc] :
+        for name, lgp in (self.processors.iteritems() if not proc else [(proc.tofrom, proc)]) :
             if lgp.test_complete :
                 continue
             try :
@@ -3790,7 +3790,7 @@ class MICA(object):
             }
 
             gp = self.processors[self.tofrom(story)]
-            self.test_dicts(gp)
+            self.test_dicts(proc = gp)
             lens = []
             chars = []
             source = ""
