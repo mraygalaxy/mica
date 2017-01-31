@@ -1051,12 +1051,14 @@ class MICA(object):
 
     def test_dicts(self, proc = False) :
         exported = False
+        mverbose("Test dicts 1")
         if mobile :
             all_found = False
 
             while not all_found :
                 all_found = True
                 recheck = False
+                mverbose("Test dicts 2")
 
                 for name, lgp in (self.processors.iteritems() if not proc else [(proc.tofrom, proc)]) :
                     if lgp.test_complete :
@@ -1083,13 +1085,20 @@ class MICA(object):
                 if not recheck :
                     sleep(30)
 
+        mverbose("Test dicts 3")
+
         for name, lgp in (self.processors.iteritems() if not proc else [(proc.tofrom, proc)]) :
+            mverbose("Test dicts 4")
             if lgp.test_complete :
                 continue
+
+            mverbose("Test dicts 5")
             try :
                 if not proc and mobile and params["serialize_couch_on_mobile"]:
+                    mverbose("Test dicts 6")
                     self.serial.safe_execute(False, lgp.test_dictionaries, retest = True)
                 else :
+                    mverbose("Test dicts 7")
                     lgp.test_dictionaries(retest = True)
                 lgp.test_complete = True
             except Exception, e :
@@ -1106,6 +1115,7 @@ class MICA(object):
                 mverbose(emsg)
                 assert(size != 0)
 
+        mverbose("Test dicts 8")
         if not proc :
             self.filedb.detach_thread()
 
@@ -6246,9 +6256,9 @@ def go(p) :
         mica = MICA(db_adapter)
 
         mverbose("INIT Testing dictionary thread")
-        ct = Thread(target=mica.test_dicts)
-        ct.daemon = True
-        ct.start()
+        #ct = Thread(target=mica.test_dicts)
+        #ct.daemon = True
+        #ct.start()
 
         reactor._initThreadPool()
         site = MicaSite(GUIDispatcher(mica))
