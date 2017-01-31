@@ -67,7 +67,8 @@ class MyListener(PoolListener):
         #dbapi_con.execute('PRAGMA cache_size=100000')
 
 class Processor(object) :
-    def __init__(self, mica, params) :
+    def __init__(self, mica, params, tofrom) :
+        self.tofrom = tofrom
         self.serial = Serializable(True if not params["serialize_couch_on_mobile"] else False)
         self.serial.start()
         self.already_romanized = True
