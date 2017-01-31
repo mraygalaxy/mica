@@ -1049,7 +1049,7 @@ class MICA(object):
         else :
             return False
 
-    def test_dicts(self) :
+    def test_dicts(self, proc = False) :
         exported = False
         if mobile :
             all_found = False
@@ -1058,7 +1058,10 @@ class MICA(object):
                 all_found = True
                 recheck = False
 
-                for name, lgp in self.processors.iteritems() :
+                for name, lgp in self.processors.iteritems() if not proc else [proc] :
+                    if lgp.test_complete :
+                        continue
+
                     for f in lgp.get_dictionaries() :
                         fname = params["scratch"] + f
                         mdebug("Testing for file: " + f)
@@ -1080,12 +1083,15 @@ class MICA(object):
                 if not recheck :
                     sleep(30)
 
-        for name, lgp in self.processors.iteritems() :
+        for name, lgp in self.processors.iteritems() if not proc else [proc] :
+            if lgp.test_complete :
+                continue
             try :
                 if mobile and params["serialize_couch_on_mobile"]:
                     self.serial.safe_execute(False, lgp.test_dictionaries, retest = True)
                 else :
                     lgp.test_dictionaries(retest = True)
+                lgp.test_complete = True
             except Exception, e :
                 err = ""
                 for line in format_exc().splitlines() :
@@ -1100,7 +1106,8 @@ class MICA(object):
                 mverbose(emsg)
                 assert(size != 0)
 
-        self.filedb.detach_thread()
+        if not proc :
+            self.filedb.detach_thread()
 
     def store_error(self, req, name, msg) :
         merr(msg)
@@ -3783,6 +3790,7 @@ class MICA(object):
             }
 
             gp = self.processors[self.tofrom(story)]
+            self.test_dicts(gp)
             lens = []
             chars = []
             source = ""
