@@ -113,13 +113,15 @@ function go(form_id, url, error, callback, opaque){
         id = form_id[1];
     }
 
+    function go_temp(XMLHttpRequest, ajaxOptions, thrownError) {
+        console.log("Ignoring temporary error: " + XMLHttpRequest.status + " id: " + id);
+    }
     function go_fail(XMLHttpRequest, ajaxOptions, thrownError) {
         console.log("AJAX Status code: " + XMLHttpRequest.status + " id: " + id);
         // Need to handle 504's (busy) like our tests do and repeat the request
         if (XMLHttpRequest.status == 401) {
               window.location.href = "/";
         } else {
-
             var aff = $(form).attr('ajaxfinish');
             if(form && aff != undefined) {
 			    eval(aff + "('" + error + "')");
@@ -207,6 +209,7 @@ function go(form_id, url, error, callback, opaque){
 
     jQuery.support.cors = true;
 
+    retryoptions = {times:5, timeout: 1000, statusCodes: [0, 503, 504], error: go_fail, start: function() {loading()}};
     if (form) {
         var formData = $(form).serialize();
 
@@ -214,9 +217,7 @@ function go(form_id, url, error, callback, opaque){
                 type: 'POST',
                 url: '/api?human=0&alien=' + $(form).attr('action'),
                 data: formData,
-                success: go_success,
-                error: go_fail
-        });
+        }).retry(retryoptions).then(go_success);
     } else {
         if(id != undefined && id != '')
             var human = 1;
@@ -227,9 +228,7 @@ function go(form_id, url, error, callback, opaque){
                 url: '/api?human=' + human + '&alien=' + url,
                 type: "GET",
                 dataType: "html",
-                success: go_success,
-                error: go_fail
-        });
+        }).retry(retryoptions).then(go_success);
     }
 }
 
