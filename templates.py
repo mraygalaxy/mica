@@ -959,6 +959,7 @@ class HTMLElement(CommonElement):
                      lazyyoutubecss = self.req.mpath + "/lazyyoutube.css",
                      lazyyoutubejs = self.req.mpath + "/lazyyoutube.js",
                      crewcss = self.req.mpath + "/crewcss/crew.min.css",
+                     retryjs = self.req.mpath + "/jquery.ajax-retry.min.js",
                     )
 
         return tag
