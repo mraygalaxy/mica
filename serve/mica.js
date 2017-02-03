@@ -209,7 +209,7 @@ function go(form_id, url, error, callback, opaque){
 
     jQuery.support.cors = true;
 
-    retryoptions = {times:5, timeout: 1000, statusCodes: [0, 503, 504], error: go_fail, start: function() {loading()}};
+    retryoptions = {times:5, timeout: 1000, statusCodes: [0, 503, 504], error: go_fail, start: function() {}};
     if (form) {
         var formData = $(form).serialize();
 
