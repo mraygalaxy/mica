@@ -82,9 +82,12 @@ function disconnect() {
 
 function connect_ready(json, opaque) {
     if (json.success) {
+        console.log("Ready?");
         if (json.replicated) {
+            console.log("Replicated. yay.");
             window.location.href = "/";
         } else {
+            console.log("Not yet replicated...sleeping.");
             setTimeout(check_ready, 1000);
         }
     } else {
@@ -93,6 +96,7 @@ function connect_ready(json, opaque) {
 }
 
 function connect_fail(msg) {
+        console.log("Failed.");
         done();
         $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + msg + "</div>");
         $("#newaccountresultdestination").attr("style", "display: block");
@@ -101,10 +105,12 @@ function connect_fail(msg) {
 }
 
 function check_ready() {
-    go(false, '/', unavailable(false), connect_ready, false);
+    console.log("Sending request again.");
+    go(false, 'read', unavailable(false), connect_ready, false);
 }
 function connect_complete(json, opaque) {
     if (json.success) {
+        console.log("Connected...checking.");
         connect_ready(json, opaque);
     } else {
         connect_fail(json.desc);
