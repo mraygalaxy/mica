@@ -65,6 +65,7 @@ var failcount = 0;
 var newRefresh = 0;
 var finish = false;
 
+
 function disconnect_complete(json, opaque) {
     done();
     if (json.success) {
@@ -79,15 +80,34 @@ function disconnect() {
     go(false, 'disconnect', unavailable(false), disconnect_complete, false);
 }
 
-function connect_complete(json, opaque) {
-    done();
+function connect_ready(json, opaque) {
     if (json.success) {
-        window.location.href = "/";
+        if (json.replicated) {
+            window.location.href = "/";
+        } else {
+            setTimeout(check_ready, 1000);
+        }
     } else {
-        $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + json.desc + "</div>");
+        connect_fail(json.desc);
+    }
+}
+
+function connect_fail(msg) {
+        done();
+        $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + msg + "</div>");
         $("#newaccountresultdestination").attr("style", "display: block");
         $("#maindisplay").attr("style", "display: none");
         $("#fh5co-header").attr("style", "display: none");
+}
+
+function check_ready() {
+    go(false, '/', unavailable(false), connect_ready, false);
+}
+function connect_complete(json, opaque) {
+    if (json.success) {
+        connect_ready(json, opaque);
+    } else {
+        connect_fail(json.desc);
     }
 }
 
