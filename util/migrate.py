@@ -23,7 +23,7 @@ dest = Server(args.dest)
 count = 0
 for dbname in src :
     db = src[dbname]
-    if (len(dbname) >= 4 and dbname[:4] == "mica" ) or dbname == "_users" :
+    if (len(dbname) >= 4 and dbname[:4] == "mica" ) :#or dbname == "_users" :
         try :
             newdb = dest[dbname]
         except couchdb.http.ResourceNotFound, e :

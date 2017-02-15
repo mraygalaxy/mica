@@ -974,7 +974,7 @@ class MICA(object):
         contents_fh.close()
         return contents
 
-    def api(self, req, desc = "", json = False, error = False) :
+    def api(self, req, desc = "", json = False, error = False, replicated = True) :
         cookie = req.db.gimme_cookie() if (not mobile and req.db) else False
         if cookie :
             req.session.value["cookie"] = cookie
@@ -982,6 +982,8 @@ class MICA(object):
 
         if not json :
             json = {}
+
+        json["replicated"] = replicated
 
         if req.human :
             return str(json["desc"]) if "desc" in json else desc
@@ -1011,9 +1013,9 @@ class MICA(object):
             #mverbose("Dumping: " + str(json))
             return json_dumps(json)
 
-    def bad_api(self, req, desc, json = {}) :
+    def bad_api(self, req, desc, json = {}, replicated = True) :
         req.session.save()
-        return self.api(req, desc = desc, json = json, error = True)
+        return self.api(req, desc = desc, json = json, error = True, replicated = replicated)
 
     def get_polyphome_hash(self, correct, source) :
         return hashlib_md5(str(correct).lower() + "".join(source).encode("utf-8").lower()).hexdigest()
@@ -3993,7 +3995,7 @@ class MICA(object):
                         req.session.value["app_chars_per_line"] if mobile else req.session.value["web_chars_per_line"])
 
                     if not result :
-                        return self.bad_api(req, self.warn_not_replicated(req), harmless = True)
+                        return self.bad_api(req, self.warn_not_replicated(req), harmless = True, replicated = False)
 
                     final_output = ""
                     lines, units = result
@@ -5385,7 +5387,7 @@ class MICA(object):
         user = req.db.try_get(self.acct(username))
         if not user :
             mwarn("Problem before warn_not_replicated:")
-            return self.bad_api(req, self.warn_not_replicated(req, initial_login = True))
+            return self.bad_api(req, self.warn_not_replicated(req, initial_login = True), replicated = False)
 
         if not mobile :
             try :
@@ -5576,12 +5578,12 @@ class MICA(object):
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.bad_api(req, self.self.warn_not_replicated(req))
+                return self.bad_api(req, self.self.warn_not_replicated(req), replicated = False)
             except AttributeError, e :
                 mwarn("Problem before warn_not_replicated:")
                 for line in format_exc().splitlines() :
                     mwarn(line)
-                return self.bad_api(req, self.self.warn_not_replicated(req))
+                return self.bad_api(req, self.self.warn_not_replicated(req), replicated = False)
 
     def render_rest(self, req, from_third_party) :
         pageid = "#messages"
