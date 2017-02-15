@@ -994,7 +994,7 @@ class MICA(object):
             if "success" not in json :
                 json["success"] = True if not error else False
 
-            if json["success"] and req.not_replicated :
+            if json["success"] and req.not_replicated and replicated :
                 mdebug("API request was true, but setting to false because of replication error.")
                 json["success"] = False
 
