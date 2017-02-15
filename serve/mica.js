@@ -81,7 +81,7 @@ function disconnect() {
 }
 
 function connect_ready(json, opaque) {
-    if (json.success) {
+    if (json.success || !json.replicated) {
         console.log("Ready?");
         if (json.replicated) {
             console.log("Replicated. yay.");
