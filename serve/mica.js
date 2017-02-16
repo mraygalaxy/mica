@@ -80,7 +80,7 @@ function disconnect() {
     go(false, 'disconnect', unavailable(false), disconnect_complete, false);
 }
 
-function connect_ready(json, opaque) {
+function connect_complete(json, opaque) {
     if (json.success || !json.replicated) {
         console.log("Ready?");
         if (json.replicated) {
@@ -91,30 +91,18 @@ function connect_ready(json, opaque) {
             setTimeout(check_ready, 1000);
         }
     } else {
-        connect_fail(json.desc);
-    }
-}
-
-function connect_fail(msg) {
         console.log("Failed.");
         done();
         $("#newaccountresultdestination").html("<div class='img-rounded jumbotron style='padding: 10px'>" + msg + "</div>");
         $("#newaccountresultdestination").attr("style", "display: block");
         $("#maindisplay").attr("style", "display: none");
         $("#fh5co-header").attr("style", "display: none");
+    }
 }
 
 function check_ready() {
     console.log("Sending request again.");
-    go(false, 'read', unavailable(false), connect_ready, false);
-}
-function connect_complete(json, opaque) {
-    if (json.success) {
-        console.log("Connected...checking.");
-        connect_ready(json, opaque);
-    } else {
-        connect_fail(json.desc);
-    }
+    go(false, 'read', unavailable(false), connect_complete, false);
 }
 
 function local(msgid) {
