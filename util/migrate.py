@@ -30,11 +30,17 @@ for dbname in src :
             dest.create(dbname)
             newdb = dest[dbname]
 
-        print "Replicating: " + str(dbname)
-        src.replicate(args.source + "/" + dbname, args.dest + "/" + dbname, continuous = True) 
+        if db.info()["doc_count"] != newdb.info()["doc_count"] :
+            print "Replicating: " + str(dbname)
+            src.replicate(args.source + "/" + dbname, args.dest + "/" + dbname, continuous = True) 
+        else :
+            print "Already replicated: " + str(dbname)
+            continue
+
         while db.info()["doc_count"] != newdb.info()["doc_count"] :
             print "Source count: " + str(db.info()["doc_count"]) + " dest count: " +  str(newdb.info()["doc_count"])
             sleep(5)
+
         count += 1
 
 print "DBs: " + str(count)
