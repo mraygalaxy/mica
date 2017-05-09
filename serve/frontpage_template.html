@@ -21,6 +21,7 @@
 		        <div id="navbar" class="navbar-collapse collapse">
 		          <ul class="nav navbar-nav navbar-right">
 		            <li class="active"><a href="#" data-nav-section="home"><span><t:slot name='home'/></span></a></li>
+		            <li><a href="#" data-nav-section="howitworks"><span><t:slot name='how'/></span></a></li>
 		            <li><a href="#" data-nav-section="chat"><span><t:slot name='chat'/></span></a></li>
 		            <li><a href="#" data-nav-section="login"><span><t:slot name='login'/></span></a></li>
 		            <li><a href="#" data-nav-section="features"><span><t:slot name='features'/></span></a></li>
@@ -58,6 +59,24 @@
 
 		    		</div>
 		    	</div>
+	</div>
+	<div id="fh5co-about-us" data-section="howitworks">
+		<div class="container">
+			<div class="row row-bottom-padded-lg" id="about-us">
+				<div class="col-md-12 section-heading text-center">
+					<h2 class="to-animate"><t:slot name='howworks'/></h2>
+					<div class="row">
+						<div class="col-md-8 col-md-offset-2 to-animate">
+							<iframe width="640" height="360" frameborder="0" webkitallowfullscreen="1" mozallowfullscreen="1" allowfullscreen="1"><t:attr name="src"><t:slot name="iframelink"/></t:attr></iframe>
+<p><a href="https://vimeo.com/216603505">ReadAlien</a> from <a href="https://vimeo.com/user66411879">Read Alien</a> on <a href="https://vimeo.com">Vimeo</a>.</p>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-5 to-animate">
+					bar
+				</div>
+			</div>
+		</div>
 	</div>
 	<div id="fh5co-about-us" data-section="chat">
 		<div class="container">

@@ -504,6 +504,11 @@ class FrontPageElement(CommonElement) :
                       chineseexample = _("Chinese Example"),
                       # This is a technology phrase: It means that a website is designed with a priority to run a mobile device and a priority to be able to run offline without the need for an internet connection.
                       offlinemobile = _("Offline-first. Mobile-first."),
+                      # How it works 
+                      how = _("How"),
+                      howworks = _("How it Works"),
+                      # iframe, don't translate
+                      iframelink="https://player.vimeo.com/video/216603505?title=0&byline=0&portrait=0",
                       # Chat / Instant Messaging
                       chat = _("Chat"),
                       # Login to the website
