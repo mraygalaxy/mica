@@ -19,7 +19,7 @@ rm -rf /usr/local/lib/couchdb/data/*
 echo "starting cluster"
 service couchdb start
 
-sleep 15
+sleep 20
 
 echo "stopping cluster"
 service couchdb stop
