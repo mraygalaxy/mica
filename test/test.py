@@ -43,7 +43,7 @@ httplib.HTTPConnection.debuglevel = 2
 logging.basicConfig()
 logging.getLogger().setLevel(level)
 requests_log = logging.getLogger("requests.packages.urllib3")
-requests_log.setLevel(WARN)
+requests_log.setLevel(DEBUG)
 requests_log.propagate = False 
 requests_oauth_log = logging.getLogger("requests_oauthlib.oauth2_session")
 requests_oauth_log.setLevel(WARN)
@@ -65,6 +65,7 @@ import couch_adapter
 server_port = 9888
 target = test["target_proto"] + "://" + test["target"] + ":" + str(test["target_port"])
 couch = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(parameters["couch_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "/")
+couch_config = parameters["couch_proto"] + "://" + parameters["couch_server"] + ":" + str(test["config_port"]) + ((parameters["couch_path"] + "/") if "couch_path" in parameters else "/")
 target_verify = True if test["target_proto"] == "http" else False
 couch_verify = True if parameters["couch_proto"] == "http" else False
 
@@ -263,18 +264,18 @@ class TimeoutServer(BaseHTTPServer.HTTPServer):
 def change_timeout(timeout) :
     tlog("Changing timeout to " + str(timeout))
     s = requests.Session()
-    r = s.post(couch + "_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
+    r = s.post(couch_config + "_session", data = {"name" : parameters["admin_user"], "password" : parameters["admin_pass"]}, verify = couch_verify)
     if r.status_code not in [200, 201] :
         raise Exception("Failed to login for timeout change")
 
-    r = s.get(couch + "_config", verify = couch_verify)
+    r = s.get(couch_config + "_config", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
-        raise Exception("Failed to lookup configuration")
+        raise Exception("Failed to lookup configuration: " + str(r.status_code))
 
     config = r.json()
 
-    r = s.put(couch + "_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
+    r = s.put(couch_config + "_config/couch_httpd_auth/timeout", data = "\"" + str(timeout) + "\"", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
         raise Exception("Failed to change timeout to " + str(timeout) + " seconds" + ": " + str(r.status_code) + ": " + r.text)
@@ -1042,7 +1043,8 @@ try :
     urls.append({ "stop" : True })
 
 except Exception, e :
-    tlog(str(e))
+    for line in format_exc().splitlines() :
+        tlog(line)
 
 old_timeout = int(change_timeout(test_timeout)[1:-2])
 stop = True
