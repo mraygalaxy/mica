@@ -66,7 +66,11 @@ done
 if [ x"$1" == x ] ; then
     for num in $(seq 1 ${nodes}) ; do
         name="cluster$num"
-     	docker run -i -t -d --name ${name} -e CUSER="$user" -e CPASS="$pass" -e "CPARAMS=$(cat /home/mrhines/mica-android/mica/params.py)" couchdb24 bash -c "cd /home/mrhines/mica; git pull; util/couch_cluster.sh >> /var/log/cluster.log"
+        bindfirst=""
+        if [ $num == 1 ] ; then
+            bindfirst="-p 5985:5984"
+        fi
+     	docker run -i -t -d $bindfirst --name ${name} -e CUSER="$user" -e CPASS="$pass" -e "CPARAMS=$(cat /home/mrhines/mica-android/mica/params.py)" couchdb24 bash -c "cd /home/mrhines/mica; git pull; util/couch_cluster.sh >> /var/log/cluster.log"
     done
 else
 	echo "Skipping startup. Only cleanup."
@@ -82,7 +86,8 @@ for num in $(seq 1 ${nodes}) ; do
     name="cluster$num"
 	ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${name})
     echo "Enabling cluster on ${ip}"
-    curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"enable_cluster\",\"bind_address\":\"0.0.0.0\",\"username\":\"${user}\",\"password\":\"${pass}\"}" http://${ip}:5984/_cluster_setup
+    # If you're starting from a truly empty container, then don't feed the username and password to couchdb if it was never set before. Chicken and the egg because we're also setting the password here, too.
+    curl -X POST -H "Content-Type: application/json" -d "{\"action\":\"enable_cluster\",\"bind_address\":\"0.0.0.0\",\"username\":\"${user}\",\"password\":\"${pass}\"}" -basic --user ${user}:${pass} http://${ip}:5984/_cluster_setup
     verify $?
 done
 
