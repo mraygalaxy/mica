@@ -66,7 +66,7 @@ done
 if [ x"$1" == x ] ; then
     for num in $(seq 1 ${nodes}) ; do
         name="cluster$num"
-     	docker run -i -t -d --name ${name} -v $dir/../:/home/mrhines/mica/ couch_ansible_installed /home/mrhines/mica/util/couch_cluster.sh
+     	docker run -i -t -d --name ${name} -e CUSER="$user" -e CPASS="$pass" -e "CPARAMS=$(cat /home/mrhines/mica-android/mica/params.py)" couchdb24 bash -c "cd /home/mrhines/mica; git pull; util/couch_cluster.sh >> /var/log/cluster.log"
     done
 else
 	echo "Skipping startup. Only cleanup."
