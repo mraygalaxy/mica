@@ -9,9 +9,30 @@
 #
 # I'm thinking about extending this into docker swarm..... maybe. The overlay is pretty sick.
 
-user="admin"
-pass="password" # Obviously, don't use the password "password" in the real world. =)
-nodes=3 # as many as you want
+if [ x"$1" == x ] ; then
+	echo "Need username"
+	exit 1
+fi
+
+user=$1
+shift
+
+if [ x"$1" == x ] ; then
+	echo "Need password"
+	exit 1
+fi
+
+pass=$1
+shift
+
+if [ x"$1" == x ] ; then
+	echo "Need # nodes"
+	exit 1
+fi
+
+nodes=$1
+shift
+
 bringup=10 # delay to wait before the cluster is listening in the containers
 
 function verify {
@@ -41,10 +62,11 @@ for num in $(seq 1 ${nodes}) ; do
 	docker stop -t 0 ${name} 
 	docker rm ${name} 
 done
+
 if [ x"$1" == x ] ; then
     for num in $(seq 1 ${nodes}) ; do
         name="cluster$num"
-     	docker run -i -t -d --name ${name} -v $dir:/util couch_ansible_installed /util/couch_cluster.sh
+     	docker run -i -t -d --name ${name} -v $dir/../:/home/mrhines/mica/ couch_ansible_installed /home/mrhines/mica/util/couch_cluster.sh
     done
 else
 	echo "Skipping startup. Only cleanup."

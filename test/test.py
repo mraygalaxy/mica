@@ -567,7 +567,7 @@ if test["start_jabber"] :
     options.append(
     dict(
         image = test["jabber_container"],
-        command = ['/home/mrhines/mica/restart.sh'],
+        command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
         hostname = 'jabber',
         name = test["jabber_name"],
         tty = True,
@@ -582,22 +582,25 @@ if test["start_jabber"] :
     )
 )
 
+fh = open(cwd + "../params.py")
+raw_params = fh.read()
+fh.close()
+
 options.append(
     dict(
         image = test["couch_container"],
-#        command = ['couchdb'],
-        command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
+        command = ["/bin/bash", "-c", "cd /home/mrhines/mica/; git pull; (/home/mrhines/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
-        ports = [5984, 22, 6984, 7984],
-        volumes = [ "/usr/local/var/log/couchdb" ],
+        ports = [5984, 22, 5986],
+        volumes = [ "/var/log/" ],
+        environment = dict(CUSER = test["username"], CPASS = test["password"], CPARAMS = raw_params),
         host_config = c.create_host_config(port_bindings = {
                 "5984/tcp": ("0.0.0.0", 5985),
+                "5986/tcp": ("0.0.0.0", 5986),
                 "22/tcp":   ("0.0.0.0", 6222),
-                #"6984/tcp": ("0.0.0.0", 6984),
-                #"7984/tcp": ("0.0.0.0", 7984),
         }, binds = [
-                cwd + "../logs:/usr/local/var/log/couchdb",
+                cwd + "../logs:/var/log/",
             ]
         )
     )

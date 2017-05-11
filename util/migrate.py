@@ -23,13 +23,16 @@ dest = Server(args.dest)
 count = 0
 for dbname in src :
     db = src[dbname]
-    if (len(dbname) >= 4 and dbname[:4] == "mica" ) :#or dbname == "_users" :
+    if (len(dbname) >= 4 and dbname[:4] == "mica" ) or dbname == "_users" :
         try :
             newdb = dest[dbname]
         except couchdb.http.ResourceNotFound, e :
             dest.create(dbname)
             newdb = dest[dbname]
 
+        security = db.security
+        print "Copying " + str(dbname) + " security parameters: " + str(security)
+        newdb.security = security
         if db.info()["doc_count"] != newdb.info()["doc_count"] :
             print "Replicating: " + str(dbname)
             src.replicate(args.source + "/" + dbname, args.dest + "/" + dbname, continuous = True) 
@@ -37,7 +40,7 @@ for dbname in src :
             print "Already replicated: " + str(dbname)
             continue
 
-        while db.info()["doc_count"] != newdb.info()["doc_count"] :
+        while db.info()["doc_count"] > newdb.info()["doc_count"] :
             print "Source count: " + str(db.info()["doc_count"]) + " dest count: " +  str(newdb.info()["doc_count"])
             sleep(5)
 
