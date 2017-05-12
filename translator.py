@@ -50,7 +50,8 @@ class Translator(object):
             data = urllib2_urlopen(self.access_token_url, "", timeout=30).read()
             mverbose("Response: " + str(data))
             response = data
-            test_log(self.test, loc = self.access_token_url, response = data, method = "post")
+            # FIXME
+            #test_log(self.test, loc = self.access_token_url, response = data, method = "post")
         except IOError, e :
             if response :
                 raise TranslateApiException(
@@ -70,8 +71,6 @@ class Translator(object):
         return response
 
     def call(self, url, p, data = False):
-        """Calls the given url with the params urlencoded
-        """
         if not self.access_token:
             self.access_token = self.get_access_token()
         final_url = "%s?%s" % (url, urllib_urlencode(p))
@@ -79,8 +78,12 @@ class Translator(object):
 
         if data :
             r = requests.post(url, headers = headers, data = data, timeout=30)
+            # FIXME
+            #test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = response))
         else :
             r = requests.get(final_url, headers = headers, timeout=30)
+            # FIXME
+            #test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = response))
 
         response = r.text
 
@@ -108,16 +111,9 @@ class Translator(object):
                     for number in part :
                         mverbose("Setting: " + name + " = " + str(number.text))
                         result[name] = number.text
-            rv.append(result)
+            if len(result) > 0 :
+                rv.append(result)
 
-        if len(rv) > 0 and self.test :
-            rvc = deepcopy(rv)
-            for idx in range(0, len(rvc)) : 
-                mwarn("RVC idx: " + str(idx) + " is " + str(type(rvc[idx])) + ", " + str(rvc))
-                rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
-
-            # Log the results of microsoft for unit testing.
-            test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = rvc))
         return rv
 
 

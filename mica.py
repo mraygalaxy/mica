@@ -4582,15 +4582,26 @@ class MICA(object):
                             req.accountpageresult = _("Old passwords don't match! Try again") + ": " + str(reason)
                         else :
                             try :
+                                mdebug("1")
                                 auth_user['password'] = newpassword
+                                mdebug("2")
                                 del self.dbs[username]
+                                mdebug("3")
                                 self.verify_db(req, "_users")
+                                mdebug("4")
                                 req.db["org.couchdb.user:" + username] = auth_user
+                                mdebug("5")
                                 del self.dbs[username]
+                                mdebug("6")
                                 self.verify_db(req, req.session.value["database"], password = newpassword)
+                                mdebug("7")
                                 req.accountpageresult = _("Success!") + " " + _("User") + " " + username + " " + _("password changed")
+                                mdebug("8")
                                 json["test_success"] = True
+                                mdebug("9")
                             except Exception, e :
+                                for line in format_exc().splitlines() :
+                                    merr(line)
                                 json["success"] = False
                                 req.accountpageresult = _("Password change failed") + ": " + str(e)
         elif req.http.params.get("resetpassword") :
