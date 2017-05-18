@@ -441,7 +441,7 @@ def call_report() :
 
 
 def sdict(**kwargs) :
-    return json_dumps(kwargs)
+    return json_dumps(kwargs, ensure_ascii=False)
 
 def test_log(test, **kwargs) :
     if test :

@@ -33,9 +33,8 @@ class TranslateApiException(Exception):
         super(TranslateApiException, self).__init__(self.message, *args)
 
 class Translator(object):
-    def __init__(self, client_id, client_secret, scope, access_token_url,
+    def __init__(self, client_secret, scope, access_token_url,
                grant_type = "client_credentials", app_id = None, test = False):
-        self.client_id = client_id
         self.client_secret = client_secret
         self.scope = scope
         self.grant_type = grant_type
@@ -50,8 +49,7 @@ class Translator(object):
             data = urllib2_urlopen(self.access_token_url, "", timeout=30).read()
             mverbose("Response: " + str(data))
             response = data
-            # FIXME
-            #test_log(self.test, loc = self.access_token_url, response = data, method = "post")
+            #test_log(self.test, exchange = {"inp" : {"TranslatorAccessissueToken" : {"Subscription-Key" : self.client_secret}}, "outp" : data})
         except IOError, e :
             if response :
                 raise TranslateApiException(
@@ -78,12 +76,10 @@ class Translator(object):
 
         if data :
             r = requests.post(url, headers = headers, data = data, timeout=30)
-            # FIXME
-            #test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = response))
+            test_log(self.test, exchange = dict(inp = data, outp = r.text))
         else :
             r = requests.get(final_url, headers = headers, timeout=30)
-            # FIXME
-            #test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = response))
+            test_log(self.test, exchange = dict(inp = p, outp = r.text))
 
         response = r.text
 
@@ -105,7 +101,7 @@ class Translator(object):
             for part in child :
                 name = part.tag
                 if name in ["TranslatedText", "From"] :
-                    mverbose("Setting: " + name + " = " + str(part.text))
+                    #mdebug("Setting: " + name + " = " + str(part.text))
                     result[name] = part.text
                 else :
                     for number in part :
@@ -162,7 +158,7 @@ class Translator(object):
         for text in texts :
             if isinstance(text, unicode) :
                 text = text.encode("utf-8")
-            xml += "<string xmlns=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">" + text + "</string>"
+            xml += '<string xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">' + text + '</string>'
 
         if isinstance(to_lang, unicode) :
             to_lang = to_lang.encode("utf-8")
