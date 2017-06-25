@@ -666,7 +666,7 @@ class MicaServerCouchDB(AuthBase) :
     def first_auth(self, username, password) :
         self.auth(username, password)
 
-    @reauth
+    #@reauth
     def get_cookie(self, url, username, password) :
         username_unquoted = myquote(username)
         password_unquoted = myquote(password)

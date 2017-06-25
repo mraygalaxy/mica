@@ -305,7 +305,7 @@ class MICA(object):
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
                     self.filedb = self.dbs["files"]
-                    #self.cs.replicate("_users", "mica_admin", continuous = True) 
+                    #self.cs.replicate("_users", "mica_admin", continuous = True)
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
 
