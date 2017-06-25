@@ -305,7 +305,9 @@ class MICA(object):
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
                     self.filedb = self.dbs["files"]
-                    #self.cs.replicate("_users", "mica_admin", continuous = True)
+                    self.usersearchdb = self.cs["usersearch"]
+                    self.usersearchdb.set_security(self.sessiondb.get_security())
+                    self.cs.replicate("_users", "usersearch", continuous = True)
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
 
@@ -828,7 +830,7 @@ class MICA(object):
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories" ] + ([] if mobile else params["oauth"].keys() ):
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories", "usersearch" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3633,20 +3635,22 @@ class MICA(object):
 
         return self.api(req, out, json = {"test_success" : test_success} )
 
-    '''
     @api_validate
-    def render_searchusers(self, req) :
+    def render_usersearch(self, req) :
         if not req.http.params.get("keyword") :
             raise exc.HTTPBadRequest("Nothing to search for. Huh?")
 
-        keyword = req.http.params.get("keyword")
-        docs = req.db.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyworkd + ".*"}})
-        names = []
-        for doc in docs :
-            names.append({"name" : doc["name"], "email" : doc["email"]})
-        return self.api(req, json = {"len" : len(names), "results" : names})  
-    '''
-
+        try :
+            keyword = req.http.params.get("keyword")
+            docs = self.usersearchdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
+            names = []
+            for doc in docs :
+                names.append({"name" : doc["name"], "email" : doc["email"] if "email" in doc else False})
+            mdebug("Received " + str(len(docs)) + " results for query: " + keyword)
+            return self.api(req, json = {"len" : len(names), "results" : names})
+        except Exception, e :
+            merr(str(e))
+            return self.bad_api(req, "API error: " + str(e))
 
     def roll_period(self, req, period_key, period_next_key, peer) :
         error = False
@@ -5648,7 +5652,7 @@ class MICA(object):
         global times
         mverbose(str(req.http.params))
 
-        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push" ] :
+        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "usersearch" ] :
             return getattr(self, "render_" + req.action)(req)
 
 
