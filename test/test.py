@@ -15,7 +15,7 @@ from binascii import hexlify as binascii_hexlify
 from logging.handlers import RotatingFileHandler
 from logging import getLogger, StreamHandler, Formatter, Filter, DEBUG, ERROR, INFO, WARN, CRITICAL
 from copy import deepcopy
-from urllib import urlencode, unquote
+from urllib import urlencode, unquote, quote
 from codecs import open as codecs_open
 
 import requests
@@ -90,7 +90,7 @@ while True :
     tstr = json_loads(trans.decode("utf-8"), "utf-8")
     mock_rest["TranslatorRequest"].append(tstr["exchange"])
 
-tlog("Loaded " + str(len(mock_rest["TranslatorRequest"])) + " tests.")
+tlog("Loaded " + str(len(mock_rest["TranslatorRequest"])) + " translations.")
 tlog("First entry keys: " + str(mock_rest["TranslatorRequest"][0].keys()))
 
 def my_parse(data) :
@@ -113,9 +113,8 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             found = False
             for pair in mock_rest[key] :
-                tlog(" Checking " + key + " against these keys: " + str(pair))
                 if xml != pair["inp"] :
-                    tlog("  " + str(xml) + " != " + str(pair["inp"]))
+                    #tlog("  " + str(xml) + " != " + str(pair["inp"]))
                     continue
 
                 found = True
@@ -129,7 +128,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             break
 
-        return body
+        # This is XML, now. Pity. When it was JSON, I didn't have to quote anything.
+        sending = quote(body)
+        tlog("  SENDING: " + str(sending))
+        return sending 
 
     def do_POST(self) :
         body = ""
@@ -548,6 +550,7 @@ options.append(
     dict(
         image = test["couch_container"],
         command = ["/bin/bash", "-c", "cd /home/mrhines/mica/; git pull; (/home/mrhines/mica/restart.sh &); bash"],
+        #command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
         ports = [5984, 22, 5986],
@@ -729,7 +732,7 @@ try :
                 common_urls["login"],
                 common_urls["storylist"],
                 common_urls["storylist_rotate"],
-                { "repeat" : 80, "urls" : [
+                { "repeat" : test["api_repeat"], "urls" : [
                     { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb", "method" : "get", "success" :  True, "test_success" : True },
                     { "loc" : "/api?human=0&alien=read&view=1&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&page=0", "method" : "get", "success" :  True, "test_success" : True },
                     { "loc" : "/api?human=0&alien=read&uuid=b220074e-f1a7-417b-9f83-e63cebea02cb&memolist=1&page=0", "method" : "get", "success" :  True, "test_success" : True },
@@ -762,7 +765,7 @@ try :
                #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=128", "method" : "get", "success" : True, "test_success" :  True },
                #{ "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(transid0 = 67, index0 = 1, nbunit0 = 75, page0 = 151, transid1 = 74, index1 = 1, nbunit1 = 84, page1 = 151, transid2 = 81, index2 = 1, nbunit2 = 93, page2 = 151, transid3 = 88, index3 = 1, nbunit3 = 102, page3 = 151, transid4 = 105, index4 = 1, nbunit4 = 123, page4 = 151, count = 5, bulkreview = 1) },
                #{ "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
-               { "repeat" : 80, "urls" : [
+               { "repeat" : test["api_repeat"], "urls" : [
                    # Switch to split view on sample
                    { "loc" : "/api?human=0&alien=read&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&reviewlist=1&page=151", "method" : "get", "success" : True, "test_success" :  True },
                    { "loc" : "/api?human=0&alien=home&view=1&uuid=37d4bcbb-752f-4a83-8ded-336554d503b9&page=151", "method" : "get", "success" : True, "test_success" :  True },
@@ -890,7 +893,7 @@ try :
 
                common_urls["account"],
 
-               { "repeat" : 10, "urls" : [
+               { "repeat" : test["login_repeat"], "urls" : [
                    { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
@@ -935,7 +938,7 @@ try :
 
                common_urls["relogin"],
 
-               { "repeat" : 2, "urls" : [
+               { "repeat" :  test["login_repeat"], "urls" : [
                    { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
@@ -951,7 +954,7 @@ try :
                common_urls["storylist_triple"],
                common_urls["relogin"],
 
-               { "repeat" : 2, "urls" : [
+               { "repeat" : test["login_repeat"], "urls" : [
                    { "sleep" : test_timeout * 2,  "loc" : "sleep", "method" : "none" },
                    common_urls["login"],
                    ]
@@ -992,9 +995,10 @@ def add_chat_tests() :
 
 try :
     urls += tests
-    for x in range(0, 100) :
+    for x in range(0, test["oauth_repeat"]) :
         add_oauth_tests()
-    add_chat_tests()
+    if test["test_chat"] :
+        add_chat_tests()
     sleep(5)
 
     urls.append(common_urls["logout"])

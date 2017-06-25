@@ -280,6 +280,11 @@ class MicaDatabaseCouchDB(MicaDatabase) :
         self.db.security = doc
 
     @reauth
+    def find(self, query) :
+        _, _, data = self.db.resource.post_json('_find', body={"selector" : query}, headers = {'Content-Type': 'application/json'})
+        return data["docs"]
+
+    @reauth
     def __setitem__(self, name, doc, second_time = False) :
         try :
             self.db[name] = doc
@@ -661,6 +666,7 @@ class MicaServerCouchDB(AuthBase) :
     def first_auth(self, username, password) :
         self.auth(username, password)
 
+    @reauth
     def get_cookie(self, url, username, password) :
         username_unquoted = myquote(username)
         password_unquoted = myquote(password)
@@ -733,6 +739,10 @@ class MicaServerCouchDB(AuthBase) :
         else :
             db = self.couch_server.create(dbname)
         return MicaDatabaseCouchDB(db, self, dbname)
+
+    @reauth
+    def replicate(self, source, target, **options) :
+        self.couch_server.replicate(source, target, **options)
 
     @reauth
     def __delitem__(self, name) :

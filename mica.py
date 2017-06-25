@@ -305,6 +305,7 @@ class MICA(object):
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
                     self.filedb = self.dbs["files"]
+                    #self.cs.replicate("_users", "mica_admin", continuous = True) 
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
 
@@ -3631,6 +3632,21 @@ class MICA(object):
             return self.bad_api(req, _("Please wait until this account is fully synchronized for an offline instant translation."))
 
         return self.api(req, out, json = {"test_success" : test_success} )
+
+    '''
+    @api_validate
+    def render_searchusers(self, req) :
+        if not req.http.params.get("keyword") :
+            raise exc.HTTPBadRequest("Nothing to search for. Huh?")
+
+        keyword = req.http.params.get("keyword")
+        docs = req.db.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyworkd + ".*"}})
+        names = []
+        for doc in docs :
+            names.append({"name" : doc["name"], "email" : doc["email"]})
+        return self.api(req, json = {"len" : len(names), "results" : names})  
+    '''
+
 
     def roll_period(self, req, period_key, period_next_key, peer) :
         error = False

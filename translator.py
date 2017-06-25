@@ -6,6 +6,7 @@ from urllib2 import urlopen as urllib2_urlopen, Request as urllib2_Request
 from json import loads, dumps
 from copy import deepcopy
 from xml import etree
+from urllib2 import quote, unquote
 
 from common import *
 
@@ -92,8 +93,18 @@ class Translator(object):
         if response.count("TranslateApiException"):
             raise TranslateApiException(response)
 
-        response = xmlstring = re.sub(' xmlns="[^"]+"', '', response, count=1)
-        root = etree.ElementTree.fromstring(response.decode("utf-8-sig"))
+        response = xmlstring = re.sub(' xmlns="[^"]+"', '', unquote(response), count=1)
+        try :
+            root = etree.ElementTree.fromstring(response.decode("utf-8-sig"))
+        except Exception, e :
+            mdebug("TRIED TO TRANSLATE: " + str(data))
+            mdebug("WE GOT BACK: " + str(r.text))
+            mdebug("DECODED AS: " + str(r.text("utf-8-sig")))
+            mdebug("UNQUOTED AS: " + str(unquote(r.text)))
+            mdebug("UNQUOTED/DECODED AS: " + str(unquote(r.text).decode("utf-8-sig")))
+
+            raise ArgumentException("Could not parse the response XML.")
+
         rv = []
 
         for child in root :
