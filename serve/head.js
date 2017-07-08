@@ -636,7 +636,6 @@ function ctest() {
     });
 
     console.log("Want to run converse with: **" + local('language') + "**");
-    /* TODO: use xhr_user_search and xhr_user_search_url options */
     cparams = {
         bosh_service_url: httpbase, 
         i18n: locales[local('language')],
@@ -657,6 +656,8 @@ function ctest() {
         allow_logout: false,
 //        auto_login: true, //prebind only
         sounds_path: "/serve/sounds/",
+        xhr_user_search: true,
+        xhr_user_search_url: "/chatsearch",
     };
 }
 

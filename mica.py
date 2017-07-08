@@ -421,10 +421,16 @@ class MICA(object):
                 if attempt > 0 :
                     mdebug("Authentication attempt #" + str(attempt))
                 
+                mdebug("Username is: " + str(type(username)))
+                mdebug("Password is: " + str(type(password)))
                 if isinstance(username, unicode) :
                     username = username.encode("utf-8").decode("latin1")
+                elif isinstance(username, str) :
+                    username = username.decode("utf-8").encode("utf-8").decode("latin1")
                 if isinstance(password, unicode) :
                     password = password.encode("utf-8").decode("latin1")
+                elif isinstance(password, str) :
+                    password = password.decode("utf-8").encode("utf-8").decode("latin1")
 
                 r = requests.get(auth_url + "/_users/org.couchdb.user:" + lookup_username_unquoted, auth=(username, password), timeout = 20 if attempt == 0 else 10)
 
@@ -830,7 +836,7 @@ class MICA(object):
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories", "usersearch" ] + ([] if mobile else params["oauth"].keys() ):
+                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories", "usersearch", "chatsearch" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3635,22 +3641,42 @@ class MICA(object):
 
         return self.api(req, out, json = {"test_success" : test_success} )
 
+    def usersearch(self, req, keyword) :
+        docs = self.usersearchdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
+        names = []
+        for doc in docs :
+            names.append({"name" : doc["name"], "email" : doc["email"] if "email" in doc else False})
+        mdebug("Received " + str(len(docs)) + " results for query: " + keyword)
+        return {"len" : len(names), "results" : names}
+
     @api_validate
     def render_usersearch(self, req) :
         if not req.http.params.get("keyword") :
             raise exc.HTTPBadRequest("Nothing to search for. Huh?")
-
+        keyword = req.http.params.get("keyword")
         try :
-            keyword = req.http.params.get("keyword")
-            docs = self.usersearchdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
-            names = []
-            for doc in docs :
-                names.append({"name" : doc["name"], "email" : doc["email"] if "email" in doc else False})
-            mdebug("Received " + str(len(docs)) + " results for query: " + keyword)
-            return self.api(req, json = {"len" : len(names), "results" : names})
+            return self.api(req, json = self.usersearch(req, keyword))
         except Exception, e :
             merr(str(e))
             return self.bad_api(req, "API error: " + str(e))
+
+    @api_validate
+    def render_chatsearch(self, req) :
+        if not req.http.params.get("q") :
+            raise exc.HTTPBadRequest("Nothing to search for. Huh?")
+        keyword = req.http.params.get("q")
+        results = []
+        try :
+            users = self.usersearch(req, keyword)
+        except Exception, e :
+            merr(str(e))
+            return self.bad_api(req, "API error: " + str(e))
+
+        for user in users["results"] :
+            name = user["name"].replace("@", "%40")
+            results.append({"id" : name + "@" + params["main_server"], "name" : name, "fullname" : name})
+
+        return json_dumps(results)
 
     def roll_period(self, req, period_key, period_next_key, peer) :
         error = False
@@ -5652,7 +5678,7 @@ class MICA(object):
         global times
         mverbose(str(req.http.params))
 
-        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "usersearch" ] :
+        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "usersearch", "chatsearch" ] :
             return getattr(self, "render_" + req.action)(req)
 
 

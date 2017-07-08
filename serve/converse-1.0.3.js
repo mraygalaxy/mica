@@ -8358,7 +8358,11 @@ define('text!ca',[],function () { return '{\n   "domain": "converse",\n   "local
 
                 searchContacts: function (ev) {
                     ev.preventDefault();
-                    $.getJSON(converse.xhr_user_search_url+ "?q=" + $(ev.target).find('input.username').val(), function (data) {
+                    var keyword = converse.xhr_user_search_url+ "?q=" + $(ev.target).find('input.username').val()
+                    console.log("Executing user search with: " + keyword);
+                    // So the request to this query actually went out and came back, but didn't go anywhere into the internal function. And breakpoints are not working. Why?
+                    $.getJSON(keyword, function (data) {
+                        console.log("Got data: " + data);
                         var $ul= $('.search-xmpp ul');
                         $ul.find('li.found-user').remove();
                         $ul.find('li.chat-info').remove();
