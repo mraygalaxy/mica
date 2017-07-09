@@ -18,7 +18,7 @@ try :
     from couchdb import Server
     import couchdb.http
     retriable_errors = (Unauthorized, IncompleteRead, CannotSendRequest)
-    bad_errnos = [errno.EPIPE, errno.ECONNRESET, None]
+    bad_errnos = [errno.EPIPE, errno.ECONNRESET, errno.ECONNREFUSED, None]
     server_errors = [403, 500, 502]
 except ImportError, e :
     mdebug("couchdb not available. Probably on mobile.")

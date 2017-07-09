@@ -57,7 +57,7 @@ sys.path = [cwd, cwd + "../"] + sys.path
 record = open(cwd + "../logs/test.log", 'w')
 
 from params import parameters, test
-from common import sdict, recursiveSetInDict, timest, getFromDict
+from common import sdict, recursiveSetInDict, timest, getFromDict, myquote
 from mica import go
 from pyquery import PyQuery as pq
 from sys import argv
@@ -129,7 +129,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             break
 
         # This is XML, now. Pity. When it was JSON, I didn't have to quote anything.
-        sending = quote(body)
+        sending = myquote(body)
         tlog("  SENDING: " + str(sending))
         return sending 
 

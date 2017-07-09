@@ -421,8 +421,6 @@ class MICA(object):
                 if attempt > 0 :
                     mdebug("Authentication attempt #" + str(attempt))
                 
-                mdebug("Username is: " + str(type(username)))
-                mdebug("Password is: " + str(type(password)))
                 if isinstance(username, unicode) :
                     username = username.encode("utf-8").decode("latin1")
                 elif isinstance(username, str) :
