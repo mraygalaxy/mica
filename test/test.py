@@ -1035,5 +1035,6 @@ if not stop and test["pause_on_error"] :
             sleep(10)
     except KeyboardInterrupt:
         tlog("CTRL-C interrupt")
+        good = False
 
 exit(0 if good else 1)
