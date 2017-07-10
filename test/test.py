@@ -328,193 +328,190 @@ def run_tests(test_urls) :
     tlog("Tests: " + str(len(flat_urls)))
     stop_test = False
     last_json = {}
-    try:
-        for tidx in range(0, len(flat_urls)) :
-            url = flat_urls[tidx]
-            if "stop" in url and url["stop"] :
-                tlog("Stop requested.")
-                stop_test = True
+
+    for tidx in range(0, len(flat_urls)) :
+        url = flat_urls[tidx]
+        if "stop" in url and url["stop"] :
+            tlog("Stop requested.")
+            stop_test = True
+            break
+
+        start = timest()
+
+        job_was_running = False
+
+        if "data" in url :
+            fkeys = ["uuid"] if "upload" not in url else []
+            if "forward_keys" in url :
+                for key in url["forward_keys"] :
+                    if key not in fkeys :
+                        fkeys.append(key)
+
+            for key in fkeys :
+                dest_key = key
+                if key.count("/") :
+                    dest_key = key.split("/")[1]
+                    key = key.split("/")[0]
+
+                if key in last_json and key not in url["data"] :
+                    if key != "uuid" :
+                        tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
+                    url["data"][dest_key] = last_json[key]
+
+        finaldest = target if ("couch" not in url or not url["couch"]) else couch
+        verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
+        secs = int(time()) - start_time
+        tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
+
+        max_retries = 5
+        retry_attempts = 0
+        until_attempts = 0
+
+        while retry_attempts < max_retries and until_attempts < 30 :
+            cookie_found = False
+            tlog(tlogmsg)
+            record.write(tlogmsg + "\n")
+            record.flush()
+
+            if "sleep" in url :
+                tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
+                sleep(url["sleep"])
                 break
 
-            start = timest()
+            if url["loc"].count("state=") and url["loc"].count("finish=") :
+                [left, right] = url["loc"].split("?")
+                oparams = my_parse(right)
+                if oparams["state"] != oauth["states"][oparams["alien"]] :
+                    #tlog("  State is stale. correcting.")
+                    oparams["state"] = oauth["states"][oparams["alien"]]
+                    url["loc"] = left + "?" + urlencode(oparams)
 
-            job_was_running = False
-
-            if "data" in url :
-                fkeys = ["uuid"] if "upload" not in url else []
-                if "forward_keys" in url :
-                    for key in url["forward_keys"] :
-                        if key not in fkeys :
-                            fkeys.append(key)
-
-                for key in fkeys :
-                    dest_key = key
-                    if key.count("/") :
-                        dest_key = key.split("/")[1]
-                        key = key.split("/")[0]
-
-                    if key in last_json and key not in url["data"] :
-                        if key != "uuid" :
-                            tlog("  Updating key " + str(dest_key) + " in data with value: " + last_json[key])
-                        url["data"][dest_key] = last_json[key]
-
-            finaldest = target if ("couch" not in url or not url["couch"]) else couch
-            verify = target_verify if ("couch" not in url or not url["couch"]) else couch_verify
-            secs = int(time()) - start_time
-            tlogmsg = "Test (@" + str(secs) + ") " + str(tidx) + "/" + str(len(flat_urls)) + ": " + url["method"].upper() + ": " + (url["loc"].replace("/api?human=0&alien=", "").replace("&", ", ").replace("=", " = ").replace("&", ", ") if "loc" in url else "nowhere") + ", data: " + (str(url["data"]) if "data" in url else "none")
-
-            max_retries = 5
-            retry_attempts = 0
-            until_attempts = 0
-
-            while retry_attempts < max_retries and until_attempts < 30 :
-                cookie_found = False
-                tlog(tlogmsg)
-                record.write(tlogmsg + "\n")
-                record.flush()
-
-                if "sleep" in url :
-                    tlog("  Sleeping for " + str(url["sleep"]) + " seconds...")
-                    sleep(url["sleep"])
-                    break
-
-                if url["loc"].count("state=") and url["loc"].count("finish=") :
-                    [left, right] = url["loc"].split("?")
-                    oparams = my_parse(right)
-                    if oparams["state"] != oauth["states"][oparams["alien"]] :
-                        #tlog("  State is stale. correcting.")
-                        oparams["state"] = oauth["states"][oparams["alien"]]
-                        url["loc"] = left + "?" + urlencode(oparams)
-
-                if url["method"] == "get" :
+            if url["method"] == "get" :
+                udest = finaldest + move_data_to_url(url)
+                r = s.get(udest, verify = verify, cookies = dict(AuthSession = current_cookie) if current_cookie else {})
+            elif url["method"] == "post" :
+                udest = finaldest + url["loc"]
+                pdata = deepcopy(url["data"])
+                if current_cookie :
+                    pdata["Cookie"] = "AuthSession=" + current_cookie
+                r = s.post(udest, data = pdata, verify = verify)
+            elif url["method"] == "put" :
+                headers = {}
+                if current_cookie :
+                    headers["Cookie"] = "AuthSession=" + current_cookie
+                if "upload" in url :
+                    fname = cwd + 'example_stories/' + url["upload"]
+                    tlog("  Uploading file: " + fname)
                     udest = finaldest + move_data_to_url(url)
-                    r = s.get(udest, verify = verify, cookies = dict(AuthSession = current_cookie) if current_cookie else {})
-                elif url["method"] == "post" :
-                    udest = finaldest + url["loc"]
-                    pdata = deepcopy(url["data"])
-                    if current_cookie :
-                        pdata["Cookie"] = "AuthSession=" + current_cookie
-                    r = s.post(udest, data = pdata, verify = verify)
-                elif url["method"] == "put" :
-                    headers = {}
-                    if current_cookie :
-                        headers["Cookie"] = "AuthSession=" + current_cookie
-                    if "upload" in url :
-                        fname = cwd + 'example_stories/' + url["upload"]
-                        tlog("  Uploading file: " + fname)
-                        udest = finaldest + move_data_to_url(url)
-                        headers['content-type'] = url["upload_type"]
-                            
-                        r = s.put(udest, headers = headers, data = open(fname, 'rb').read(), verify = verify)
-                    else :
-                        udest = finaldest + url["loc"]
-                        r = s.put(udest, headers = headers, data = json_dumps(url["data"]), verify = verify)
-                stop = timest()
-
-                if 'AuthSession' in r.cookies :
-                    current_cookie = r.cookies['AuthSession']
-                    #tlog("  Setting cookie: " + current_cookie)
-                    cookie_found = True
-
-                if r.status_code not in [200, 201] :
-
-                    if r.status_code == 504 :
-                        tlog("  Gateway timeout to: " + udest + ", Try the request again...")
-                        retry_attempts += 1
-                        run_tests(common_urls["relogin"])
-                        sleep(5)
-                        continue
-
-                    if r.status_code == 401 :
-                        tlog("  Our token may have expired. Login again and retry the test: " + str(r.text))
-                        # For auth tests, 401 means the oauth state parameter
-                        # is no longer valid. We have to update it.
-
-                        if url["loc"].count("state=") and url["loc"].count("finish=") :
-                            #tlog("Repopulating oauth state value...")
-                            repopulate_states()
+                    headers['content-type'] = url["upload_type"]
                         
-                        if "retry_action" in url :
-                            run_tests(common_urls[url["retry_action"]])
-                        else :
-                            run_tests(common_urls["relogin"])
-                        retry_attempts += 1
-                        sleep(5)
-
-                        continue
-
-                    tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
-                    assert(False)
+                    r = s.put(udest, headers = headers, data = open(fname, 'rb').read(), verify = verify)
                 else :
-                    #tlog("  Resetting all attempts to zero.")
-                    retry_attempts = 0
-                    until_attempts = 0
+                    udest = finaldest + url["loc"]
+                    r = s.put(udest, headers = headers, data = json_dumps(url["data"]), verify = verify)
+            stop = timest()
 
-                # The difference between 'success' and 'test_success' is for errors
-                # that happen during tests which are tolerable in the user experience.
-                # For example, if the translation API can't reach the internet, the
-                # UI will just return that connectivity information to the user, but
-                # it does not mean there's a failure in the system. But, it is indeed
-                # a unit test failure, so we need to know about it and check for it.
-                try :
-                    j = json_loads(r.text)
-                    last_json = j
-                    if "cookie" in j and not cookie_found :
-                        current_cookie = j["cookie"].split("=")[1]
-                        tlog(" using json cookie: " + current_cookie)
-                except ValueError, e :
-                    tlog("  Failed to parse JSON from:\n" + r.text)
-                    #tlog("  Failed to parse JSON.")
-                    assert(False)
-                    #retry_attempts += 1
-                    #sleep(5)
-                    #continue
+            if 'AuthSession' in r.cookies :
+                current_cookie = r.cookies['AuthSession']
+                #tlog("  Setting cookie: " + current_cookie)
+                cookie_found = True
 
-                if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
-                    #if not job_was_running :
-                    tlog("  There is a job running. Coming back later.")
-                    job_was_running = True
+            if r.status_code not in [200, 201] :
+
+                if r.status_code == 504 :
+                    tlog("  Gateway timeout to: " + udest + ", Try the request again...")
+                    retry_attempts += 1
+                    run_tests(common_urls["relogin"])
                     sleep(5)
                     continue
 
-                if "until" in url :
-                    v = getFromDict(j, url["until"]["path"])
-                    if v != url["until"]["equals"] :
-                        tlog("  Until " + str(v) + " != " + url["until"]["equals"])
-                        sleep(5)
-                        until_attempts += 1
-                        continue
+                if r.status_code == 401 :
+                    tlog("  Our token may have expired. Login again and retry the test: " + str(r.text))
+                    # For auth tests, 401 means the oauth state parameter
+                    # is no longer valid. We have to update it.
 
-                diff = stop - start
-                #tlog("  Time: " + str(int(diff)) + " secs.")
+                    if url["loc"].count("state=") and url["loc"].count("finish=") :
+                        #tlog("Repopulating oauth state value...")
+                        repopulate_states()
+                    
+                    if "retry_action" in url :
+                        run_tests(common_urls[url["retry_action"]])
+                    else :
+                        run_tests(common_urls["relogin"])
+                    retry_attempts += 1
+                    sleep(5)
 
-                if "success" in url and url["success"] is not None :
-                    assert("success" in j)
-                    if j["success"] != url["success"] :
-                        tlog("resulting JSON: " + str(j))
-                        tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
-                        assert(False)
-                if "test_success" in url and url["test_success"] is not None :
-                    assert("test_success" in j)
-                    if j["test_success"] != url["test_success"] :
-                        tlog("resulting JSON: " + str(j))
-                        tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
-                        assert(False)
+                    continue
 
-                break
-
-            if retry_attempts >= max_retries :
-                tlog(" Failed to retry last run after 3 attempts.")
-                stop_test = True
+                tlog("  Bad status code: " + str(r.status_code) + ": " + r.text)
                 assert(False)
+            else :
+                #tlog("  Resetting all attempts to zero.")
+                retry_attempts = 0
+                until_attempts = 0
 
-            if until_attempts >= 30 :
-                tlog(" Failed to until last run after 30 attempts.")
-                stop_test = True
+            # The difference between 'success' and 'test_success' is for errors
+            # that happen during tests which are tolerable in the user experience.
+            # For example, if the translation API can't reach the internet, the
+            # UI will just return that connectivity information to the user, but
+            # it does not mean there's a failure in the system. But, it is indeed
+            # a unit test failure, so we need to know about it and check for it.
+            try :
+                j = json_loads(r.text)
+                last_json = j
+                if "cookie" in j and not cookie_found :
+                    current_cookie = j["cookie"].split("=")[1]
+                    tlog(" using json cookie: " + current_cookie)
+            except ValueError, e :
+                tlog("  Failed to parse JSON from:\n" + r.text)
+                #tlog("  Failed to parse JSON.")
                 assert(False)
+                #retry_attempts += 1
+                #sleep(5)
+                #continue
 
-    except KeyboardInterrupt:
-        tlog("CTRL-C interrupt")
+            if "job_running" in j and j["job_running"] and ("check_job_running" not in url or url["check_job_running"]):
+                #if not job_was_running :
+                tlog("  There is a job running. Coming back later.")
+                job_was_running = True
+                sleep(5)
+                continue
+
+            if "until" in url :
+                v = getFromDict(j, url["until"]["path"])
+                if v != url["until"]["equals"] :
+                    tlog("  Until " + str(v) + " != " + url["until"]["equals"])
+                    sleep(5)
+                    until_attempts += 1
+                    continue
+
+            diff = stop - start
+            #tlog("  Time: " + str(int(diff)) + " secs.")
+
+            if "success" in url and url["success"] is not None :
+                assert("success" in j)
+                if j["success"] != url["success"] :
+                    tlog("resulting JSON: " + str(j))
+                    tlog("Success failed. Requested: " + str(url["success"]) + ", Got: " + str(j["success"]))
+                    assert(False)
+            if "test_success" in url and url["test_success"] is not None :
+                assert("test_success" in j)
+                if j["test_success"] != url["test_success"] :
+                    tlog("resulting JSON: " + str(j))
+                    tlog("  Test Success failed. Requested: " + str(url["test_success"]) + ", Got: " + str(j["test_success"]))
+                    assert(False)
+
+            break
+
+        if retry_attempts >= max_retries :
+            tlog(" Failed to retry last run after 3 attempts.")
+            stop_test = True
+            assert(False)
+
+        if until_attempts >= 30 :
+            tlog(" Failed to until last run after 30 attempts.")
+            stop_test = True
+            assert(False)
 
     return stop_test
 
