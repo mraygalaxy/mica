@@ -1007,20 +1007,17 @@ except Exception, e :
 
 old_timeout = int(change_timeout(test_timeout)[1:-2])
 stop = True
-good = True
+good = False 
 try :
     stop = run_tests(urls)
+    good = True
 except AssertionError, e :
     tlog(str(e))
-    good = False
 except KeyboardInterrupt:
     tlog("CTRL-C interrupt")
-    good = False
 except Exception, e :
-    good = False
     for line in format_exc().splitlines() :
         tlog(line)
-    #pass
 
 change_timeout(604800)
 #change_timeout(old_timeout)
@@ -1036,6 +1033,5 @@ if not stop and test["pause_on_error"] :
             sleep(10)
     except KeyboardInterrupt:
         tlog("CTRL-C interrupt")
-        good = False
 
 exit(0 if good else 1)
