@@ -26,6 +26,8 @@ import BaseHTTPServer
 import httplib
 import logging
 
+exit(1)
+
 logger = getLogger("micatest")
 logger.setLevel(level=DEBUG)
 streamhandler = StreamHandler(sys.stderr)
