@@ -1013,7 +1013,11 @@ try :
 except AssertionError, e :
     tlog(str(e))
     good = False
+except KeyboardInterrupt:
+    tlog("CTRL-C interrupt")
+    good = False
 except Exception, e :
+    good = False
     for line in format_exc().splitlines() :
         tlog(line)
     #pass
