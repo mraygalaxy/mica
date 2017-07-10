@@ -26,8 +26,6 @@ import BaseHTTPServer
 import httplib
 import logging
 
-exit(1)
-
 logger = getLogger("micatest")
 logger.setLevel(level=DEBUG)
 streamhandler = StreamHandler(sys.stderr)
@@ -1029,7 +1027,7 @@ change_timeout(604800)
 record.close()
 httpd.socket.close()
 
-if not stop :
+if not stop and test["pause_on_error"] :
     try:
         secs = int(time()) - start_time
         tlog("Done in " + str(secs) + " secs. Application left running...")
