@@ -888,6 +888,8 @@ try :
                { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : False, "test_success" :  False, "data" : dict(setappzoom = 'notanumber') },
                { "loc" : "/api?human=0&alien=account", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(setappzoom = '1.0') },
 
+               { "loc" : "/chatsearch?q=m", "method" : "get", "success" : True, "test_success" : True },
+
                common_urls["account"],
 
                { "repeat" : test["login_repeat"], "urls" : [

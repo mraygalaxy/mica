@@ -4057,7 +4057,7 @@ class MICA(object):
 
     def render_translate(self, req, story) :
         output = ""
-        if story["translated"] or story["translating"] :
+        if story["translated"] or ("translating" in story and story["translating"]) :
             output += _("Story already translated. To re-translate, please select 'Forget'.")
         else :
             pt = Thread(target = self.parse, args = [req, story])
