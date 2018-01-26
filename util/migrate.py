@@ -12,8 +12,8 @@ import couchdb
 parser = OptionParser()
 
 parser = argparse.ArgumentParser(description='Replicate one server to another.')
-parser.add_argument('--source', type=str, help='Source address')
-parser.add_argument('--dest', type=str, help='Destination address')
+parser.add_argument('--source', type=str, required = True, help='Source address')
+parser.add_argument('--dest', type=str, required = True, help='Destination address')
 
 args = parser.parse_args()
 

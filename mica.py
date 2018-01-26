@@ -305,9 +305,10 @@ class MICA(object):
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
                     self.filedb = self.dbs["files"]
-                    self.usersearchdb = self.cs["usersearch"]
-                    self.usersearchdb.set_security(self.sessiondb.get_security())
-                    self.cs.replicate("_users", "usersearch", continuous = True)
+                    #bug is fixed. You can delete the code now.
+                    #self.usersearchdb = self.cs["usersearch"]
+                    #self.usersearchdb.set_security(self.sessiondb.get_security())
+                    #self.cs.replicate("_users", "usersearch", continuous = True)
                 else :
                     mwarn("Admin credentials ommitted. Skipping administration setup.")
 
@@ -3640,7 +3641,8 @@ class MICA(object):
         return self.api(req, out, json = {"test_success" : test_success} )
 
     def usersearch(self, req, keyword) :
-        docs = self.usersearchdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
+        #docs = self.usersearchdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
+        docs = self.userdb.find({"_id" : {"$regex" : "org.couchdb.user:.*" + keyword + ".*"}})
         names = []
         for doc in docs :
             names.append({"name" : doc["name"], "email" : doc["email"] if "email" in doc else False})

@@ -162,6 +162,8 @@ def reauth(func):
                     # Database failure. Retry again too.
                     retry_auth = True
                     mverbose("Retriable Server error: " + str(status) + " " + str(error))
+                    for line in format_exc().splitlines() :
+                        mwarn(line)
                 else :
                     merr("Unhandled Server error: " + str(status) + " " + str(error))
             except Exception, e :
