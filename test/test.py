@@ -530,11 +530,11 @@ if test["start_jabber"] :
         tty = True,
         ports = [5280, 22, 5222, 5223, 5281],
         host_config = c.create_host_config(port_bindings = {
-                "22/tcp":   ("0.0.0.0", 4444),
-                "5222/tcp": ("0.0.0.0", 5222),
-                "5223/tcp": ("0.0.0.0", 5223),
-                "5280/tcp": ("0.0.0.0", 5280),
-                "5281/tcp": ("0.0.0.0", 5281),
+                "22/tcp":   (test["bind"], 4444),
+                "5222/tcp": (test["bind"], 5222),
+                "5223/tcp": (test["bind"], 5223),
+                "5280/tcp": (test["bind"], 5280),
+                "5281/tcp": (test["bind"], 5281),
         })
     )
 )
@@ -554,9 +554,9 @@ options.append(
         volumes = [ "/var/log/" ],
         environment = dict(CUSER = test["username"], CPASS = test["password"], CPARAMS = raw_params),
         host_config = c.create_host_config(port_bindings = {
-                "5984/tcp": ("0.0.0.0", 5985),
-                "5986/tcp": ("0.0.0.0", 5986),
-                "22/tcp":   ("0.0.0.0", 6222),
+                "5984/tcp": (test["bind"], 5985),
+                "5986/tcp": (test["bind"], 5986),
+                "22/tcp":   (test["bind"], 6222),
         }, binds = [
                 cwd + "../logs:/var/log/",
             ]
