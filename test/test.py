@@ -230,7 +230,7 @@ def change_timeout(timeout) :
     r = s.get(couch_config + "_config", verify = couch_verify)
 
     if r.status_code not in [200, 201] :
-        raise Exception("Failed to lookup configuration: " + str(r.status_code))
+        raise Exception("Failed to lookup configuration: " + str(r.status_code) + " to: " + couch_config + "_session")
 
     config = r.json()
 
