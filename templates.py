@@ -779,6 +779,11 @@ class PrivacyElement(CommonElement):
     def privacy(self, request, tag) :
         return tag
 
+class SurveyElement(CommonElement):
+    @renderer
+    def survey(self, request, tag) :
+        return tag
+
 class DatabasesElement(CommonElement):
     @renderer
     def databaseslots(self, request, tag) :

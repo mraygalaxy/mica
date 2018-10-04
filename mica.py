@@ -3248,6 +3248,10 @@ class MICA(object):
     def render_privacy(self, req) :
         self.install_local_language(req)
         return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8'))
+    
+    def render_survey(self, req) :
+        self.install_local_language(req)
+        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, SurveyElement)).encode('utf-8'))
 
     def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
