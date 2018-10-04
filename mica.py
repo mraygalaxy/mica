@@ -827,7 +827,7 @@ class MICA(object):
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories" ] + ([] if mobile else params["oauth"].keys() ):
+                if req.action in ["connect", "disconnect", "survey", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -3240,6 +3240,10 @@ class MICA(object):
     def render_privacy(self, req) :
         self.install_local_language(req)
         return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, PrivacyElement)).encode('utf-8'))
+    
+    def render_survey(self, req) :
+        self.install_local_language(req)
+        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^>]\n)", "\g<1>\n<br/>\n", run_template(req, SurveyElement)).encode('utf-8'))
 
     def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
@@ -5621,7 +5625,7 @@ class MICA(object):
         global times
         mverbose(str(req.http.params))
 
-        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push" ] :
+        if req.action in ["disconnect", "survey", "privacy", "help", "switchlang", "online", "instant", "auth", "push" ] :
             return getattr(self, "render_" + req.action)(req)
 
 
