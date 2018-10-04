@@ -44,8 +44,8 @@ dbtag = "MICA"
 
 if not mobile :
     import stripe
-    from gcm import *
-    from gcm.gcm import GCMNotRegisteredException
+    #from gcm import *
+    #from gcm.gcm import GCMNotRegisteredException
     from apns import APNs, Frame, Payload
     from crypticle import *
     from oauthlib.common import to_unicode
@@ -835,7 +835,7 @@ class MICA(object):
                 if req.api and req.action not in (([] if mobile else params["oauth"].keys()) + ["connect", "disconnect"]):
                     raise exc.HTTPUnauthorized("you're not logged in anymore.")
 
-                if req.action in ["connect", "disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories", "usersearch", "chatsearch" ] + ([] if mobile else params["oauth"].keys() ):
+                if req.action in ["connect", "disconnect", "survey", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "stories", "usersearch", "chatsearch" ] + ([] if mobile else params["oauth"].keys() ):
                     self.install_local_language(req)
                     resp = self.render(req)
                 else :
@@ -5682,7 +5682,7 @@ class MICA(object):
         global times
         mverbose(str(req.http.params))
 
-        if req.action in ["disconnect", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "usersearch", "chatsearch" ] :
+        if req.action in ["disconnect", "survey", "privacy", "help", "switchlang", "online", "instant", "auth", "push", "usersearch", "chatsearch" ] :
             return getattr(self, "render_" + req.action)(req)
 
 
