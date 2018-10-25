@@ -44,8 +44,11 @@ dbtag = "MICA"
 
 if not mobile :
     import stripe
-    from gcm import *
-    from gcm.gcm import GCMNotRegisteredException
+    try :
+        from gcm import *
+        from gcm.gcm import GCMNotRegisteredException
+    except ImportError, e :
+        mdebug("Cannot find GCM. Will not be able to send android push notifications.")
     from apns import APNs, Frame, Payload
     from crypticle import *
     from oauthlib.common import to_unicode
