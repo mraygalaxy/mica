@@ -59,7 +59,7 @@ function cleanup(name, next) {
 
 var options = {
 	Image: 'micadev7', 
-	Cmd: ['/home/mrhines/mica/restart.sh'], 
+	Cmd: ['/home/mrgalaxy/mica/restart.sh'], 
 	name: 'couchdev',
 	Tty : true,
 	PortBindings: {

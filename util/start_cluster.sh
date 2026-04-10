@@ -70,7 +70,7 @@ if [ x"$1" == x ] ; then
         if [ $num == 1 ] ; then
             bindfirst="-p 5985:5984"
         fi
-     	docker run -i -t -d $bindfirst --name ${name} -e CUSER="$user" -e CPASS="$pass" -e "CPARAMS=$(cat /home/mrhines/mica-android/mica/params.py)" couchdb24 bash -c "cd /home/mrhines/mica; git pull; util/couch_cluster.sh >> /var/log/cluster.log"
+     	docker run -i -t -d $bindfirst --name ${name} -e CUSER="$user" -e CPASS="$pass" -e "CPARAMS=$(cat /home/mrgalaxy/mica-android/mica/params.py)" couchdb24 bash -c "cd /home/mrgalaxy/mica; git pull; util/couch_cluster.sh >> /var/log/cluster.log"
     done
 else
 	echo "Skipping startup. Only cleanup."

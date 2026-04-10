@@ -76,7 +76,7 @@ test_timeout = 60
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
 mock_rest = {
-    "TranslatorAccess" : [ dict(inp = {"client_secret": "fge8PkcT/cF30AcBKOMuU9eDysKN/a7fUqH6Tq3M0W8=", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
+    "TranslatorAccess" : [ dict(inp = {"client_secret": "xxxxxxxxxxxxxxxxxxxx", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
                                outp = {"token_type": "http://schemas.xmlsoap.org/ws/2009/11/swt-token-profile-1.0", "access_token": "http%3a%2f%2fschemas.xmlsoap.org%2fws%2f2005%2f05%2fidentity%2fclaims%2fnameidentifier=micalearning&http%3a%2f%2fschemas.microsoft.com%2faccesscontrolservice%2f2010%2f07%2fclaims%2fidentityprovider=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&Audience=http%3a%2f%2fapi.microsofttranslator.com&ExpiresOn=1448071220&Issuer=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&HMACSHA256=p2YmU56ljSJjtcQOpViQaKZ1JpEOZJiCGQJf5otxmpA%3d", "expires_in": "599", "scope": "http://api.microsofttranslator.com"}),
                          ],
     "TranslatorRequest" : [
@@ -568,7 +568,7 @@ if test["start_jabber"] :
     options.append(
     dict(
         image = test["jabber_container"],
-        command = ["/bin/bash", "-c", "(/home/mrhines/mica/restart.sh &); bash"],
+        command = ["/bin/bash", "-c", "(/home/mrgalaxy/mica/restart.sh &); bash"],
         hostname = 'jabber',
         name = test["jabber_name"],
         tty = True,
@@ -590,7 +590,7 @@ fh.close()
 options.append(
     dict(
         image = test["couch_container"],
-        command = ["/bin/bash", "-c", "cd /home/mrhines/mica/; git pull; (/home/mrhines/mica/restart.sh &); bash"],
+        command = ["/bin/bash", "-c", "cd /home/mrgalaxy/mica/; git pull; (/home/mrgalaxy/mica/restart.sh &); bash"],
         name = test["couch_name"],
         tty = True,
         ports = [5984, 22, 5986],
