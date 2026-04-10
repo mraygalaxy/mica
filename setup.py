@@ -10,9 +10,9 @@ module1 = Extension('mica_ictclas',
 setup (name = 'PackageName',
        version = '1.0',
        description = 'This is a python-extention for the ICTCLAS package',
-       author = 'Michael R. Hines',
-       author_email = 'michael@hinespot.com',
-       url = 'http://michael.hinespot.com/',
+       author = 'Michael R. Galaxy',
+       author_email = 'michael@flatgalaxy.com',
+       url = 'http://michael.flatgalaxy.com/',
        long_description = '''
        Exposing the C++ ICTCLAS lexical chinese word parser API in Python.
 ''',

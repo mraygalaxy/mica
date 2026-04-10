@@ -18,7 +18,7 @@ for lang in zh py es ; do
 
     if [ ! -e messages_${lang}.po ] ; then
         echo "First time generation of language: $lang"
-	xgettext --omit-header --no-location --package-name=MICA --package-version="beta" --copyright-holder="Michael R. Hines michael@hinespot.com" $dir/../*.py
+	xgettext --omit-header --no-location --package-name=MICA --package-version="beta" --copyright-holder="Michael R. Galaxy michael@flatgalaxy.com" $dir/../*.py
         mv messages.po messages_${lang}.po
     fi
 

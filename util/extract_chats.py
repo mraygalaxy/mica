@@ -20,7 +20,7 @@ from params import parameters
 from common import myquote
 
 lookup_prefix = dict(human = 0, alien = "chat_ime", ime = 1, mode = "read", target_language = "en", source_language = "zh-CHS", lang = "en")
-final_prefix = dict(human = 0, alien = "chat_ime", ime = 1, mode = "read", target_language = "en", source_language = "zh-CHS", lang = "en", tzoffset = 18000, peer = "family@hinespot.com")
+final_prefix = dict(human = 0, alien = "chat_ime", ime = 1, mode = "read", target_language = "en", source_language = "zh-CHS", lang = "en", tzoffset = 18000, peer = "family@flatgalaxy.com")
 
 url = credentials(parameters) 
 s = MicaServerCouchDB(url, parameters["admin_user"], parameters["admin_pass"], refresh = True)
@@ -63,7 +63,7 @@ def flattenChar(char) :
 
 
 for numpage in range(0, nb_pages) :
-    doc = db["MICA:family@hinespot.com:stories:chat;weeks;2376;还在分析:pages:" + str(numpage)]
+    doc = db["MICA:family@flatgalaxy.com:stories:chat;weeks;2376;还在分析:pages:" + str(numpage)]
     units = doc["units"]
 
     curr_src = ""
@@ -78,7 +78,7 @@ for numpage in range(0, nb_pages) :
                 fromwho, text = curr_src.split(" ", 1)
                 sfromwho, stext = curr_sromanization.split(" ", 1)
                 if text.strip() != "" :
-                    to = "family@hinespot.com" if fromwho == "还在分析" else "还在分析"
+                    to = "family@flatgalaxy.com" if fromwho == "还在分析" else "还在分析"
                     d = deepcopy(lookup_prefix)
                     d.update(dict(msgfrom = fromwho, source = text, msgto = to))
                     for word in stext.strip().split(" ") :

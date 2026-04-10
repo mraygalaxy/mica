@@ -727,11 +727,11 @@ common_urls = {
 def init_and_translate(storyname) :
     return [
         # Need to retrieve the UUID again for the story initialization.
-        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
+        { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", storyinit = 1, name = storyname), "check_job_running" : False},
     ] + common_urls["storylist_triple"] + [
         # This get is only to retrieve the UUID again for the story initialization.
-        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
+        { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "home", translate = 1, name = storyname), "check_job_running" : False},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False, "until" : { "path" : ["translated", "translating"], "equals" : "no"}},
         { "loc" : "/api", "method" : "get", "success" : True, "test_success" : True, "data" : dict(human = 0, alien = "read", tstatus = 1), "check_job_running" : False},
@@ -747,9 +747,9 @@ def file_story(filename, languagetype, filetype, mimetype) :
     return [
            { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(filetype = filetype, filename = filename, languagetype = languagetype, uploadfile = "1") },
 
-           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
+           { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + filename, "method" : "get", "success" : None, "test_success" :  None, "couch" : True},
 
-           { "loc" : "/mica/MICA:family@hinespot.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {}, "couch" : True},
+           { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + filename + "/" + filename, "method" : "put", "success" : None, "test_success" :  None, "upload" : filename, "upload_type" : mimetype, "forward_keys" : ["_rev/rev"], "data" : {}, "couch" : True},
 
         ] + common_urls["storylist_triple"]
 
@@ -757,8 +757,8 @@ def txt_story(storyname, languagetype, source) :
 
     return [
         { "loc" : "/api?human=0&alien=home", "method" : "post", "success" : True, "test_success" :  True, "data" : dict(storyname = storyname, languagetype = languagetype, uploadtext = "1") },
-        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None , "couch" : True},
-        { "loc" : "/mica/MICA:family@hinespot.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@hinespot.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"], "couch" : True},
+        { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + storyname, "method" : "get", "success" : None, "test_success" :  None , "couch" : True},
+        { "loc" : "/mica/MICA:family@flatgalaxy.com:stories:" + storyname + "?authorization=false", "method" : "put", "success" : None, "test_success" :  None, "data" : {"_id" : "MICA:family@flatgalaxy.com:stories:" + storyname, "format" : 2, "filetype" : "txt", "source_language" : languagetype.split(",")[1], "reviewed": False, "date" : 1449946344.440684, "nb_pages" : 0, "name" : storyname, "translated": False, "new" : True, "target_language" : languagetype.split(",")[0], "txtsource" : "从前有个小孩，爸爸死了，妈妈病了，日子可不好过了。"}, "forward_keys" : ["_rev"], "couch" : True},
 
     ] + common_urls["storylist_triple"]
 

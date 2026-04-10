@@ -3250,7 +3250,7 @@ class MICA(object):
 
     def render_help(self, req) :
         req.tutorial = tutorials[self.install_local_language(req)]
-        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/hinesmr/mica/master", "").encode('utf-8')))
+        return self.api(req, ("<!DOCTYPE html>\n" if not mobile else "") + re_sub(r"([^\>]\n)", "\g<1>\n<br/>", run_template(req, HelpElement).replace("https://raw.githubusercontent.com/mraygalaxy/mica/master", "").encode('utf-8')))
 
     def render_mainpage(self, req, msg, pageid = "#messages") :
         if req.messages == "" :

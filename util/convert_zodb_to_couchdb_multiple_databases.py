@@ -26,7 +26,7 @@ cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
 Example commands:
 $ cd /tmp
   # first one drops the whole databases
-$ cp /home/mrhines/mica-v0.2/databases/family@hinespot.com.db .; ~/convert_zodb_to_couchdb.py -i family@hinespot.com.db -o "https://admin:super_secret_password@localhost:6984" -u family@hinespot.com -d
+$ cp /home/mrhines/mica-v0.2/databases/family@flatgalaxy.com.db .; ~/convert_zodb_to_couchdb.py -i family@flatgalaxy.com.db -o "https://admin:super_secret_password@localhost:6984" -u family@flatgalaxy.com -d
 $ cp /home/mrhines/mica-v0.2/databases/admin.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i admin.db -u admin -d
 $ cp /home/mrhines/mica-v0.2/databases/jonathan.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i jonathan.db -u jonathan -d
 $ cp /home/mrhines/mica-v0.2/accounts.db .; ~/convert_zodb_to_couchdb.py -o "https://admin:super_secret_password@localhost:6984" -i accounts.db -d

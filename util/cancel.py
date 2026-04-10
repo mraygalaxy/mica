@@ -5,7 +5,7 @@ from threading import Thread, Lock, current_thread, Timer, local as threading_lo
 from time import sleep
 
 print "Request start"
-req = urllib2_Request("https://security.hinespot.com/file.tgz")
+req = urllib2_Request("https://security.flatgalaxy.com/file.tgz")
 print "Opening..."
 fdurl = urllib2_urlopen(req, timeout = 60)
 print "Grabbing socket"

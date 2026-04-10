@@ -14,7 +14,7 @@ in the world, and then use people to correct the errors
 *after* the content has already been tranformed into an
 interactive, readable format.
 
-Full Usage Documentation: https://github.com/hinesmr/mica/wiki
+Full Usage Documentation: https://github.com/mraygalaxy/mica/wiki
 
 Credits:
  1. Lexical word parsing and character grouping: http://www.ictclas.org
@@ -112,5 +112,5 @@ FAQ:
 1) Do you have a mobile version?
    - Yes, it's called "Read Alien": https://readalien.com, both for Android and iOS. In fact, I use the mobile version much more frequently than the web-based version. The mobile version does not allow upload of new stories. You first must upload them to the web version and then the phone will automatically stay synchronized with the website at all times so that you can use the mobile application in an offline mode while you are learning.
    - Both versions are free in their respective app stores.
-   - The iOS version is here: <a href='http://github.com/hinesmr/mll-ios'>MLL for iOS</a>
-   - The android version is here: <a href='http://github.com/hinesmr/mll-android'>MLL for Android</a>.
+   - The iOS version is here: <a href='http://github.com/mraygalaxy/mll-ios'>MLL for iOS</a>
+   - The android version is here: <a href='http://github.com/mraygalaxy/mll-android'>MLL for Android</a>.
