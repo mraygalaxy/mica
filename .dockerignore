@@ -1,0 +1,15 @@
+.git
+*.pyc
+*.pyo
+build/
+logs/
+sessions/
+databases/
+*.db
+*.swp
+*.swo
+params.py
+mica.key
+mica.crt
+mica.der
+mica_ictclas.so

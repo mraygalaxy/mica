@@ -1,0 +1,77 @@
+# coding: utf-8
+# Copy this file to params.py and fill in real values before running.
+import os
+import re
+
+cwd = re.compile(".*\/").search(os.path.realpath(__file__)).group(0)
+
+parameters = {
+    # Web server
+    "port"              : 8080,
+    "sslport"           : -1,       # set to 443 and provide cert/privkey for SSL
+    "host"              : "0.0.0.0",
+    "keepsession"       : True,
+    "debug_host"        : False,
+    "duplicate_logger"  : False,
+
+    # Logging (set to False to disable)
+    "log"               : cwd + "logs/mica.log",
+    "tlog"              : False,
+
+    # SSL (only needed when sslport != -1)
+    "cert"              : False,    # e.g. cwd + "mica.crt"
+    "privkey"           : False,    # e.g. cwd + "mica.key"
+
+    # CouchDB — credentials embedded in couch_server
+    # In Docker: service name is "couchdb" (see docker-compose.yml)
+    "couch_proto"       : "http",
+    "couch_server"      : "couchdb",
+    "couch_port"        : "5984",
+    "couch_path"        : "",
+    "couch_adapter_type": "MicaServerCouchDB",
+    "dbname"            : "mica",
+    "admin_user"        : "admin",
+    "admin_pass"        : "password",
+
+    # AES key for encrypting jabber/chat exchanges — generate once with:
+    #   python2 -c "import os,hashlib; k=os.urandom(24+hashlib.sha256().digest_size); print k.encode('base64').replace('\n','')"
+    "jabber_auth"       : "REPLACE_WITH_GENERATED_KEY",
+
+    # Microsoft Translator API (required for online translations)
+    # Register at https://azure.microsoft.com/en-us/services/cognitive-services/translator/
+    "trans_id"          : "REPLACE_ME",
+    "trans_secret"      : "REPLACE_ME",
+
+    # Dictionary databases (SQLite — must be present in the source directory)
+    "cedict"            : cwd + "cedict.db",
+    "tonefile"          : cwd + "chinese.txt",
+
+    # Scratch space for file uploads and temp data
+    "scratch"           : cwd,
+
+    # Mobile internet connectivity object (False on server deployments)
+    "mobileinternet"    : False,
+
+    # Validate translator API on startup (set False if no trans_id/trans_secret configured)
+    "transcheck"        : False,
+    "transreset"        : False,
+
+    # Distributed processing slaves (leave False for single-node)
+    "slaves"            : False,
+    "slave_port"        : False,
+
+    # Push notifications (optional)
+    # "gcm"             : "YOUR_GCM_SERVER_KEY",
+    # "apns_devcert"    : cwd + "apns_dev.pem",
+    # "apns_devkey"     : cwd + "apns_dev.key",
+    # "apns_distcert"   : cwd + "apns_dist.pem",
+    # "apns_distkey"    : cwd + "apns_dist.key",
+
+    # Stripe (optional — billing)
+    # "stripe_secret"   : "REPLACE_ME",
+
+    # OAuth (optional — social login)
+    "oauth"             : {
+        "redirect"      : "http://localhost:8080",
+    },
+}

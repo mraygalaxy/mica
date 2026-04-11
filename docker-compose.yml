@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+
+  couchdb:
+    image: couchdb:1.7
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+    ports:
+      - "5984:5984"     # expose for direct access / Futon UI at http://localhost:5984/_utils
+    volumes:
+      - couchdb_data:/usr/local/var/lib/couchdb
+
+  mica:
+    build: .
+    volumes:
+      - .:/mica           # mount source directory; edits take effect on restart
+    ports:
+      - "8080:8080"
+    depends_on:
+      - couchdb
+
+volumes:
+  couchdb_data:

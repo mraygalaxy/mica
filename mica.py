@@ -297,13 +297,13 @@ class MICA(object):
             else :
                 if self.userdb :
                     self.db = self.userdb
-                    self.view_check("mica_admin", "accounts")
 
                     if "mica_admin" not in self.cs :
                         self.make_account(self, "mica_admin", "password", "owner@example.com", "mica", admin = True, dbname = "mica_admin")
                     if "file_admin" not in self.cs :
                         self.make_account(self, "files", "password", "owner@example.com", "mica", admin = False, dbname = "files", extra_roles = ["nobody"])
 
+                    self.view_check("mica_admin", "accounts")
                     self.verify_db(False, "mica_admin", username = "mica_admin")
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
@@ -3315,6 +3315,8 @@ class MICA(object):
         if req.billable :
             req.stripe_public = params["stripe_public"]
             req.amount = params["billing_rate"]
+        else :
+            req.amount = 0
         self.install_local_language(req)
         if not mobile :
             req.oauth = params["oauth"]
@@ -4955,6 +4957,8 @@ class MICA(object):
         if req.billable :
             req.stripe_public = params["stripe_public"]
             req.amount = params["billing_rate"]
+        else :
+            req.amount = 0
         return self.api(req, out + run_template(req, AccountElement), json = json)
 
     def render_chat(self, req, unused_story) :
