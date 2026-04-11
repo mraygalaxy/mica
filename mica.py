@@ -303,7 +303,11 @@ class MICA(object):
                     if "file_admin" not in self.cs :
                         self.make_account(self, "files", "password", "owner@example.com", "mica", admin = False, dbname = "files", extra_roles = ["nobody"])
 
-                    self.view_check("mica_admin", "accounts")
+                    # accounts view must live in _users so userdb.view('accounts/all') works
+                    if not self.userdb.doc_exist("_design/accounts") :
+                        fh = open(cwd + "views/accounts.js", 'r')
+                        self.userdb["_design/accounts"] = json_loads(fh.read())
+                        fh.close()
                     self.verify_db(False, "mica_admin", username = "mica_admin")
                     self.verify_db(False, "files", username = "files")
                     self.sessiondb = self.dbs["mica_admin"]
