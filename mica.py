@@ -242,7 +242,10 @@ class MICA(object):
     def __init__(self, db_adapter):
         self.serial = Serializable(params["serialize_couch_on_mobile"])
         self.general_processor = Processor(self, params, "general")
-        self.translation_client = Translator(params["trans_id"], params["trans_secret"], params["trans_scope"], params["trans_access_token_url"], test = params["test"])
+        self.translation_client = OllamaTranslator(
+            params.get("ollama_url",   "http://ollama:11434"),
+            params.get("ollama_model", "qwen3:14b-q4_K_M")
+        )
         self.mutex = Lock()
         self.sessionmutex = Lock()
         self.jobsmutex = Lock()

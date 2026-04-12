@@ -31,5 +31,19 @@ for i in $(seq 1 30); do
     fi
 done
 
+# Wait for Ollama to be ready and the model to be pulled
+echo "Waiting for Ollama model..."
+for i in $(seq 1 60); do
+    if curl -sf http://ollama:11434/api/tags 2>/dev/null | grep -q "qwen3:14b-q4_K_M"; then
+        echo "Ollama model is ready."
+        break
+    fi
+    sleep 5
+    if [ "$i" -eq 60 ]; then
+        echo "ERROR: Ollama did not become ready in time."
+        exit 1
+    fi
+done
+
 echo "Starting MICA..."
 exec python2.7 /mica/test.py "$@"

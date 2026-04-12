@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from urllib import urlencode as urllib_urlencode
-from urllib2 import urlopen as urllib2_urlopen, Request as urllib2_Request
 from json import loads, dumps
-from copy import deepcopy
-from xml import etree
-
 from common import *
 
 import requests
-import re
+
+# ---------------------------------------------------------------------------
+# Exception classes (kept for compatibility — caught in mica.py error handling)
+# ---------------------------------------------------------------------------
 
 class ArgumentOutOfRangeException(Exception):
     def __init__(self, message):
@@ -32,149 +30,109 @@ class TranslateApiException(Exception):
         self.message = message.replace('TranslateApiException: ', '')
         super(TranslateApiException, self).__init__(self.message, *args)
 
-class Translator(object):
-    def __init__(self, client_id, client_secret, scope, access_token_url,
-               grant_type = "client_credentials", app_id = None, test = False):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.scope = scope
-        self.grant_type = grant_type
-        self.access_token = None
-        self.test = test
-        self.access_token_url = str(access_token_url) + "/issueToken?Subscription-Key=" + str(client_secret)
+# ---------------------------------------------------------------------------
+# Language code → human-readable name for LLM prompts
+# ---------------------------------------------------------------------------
+
+_LANG_NAMES = {
+    'zh-CHS': 'Chinese (Simplified)',
+    'zh-CHT': 'Chinese (Traditional)',
+    'zh':     'Chinese (Simplified)',
+    'en':     'English',
+    'es':     'Spanish',
+    'fr':     'French',
+    'de':     'German',
+    'ja':     'Japanese',
+    'ko':     'Korean',
+    'pt':     'Portuguese',
+    'ru':     'Russian',
+    'ar':     'Arabic',
+}
+
+def _lang_name(code):
+    return _LANG_NAMES.get(code, code)
+
+# ---------------------------------------------------------------------------
+# Ollama-backed translator — drop-in replacement for the old Translator class.
+# translate_array() returns the same [{"TranslatedText": ..., "From": ...}]
+# format that the rest of the codebase expects.
+# ---------------------------------------------------------------------------
+
+class OllamaTranslator(object):
+    def __init__(self, ollama_url, model):
+        self.ollama_url = ollama_url.rstrip('/')
+        self.model = model
+        self.access_token = None  # no-op: keeps retry loop in translate_and_check_array happy
 
     def get_access_token(self):
-        response = False
-        try :
-            mverbose("Sending to: " + self.access_token_url)
-            data = urllib2_urlopen(self.access_token_url, "", timeout=30).read()
-            mverbose("Response: " + str(data))
-            response = data
-            test_log(self.test, loc = self.access_token_url, response = data, method = "post")
-        except IOError, e :
-            if response :
-                raise TranslateApiException(
-                    response.get('error_description', 'Failed to authenticate with translation service'),
-                    response.get('error', str(e))
-                    )
-            else :
-                raise TranslateApiException("Translation Service Authentication failed", str(e))
-        
+        return None  # no-op: Ollama needs no authentication token
 
-        if response and "error" in response:
-            merr("Error in authentication response.")
-            raise TranslateApiException(
-                response.get('error_description', 'No Error Description'),
-                response.get('error', 'Unknown Error')
-            )
-        return response
+    def translate_array(self, texts, to_lang, from_lang=None):
+        to_name   = _lang_name(to_lang)
+        from_name = _lang_name(from_lang) if from_lang else None
 
-    def call(self, url, p, data = False):
-        """Calls the given url with the params urlencoded
-        """
-        if not self.access_token:
-            self.access_token = self.get_access_token()
-        final_url = "%s?%s" % (url, urllib_urlencode(p))
-        headers={'Content-Type' : 'text/xml', 'Authorization': 'Bearer %s' % self.access_token}
+        results = []
+        for text in texts:
+            if isinstance(text, str):
+                text = text.decode('utf-8')
 
-        if data :
-            r = requests.post(url, headers = headers, data = data, timeout=30)
-        else :
-            r = requests.get(final_url, headers = headers, timeout=30)
+            if from_name:
+                user_msg = u"Translate from {} to {}: {}".format(from_name, to_name, text)
+            else:
+                user_msg = u"Translate to {}: {}".format(to_name, text)
 
-        response = r.text
-
-        if response.count("ArgumentOutOfRangeException"):
-            raise ArgumentOutOfRangeException(response)
-
-        if response.count("ArgumentException"):
-            raise ArgumentException(response)
-
-        if response.count("TranslateApiException"):
-            raise TranslateApiException(response)
-
-        response = xmlstring = re.sub(' xmlns="[^"]+"', '', response, count=1)
-        root = etree.ElementTree.fromstring(response.decode("utf-8-sig"))
-        rv = []
-
-        for child in root :
-            result = {}
-            for part in child :
-                name = part.tag
-                if name in ["TranslatedText", "From"] :
-                    mverbose("Setting: " + name + " = " + str(part.text))
-                    result[name] = part.text
-                else :
-                    for number in part :
-                        mverbose("Setting: " + name + " = " + str(number.text))
-                        result[name] = number.text
-            rv.append(result)
-
-        if len(rv) > 0 and self.test :
-            rvc = deepcopy(rv)
-            for idx in range(0, len(rvc)) : 
-                mwarn("RVC idx: " + str(idx) + " is " + str(type(rvc[idx])) + ", " + str(rvc))
-                rvc[idx]["TranslatedText"] = rvc[idx]["TranslatedText"].encode("utf-8")
-
-            # Log the results of microsoft for unit testing.
-            test_log(self.test, exchange = dict(inp = {'texts' : str(p["texts"]), 'from' : p['from'], 'options' : p['options'], 'to' : p['to']}, outp = rvc))
-        return rv
-
-
-    def translate(self, text, to_lang, from_lang=None,
-            content_type='text/plain', category='general'):
-        p = {
-            'text': text.encode('utf8'),
-            'to': to_lang,
-            'contentType': content_type,
-            'category': category,
+            payload = {
+                "model":  self.model,
+                "think":  False,
+                "stream": False,
+                "messages": [
+                    {
+                        "role":    "system",
+                        "content": (
+                            "You are a professional translator. "
+                            "Translate the given text accurately and concisely. "
+                            "Respond with only the translation, nothing else — "
+                            "no explanations, no punctuation added, no quotation marks."
+                        )
+                    },
+                    {
+                        "role":    "user",
+                        "content": user_msg
+                    }
+                ]
             }
-        if from_lang is not None:
-            p['from'] = from_lang
-        return self.call(self.scope + "/v2/http.svc/Translate", p)
+
+            r = requests.post(
+                self.ollama_url + "/api/chat",
+                headers={"Content-Type": "application/json"},
+                data=dumps(payload),
+                timeout=120
+            )
+
+            if r.status_code != 200:
+                raise TranslateApiException(
+                    "Ollama returned HTTP " + str(r.status_code) + ": " + r.text[:200]
+                )
+
+            translated = r.json()["message"]["content"].strip()
+            results.append({"TranslatedText": translated, "From": from_lang or u""})
+
+        return results
+
+
+# ---------------------------------------------------------------------------
+# Stub kept so that test.py mock infrastructure (TranslatorAccess /
+# TranslatorRequest routes) can still be imported without errors.
+# Not used at runtime on the server.
+# ---------------------------------------------------------------------------
+
+class Translator(object):
+    def __init__(self, client_id, client_secret, scope, access_token_url,
+                 grant_type="client_credentials", app_id=None, test=False):
+        pass
+
+    def get_access_token(self):
+        raise TranslateApiException("Microsoft Translator is no longer used")
 
     def translate_array(self, texts, to_lang, from_lang=None, **options):
-        options = {
-            'Category': u"general",
-            'Contenttype': u"text/xml",
-            'Uri': u'',
-            'User': u'default',
-            'State': u''
-            }.update(options)
-        p = {
-            'to': to_lang,
-            'options': dumps(options),
-            }
-
-        if from_lang is not None:
-            p['from'] = from_lang
-
-        xml = """
-        <TranslateArrayRequest>
-          <AppId />"""
-
-        if from_lang is not None :
-            if isinstance(from_lang, unicode) :
-                from_lang = from_lang.encode("utf-8")
-            xml += """
-              <From>""" + from_lang + """</From>"""
-
-        xml += """
-          <Texts>
-        """
-
-        for text in texts :
-            if isinstance(text, unicode) :
-                text = text.encode("utf-8")
-            xml += "<string xmlns=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">" + text + "</string>"
-
-        if isinstance(to_lang, unicode) :
-            to_lang = to_lang.encode("utf-8")
-
-        xml += """
-            </Texts>
-          <To>""" + to_lang + """</To>
-        </TranslateArrayRequest>
-        """
-
-        return self.call(self.scope + "/v2/http.svc/TranslateArray", p, data = xml)
+        raise TranslateApiException("Microsoft Translator is no longer used")

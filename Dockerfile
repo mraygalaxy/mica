@@ -27,8 +27,8 @@ RUN apt-get update && apt-get install -y \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # Python packages — pinned to last versions supporting Python 2.7
 RUN pip install \

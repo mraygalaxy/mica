@@ -37,10 +37,14 @@ parameters = {
     #   python2 -c "import os,hashlib; k=os.urandom(24+hashlib.sha256().digest_size); print k.encode('base64').replace('\n','')"
     "jabber_auth"       : "REPLACE_WITH_GENERATED_KEY",
 
-    # Microsoft Translator API (required for online translations)
-    # Register at https://azure.microsoft.com/en-us/services/cognitive-services/translator/
-    "trans_id"          : "REPLACE_ME",
-    "trans_secret"      : "REPLACE_ME",
+    # Ollama local LLM for translations (replace Microsoft Translator)
+    # In Docker: service name is "ollama" (see docker-compose.yml)
+    "ollama_url"        : "http://ollama:11434",
+    "ollama_model"      : "qwen3:14b-q4_K_M",
+
+    # Microsoft Translator API — no longer used, kept for test suite compatibility
+    # "trans_id"        : "REPLACE_ME",
+    # "trans_secret"    : "REPLACE_ME",
 
     # Dictionary databases (SQLite — must be present in the source directory)
     "cedict"            : cwd + "cedict.db",

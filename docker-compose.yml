@@ -12,6 +12,26 @@ services:
     volumes:
       - couchdb_data:/usr/local/var/lib/couchdb
 
+  ollama:
+    build: ./ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ollama list | grep -q 'qwen3:14b-q4_K_M'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s   # first run pulls ~8GB; 5 minute window
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
   mica:
     build: .
     volumes:
@@ -20,6 +40,8 @@ services:
       - "8080:8080"
     depends_on:
       - couchdb
+      - ollama
 
 volumes:
   couchdb_data:
+  ollama_models:
