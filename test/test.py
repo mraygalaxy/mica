@@ -75,69 +75,80 @@ test_timeout = 60
 
 oauth = { "codes" : {}, "states" : {}, "tokens" : {}}
 
-mock_rest = {
-    "TranslatorAccess" : [ dict(inp = {"client_secret": "xxxxxxxxxxxxxxxxxxxx", "grant_type": "client_credentials", "client_id": "micalearning", "scope": "http://localhost:" + str(server_port) + "/TranslatorRequest"},
-                               outp = {"token_type": "http://schemas.xmlsoap.org/ws/2009/11/swt-token-profile-1.0", "access_token": "http%3a%2f%2fschemas.xmlsoap.org%2fws%2f2005%2f05%2fidentity%2fclaims%2fnameidentifier=micalearning&http%3a%2f%2fschemas.microsoft.com%2faccesscontrolservice%2f2010%2f07%2fclaims%2fidentityprovider=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&Audience=http%3a%2f%2fapi.microsofttranslator.com&ExpiresOn=1448071220&Issuer=https%3a%2f%2fdatamarket.accesscontrol.windows.net%2f&HMACSHA256=p2YmU56ljSJjtcQOpViQaKZ1JpEOZJiCGQJf5otxmpA%3d", "expires_in": "599", "scope": "http://api.microsofttranslator.com"}),
-                         ],
-    "TranslatorRequest" : [
-                {"outp": [{"TranslatedText": "Baise", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u767e\\u8272\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Business", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u751f\\u610f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Centimetre", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [10]}], "inp": {"texts": "[\"\\u5398\\u7c73\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Cheap", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u4fbf\\u5b9c\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Collection", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [10]}], "inp": {"texts": "[\"\\u6c47\\u96c6\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Come out", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u51fa\\u6765\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Fair", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [4]}], "inp": {"texts": "[\"\\u516c\\u9053\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Family", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u4eba\\u5bb6\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Get up", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u8d77\\u6765\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}, {"TranslatedText": "Inflammation", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [12]}, {"TranslatedText": "It's hot", "From": "zh-CHS", "OriginalTextSentenceLengths": [1], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u708e\\u70ed\", \"\\u708e\", \"\\u70ed\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "How", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"\\u600e\\u4e48\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Husband", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [7]}], "inp": {"texts": "[\"\\u8001\\u516c\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Internet", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [8]}], "inp": {"texts": "[\"\\u7f51\\u7edc\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "King", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [4]}], "inp": {"texts": "[\"\\u5927\\u738b\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Modern", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u73b0\\u4ee3\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Nausea", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u6076\\u5fc3\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Promise", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [7]}], "inp": {"texts": "[\"\\u51fa\\u606f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Relationship", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [12]}], "inp": {"texts": "[\"\\u5173\\u7cfb\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Reporting", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [9]}], "inp": {"texts": "[\"\\u6c47\\u62a5\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Review", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u590d\\u4e60\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Story", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u6545\\u4e8b\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Take care of", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [12]}], "inp": {"texts": "[\"\\u7167\\u5e94\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Things", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u4e1c\\u897f\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "View", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [4]}], "inp": {"texts": "[\"\\u8bf4\\u6cd5\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Where", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u54ea\\u91cc\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Wonder", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u7422\\u78e8\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "Woods", "From": "zh-CHS", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [5]}], "inp": {"texts": "[\"\\u6811\\u6797\"]", "from": "zh-CHS", "options": "null", "to": "en"}},
-                {"outp": [{"TranslatedText": "\u4e08\u592b", "From": "en", "OriginalTextSentenceLengths": [7], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Husband\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp" : [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4e0d\u77e5\u9053", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Wonder\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4e1a\u52a1", "From": "en", "OriginalTextSentenceLengths": [8], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Business\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4e8b\u60c5", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Things\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4e92\u8054\u7f51", "From": "en", "OriginalTextSentenceLengths": [8], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Internet\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4ece\u524d\u6709\u4e2a\u5c0f\u5b69", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [6]}], "inp": {"texts": "[\"\\u4ece\\u524d\\u6709\\u4e2a\\u5c0f\\u5b69\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4f0d\u5179", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Woods\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u4fbf\u5b9c", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Cheap\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u516c\u5e73", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Fair\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5173\u7cfb", "From": "en", "OriginalTextSentenceLengths": [12], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Relationship\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5398\u7c73", "From": "en", "OriginalTextSentenceLengths": [10], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Centimetre\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u56fd\u738b", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"King\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5728\u54ea\u91cc", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [3]}], "inp": {"texts": "[\"Where\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5982\u4f55", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"How\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5ba1\u67e5", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Review\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u5bb6\u5ead", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Family\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u6076\u5fc3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Nausea\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u627f\u8bfa", "From": "en", "OriginalTextSentenceLengths": [7], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Promise\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u62a5\u544a", "From": "en", "OriginalTextSentenceLengths": [9], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Reporting\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u6545\u4e8b", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Story\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u6765\u5427", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u51fa", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Come\", \"out\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u73b0\u4ee3", "From": "en", "OriginalTextSentenceLengths": [6], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Modern\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u767e\u8272", "From": "en", "OriginalTextSentenceLengths": [5], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Baise\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u83b7\u53d6", "From": "en", "OriginalTextSentenceLengths": [3], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u5411\u4e0a", "From": "en", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Get\", \"up\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u89c6\u56fe", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"View\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u91c7\u53d6", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u4fdd\u5065", "From": "en", "OriginalTextSentenceLengths": [4], "TranslatedTextSentenceLengths": [2]}, {"TranslatedText": "\u7684", "From": "en", "OriginalTextSentenceLengths": [2], "TranslatedTextSentenceLengths": [1]}], "inp": {"texts": "[\"Take\", \"care\", \"of\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-                {"outp": [{"TranslatedText": "\u96c6\u5408", "From": "en", "OriginalTextSentenceLengths": [10], "TranslatedTextSentenceLengths": [2]}], "inp": {"texts": "[\"Collection\"]", "from": "en", "options": "null", "to": "zh-CHS"}},
-              ],
+# Map from (from_lang_name, to_lang_name, source_text) -> translated_text
+# These mirror the old TranslatorRequest mock data, one entry per text item.
+# OllamaTranslator sends one POST /api/chat per text, so no multi-text batches.
+from translator import _LANG_NAMES
+_OLLAMA_LANG_CODES = {v: k for k, v in _LANG_NAMES.iteritems()}
 
-    #"" : [dict(inp = , outp = ),],
+_OLLAMA_TRANSLATIONS = {
+    # zh-CHS -> en
+    ('zh-CHS', 'en', u'百色'):  'Baise',
+    ('zh-CHS', 'en', u'生意'):  'Business',
+    ('zh-CHS', 'en', u'厘米'):  'Centimetre',
+    ('zh-CHS', 'en', u'便宜'):  'Cheap',
+    ('zh-CHS', 'en', u'汇集'):  'Collection',
+    ('zh-CHS', 'en', u'出来'):  'Come out',
+    ('zh-CHS', 'en', u'公道'):  'Fair',
+    ('zh-CHS', 'en', u'人家'):  'Family',
+    ('zh-CHS', 'en', u'起来'):  'Get up',
+    ('zh-CHS', 'en', u'炎热'):  'Hot',
+    ('zh-CHS', 'en', u'炎'):    'Inflammation',
+    ('zh-CHS', 'en', u'热'):    "It's hot",
+    ('zh-CHS', 'en', u'怎么'):  'How',
+    ('zh-CHS', 'en', u'老公'):  'Husband',
+    ('zh-CHS', 'en', u'网络'):  'Internet',
+    ('zh-CHS', 'en', u'大王'):  'King',
+    ('zh-CHS', 'en', u'现代'):  'Modern',
+    ('zh-CHS', 'en', u'恶心'):  'Nausea',
+    ('zh-CHS', 'en', u'出息'):  'Promise',
+    ('zh-CHS', 'en', u'关系'):  'Relationship',
+    ('zh-CHS', 'en', u'汇报'):  'Reporting',
+    ('zh-CHS', 'en', u'复习'):  'Review',
+    ('zh-CHS', 'en', u'故事'):  'Story',
+    ('zh-CHS', 'en', u'照应'):  'Take care of',
+    ('zh-CHS', 'en', u'东西'):  'Things',
+    ('zh-CHS', 'en', u'说法'):  'View',
+    ('zh-CHS', 'en', u'哪里'):  'Where',
+    ('zh-CHS', 'en', u'琢磨'):  'Wonder',
+    ('zh-CHS', 'en', u'树林'):  'Woods',
+    # en -> zh-CHS (individual words — OllamaTranslator splits on space first)
+    ('en', 'zh-CHS', u'Baise'):        u'百色',
+    ('en', 'zh-CHS', u'Business'):     u'业务',
+    ('en', 'zh-CHS', u'Centimetre'):   u'厘米',
+    ('en', 'zh-CHS', u'Cheap'):        u'便宜',
+    ('en', 'zh-CHS', u'Collection'):   u'集合',
+    ('en', 'zh-CHS', u'Come'):         u'来吧',
+    ('en', 'zh-CHS', u'out'):          u'出',
+    ('en', 'zh-CHS', u'Fair'):         u'公平',
+    ('en', 'zh-CHS', u'Family'):       u'家庭',
+    ('en', 'zh-CHS', u'Get'):          u'获取',
+    ('en', 'zh-CHS', u'up'):           u'向上',
+    ('en', 'zh-CHS', u'Hot'):          u'炎热',
+    ('en', 'zh-CHS', u'How'):          u'如何',
+    ('en', 'zh-CHS', u'Husband'):      u'丈夫',
+    ('en', 'zh-CHS', u'Internet'):     u'互联网',
+    ('en', 'zh-CHS', u'King'):         u'国王',
+    ('en', 'zh-CHS', u'Modern'):       u'现代',
+    ('en', 'zh-CHS', u'Nausea'):       u'恶心',
+    ('en', 'zh-CHS', u'Promise'):      u'承诺',
+    ('en', 'zh-CHS', u'Relationship'): u'关系',
+    ('en', 'zh-CHS', u'Reporting'):    u'报告',
+    ('en', 'zh-CHS', u'Review'):       u'审查',
+    ('en', 'zh-CHS', u'Story'):        u'故事',
+    ('en', 'zh-CHS', u'Take'):         u'采取',
+    ('en', 'zh-CHS', u'care'):         u'保健',
+    ('en', 'zh-CHS', u'of'):           u'的',
+    ('en', 'zh-CHS', u'Things'):       u'事情',
+    ('en', 'zh-CHS', u'View'):         u'视图',
+    ('en', 'zh-CHS', u'Where'):        u'在哪里',
+    ('en', 'zh-CHS', u'Wonder'):       u'不知道',
+    ('en', 'zh-CHS', u'Woods'):        u'伍兹',
+    # identity pass-through used in one test (Chinese source passed as "en")
+    ('en', 'zh-CHS', u'从前有个小孩'): u'从前有个小孩',
+}
+
+mock_rest = {
     #"" : [dict(inp = , outp = ),],
 }
 
@@ -178,13 +189,58 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         return body
 
+    def check_ollama_chat(self, raw_body) :
+        """Mock handler for POST /api/chat — returns a fake Ollama chat response."""
+        try :
+            req = json_loads(raw_body)
+            # Find the user message (last message with role=user)
+            user_content = u""
+            for msg in req.get("messages", []) :
+                if msg.get("role") == "user" :
+                    user_content = msg.get("content", u"")
+            if isinstance(user_content, str) :
+                user_content = user_content.decode('utf-8')
+
+            # Parse "Translate from X to Y: <text>" or "Translate to Y: <text>"
+            import re
+            m = re.match(u"Translate from (.+?) to (.+?): (.+)$", user_content, re.DOTALL)
+            if m :
+                from_name = m.group(1).strip()
+                to_name   = m.group(2).strip()
+                text      = m.group(3).strip()
+                from_code = _OLLAMA_LANG_CODES.get(from_name, from_name)
+            else :
+                m = re.match(u"Translate to (.+?): (.+)$", user_content, re.DOTALL)
+                if m :
+                    to_name   = m.group(1).strip()
+                    text      = m.group(2).strip()
+                    from_code = None
+                else :
+                    tlog("  check_ollama_chat: could not parse user message: " + repr(user_content))
+                    text      = user_content
+                    to_name   = u""
+                    from_code = None
+
+            to_code = _OLLAMA_LANG_CODES.get(to_name, to_name)
+            key = (from_code, to_code, text)
+            translation = _OLLAMA_TRANSLATIONS.get(key)
+            if translation is None :
+                tlog("  check_ollama_chat: no mock entry for " + repr(key))
+                translation = text  # pass-through fallback
+
+            resp = json_dumps({"message": {"role": "assistant", "content": translation}, "done": True})
+        except Exception as e :
+            tlog("  check_ollama_chat error: " + str(e))
+            resp = json_dumps({"message": {"role": "assistant", "content": ""}, "done": True})
+        return resp
+
     def do_POST(self) :
         body = ""
         url = urlparse(self.path)
         url_parameters = my_parse(url.query)
         path = url.path.replace("/", "")
         length = int(self.headers.getheader('content-length'))
-        url_parameters.update(my_parse(self.rfile.read(length)))
+        raw_body = self.rfile.read(length)
         result = 200
         result_msg = "OK"
 
@@ -192,7 +248,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         body = sdict(success = True, test_success = True)
 
-        if path in parameters["oauth"].keys() :
+        if "api/chat" in url.path :
+            body = self.check_ollama_chat(raw_body)
+        elif path in parameters["oauth"].keys() :
+            url_parameters.update(my_parse(raw_body))
             #tlog("  TOKEN REQUEST from: " + path)
             if url_parameters["code"] != oauth["codes"][path] or url_parameters["client_secret"] != parameters["oauth"][path]["client_secret"] :
                 result = 401
@@ -202,6 +261,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             oauth["tokens"][path] = binascii_hexlify(os_urandom(4))
             body = sdict(access_token = oauth["tokens"][path], token_type = "Bearer", expires_in = 3597)
         else :
+            url_parameters.update(my_parse(raw_body))
             body = self.check_mock_data(path, url_parameters)
 
         try:
@@ -644,8 +704,8 @@ if len(sys.argv) > 1 and sys.argv[1] == "stop" :
 
 urls = []
 if "test" not in parameters or not parameters["test"] :
-    parameters["trans_scope"] = "http://localhost:" + str(server_port) + "/TranslatorRequest"
-    parameters["trans_access_token_url"] = "http://localhost:" + str(server_port) + "/TranslatorAccess"
+    parameters["ollama_url"]   = "http://localhost:" + str(server_port)
+    parameters["ollama_model"] = "qwen3:14b-q4_K_M"
 
 httpd = TimeoutServer(('127.0.0.1', server_port), MyHandler)
 oresp = Thread(target=oauth_responder, args = [httpd])
